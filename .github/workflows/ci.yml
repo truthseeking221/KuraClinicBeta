@@ -78,3 +78,59 @@ jobs:
       - name: Deploy production
         if: github.event_name == 'push'
         run: vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN"
+
+  deploy-storybook:
+    needs: verify
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_STORYBOOK_PROJECT_ID }}
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Configure private package registry
+        env:
+          HUGEICONS_TOKEN: ${{ secrets.HUGEICONS_TOKEN }}
+        run: |
+          npm config set @hugeicons-pro:registry https://npm.hugeicons.com/
+          npm config set //npm.hugeicons.com/:_authToken "$HUGEICONS_TOKEN"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Vercel CLI
+        run: npm install --global vercel@50.28.0
+
+      - name: Pull preview environment
+        if: github.event_name == 'pull_request'
+        run: vercel pull --yes --environment=preview --token="$VERCEL_TOKEN"
+
+      - name: Build preview
+        if: github.event_name == 'pull_request'
+        run: vercel build --token="$VERCEL_TOKEN"
+
+      - name: Deploy preview
+        if: github.event_name == 'pull_request'
+        run: vercel deploy --prebuilt --archive=tgz --token="$VERCEL_TOKEN"
+
+      - name: Pull production environment
+        if: github.event_name == 'push'
+        run: vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
+
+      - name: Build production
+        if: github.event_name == 'push'
+        run: vercel build --prod --token="$VERCEL_TOKEN"
+
+      - name: Deploy production
+        if: github.event_name == 'push'
+        run: vercel deploy --prebuilt --archive=tgz --prod --token="$VERCEL_TOKEN"
