@@ -1,0 +1,54 @@
+.sparkline {
+  display: inline-flex;
+  align-items: center;
+  line-height: 0;
+}
+
+.band {
+  fill: var(--lab-range-optimal-muted);
+}
+
+.line {
+  fill: none;
+  stroke: var(--color-text-secondary);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+  animation: sparkline-draw var(--duration-slow) var(--ease-out) both;
+}
+
+@keyframes sparkline-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+}
+
+.pointDot {
+  fill: var(--color-text-tertiary);
+}
+
+/* Latest reading: surface core + tone ring — same language as the range band. */
+.latestDot {
+  fill: var(--lab-dot-ring);
+  stroke-width: 1.5;
+}
+
+.latestDot[data-tone='optimal'] {
+  stroke: var(--lab-dot-optimal);
+}
+
+.latestDot[data-tone='caution'] {
+  stroke: var(--lab-dot-caution);
+}
+
+.latestDot[data-tone='out'] {
+  stroke: var(--lab-dot-out);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .line {
+    animation: none;
+  }
+}

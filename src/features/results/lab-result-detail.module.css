@@ -1,0 +1,100 @@
+.detail {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--space-stack-control);
+}
+
+.compact {
+  max-width: calc(var(--space-32) * 3);
+}
+
+.status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-2);
+}
+
+.value {
+  color: var(--color-text-primary);
+  font-size: var(--type-xl);
+  font-weight: var(--weight-bold);
+  font-variant-numeric: tabular-nums;
+}
+
+.unit,
+.meta {
+  color: var(--color-text-secondary);
+  font-size: var(--type-xs);
+}
+
+.note,
+.previewHint {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--type-xs);
+  line-height: var(--leading-normal);
+}
+
+.previewTitle {
+  margin: 0 0 var(--space-2);
+  color: var(--color-text-primary);
+  font-size: var(--type-base);
+  font-weight: var(--weight-semibold);
+}
+
+.previewHint {
+  margin-top: var(--space-2);
+}
+
+.history {
+  margin-top: var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card-surface);
+}
+
+.history :global([data-slot='collapsible-trigger']) {
+  color: var(--color-text-link);
+}
+
+.history :global([data-slot='collapsible-trigger']):hover,
+.history :global([data-slot='collapsible-trigger'])[data-state='open'] {
+  color: var(--color-text-link);
+}
+
+:global([data-density='compact']) .history :global([data-slot='collapsible-trigger']) {
+  min-height: var(--touch-target-min);
+}
+
+.historyList {
+  display: flex;
+  margin: 0;
+  padding: 0;
+  flex-direction: column;
+  list-style: none;
+}
+
+.historyItem {
+  display: flex;
+  min-height: var(--touch-target-min);
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--space-0-5);
+  padding: var(--space-2) var(--space-3);
+  border-top: 1px solid var(--color-border);
+}
+
+.historyValue {
+  color: var(--color-text-primary);
+  font-size: var(--type-sm);
+  font-weight: var(--weight-medium);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.historyMeta {
+  color: var(--color-text-secondary);
+  font-size: var(--type-xs);
+  line-height: var(--leading-normal);
+}

@@ -1,0 +1,12 @@
+interface:
+  display_name: Kura UX Architect
+  short_description: Design complete, safe Kura workflows
+  default_prompt: Use $architect-kura-ux to architect this Kura workflow and choose
+    the correct components for every interaction.
+policy:
+  products:
+  - chatgpt
+  - codex
+  - api
+  - atlas
+  allow_implicit_invocation: true

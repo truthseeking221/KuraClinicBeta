@@ -1,0 +1,21 @@
+.money {
+  font-variant-numeric: tabular-nums;
+}
+
+.value {
+  display: inline-block;
+  animation: money-value-in var(--duration-base) var(--ease-out);
+}
+
+@keyframes money-value-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.15em);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .value {
+    animation: none;
+  }
+}

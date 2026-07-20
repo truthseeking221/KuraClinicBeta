@@ -1,0 +1,179 @@
+.band {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1-5);
+  min-width: calc(var(--space-20) * 2);
+  width: 100%;
+}
+
+.band[data-show-value='true'] {
+  padding-top: var(--space-4);
+}
+
+.track {
+  position: relative;
+  height: var(--space-5);
+  width: 100%;
+}
+
+/* Segmented scale: thin muted zones with joint gaps; only the zone holding
+ * the value lights up to full tint. The scale stays calm, the reading is loud. */
+.zones {
+  position: absolute;
+  inset: var(--space-1-5) 0;
+  display: flex;
+  gap: var(--space-0-5);
+}
+
+.zone {
+  flex: 1 0 0;
+  min-width: var(--space-0-5);
+  border-radius: var(--radius-indicator);
+  transition: background-color var(--motion-color);
+}
+
+.zone:first-child {
+  border-start-start-radius: var(--radius-full);
+  border-end-start-radius: var(--radius-full);
+}
+
+.zone:last-child {
+  border-start-end-radius: var(--radius-full);
+  border-end-end-radius: var(--radius-full);
+}
+
+.zone[data-tone='optimal'] {
+  background: var(--lab-range-optimal-muted);
+}
+
+.zone[data-tone='caution'] {
+  background: var(--lab-range-caution-muted);
+}
+
+.zone[data-tone='out'] {
+  background: var(--lab-range-out-muted);
+}
+
+.zone[data-active][data-tone='optimal'] {
+  background: var(--lab-range-optimal);
+}
+
+.zone[data-active][data-tone='caution'] {
+  background: var(--lab-range-caution);
+}
+
+.zone[data-active][data-tone='out'] {
+  background: var(--lab-range-out);
+}
+
+/* Needle marker: a rounded vertical pin in the tone foreground, reaching past
+ * the zones on both sides. A surface hairline separates it from same-tone
+ * tints; the shadow keeps it readable on muted zones. */
+.dot {
+  position: absolute;
+  top: 50%;
+  width: var(--space-1);
+  height: var(--space-4);
+  border-radius: var(--radius-full);
+  transform: translate(-50%, -50%);
+  box-shadow:
+    0 0 0 1px var(--lab-dot-ring),
+    var(--shadow-sm);
+  transition: left var(--motion-indicator);
+  animation: lab-dot-in var(--duration-base) var(--ease-out);
+}
+
+.dot[data-tone='optimal'] {
+  background: var(--lab-dot-optimal);
+}
+
+.dot[data-tone='caution'] {
+  background: var(--lab-dot-caution);
+}
+
+.dot[data-tone='out'] {
+  background: var(--lab-dot-out);
+}
+
+@keyframes lab-dot-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scaleY(0.4);
+  }
+}
+
+/* The measured value rides the marker — loud data anchored to its position. */
+.valueLabel {
+  position: absolute;
+  bottom: calc(100% - var(--space-0-5));
+  transform: translateX(-50%);
+  font-size: var(--type-xs);
+  font-weight: var(--weight-semibold);
+  font-variant-numeric: tabular-nums;
+  line-height: var(--leading-tight);
+  white-space: nowrap;
+  transition: left var(--motion-indicator);
+}
+
+.valueLabel[data-tone='optimal'] {
+  color: var(--lab-dot-optimal);
+}
+
+.valueLabel[data-tone='caution'] {
+  color: var(--lab-dot-caution);
+}
+
+.valueLabel[data-tone='out'] {
+  color: var(--lab-dot-out);
+}
+
+.ticks {
+  display: flex;
+  gap: var(--space-0-5);
+}
+
+.tick {
+  flex: 1 0 0;
+  min-width: var(--space-0-5);
+  font-size: var(--type-2xs);
+  line-height: var(--leading-normal);
+  text-align: center;
+  color: var(--color-text-tertiary);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: break-word;
+  transition: color var(--motion-color);
+}
+
+.tick[data-active] {
+  color: var(--color-text-primary);
+  font-weight: var(--weight-medium);
+}
+
+/* Dense placements (result rows in compact density, hover cards). */
+.band[data-size='sm'] {
+  gap: var(--space-1);
+}
+
+.band[data-size='sm'] .track {
+  height: var(--space-4);
+}
+
+.band[data-size='sm'] .zones {
+  inset: var(--space-1) 0;
+}
+
+.band[data-size='sm'] .dot {
+  width: var(--space-0-5);
+  height: var(--space-3);
+}
+
+.band[data-size='sm'] .tick {
+  font-size: var(--type-2xs);
+  line-height: var(--leading-tight);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dot {
+    animation: none;
+  }
+}

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Storybook Consistency Police"
+  short_description: "Audit Storybook consistency before approved fixes"
+  default_prompt: "Use $storybook-consistency-police to audit this Storybook UI and propose fixes without changing code until I approve."

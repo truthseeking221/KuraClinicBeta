@@ -1,0 +1,44 @@
+.flow {
+  display: flex;
+  width: 100%;
+  max-width: calc(var(--space-32) * 9);
+  margin: 0 auto;
+  padding: var(--space-page-gutter);
+  flex-direction: column;
+  gap: var(--space-stack-section);
+}
+
+.flow :global([data-slot='results-workspace']) {
+  max-width: none;
+  padding: 0;
+}
+
+.closureStatus {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-inline-group);
+}
+
+.closureTitle,
+.closureReason {
+  margin: 0;
+}
+
+.closureTitle {
+  color: var(--color-text-primary);
+  font-size: var(--type-sm);
+  font-weight: var(--weight-semibold);
+}
+
+.closureReason {
+  margin-top: var(--space-1);
+  color: var(--color-text-secondary);
+  font-size: var(--type-sm);
+  line-height: var(--leading-normal);
+}
+
+@media (max-width: 48rem) {
+  .flow {
+    padding: var(--space-4);
+  }
+}

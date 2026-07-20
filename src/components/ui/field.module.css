@@ -1,0 +1,167 @@
+.fieldSet,
+.group {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--space-stack-section);
+}
+
+.fieldSet {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.legend {
+  margin-block-end: var(--space-stack-control);
+  color: var(--color-text-primary);
+  font-size: var(--type-lg);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-snug);
+}
+
+.legend[data-variant='label'] {
+  font-size: var(--type-sm);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-normal);
+  color: var(--color-text-secondary);
+}
+
+.field {
+  display: flex;
+  min-width: 0;
+  gap: var(--space-stack-control);
+}
+
+.field[data-orientation='vertical'] {
+  flex-direction: column;
+}
+
+.field[data-orientation='horizontal'] {
+  align-items: flex-start;
+}
+
+.field[data-orientation='horizontal'] > .label,
+.field[data-orientation='horizontal'] > .title {
+  flex: 0 0 min(12rem, 35%);
+  padding-block-start: var(--space-2);
+}
+
+.field[data-orientation='horizontal'] > .content {
+  flex: 1;
+}
+
+.field[data-orientation='responsive'] {
+  flex-direction: column;
+}
+
+.content {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--space-stack-label);
+}
+
+.label,
+.title {
+  display: inline-flex;
+  width: fit-content;
+  align-items: baseline;
+  gap: var(--space-0-5);
+  color: var(--color-text-secondary);
+  font-size: var(--type-sm);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-normal);
+}
+
+.requiredMark,
+.error {
+  color: var(--color-status-danger-fg);
+}
+
+.description,
+.error {
+  margin: 0;
+  font-size: var(--type-xs);
+  line-height: var(--leading-normal);
+}
+
+.description {
+  color: var(--color-text-tertiary);
+}
+
+.description a {
+  color: var(--primary);
+  text-underline-offset: var(--space-1);
+}
+
+.errorList {
+  margin: 0;
+  padding-inline-start: var(--space-5);
+}
+
+.field[data-disabled='true'] .label,
+.field[data-disabled='true'] .title,
+.field[data-disabled='true'] .description {
+  color: var(--color-text-disabled);
+}
+
+.separator {
+  position: relative;
+  display: grid;
+  min-height: var(--control-h);
+  place-items: center;
+}
+
+.separatorLine {
+  position: absolute;
+  inset-inline: 0;
+  height: 1px;
+  background: var(--color-border);
+}
+
+.separatorContent {
+  position: relative;
+  padding-inline: var(--space-3);
+  background: var(--color-surface-bg);
+  color: var(--color-text-tertiary);
+  font-size: var(--type-xs);
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+
+@media (min-width: 48rem) {
+  .field[data-orientation='responsive'] {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+
+  .field[data-orientation='responsive'] > .label,
+  .field[data-orientation='responsive'] > .title {
+    flex: 0 0 min(12rem, 35%);
+    padding-block-start: var(--space-2);
+  }
+
+  .field[data-orientation='responsive'] > .content {
+    flex: 1;
+  }
+}
+
+@media (max-width: 30rem) {
+  .field[data-orientation='horizontal'] {
+    flex-direction: column;
+  }
+
+  .field[data-orientation='horizontal'] > .label,
+  .field[data-orientation='horizontal'] > .title {
+    flex-basis: auto;
+    padding-block-start: 0;
+  }
+}

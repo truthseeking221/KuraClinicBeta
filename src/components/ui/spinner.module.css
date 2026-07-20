@@ -1,0 +1,55 @@
+.root {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: var(--space-inline-icon);
+  color: currentColor;
+  font-size: var(--type-sm);
+  line-height: var(--leading-normal);
+}
+
+.icon {
+  width: var(--space-4);
+  height: var(--space-4);
+  flex: 0 0 auto;
+  animation: spinner-rotate var(--duration-slow) linear infinite;
+}
+
+.root[data-size='sm'] .icon {
+  width: var(--space-3);
+  height: var(--space-3);
+}
+
+.root[data-size='lg'] .icon {
+  width: var(--space-6);
+  height: var(--space-6);
+}
+
+.label {
+  overflow-wrap: anywhere;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  padding: 0;
+  border: 0;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@keyframes spinner-rotate {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .icon {
+    animation: none;
+  }
+}

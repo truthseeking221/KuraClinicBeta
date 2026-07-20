@@ -1,0 +1,124 @@
+.frame {
+  width: min(100%, calc(var(--space-32) * 3));
+}
+
+.wideFrame {
+  width: min(100%, calc(var(--space-32) * 4));
+}
+
+.treeSurface {
+  padding: var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card-surface);
+  background: var(--color-surface);
+}
+
+.withGuides {
+  isolation: isolate;
+}
+
+.withGuides::before {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  margin-inline-start: calc(var(--space-1) * -1);
+  background-image: repeating-linear-gradient(
+    to right,
+    transparent 0,
+    transparent calc(var(--tree-indent) - 1px),
+    var(--color-border) calc(var(--tree-indent) - 1px),
+    var(--color-border) var(--tree-indent)
+  );
+  content: '';
+  pointer-events: none;
+}
+
+.withGuides :global([data-slot='tree-item-label']) {
+  background: var(--color-surface);
+}
+
+.withGuides :global([data-slot='tree-item-label']):hover {
+  background: var(--color-surface-sunken);
+}
+
+.storyStack {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.storyNote {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--type-sm);
+  line-height: var(--leading-normal);
+}
+
+.orgLabel {
+  min-height: calc(var(--space-6) + var(--space-2));
+}
+
+.orgCopy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.orgName,
+.orgRole {
+  overflow: hidden;
+  max-width: 100%;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.orgName {
+  font-weight: var(--weight-medium);
+}
+
+.orgRole {
+  color: var(--color-text-tertiary);
+  font-size: var(--type-xs);
+}
+
+.permissionLabel {
+  gap: var(--space-2);
+}
+
+.permissionCheckbox {
+  flex: 0 0 auto;
+}
+
+.nodeContent {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: var(--space-inline-icon);
+}
+
+.nodeIcon {
+  display: inline-flex;
+  color: var(--color-text-secondary);
+}
+
+.emptyState {
+  display: grid;
+  min-height: calc(var(--space-8) * 2);
+  place-items: center;
+  padding: var(--space-4);
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--radius-card-surface);
+  color: var(--color-text-secondary);
+  text-align: center;
+}
+
+.mobileFrame {
+  width: min(100%, 320px);
+}
+
+@media (max-width: 480px) {
+  .frame,
+  .wideFrame {
+    width: 100%;
+  }
+}

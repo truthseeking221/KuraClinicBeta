@@ -1,0 +1,83 @@
+.toggle {
+  width: fit-content;
+  max-width: 100%;
+  border-radius: var(--radius-control);
+  padding: var(--space-1);
+  background: var(--muted);
+}
+
+/* Doubled attribute selector outranks button-group's per-position radius
+   rules; every segment stays rounded inside the padded track. */
+.toggle > :global([data-slot='button'][data-slot='button']) {
+  min-width: 0;
+  min-height: var(--space-6);
+  gap: var(--space-1-5);
+  border-color: transparent;
+  border-radius: var(--radius-control);
+  padding-block: 0;
+  padding-inline: var(--space-1-5);
+  color: var(--muted-foreground);
+  transition:
+    color var(--duration-fast) var(--ease-standard),
+    background-color var(--duration-fast) var(--ease-standard);
+}
+
+.toggle > :global([data-slot='button'][data-selected='true']) {
+  border-radius: var(--radius-control);
+  background: var(--card);
+  color: var(--card-foreground);
+  box-shadow: var(--elevation-2);
+}
+
+.toggle > :global([data-slot='button']:hover:not(:disabled):not([data-selected='true'])) {
+  background: transparent;
+  color: var(--foreground);
+}
+
+.toggle > :global([data-slot='button'][data-selected='true']):focus-visible {
+  box-shadow: var(--elevation-focus);
+}
+
+.toggle[data-disabled='true'] {
+  opacity: var(--opacity-disabled);
+}
+
+:global([data-density='compact']) .toggle > :global([data-slot='button']) {
+  min-height: var(--space-5);
+}
+
+:global([data-density='comfortable']) .toggle > :global([data-slot='button']) {
+  min-height: var(--space-8);
+}
+
+@media (max-width: 479px) {
+  .toggle {
+    width: 100%;
+  }
+
+  .toggle > :global([data-slot='button']) {
+    flex: 1 1 0;
+  }
+}
+
+@media (pointer: coarse) {
+  .toggle > :global([data-slot='button']) {
+    min-height: var(--control-h);
+  }
+}
+
+/* Form-field presentation: visible label above the segments (labelVisible). */
+.field {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-stack-label);
+  min-width: 0;
+}
+
+.label {
+  font-size: var(--type-sm);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-normal);
+  color: var(--color-text-secondary);
+}

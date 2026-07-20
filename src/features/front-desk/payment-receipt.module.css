@@ -1,0 +1,116 @@
+.receipt {
+  max-width: 420px;
+}
+
+.title {
+  font-size: var(--type-sm);
+  font-weight: var(--weight-semibold);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-primary);
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.body[data-voided='true'] .lineName,
+.body[data-voided='true'] .linePrice,
+.body[data-voided='true'] .total {
+  color: var(--color-text-tertiary);
+  text-decoration: line-through;
+}
+
+.patient {
+  margin: 0;
+  font-size: var(--type-sm);
+  font-weight: var(--weight-medium);
+  color: var(--color-text-primary);
+}
+
+.lines {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.lines > li + li {
+  border-top: 1px solid var(--color-border);
+}
+
+.line {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding-block: var(--space-1-5);
+}
+
+.lineName {
+  font-size: var(--type-sm);
+  color: var(--color-text-secondary);
+  overflow-wrap: anywhere;
+}
+
+.linePrice {
+  font-size: var(--type-sm);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-primary);
+}
+
+/* The paid amount is the loud value; everything else stays quiet. */
+.totalRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--color-border-strong);
+  font-size: var(--type-sm);
+  color: var(--color-text-secondary);
+}
+
+.total {
+  font-size: var(--type-xl);
+  font-weight: var(--weight-semibold);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-primary);
+}
+
+.meta {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.metaRow {
+  display: flex;
+  gap: var(--space-3);
+  font-size: var(--type-xs);
+}
+
+.metaRow dt {
+  flex-shrink: 0;
+  min-width: var(--space-16);
+  color: var(--color-text-tertiary);
+}
+
+.metaRow dd {
+  margin: 0;
+  color: var(--color-text-secondary);
+  overflow-wrap: anywhere;
+}
+
+.immutable {
+  margin: 0;
+  font-size: var(--type-xs);
+  color: var(--color-text-tertiary);
+}
+
+.footer {
+  padding-top: 0;
+}

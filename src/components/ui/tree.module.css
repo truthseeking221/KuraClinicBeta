@@ -1,0 +1,116 @@
+.root {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--space-0-5);
+  color: var(--color-text-primary);
+  font-size: var(--type-sm);
+}
+
+.item {
+  position: relative;
+  z-index: 1;
+  display: block;
+  min-width: 0;
+  width: 100%;
+  padding: 0 0 0 var(--tree-padding);
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  outline: none;
+  user-select: none;
+}
+
+.item[data-disabled='true'] {
+  pointer-events: none;
+  opacity: var(--opacity-disabled);
+}
+
+.item[data-drag-target='true'] .label,
+.item[data-selected='true'] .label,
+.item[data-search-match='true'] .label {
+  background: var(--color-brand-50);
+  color: var(--color-text-primary);
+}
+
+.item[data-focus='true'] .label {
+  background: var(--color-surface-sunken);
+}
+
+.item:focus-visible .label {
+  box-shadow: var(--shadow-focus);
+}
+
+.label {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  min-height: var(--control-h-sm);
+  align-items: center;
+  gap: var(--space-inline-icon);
+  padding: var(--space-1-5) var(--space-2);
+  border-radius: var(--radius-control-compact);
+  color: var(--color-text-primary);
+  line-height: var(--leading-normal);
+  transition: background-color var(--motion-color), color var(--motion-color), box-shadow var(--motion-color);
+}
+
+.item:hover .label {
+  background: var(--color-surface-sunken);
+}
+
+.item[data-selected='true']:hover .label,
+.item[data-drag-target='true']:hover .label {
+  background: var(--color-brand-100);
+}
+
+.label > :global(svg),
+.label :global(svg) {
+  flex: 0 0 auto;
+}
+
+.toggleIcon {
+  color: var(--color-text-tertiary);
+  transition: transform var(--motion-control), color var(--motion-color);
+}
+
+.toggleIconCollapsed {
+  transform: rotate(-90deg);
+}
+
+.leafIndent {
+  width: var(--space-4);
+  height: var(--space-4);
+  flex: 0 0 var(--space-4);
+}
+
+.dragLine {
+  position: absolute;
+  z-index: 3;
+  height: 2px;
+  border-radius: var(--radius-track);
+  background: var(--color-brand-600);
+  pointer-events: none;
+}
+
+.dragLine::before {
+  position: absolute;
+  top: -3px;
+  left: 0;
+  width: var(--space-2);
+  height: var(--space-2);
+  border: 2px solid var(--color-brand-600);
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  content: '';
+}
+
+@media (max-width: 480px) {
+  .label {
+    min-height: var(--touch-target-min);
+    padding-block: var(--space-2);
+  }
+}

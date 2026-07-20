@@ -1,0 +1,144 @@
+.root {
+  box-sizing: border-box;
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  min-height: calc(var(--row-h) * 4);
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--space-5);
+  padding: var(--space-8) var(--space-inset-panel);
+  color: var(--foreground);
+  font-family: var(--font-family-sans);
+}
+
+.root[data-align='center'] {
+  align-items: center;
+  text-align: center;
+}
+
+.root[data-align='start'] {
+  align-items: flex-start;
+  text-align: start;
+}
+
+.root[data-surface='muted'] {
+  border-radius: var(--radius-card-surface);
+  background: var(--muted);
+}
+
+.root[data-surface='outlined'] {
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-card-surface);
+}
+
+.header,
+.content {
+  display: flex;
+  width: min(100%, calc(var(--space-32) * 3));
+  min-width: 0;
+  flex-direction: column;
+}
+
+/*
+ * The align contract has to reach every level. `.root` only positions its own
+ * children, so a fixed-size media inside `.header` stayed at the cross-start
+ * edge while the surrounding text read as centered.
+ */
+.root[data-align='center'] .header,
+.root[data-align='center'] .content {
+  align-items: center;
+}
+
+.root[data-align='start'] .header,
+.root[data-align='start'] .content {
+  align-items: flex-start;
+}
+
+.header {
+  gap: var(--space-stack-control);
+}
+
+.content {
+  gap: var(--space-control-gap);
+}
+
+.media {
+  display: flex;
+  max-width: 100%;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted-foreground);
+}
+
+/*
+ * Media is a different rhythm unit from the title/description pair, so it takes
+ * the group gap instead of the control gap: this margin plus the header gap
+ * resolves to `--space-4`.
+ */
+.header > .media:not(:last-child) {
+  margin-block-end: var(--space-stack-control);
+}
+
+.media[data-variant='icon'] {
+  width: var(--space-12);
+  height: var(--space-12);
+  border-radius: var(--radius-control);
+  background: var(--muted);
+  color: var(--foreground);
+}
+
+.root[data-surface='muted'] .media[data-variant='icon'] {
+  background: var(--card);
+}
+
+.media[data-variant='icon'] > :global(svg) {
+  width: var(--space-6);
+  height: var(--space-6);
+}
+
+/* Text keeps the full column so wrapping stays identical under every align. */
+.title {
+  width: 100%;
+  margin: 0;
+  color: var(--foreground);
+  font-size: var(--type-lg);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-snug);
+  overflow-wrap: anywhere;
+}
+
+.description {
+  width: 100%;
+  margin: 0;
+  color: var(--muted-foreground);
+  font-size: var(--type-base);
+  line-height: var(--leading-normal);
+  overflow-wrap: anywhere;
+}
+
+.description > :global(a) {
+  color: var(--text-link);
+  text-underline-offset: var(--space-1);
+}
+
+.content > :global([data-slot='button']) {
+  max-width: 100%;
+}
+
+@media (max-width: 480px) {
+  .root {
+    min-height: calc(var(--row-h) * 3);
+    padding: var(--space-6) var(--space-inset-card);
+  }
+
+  /* Specificity has to match the align rules above, or actions never stack. */
+  .root[data-align='center'] .content,
+  .root[data-align='start'] .content {
+    align-items: stretch;
+  }
+
+  .content > :global([data-slot='button']) {
+    width: 100%;
+  }
+}

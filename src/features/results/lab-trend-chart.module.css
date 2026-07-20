@@ -1,0 +1,208 @@
+.chart {
+  width: 100%;
+  max-width: calc(var(--space-32) * 3 + var(--space-14));
+}
+
+.chart svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+/* Reference structure stays whisper-quiet: one tinted normal band,
+ * dashed tier boundaries, inline zone captions. */
+.normalBand {
+  fill: var(--lab-range-optimal-muted);
+  animation: zone-in var(--duration-slow) var(--ease-out) both;
+}
+
+@keyframes zone-in {
+  from {
+    opacity: 0;
+  }
+}
+
+.zoneBoundary {
+  stroke: var(--color-border);
+  stroke-width: 1;
+  stroke-dasharray: 3 4;
+}
+
+.zoneLabel {
+  font-size: var(--type-2xs);
+  fill: var(--color-text-tertiary);
+}
+
+.zoneLabel[data-tone='optimal'] {
+  fill: var(--color-status-success-fg);
+}
+
+.axisLabel {
+  fill: var(--color-text-tertiary);
+  font-size: var(--type-2xs);
+  font-variant-numeric: tabular-nums;
+}
+
+.baseline {
+  stroke: var(--color-border);
+  stroke-width: 1;
+}
+
+.crosshair {
+  stroke: var(--color-border-strong);
+  stroke-width: 1;
+  stroke-dasharray: 2 3;
+  animation: crosshair-in var(--duration-fast) var(--ease-out) both;
+}
+
+@keyframes crosshair-in {
+  from {
+    opacity: 0;
+  }
+}
+
+/* The series is the hero: a confident ink line over a quiet scale. */
+.line {
+  fill: none;
+  stroke: var(--color-text-secondary);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  /* pathLength=1 in markup normalizes the dash trick to a 0→1 draw. */
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+  animation: line-draw calc(var(--duration-slow) * 2) var(--ease-out) both;
+}
+
+@keyframes line-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+}
+
+.point {
+  outline: none;
+  cursor: default;
+  animation: point-in var(--duration-base) var(--ease-out) both;
+  animation-delay: var(--duration-slow);
+}
+
+@keyframes point-in {
+  from {
+    opacity: 0;
+  }
+}
+
+.pointHit {
+  fill: transparent;
+}
+
+.pointDot {
+  fill: var(--color-text-tertiary);
+  stroke: var(--lab-dot-ring);
+  stroke-width: 1.5;
+  transform-box: fill-box;
+  transform-origin: center;
+  transition:
+    transform var(--motion-control),
+    stroke-width var(--motion-control);
+}
+
+.pointDot[data-abnormal][data-tone='caution'] {
+  fill: var(--lab-dot-caution);
+}
+
+.pointDot[data-abnormal][data-tone='out'] {
+  fill: var(--lab-dot-out);
+}
+
+/* The latest reading borrows the range-band needle language:
+ * surface core, tone ring. */
+.latestDot {
+  fill: var(--lab-dot-ring);
+  stroke-width: 2.5;
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: transform var(--motion-control);
+  animation: latest-in var(--duration-base) var(--ease-emphasized) both;
+  animation-delay: calc(var(--duration-slow) * 2);
+}
+
+@keyframes latest-in {
+  from {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+}
+
+.latestDot[data-tone='optimal'] {
+  stroke: var(--lab-dot-optimal);
+}
+
+.latestDot[data-tone='caution'] {
+  stroke: var(--lab-dot-caution);
+}
+
+.latestDot[data-tone='out'] {
+  stroke: var(--lab-dot-out);
+}
+
+.point:hover .pointDot,
+.point:focus-visible .pointDot {
+  stroke-width: 2.5;
+  transform: scale(1.35);
+}
+
+.point:hover .latestDot,
+.point:focus-visible .latestDot {
+  transform: scale(1.2);
+}
+
+.point:focus-visible .pointHit {
+  fill: var(--color-focus-ring);
+}
+
+.valueLabel {
+  font-size: var(--type-2xs);
+  font-weight: var(--weight-medium);
+  font-variant-numeric: tabular-nums;
+  animation: point-in var(--duration-base) var(--ease-out) both;
+}
+
+.valueLabel[data-latest] {
+  font-size: var(--type-xs);
+  font-weight: var(--weight-semibold);
+}
+
+.valueLabel[data-tone='optimal'] {
+  fill: var(--color-status-success-fg);
+}
+
+.valueLabel[data-tone='caution'] {
+  fill: var(--color-status-warning-fg);
+}
+
+.valueLabel[data-tone='out'] {
+  fill: var(--color-status-danger-fg);
+}
+
+.pointSummary {
+  min-height: calc(var(--type-xs) * var(--leading-normal));
+  margin: var(--space-1) 0 0;
+  color: var(--color-text-secondary);
+  font-size: var(--type-xs);
+  line-height: var(--leading-normal);
+  text-align: start;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .normalBand,
+  .line,
+  .point,
+  .valueLabel,
+  .latestDot,
+  .crosshair {
+    animation: none;
+  }
+}

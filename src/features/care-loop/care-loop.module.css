@@ -1,0 +1,396 @@
+.page {
+  min-height: 100dvh;
+  background: var(--color-surface-bg);
+  color: var(--color-text-primary);
+}
+
+.patientIntakePage {
+  min-height: 100dvh;
+  display: flex;
+  justify-content: center;
+  padding: var(--space-8) var(--space-4);
+  background: var(--color-surface-bg);
+  color: var(--color-text-primary);
+}
+
+.patientIntakeSurface {
+  width: min(100%, 30rem);
+  align-self: flex-start;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+}
+
+.patientIntakeHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.patientIntakeHeader strong {
+  font-size: var(--type-sm);
+  font-weight: var(--weight-semibold);
+}
+
+.patientIntakeHeader span {
+  color: var(--color-text-tertiary);
+  font-size: var(--type-sm);
+}
+
+.patientIntakeBody,
+.patientIntakeIntro,
+.patientIntakeForm,
+.patientIntakeFields,
+.patientSubmitArea {
+  display: grid;
+}
+
+.patientIntakeBody {
+  gap: var(--space-6);
+  padding: var(--space-6);
+}
+
+.patientIntakeIntro {
+  gap: var(--space-2);
+}
+
+.patientIntakeIntro .eyebrow,
+.patientIntakeIntro h1,
+.patientIntakeIntro p,
+.patientSubmitArea p {
+  margin: 0;
+}
+
+.patientIntakeIntro h1 {
+  color: var(--color-text-primary);
+  font-size: var(--type-2xl);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-tight);
+}
+
+.patientIntakeIntro p:last-child {
+  color: var(--color-text-secondary);
+  font-size: var(--type-base);
+  line-height: var(--leading-normal);
+}
+
+.patientIdentity {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--space-3);
+  margin: 0;
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-2);
+}
+
+.patientIdentity div {
+  min-width: 0;
+}
+
+.patientIdentity div:first-child {
+  grid-column: 1 / -1;
+}
+
+.patientIdentity dt {
+  margin-bottom: var(--space-1);
+  color: var(--color-text-tertiary);
+  font-size: var(--type-xs);
+  font-weight: var(--weight-medium);
+}
+
+.patientIdentity dd {
+  margin: 0;
+  color: var(--color-text-primary);
+  font-size: var(--type-sm);
+  line-height: var(--leading-normal);
+  overflow-wrap: anywhere;
+}
+
+.patientIntakeForm {
+  gap: var(--space-5);
+}
+
+.patientIntakeFields {
+  gap: var(--space-4);
+}
+
+.patientSubmitArea {
+  gap: var(--space-2);
+}
+
+.patientSubmitArea p {
+  color: var(--color-text-tertiary);
+  font-size: var(--type-sm);
+  line-height: var(--leading-normal);
+}
+
+.pageHeader {
+  display: grid;
+  gap: var(--space-5);
+  padding: var(--space-6) var(--space-page-gutter);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.headingRow,
+.headerActions,
+.patientBar,
+.sectionHeading {
+  display: flex;
+  align-items: center;
+}
+
+.headingRow,
+.sectionHeading {
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.headerActions {
+  gap: var(--space-2);
+}
+
+.eyebrow {
+  margin: 0 0 var(--space-1);
+  color: var(--color-text-tertiary);
+  font-size: var(--type-xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: 0.05em;
+  line-height: var(--leading-normal);
+  text-transform: uppercase;
+}
+
+.pageTitle,
+.sectionHeading h2,
+.stageIntro h2 {
+  margin: 0;
+  color: var(--color-text-primary);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-tight);
+}
+
+.pageTitle {
+  font-size: var(--type-3xl);
+}
+
+.sectionHeading h2,
+.stageIntro h2 {
+  font-size: var(--type-xl);
+}
+
+.patientBar {
+  min-width: 0;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-2);
+  font-size: var(--type-sm);
+}
+
+.patientBar strong {
+  font-weight: var(--weight-semibold);
+}
+
+.patientBar span {
+  color: var(--color-text-tertiary);
+}
+
+.patientBar span::before {
+  content: '·';
+  margin-right: var(--space-2);
+}
+
+.content {
+  width: min(100%, calc(var(--space-32) * 10));
+  margin: 0 auto;
+  padding: var(--space-8) var(--space-page-gutter);
+}
+
+.primaryCard,
+.focusCard,
+.formCard,
+.handoffCard {
+  width: min(100%, calc(var(--space-32) * 5));
+  margin: 0 auto;
+}
+
+.requirementList {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding-left: var(--space-5);
+  color: var(--color-text-secondary);
+  font-size: var(--type-sm);
+  line-height: var(--leading-normal);
+}
+
+.formGrid,
+.handoffContent,
+.checklist {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.factGrid,
+.metricGrid {
+  display: grid;
+  margin: 0;
+  gap: var(--space-3);
+}
+
+.factGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.metricGrid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.factGrid div,
+.metricGrid div {
+  min-width: 0;
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-2);
+}
+
+.factGrid dt,
+.metricGrid dt {
+  margin-bottom: var(--space-1);
+  color: var(--color-text-tertiary);
+  font-size: var(--type-xs);
+  font-weight: var(--weight-medium);
+}
+
+.factGrid dd,
+.metricGrid dd {
+  margin: 0;
+  color: var(--color-text-primary);
+  font-size: var(--type-sm);
+  line-height: var(--leading-normal);
+  overflow-wrap: anywhere;
+}
+
+.orderGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(22rem, 26rem);
+  gap: var(--space-6);
+  align-items: start;
+}
+
+.catalogPanel {
+  min-width: 0;
+}
+
+.sectionHeading {
+  margin-bottom: var(--space-4);
+}
+
+.singleRail {
+  display: grid;
+  grid-template-columns: minmax(16rem, 1fr) minmax(22rem, 26rem);
+  gap: var(--space-8);
+  align-items: start;
+}
+
+.stageIntro {
+  display: grid;
+  max-width: calc(var(--space-32) * 3);
+  gap: var(--space-3);
+  padding-top: var(--space-6);
+}
+
+.stageIntro p:last-child {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--type-base);
+  line-height: var(--leading-normal);
+}
+
+@media (max-width: 68rem) {
+  .orderGrid,
+  .singleRail {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .singleRail > :last-child {
+    width: min(100%, calc(var(--space-32) * 3.25));
+  }
+}
+
+@media (max-width: 40rem) {
+  .patientIntakePage {
+    padding: 0;
+    background: var(--color-surface);
+  }
+
+  .patientIntakeSurface {
+    min-height: 100dvh;
+    border: 0;
+    border-radius: 0;
+  }
+
+  .patientIntakeHeader {
+    padding-right: var(--space-4);
+    padding-left: var(--space-4);
+  }
+
+  .patientIntakeBody {
+    gap: var(--space-5);
+    padding: var(--space-5) var(--space-4) var(--space-6);
+  }
+
+  .pageHeader,
+  .content {
+    padding-right: var(--space-4);
+    padding-left: var(--space-4);
+  }
+
+  .content {
+    padding-top: var(--space-5);
+    padding-bottom: var(--space-5);
+  }
+
+  .headingRow,
+  .sectionHeading {
+    align-items: flex-start;
+  }
+
+  .headingRow {
+    flex-direction: column;
+  }
+
+  .headerActions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .pageTitle {
+    font-size: var(--type-2xl);
+  }
+
+  .patientBar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .patientBar span::before {
+    content: none;
+  }
+
+  .factGrid,
+  .metricGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .orderGrid > :last-child {
+    order: -1;
+  }
+}

@@ -1,0 +1,162 @@
+.field {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--space-stack-label);
+}
+
+.control {
+  box-sizing: border-box;
+  display: inline-flex;
+  width: fit-content;
+  max-width: 100%;
+  min-height: var(--control-h);
+  align-items: center;
+  gap: var(--space-control-gap);
+  border: 0;
+  border-radius: var(--radius-control);
+  padding: var(--space-2) var(--space-1);
+  background: transparent;
+  color: var(--foreground);
+  font-family: var(--font-family-sans);
+  font-size: var(--type-sm);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-normal);
+  cursor: pointer;
+  box-shadow: none;
+  transition:
+    box-shadow var(--duration-fast) var(--ease-standard),
+    color var(--duration-fast) var(--ease-standard);
+}
+
+.control:has(.input:focus-visible) {
+  outline: none;
+  box-shadow: var(--elevation-focus);
+}
+
+.control[data-disabled='true'] {
+  cursor: not-allowed;
+  opacity: var(--opacity-disabled);
+  pointer-events: none;
+}
+
+.input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  padding: 0;
+  border: 0;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.indicator {
+  display: inline-flex;
+  width: var(--space-4);
+  height: var(--space-4);
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-indicator);
+  background: var(--card);
+  color: var(--primary-foreground);
+  transition:
+    background-color var(--duration-fast) var(--ease-standard),
+    border-color var(--duration-fast) var(--ease-standard),
+    transform var(--duration-fast) var(--ease-standard);
+}
+
+.control[data-state='checked'] .indicator,
+.control[data-state='indeterminate'] .indicator {
+  border-color: var(--primary);
+  background: var(--primary);
+}
+
+.control[data-tone='ai'][data-state='checked'] .indicator,
+.control[data-tone='ai'][data-state='indeterminate'] .indicator {
+  border-color: var(--status-ai-fg);
+  background: var(--status-ai-fg);
+}
+
+.mark {
+  width: var(--space-3);
+  height: var(--space-3);
+  opacity: 0;
+  transform: scale(0.5);
+}
+
+.control[data-state='checked'] .mark,
+.control[data-state='indeterminate'] .mark {
+  opacity: 1;
+  transform: scale(1);
+  animation: checkbox-mark-in var(--duration-base) var(--ease-out) both;
+}
+
+.labelText {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.helpText,
+.errorText {
+  max-width: 60ch;
+  padding-inline: var(--space-1);
+  font-size: var(--type-xs);
+  line-height: var(--leading-normal);
+}
+
+.helpText {
+  color: var(--muted-foreground);
+}
+
+.errorText {
+  color: var(--destructive);
+}
+
+@keyframes checkbox-mark-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.5) rotate(-8deg);
+  }
+
+  65% {
+    opacity: 1;
+    transform: scale(1.1) rotate(0deg);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+:global([data-density='compact']) .control {
+  padding-inline: var(--space-1);
+}
+
+:global([data-density='comfortable']) .control {
+  min-height: var(--space-12);
+  padding-inline: var(--space-2);
+}
+
+@media (max-width: 479px) {
+  .control {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .control,
+  .indicator {
+    transition: none;
+  }
+
+  .control[data-state='checked'] .mark,
+  .control[data-state='indeterminate'] .mark {
+    animation: none;
+  }
+}

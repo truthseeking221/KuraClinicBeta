@@ -1,0 +1,632 @@
+.shell {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  min-height: 100dvh;
+  background: var(--background);
+  color: var(--color-text-primary);
+}
+
+.shellStation {
+  grid-template-columns: 1fr;
+}
+
+/* ── Sidebar ─────────────────────────────────────────────── */
+
+.sidebar {
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  width: 240px;
+  height: 100dvh;
+  background: var(--sidebar-bg);
+  border-right: 1px solid var(--sidebar-border);
+  transition: width var(--duration-base) var(--ease-standard);
+}
+
+/* Rail width = topbar height token: the collapsed rail reads as one square
+   rhythm with the context strip. */
+.sidebarCollapsed {
+  width: var(--space-14);
+}
+
+/* Locked to the topbar height (56px content + 1px border) so this border and
+   the topbar border form one continuous line across the whole app: context
+   strip above, work zone below. */
+.sidebarHeader {
+  display: flex;
+  align-items: center;
+  min-height: var(--space-14);
+  padding: var(--space-1) var(--space-2);
+  border-bottom: 1px solid var(--sidebar-border);
+}
+
+.sidebarHeader > * {
+  flex: 1;
+  min-width: 0;
+}
+
+.sidebarFooter {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-2) var(--space-3);
+}
+
+.sidebarFooter .navItem {
+  flex: 1;
+}
+
+/* Lives in the topbar so it stays put when the rail collapses; the mobile
+   viewport swaps the sidebar for the sheet, so the toggle goes with it. */
+.collapseToggle {
+  flex-shrink: 0;
+}
+
+@media (max-width: 767px) {
+  .collapseToggle {
+    display: none;
+  }
+}
+
+/* ── Workspace switcher ──────────────────────────────────── */
+
+.workspaceTrigger {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  min-height: var(--control-h);
+  padding: var(--space-1) var(--space-2);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-control);
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  color: var(--sidebar-fg);
+}
+
+.workspaceTrigger:hover {
+  background: var(--sidebar-hover-bg);
+}
+
+.workspaceTrigger:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
+
+.workspaceMark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--space-7);
+  height: var(--space-7);
+  flex-shrink: 0;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  border-radius: var(--radius-inset);
+  font-size: var(--type-sm);
+  font-weight: var(--weight-semibold);
+}
+
+.workspaceText {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.workspaceName {
+  font-size: var(--type-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.workspaceBranch {
+  font-size: var(--type-xs);
+  color: var(--sidebar-fg-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.workspaceChevron {
+  flex-shrink: 0;
+  color: var(--sidebar-fg-muted);
+}
+
+/* ── Mode switcher ───────────────────────────────────────── */
+
+/* Work-zone scope control: a bordered surface gives it control affordance the
+   bare text row lacked. Icon + value + chevron; the "Work area" kicker stays
+   for assistive technology only — the switch menu names the axis. */
+.modeTrigger {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--space-8);
+  padding-inline: var(--space-2);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--type-sm);
+  text-align: left;
+}
+
+/* Inside the sidebar nav the control spans the rail; in the topbar it hugs. */
+.nav .modeTrigger {
+  width: 100%;
+}
+
+.modeTrigger:hover {
+  border-color: var(--color-border-strong);
+}
+
+.modeTrigger:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
+
+.modeTriggerCollapsed {
+  justify-content: center;
+  padding-inline: 0;
+}
+
+.modeKicker {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.modeLabel {
+  flex: 1;
+  min-width: 0;
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.modeChevron {
+  flex-shrink: 0;
+  color: var(--sidebar-fg-muted);
+}
+
+/* ── Nav ─────────────────────────────────────────────────── */
+
+.nav {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--space-3) var(--space-2);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.navGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+/* Label left edge sits on the nav-item icon edge: one shared rail line. */
+.navGroupLabel {
+  padding-inline: var(--space-2);
+  font-size: var(--type-2xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--sidebar-fg-muted);
+}
+
+.navList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-0-5);
+}
+
+.navItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  min-height: var(--space-8);
+  padding: var(--space-1) var(--space-2);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-control);
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--type-sm);
+  font-weight: var(--weight-medium);
+  color: var(--sidebar-fg);
+  text-align: left;
+}
+
+.navItem:hover {
+  background: var(--sidebar-hover-bg);
+}
+
+.navItem:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
+
+/* Roadmap items stay listed but read as not-yet-live. Kept before the
+   data-active rules so an opened teaser still gets the active treatment. */
+.navItem[data-coming-soon='true'],
+.navItem[data-coming-soon='true'] .navIcon {
+  color: var(--sidebar-fg-muted);
+}
+
+/* Trailing state tag inside the overflow menu. */
+.menuItemTrailing {
+  margin-left: auto;
+  padding-left: var(--space-3);
+  display: inline-flex;
+}
+
+/* Active carries two quiet cues (fill + foreground shift); the bulk icon
+   style is the non-color cue. No weight bump — it made the rail shout. */
+.navItem[data-active='true'] {
+  background: var(--sidebar-active-bg);
+  color: var(--sidebar-active-fg);
+}
+
+.navItem[data-active='true'] .navIcon {
+  color: var(--sidebar-active-fg);
+}
+
+.navIcon {
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
+.navLabel {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.navDot {
+  position: absolute;
+  top: var(--space-1);
+  right: var(--space-1);
+  width: var(--space-1-5);
+  height: var(--space-1-5);
+  border-radius: var(--radius-full);
+  background: var(--destructive);
+}
+
+.sidebarCollapsed .navItem {
+  position: relative;
+  justify-content: center;
+  padding-inline: 0;
+}
+
+.sidebarCollapsed .workspaceTrigger {
+  justify-content: center;
+  padding-inline: 0;
+}
+
+.sidebarCollapsed .sidebarFooter .navItem {
+  flex: none;
+  width: 100%;
+}
+
+/* Hover and state feedback share one tempo across the chrome. */
+.navItem,
+.workspaceTrigger,
+.modeTrigger,
+.searchTrigger,
+.accountTrigger,
+.shiftTrigger,
+.mobileNavTrigger {
+  transition:
+    background-color var(--motion-color),
+    border-color var(--motion-color),
+    color var(--motion-color);
+}
+
+/* ── Main column ─────────────────────────────────────────── */
+
+.main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  min-height: var(--space-14);
+  padding-inline: var(--space-4);
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.topbarStart,
+.topbarEnd {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.banner {
+  padding: var(--space-3) var(--space-4) 0;
+}
+
+.content {
+  flex: 1;
+  min-height: 0;
+  padding: var(--space-inset-panel) var(--space-page-gutter);
+}
+
+.shellStation .content {
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Topbar pieces ───────────────────────────────────────── */
+
+.searchTrigger {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--space-9);
+  padding-inline: var(--space-2);
+  background: var(--color-surface-sunken);
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--type-sm);
+  color: var(--color-text-tertiary);
+}
+
+.searchTrigger:hover {
+  border-color: var(--color-border-strong);
+}
+
+.searchTrigger:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
+
+.searchLabel {
+  min-width: var(--space-24);
+  text-align: left;
+}
+
+.notificationWrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.notificationBadge {
+  position: absolute;
+  top: calc(-1 * var(--space-0-5));
+  right: calc(-1 * var(--space-0-5));
+  pointer-events: none;
+}
+
+.accountTrigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--space-9);
+  height: var(--space-9);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  color: var(--color-text-secondary);
+}
+
+.accountTrigger:hover {
+  background: var(--sidebar-hover-bg);
+}
+
+.accountTrigger:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
+
+.accountName {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.accountEmail {
+  display: block;
+  font-size: var(--type-xs);
+  font-weight: var(--weight-regular);
+  color: var(--color-text-tertiary);
+}
+
+.menuContent {
+  min-width: 220px;
+}
+
+.menuItemIcon {
+  display: inline-flex;
+  margin-right: var(--space-2);
+  color: var(--color-text-tertiary);
+}
+
+/* ── Station posture ─────────────────────────────────────── */
+
+.stationIdentity {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.stationText {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.stationTitle {
+  font-size: var(--type-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-primary);
+  white-space: nowrap;
+}
+
+.stationMeta {
+  font-size: var(--type-xs);
+  color: var(--color-text-tertiary);
+  white-space: nowrap;
+}
+
+.shiftTrigger {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: var(--space-8);
+  padding-inline: var(--space-2);
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-badge);
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--type-xs);
+  font-weight: var(--weight-medium);
+  color: var(--color-text-secondary);
+}
+
+.shiftTrigger:hover {
+  background: var(--sidebar-hover-bg);
+}
+
+.shiftTrigger:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
+
+/* ── Mobile ──────────────────────────────────────────────── */
+
+.mobileNav {
+  display: none;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.mobileNavTrigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--control-h);
+  height: var(--control-h);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-control);
+  cursor: pointer;
+  color: var(--color-text-secondary);
+}
+
+.mobileNavTrigger:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
+
+.mobileContext {
+  font-size: var(--type-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 767px) {
+  .shell {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    display: none;
+  }
+
+  .mobileNav {
+    display: flex;
+    flex: 1 1 auto;
+  }
+
+  .topbarStart {
+    flex: 1 1 auto;
+    overflow: hidden;
+  }
+
+  .topbarEnd {
+    flex: 0 0 auto;
+  }
+
+  .mobileContext {
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+
+  .mobileNavTrigger,
+  .accountTrigger {
+    flex: 0 0 var(--touch-target-min);
+    min-width: var(--touch-target-min);
+    min-height: var(--touch-target-min);
+  }
+
+  .searchLabel,
+  .searchTrigger :global([data-slot='kbd']),
+  .searchTrigger kbd {
+    display: none;
+  }
+
+  .content {
+    padding: var(--space-4);
+  }
+}
+
+@media (pointer: coarse) {
+  .navItem {
+    min-height: var(--touch-target-min);
+  }
+
+  .accountTrigger {
+    flex: 0 0 var(--touch-target-min);
+    min-width: var(--touch-target-min);
+    min-height: var(--touch-target-min);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar {
+    transition: none;
+  }
+}

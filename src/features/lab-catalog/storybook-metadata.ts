@@ -1,0 +1,61 @@
+import { READINESS } from '../../components/foundations/readiness-data';
+
+export const LAB_CATALOG_STORYBOOK_KURA = {
+  readiness: READINESS.labCatalog,
+  contract: {
+    status: 'backend-aligned',
+    backendRef: 'Kura-med/kura-platform@be3152c972beabb3b32561aef49f1bda60f454fe',
+    persona: 'clinic doctor',
+    route: 'GET /clinic/lab/catalog + GET /clinic/lab/facets',
+    owningBff: 'apps/bff/clinic-bff',
+    grpc: 'LabService.SearchTestCatalogs + LabService.GetCatalogFacets',
+    fields:
+      'testCatalogId, code, displayName, abbrv, kind, status, requiredPreAnalyticalFields, categoryIds, total',
+    note:
+      'Availability is a composed pricing/lab capability fact supplied to this picker. The BFF search contract defaults to 50 rows, so a full 67-row view must request limit=100 or paginate before presenting the total as fully loaded. UNMAPPED FIELDS: componentCount (panel size badge), availability, and unavailableReason (restock copy) are not in the recorded contract field list above; they are prototype-composed facts pending confirmation against kura-platform before any production wiring.',
+    consulted: [
+      'README.md',
+      'docs/INDEX.md',
+      'docs/adr/INDEX.md',
+      'docs/architecture/system-diagram.md',
+      'docs/adr/ADR-0024-lab-ms-catalog-pricing-microservice.md',
+      'docs/adr/ADR-0033-clinic-doctor-lab-catalog-browse.md',
+      'docs/adr/ADR-0038-clinic-lab-catalog-order-flow-order-ms-booking-ms.md',
+      'apps/bff/clinic-bff/src/app/lab/catalog.controller.ts',
+      'apps/bff/clinic-bff/src/app/lab/catalog.service.ts',
+      'apps/bff/clinic-bff/src/app/lab/dto/catalog-search-query.dto.ts',
+      'apps/bff/clinic-bff/src/app/lab/dto/catalog.dto.ts',
+      'apps/clinic/clinic-doctor-catalog-mf/src/app/lib/use-catalog.ts',
+      'apps/clinic/clinic-doctor-catalog-mf/src/app/components/catalog-results.tsx',
+      'libs/contracts/proto/lab.proto',
+    ],
+  },
+  intake: {
+    decision: 'FEATURE-OWN',
+    owner: 'src/features/lab-catalog',
+    source: 'Figma Kura Design node 1253:106518',
+    evidence:
+      'Fresh Storybook and source search found canonical Popover, Checkbox, Input, Button, Badge, Collapsible, Alert, and EmptyState owners but no domain picker. The implementation composes those owners into a single-level category filter menu (the generic query-builder Filters pattern was retired here: one field with one operator does not justify field/operator/value chip grammar) and keeps catalog meaning in the lab-catalog feature.',
+  },
+  figma: {
+    component: 'Lab catalog — test picker',
+    node: '1253:106518',
+    variants: {
+      default: '1253:106516',
+      newPatient: '1253:106517',
+      searching: '1359:690',
+      noResults: '1362:1006',
+    },
+  },
+  journeys: ['ORD-01', 'ORD-02', 'MOB-02'],
+  binding: {
+    colors: 'kura-semantic',
+    typography: 'kura',
+    spacing: 'kura-density-aware',
+    radius: 'kura',
+    elevation: 'none-page-surface',
+    icons: 'kura-canonical',
+    focus: 'kura',
+    responsive: 'mobile-first-contract',
+  },
+} as const;

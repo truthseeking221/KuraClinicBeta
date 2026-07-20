@@ -1,0 +1,25 @@
+.root {
+  display: flex;
+  min-width: 0;
+  gap: var(--space-2);
+}
+
+.root > [data-scrollspy-anchor] {
+  min-width: 0;
+  transition:
+    background-color var(--motion-color),
+    border-color var(--motion-color),
+    color var(--motion-color);
+}
+
+.root > [data-scrollspy-anchor][data-active='true'] {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .root > [data-scrollspy-anchor] {
+    transition: none;
+  }
+}

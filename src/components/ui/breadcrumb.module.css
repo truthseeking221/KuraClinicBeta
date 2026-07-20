@@ -1,0 +1,121 @@
+.nav {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.list {
+  display: flex;
+  min-width: 0;
+  max-width: 100%;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-2);
+  margin: 0;
+  padding: 0;
+  color: var(--muted-foreground);
+  font-size: var(--type-sm);
+  line-height: var(--leading-normal);
+  list-style: none;
+}
+
+.item {
+  display: inline-flex;
+  min-width: 0;
+  max-width: 100%;
+  align-items: center;
+  gap: var(--space-1-5);
+}
+
+.link,
+.page {
+  display: inline-flex;
+  min-width: 0;
+  max-width: 100%;
+  min-height: var(--control-h);
+  align-items: center;
+  border-radius: var(--radius-control-compact);
+  padding: var(--space-2) var(--space-1);
+  overflow-wrap: anywhere;
+}
+
+.link {
+  color: var(--text-link);
+  text-decoration: none;
+  transition: background-color var(--duration-fast) var(--ease-standard), color var(--duration-fast) var(--ease-standard), box-shadow var(--duration-fast) var(--ease-standard);
+}
+
+.link:hover {
+  background: var(--muted);
+  color: var(--foreground);
+}
+
+.link:focus-visible,
+.ellipsis:focus-visible {
+  outline: none;
+  box-shadow: var(--elevation-focus);
+}
+
+.page {
+  color: var(--foreground);
+  font-weight: var(--weight-medium);
+}
+
+.separator {
+  display: inline-flex;
+  min-height: var(--space-4);
+  align-items: center;
+  justify-content: center;
+  color: var(--muted-foreground);
+}
+
+.separator > svg {
+  width: var(--space-4);
+  height: var(--space-4);
+  flex-shrink: 0;
+}
+
+.ellipsis {
+  display: inline-flex;
+  width: var(--control-h);
+  min-height: var(--control-h);
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: var(--radius-control-compact);
+  background: transparent;
+  color: var(--muted-foreground);
+}
+
+.ellipsis > svg {
+  width: var(--space-5);
+  height: var(--space-5);
+}
+
+.ellipsis:hover {
+  background: var(--muted);
+  color: var(--foreground);
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  clip-path: inset(50%);
+}
+
+:global([data-density='compact']) .list {
+  gap: var(--space-1);
+}
+
+:global([data-density='comfortable']) .list {
+  gap: var(--space-2) var(--space-3);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .link {
+    transition: none;
+  }
+}

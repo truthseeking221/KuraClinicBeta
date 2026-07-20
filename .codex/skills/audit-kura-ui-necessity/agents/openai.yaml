@@ -1,0 +1,12 @@
+interface:
+  display_name: Kura UI Necessity Auditor
+  short_description: Remove clutter without losing essential context
+  default_prompt: Use $audit-kura-ui-necessity to identify what this Kura interface
+    can remove, combine, demote, or reveal only when needed.
+policy:
+  products:
+  - chatgpt
+  - codex
+  - api
+  - atlas
+  allow_implicit_invocation: true

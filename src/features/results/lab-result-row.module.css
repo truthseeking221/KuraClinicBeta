@@ -1,0 +1,203 @@
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-stack-section);
+  padding: var(--space-4) var(--space-inset-card);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.row:last-child {
+  border-bottom: none;
+}
+
+:global([data-density='compact']) .row {
+  padding-block: var(--space-2);
+}
+
+:global([data-density='comfortable']) .row {
+  padding-block: var(--space-5);
+}
+
+.identity {
+  display: flex;
+  min-width: 0;
+  flex: 0 1 calc(var(--space-32) * 2);
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.nameLine {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-2);
+}
+
+.name {
+  margin: 0;
+  color: var(--color-text-primary);
+  font-size: var(--type-base);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-snug);
+  overflow-wrap: anywhere;
+}
+
+.panelName {
+  color: var(--color-text-secondary);
+  font-size: var(--type-2xs);
+  line-height: var(--leading-normal);
+}
+
+.valueLine {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-1);
+}
+
+.value {
+  color: var(--color-text-primary);
+  font-size: var(--type-2xl);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-tight);
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.value[data-tone='optimal'] {
+  color: var(--color-status-success-fg);
+}
+
+.value[data-tone='caution'] {
+  color: var(--color-status-warning-fg);
+}
+
+.value[data-tone='out'] {
+  color: var(--color-status-danger-fg);
+}
+
+.unit {
+  color: var(--color-text-secondary);
+  font-size: var(--type-2xs);
+}
+
+.pendingLine {
+  display: flex;
+  min-height: var(--touch-target-min);
+  align-items: center;
+}
+
+.statusLine {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-2);
+  font-size: var(--type-2xs);
+  line-height: var(--leading-normal);
+}
+
+.flagLabel {
+  font-weight: var(--weight-semibold);
+}
+
+.flagLabel[data-tone='optimal'] {
+  color: var(--color-text-primary);
+}
+
+.flagLabel[data-tone='caution'] {
+  color: var(--color-status-warning-fg);
+}
+
+.flagLabel[data-tone='out'] {
+  color: var(--color-status-danger-fg);
+}
+
+.reference,
+.provenance {
+  color: var(--color-text-secondary);
+}
+
+.reference + .provenance::before,
+.provenance + .provenance::before {
+  content: '·';
+  margin-right: var(--space-2);
+}
+
+.visual {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: var(--space-inline-group);
+}
+
+.visual[data-empty] {
+  justify-content: flex-end;
+}
+
+.trendCell {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-inline-group);
+}
+
+.trendLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--color-text-secondary);
+  font-size: var(--type-xs);
+}
+
+.trendLabel[data-direction='worsening'] {
+  color: var(--color-status-danger-fg);
+}
+
+.trendLabel[data-direction='improving'] {
+  color: var(--color-text-secondary);
+}
+
+.trailing {
+  display: flex;
+  margin-left: auto;
+  align-items: center;
+}
+
+.row[data-status='cancelled'] .name {
+  color: var(--color-text-secondary);
+  text-decoration: line-through;
+  text-decoration-color: var(--color-border-strong);
+}
+
+@media (max-width: 48rem) {
+  .row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-inline-group);
+  }
+
+  .identity {
+    flex-basis: auto;
+  }
+
+  .visual {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+
+  .trailing {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .trailing :global([data-slot='button']) {
+    width: 100%;
+  }
+}
+
+:global([data-density='compact']) .row .trailing :global([data-slot='button']) {
+  min-height: var(--touch-target-min);
+}

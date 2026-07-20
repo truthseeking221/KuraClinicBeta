@@ -1,0 +1,29 @@
+.root {
+  width: min(calc(var(--space-32) * 3), 100%);
+}
+
+.inputs {
+  display: grid;
+  min-width: 0;
+  gap: var(--space-control-gap);
+}
+
+.calendarRegion {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+  border-top: 1px solid var(--border);
+  padding-top: var(--space-stack-section);
+}
+
+.clearButton {
+  min-height: var(--control-h);
+}
+
+@media (min-width: 30rem) {
+  .inputs[data-mode='range'] {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

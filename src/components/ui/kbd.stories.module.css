@@ -1,0 +1,67 @@
+.inlineExamples,
+.mobileExample {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-text-secondary);
+  font-size: var(--type-sm);
+  line-height: var(--leading-normal);
+}
+
+.inlineExamples {
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.inputExample,
+.reference {
+  width: min(calc(var(--space-32) * 3), calc(100vw - (var(--space-page-gutter) * 2)));
+}
+
+.reference {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.referenceTitle {
+  margin: 0;
+  color: var(--color-text-primary);
+  font-size: var(--type-sm);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-normal);
+}
+
+.referenceList {
+  display: grid;
+}
+
+.referenceRow {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding-block: var(--space-2-5);
+  border-block-start: 1px solid var(--color-border);
+}
+
+.referenceLabel {
+  min-width: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--type-sm);
+  line-height: var(--leading-normal);
+  overflow-wrap: anywhere;
+}
+
+.mobileExample {
+  width: 100%;
+  min-width: 0;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+.mobileExample > span:first-child {
+  min-width: min(100%, calc(var(--space-32) + var(--space-16)));
+  flex: 1;
+  overflow-wrap: anywhere;
+}

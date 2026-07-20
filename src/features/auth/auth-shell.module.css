@@ -1,0 +1,155 @@
+.shell {
+  display: grid;
+  min-height: 100dvh;
+  place-items: center;
+  padding: var(--space-page-gutter);
+  /* Airy brand canvas for pre-app surfaces: three soft washes from the Kura
+   * blue family (cyan, kura-blue, navy) over the page background. Multi-stop
+   * falloffs keep the blend seamless; static and quiet — the card keeps all
+   * of the attention. */
+  background:
+    radial-gradient(
+      66% 52% at 50% 45%,
+      rgba(var(--surface-rgb), 0.8) 0%,
+      rgba(var(--surface-rgb), 0.3) 48%,
+      transparent 72%
+    ),
+    linear-gradient(
+      115deg,
+      transparent 12%,
+      rgba(var(--surface-rgb), 0.22) 38%,
+      rgba(var(--surface-rgb), 0.3) 50%,
+      rgba(var(--secondary-light-rgb), 0.05) 64%,
+      transparent 84%
+    ),
+    conic-gradient(
+      from 210deg at 85% -20%,
+      transparent 0deg,
+      rgba(var(--secondary-light-rgb), 0.1) 80deg,
+      rgba(var(--brand-rgb), 0.12) 150deg,
+      rgba(var(--brand-rgb), 0.05) 230deg,
+      transparent 330deg
+    ),
+    radial-gradient(
+      95% 80% at 10% -12%,
+      rgba(var(--secondary-light-rgb), 0.2) 0%,
+      rgba(var(--secondary-light-rgb), 0.09) 38%,
+      rgba(var(--secondary-light-rgb), 0.03) 58%,
+      transparent 78%
+    ),
+    radial-gradient(
+      110% 90% at 112% 30%,
+      rgba(var(--brand-rgb), 0.22) 0%,
+      rgba(var(--brand-rgb), 0.09) 40%,
+      rgba(var(--brand-rgb), 0.03) 60%,
+      transparent 80%
+    ),
+    radial-gradient(
+      90% 70% at -10% 78%,
+      rgba(var(--secondary-light-rgb), 0.16) 0%,
+      rgba(var(--secondary-light-rgb), 0.06) 42%,
+      transparent 74%
+    ),
+    radial-gradient(
+      80% 46% at 62% 114%,
+      rgba(var(--brand-rgb), 0.13) 0%,
+      rgba(var(--secondary-deep-rgb), 0.05) 45%,
+      transparent 76%
+    ),
+    linear-gradient(
+      168deg,
+      rgba(var(--secondary-light-rgb), 0.06) 0%,
+      rgba(var(--brand-rgb), 0.04) 50%,
+      rgba(var(--brand-rgb), 0.07) 100%
+    ),
+    var(--color-surface-bg);
+}
+
+:global([data-theme='dark']) .shell {
+  background:
+    radial-gradient(
+      66% 52% at 50% 45%,
+      rgba(var(--surface-rgb), 0.68) 0%,
+      rgba(var(--surface-rgb), 0.28) 48%,
+      transparent 72%
+    ),
+    linear-gradient(
+      115deg,
+      transparent 12%,
+      rgba(var(--brand-rgb), 0.06) 38%,
+      rgba(var(--brand-rgb), 0.08) 50%,
+      rgba(var(--secondary-light-rgb), 0.04) 64%,
+      transparent 84%
+    ),
+    conic-gradient(
+      from 210deg at 85% -20%,
+      transparent 0deg,
+      rgba(var(--secondary-light-rgb), 0.08) 80deg,
+      rgba(var(--brand-rgb), 0.12) 150deg,
+      rgba(var(--brand-rgb), 0.05) 230deg,
+      transparent 330deg
+    ),
+    radial-gradient(
+      95% 80% at 10% -12%,
+      rgba(var(--secondary-light-rgb), 0.13) 0%,
+      rgba(var(--secondary-light-rgb), 0.06) 38%,
+      transparent 78%
+    ),
+    radial-gradient(
+      110% 90% at 112% 30%,
+      rgba(var(--brand-rgb), 0.17) 0%,
+      rgba(var(--brand-rgb), 0.07) 40%,
+      transparent 80%
+    ),
+    radial-gradient(
+      90% 70% at -10% 78%,
+      rgba(var(--secondary-light-rgb), 0.09) 0%,
+      rgba(var(--secondary-light-rgb), 0.04) 42%,
+      transparent 74%
+    ),
+    radial-gradient(
+      80% 46% at 62% 114%,
+      rgba(var(--secondary-deep-rgb), 0.18) 0%,
+      rgba(var(--brand-rgb), 0.06) 45%,
+      transparent 76%
+    ),
+    linear-gradient(
+      168deg,
+      rgba(var(--secondary-light-rgb), 0.04) 0%,
+      rgba(var(--brand-rgb), 0.03) 50%,
+      rgba(var(--brand-rgb), 0.06) 100%
+    ),
+    var(--color-surface-bg);
+}
+
+.column {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--space-5);
+  align-items: stretch;
+}
+
+.column[data-width='sm'] {
+  max-width: calc(var(--space-16) * 6.5);
+}
+
+.column[data-width='md'] {
+  max-width: calc(var(--space-16) * 8.5);
+}
+
+.wordmark {
+  display: block;
+  align-self: center;
+  width: auto;
+  height: 22px;
+}
+
+.footer {
+  margin: 0;
+  align-self: center;
+  color: var(--color-text-tertiary);
+  font-size: var(--type-xs);
+  text-align: center;
+}

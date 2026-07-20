@@ -1,0 +1,49 @@
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-stack-section);
+}
+
+.chartPair {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-stack-section);
+}
+
+.frame {
+  width: 100%;
+  margin: 0 auto;
+}
+
+.w288 {
+  max-width: 18rem;
+}
+
+.w320 {
+  max-width: 20rem;
+}
+
+.w360 {
+  max-width: 22.5rem;
+}
+
+.w390 {
+  max-width: 24.375rem;
+}
+
+.w412 {
+  max-width: 25.75rem;
+}
+
+.w480 {
+  max-width: 30rem;
+}
+
+.w768 {
+  max-width: 48rem;
+}
+
+.w1024 {
+  max-width: 64rem;
+}

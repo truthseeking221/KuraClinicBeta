@@ -1,0 +1,114 @@
+.standalone {
+  display: inline-flex;
+}
+
+.field {
+  display: inline-flex;
+  min-width: 0;
+  align-items: flex-start;
+  gap: var(--space-control-gap);
+  font-family: var(--font-family-sans);
+}
+
+.control {
+  position: relative;
+  display: inline-flex;
+  width: var(--space-10);
+  height: var(--space-6);
+  flex: 0 0 auto;
+  align-items: center;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-full);
+  background: var(--color-surface-sunken);
+  cursor: pointer;
+  transition:
+    background-color var(--duration-fast) var(--ease-standard),
+    border-color var(--duration-fast) var(--ease-standard),
+    box-shadow var(--duration-fast) var(--ease-standard);
+}
+
+.control[data-size='sm'] {
+  width: var(--space-8);
+  height: var(--space-5);
+}
+
+.control[data-checked] {
+  border-color: var(--primary);
+  background: var(--primary);
+}
+
+.control:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
+
+.control[data-disabled] {
+  cursor: not-allowed;
+  opacity: var(--opacity-disabled);
+}
+
+.control[data-readonly] {
+  cursor: default;
+}
+
+.thumb {
+  width: var(--space-5);
+  height: var(--space-5);
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-xs);
+  transform: translateX(0);
+  transition: transform var(--duration-fast) var(--ease-emphasized);
+}
+
+.control[data-size='sm'] .thumb {
+  width: var(--space-4);
+  height: var(--space-4);
+}
+
+.control[data-checked] .thumb {
+  transform: translateX(var(--space-4));
+}
+
+.control[data-size='sm'][data-checked] .thumb {
+  transform: translateX(var(--space-3));
+}
+
+.copy {
+  display: grid;
+  min-width: 0;
+  gap: var(--space-stack-label);
+}
+
+.label {
+  color: var(--color-text-primary);
+  font-size: var(--type-sm);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-normal);
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+
+.description {
+  max-width: 60ch;
+  color: var(--color-text-tertiary);
+  font-size: var(--type-xs);
+  line-height: var(--leading-normal);
+  overflow-wrap: anywhere;
+}
+
+.field[data-disabled='true'] .label {
+  cursor: not-allowed;
+  color: var(--color-text-disabled);
+}
+
+.field[data-readonly='true'] .label {
+  cursor: default;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .control,
+  .thumb {
+    transition: none;
+  }
+}

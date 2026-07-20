@@ -1,0 +1,4 @@
+interface:
+  display_name: "Design Kura UI"
+  short_description: "Kura UI craft and fidelity standard"
+  default_prompt: "Use $design-kura-ui to design, implement, or audit this Kura interface with production-level fidelity."

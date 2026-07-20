@@ -1,0 +1,129 @@
+.body {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.step {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--type-lg);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-snug);
+  color: var(--color-text-primary);
+}
+
+.subtitle {
+  margin: 0;
+  font-size: var(--type-sm);
+  line-height: var(--leading-normal);
+  color: var(--color-text-secondary);
+}
+
+.identifier {
+  font-weight: var(--weight-medium);
+  color: var(--color-text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.actionRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.actionCluster {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.inlineEnd {
+  align-self: flex-end;
+}
+
+.fieldGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-stack-label);
+}
+
+.fieldError {
+  margin: 0;
+  color: var(--color-status-danger-fg);
+  font-size: var(--type-xs);
+  line-height: var(--leading-normal);
+}
+
+.pending {
+  margin: 0;
+  padding-block: var(--space-4);
+  color: var(--color-text-secondary);
+  font-size: var(--type-sm);
+  text-align: center;
+}
+
+.hint {
+  margin: 0;
+  color: var(--color-text-tertiary);
+  font-size: var(--type-xs);
+}
+
+@media (max-width: 480px) {
+  .body :global([data-slot="stepper-title"]:not([data-state="active"])) {
+    display: none;
+  }
+
+  .body :global([data-slot="stepper-trigger"]) {
+    min-width: var(--touch-target-min);
+    min-height: var(--touch-target-min);
+    gap: var(--space-1);
+    padding-inline: 0;
+  }
+
+  .body :global([data-slot="stepper-separator"]) {
+    min-width: 0;
+    margin-inline: 0;
+  }
+
+  .actionRow {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .actionRow > span:empty {
+    display: none;
+  }
+
+  .actionRow > :global([data-slot="button"]) {
+    width: 100%;
+  }
+
+  .actionCluster {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .actionCluster :global([data-slot="button"]) {
+    width: 100%;
+  }
+
+  .inlineEnd {
+    width: 100%;
+  }
+}

@@ -1,0 +1,204 @@
+.stepper {
+  width: 100%;
+}
+
+.nav {
+  display: flex;
+  width: 100%;
+}
+
+.nav[data-orientation='horizontal'] {
+  flex-direction: row;
+  align-items: center;
+  /* Narrow viewports scroll the rail instead of clipping later steps. */
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.nav[data-orientation='horizontal'] .title {
+  white-space: nowrap;
+}
+
+.nav[data-orientation='vertical'] {
+  flex-direction: column;
+  align-items: flex-start;
+  width: auto;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+}
+
+.item:not(:last-child) {
+  flex: 1;
+}
+
+.nav[data-orientation='vertical'] .item {
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-1-5);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+  transition: background-color var(--motion-color);
+}
+
+.trigger:hover:not(:disabled) {
+  background: var(--color-surface-sunken);
+}
+
+.trigger:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+  z-index: 1;
+}
+
+.trigger:disabled {
+  cursor: not-allowed;
+  opacity: var(--opacity-disabled);
+}
+
+/* Rest state is an outline, the active step is the only filled element, and
+ * done steps fade to a light tint with a check — calm rail, one focal point. */
+.indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--space-6);
+  height: var(--space-6);
+  flex-shrink: 0;
+  border-radius: var(--radius-full);
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--color-border-strong);
+  color: var(--color-text-tertiary);
+  font-size: var(--type-xs);
+  font-weight: var(--weight-medium);
+  font-variant-numeric: tabular-nums;
+  transition:
+    background-color var(--motion-color),
+    box-shadow var(--motion-color),
+    color var(--motion-color);
+}
+
+.indicator[data-state='active'] {
+  background: var(--primary);
+  /* Soft halo marks the single focal point without adding elevation. */
+  box-shadow: 0 0 0 3px var(--stepper-active-ring);
+  color: var(--primary-foreground);
+}
+
+.indicator[data-state='completed'] {
+  background: var(--stepper-done-bg);
+  box-shadow: none;
+  color: var(--stepper-done-fg);
+}
+
+.indicator[data-state='loading'] {
+  background: var(--stepper-done-bg);
+  box-shadow: none;
+  color: var(--stepper-done-fg);
+}
+
+.indicatorCheck {
+  width: var(--space-3);
+  height: var(--space-3);
+  animation: stepper-check-in var(--duration-base) var(--ease-emphasized);
+}
+
+@keyframes stepper-check-in {
+  from {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.separator {
+  flex: 1;
+  height: 2px;
+  min-width: var(--space-4);
+  margin-inline: var(--space-1);
+  border-radius: var(--radius-full);
+  background: var(--color-border);
+  transition: background-color var(--motion-color);
+}
+
+.separator[data-state='completed'] {
+  background: var(--stepper-rail-done);
+}
+
+.nav[data-orientation='vertical'] .separator {
+  flex: none;
+  width: 2px;
+  height: var(--space-8);
+  min-width: 0;
+  margin-block: var(--space-1);
+  /* Center the 2px rail on the 24px indicator column. */
+  margin-inline: calc(var(--space-1-5) + var(--space-6) / 2 - 1px);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--type-sm);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-tight);
+  color: var(--color-text-primary);
+}
+
+.title[data-state='inactive'] {
+  color: var(--color-text-tertiary);
+}
+
+.title[data-state='completed'] {
+  color: var(--color-text-secondary);
+}
+
+.description {
+  font-size: var(--type-xs);
+  line-height: var(--leading-normal);
+  color: var(--color-text-tertiary);
+}
+
+.panel {
+  width: 100%;
+  margin-top: var(--space-4);
+}
+
+.content {
+  width: 100%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .indicator,
+  .separator,
+  .trigger {
+    transition: none;
+  }
+
+  .indicatorCheck {
+    animation: none;
+  }
+}

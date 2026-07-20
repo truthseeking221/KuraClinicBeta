@@ -1,0 +1,97 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-stack-section);
+  max-width: 720px;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.sectionTitle {
+  margin: 0;
+  font-size: var(--type-sm);
+  font-weight: var(--weight-semibold);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+}
+
+.grid3 {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-4);
+  align-items: start;
+}
+
+.bp {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-2);
+}
+
+.temp {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.bmi {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-stack-label);
+}
+
+.bmiLabel {
+  font-size: var(--type-sm);
+  font-weight: var(--weight-medium);
+  color: var(--color-text-secondary);
+}
+
+.bmiValue {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--field-h);
+  font-size: var(--type-lg);
+  font-weight: var(--weight-semibold);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-primary);
+}
+
+.bmiEmpty {
+  min-height: var(--field-h);
+  display: flex;
+  align-items: center;
+  color: var(--color-text-tertiary);
+}
+
+.pain {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.painFace {
+  font-size: var(--type-sm);
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border);
+}
+
+@media (max-width: 767px) {
+  .grid3 {
+    grid-template-columns: 1fr;
+  }
+}

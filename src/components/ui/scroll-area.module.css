@@ -1,0 +1,111 @@
+.root {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.viewport {
+  width: 100%;
+  height: 100%;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+}
+
+.viewport::-webkit-scrollbar {
+  display: none;
+}
+
+.content {
+  min-width: 100%;
+}
+
+.scrollbar {
+  position: absolute;
+  z-index: 2;
+  display: flex;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  touch-action: none;
+  user-select: none;
+  transition: background-color var(--motion-color);
+}
+
+.scrollbar[data-orientation='vertical'] {
+  top: 0;
+  right: 0;
+  bottom: var(--scroll-area-corner-height);
+  width: var(--space-3);
+  padding: var(--space-1);
+}
+
+.scrollbar[data-orientation='horizontal'] {
+  right: var(--scroll-area-corner-width);
+  bottom: 0;
+  left: 0;
+  height: var(--space-3);
+  flex-direction: column;
+  padding: var(--space-1);
+}
+
+.scrollbar:hover,
+.scrollbar[data-hovering],
+.scrollbar[data-scrolling] {
+  background: color-mix(in srgb, var(--color-surface-sunken) 82%, transparent);
+}
+
+.thumb {
+  position: relative;
+  flex: 1;
+  min-width: var(--space-1);
+  min-height: var(--space-6);
+  border-radius: var(--radius-pill);
+  background: var(--color-border-strong);
+  transition: background-color var(--motion-color);
+}
+
+.scrollbar:hover .thumb,
+.scrollbar[data-hovering] .thumb,
+.scrollbar[data-scrolling] .thumb {
+  background: var(--color-text-tertiary);
+}
+
+.corner {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  background: var(--color-surface-sunken);
+}
+
+.root[data-scrollbar-gutter='true'][data-has-overflow-y] .viewport {
+  padding-inline-end: var(--space-3);
+}
+
+.root[data-scrollbar-gutter='true'][data-has-overflow-x] .viewport {
+  padding-block-end: var(--space-3);
+}
+
+.root[data-fade-edges='true'][data-overflow-y-start][data-overflow-y-end] .viewport {
+  mask-image: linear-gradient(
+    to bottom,
+    transparent,
+    black var(--space-6),
+    black calc(100% - var(--space-6)),
+    transparent
+  );
+}
+
+.root[data-fade-edges='true'][data-overflow-y-start]:not([data-overflow-y-end]) .viewport {
+  mask-image: linear-gradient(to bottom, transparent, black var(--space-6));
+}
+
+.root[data-fade-edges='true'][data-overflow-y-end]:not([data-overflow-y-start]) .viewport {
+  mask-image: linear-gradient(to bottom, black calc(100% - var(--space-6)), transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scrollbar,
+  .thumb {
+    transition: none;
+  }
+}

@@ -1,0 +1,333 @@
+.calendar {
+  --calendar-cell-size: var(--space-12);
+  box-sizing: border-box;
+  display: flex;
+  width: fit-content;
+  max-width: 100%;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--space-4);
+  color: var(--foreground);
+  font-family: var(--font-family-sans);
+  font-size: var(--type-sm);
+  line-height: var(--leading-normal);
+}
+
+.header {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.calendar[data-navigation='right'] .header {
+  justify-content: flex-start;
+}
+
+.caption {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  color: var(--foreground);
+  font-size: var(--type-base);
+  font-weight: var(--weight-semibold);
+  text-align: center;
+}
+
+.calendar[data-navigation='right'] .caption {
+  justify-content: flex-start;
+}
+
+.captionLabel {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.navigation {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.navigationButton {
+  border-color: transparent;
+}
+
+.selectLabel {
+  position: relative;
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+}
+
+.selectLabel select {
+  min-height: var(--control-h);
+  min-width: var(--space-14);
+  max-width: 100%;
+  appearance: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  padding: var(--space-2) var(--space-7) var(--space-2) var(--space-3);
+  background: var(--card);
+  color: var(--foreground);
+  font: inherit;
+  font-size: var(--type-sm);
+}
+
+.selectLabel select:focus-visible {
+  border-color: var(--ring);
+  outline: none;
+  box-shadow: var(--elevation-focus);
+}
+
+.selectIcon {
+  position: absolute;
+  right: var(--space-2);
+  pointer-events: none;
+  color: var(--muted-foreground);
+}
+
+.months {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.month {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 0;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.monthLabel {
+  color: var(--foreground);
+  font-size: var(--type-base);
+  font-weight: var(--weight-semibold);
+  text-align: center;
+}
+
+.weekdays,
+.week {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  min-width: 0;
+  align-items: center;
+}
+
+.weekdays {
+  color: var(--muted-foreground);
+}
+
+.weekday {
+  min-width: 0;
+  padding: var(--space-1) var(--space-0-5);
+  font-size: var(--type-xs);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-normal);
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.grid {
+  display: grid;
+  min-width: 0;
+  gap: var(--space-1);
+}
+
+.week {
+  gap: var(--space-1);
+}
+
+.dayCell {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: center;
+}
+
+.dayCell[data-outside='true'] {
+  color: var(--muted-foreground);
+}
+
+.dayButton {
+  width: 100%;
+  min-width: var(--control-h);
+  min-height: var(--control-h);
+  border-color: transparent;
+  border-radius: var(--radius-control);
+  padding: var(--space-1);
+  background: transparent;
+  color: inherit;
+  font-size: var(--type-sm);
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--weight-regular);
+  transition:
+    background-color var(--duration-fast) var(--ease-standard),
+    color var(--duration-fast) var(--ease-standard);
+}
+
+.dayButton:hover:not(:disabled):not([data-disabled='true']) {
+  background: var(--muted);
+}
+
+.dayButton[data-outside='true'] {
+  color: var(--muted-foreground);
+}
+
+.dayButton[data-today='true']:not([data-selected='true']) {
+  border-color: var(--border-focus);
+}
+
+.dayButton[data-selected='true'],
+.dayButton[data-range-start='true'],
+.dayButton[data-range-end='true'] {
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.dayButton[data-range-middle='true'] {
+  border-radius: var(--radius-indicator);
+  background: var(--muted);
+  color: var(--foreground);
+}
+
+.dayButton[data-disabled='true'],
+.dayButton:disabled {
+  color: var(--muted-foreground);
+  text-decoration: line-through;
+}
+
+.dayButton[data-focused='true']:focus-visible {
+  position: relative;
+  z-index: 1;
+}
+
+.dayButton > span {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: center;
+}
+
+.weekNumberColumn {
+  grid-column: span 1;
+}
+
+.weekdays:has(.weekNumberColumn),
+.week:has(.weekNumberColumn) {
+  grid-template-columns: var(--space-8) repeat(7, minmax(0, 1fr));
+}
+
+.weekNumber {
+  min-height: var(--control-h);
+  align-content: center;
+  color: var(--muted-foreground);
+  font-size: var(--type-xs);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.footer {
+  display: flex;
+  justify-content: center;
+  border-top: 1px solid var(--border);
+  padding-top: var(--space-2);
+}
+
+.todayButton {
+  min-height: var(--control-h);
+}
+
+.loadingState {
+  display: flex;
+  min-height: calc(var(--calendar-cell-size) * 6 + var(--space-6));
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  background: var(--muted);
+  color: var(--muted-foreground);
+  font-size: var(--type-sm);
+}
+
+.loadingIcon {
+  width: var(--space-5);
+  height: var(--space-5);
+  animation: calendar-spin 800ms linear infinite;
+}
+
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+:global([data-density='compact']) .calendar {
+  --calendar-cell-size: var(--control-h);
+  gap: var(--space-3);
+}
+
+:global([data-density='comfortable']) .calendar {
+  --calendar-cell-size: var(--space-14);
+  gap: var(--space-5);
+}
+
+@media (min-width: 48rem) {
+  .months {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+
+  .calendar[data-month-count='1'] .months {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 30rem) {
+  .header {
+    align-items: flex-start;
+  }
+
+  .caption {
+    justify-content: flex-start;
+    text-align: left;
+  }
+
+  .calendar[data-navigation='right'] .caption {
+    flex-basis: 100%;
+  }
+
+  .weekNumberColumn {
+    display: none;
+  }
+
+  .weekdays:has(.weekNumberColumn),
+  .week:has(.weekNumberColumn) {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+  }
+}
+
+@keyframes calendar-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loadingIcon {
+    animation: none;
+  }
+}

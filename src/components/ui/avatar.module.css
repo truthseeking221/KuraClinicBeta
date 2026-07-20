@@ -1,0 +1,416 @@
+.root {
+  --avatar-size: var(--space-10);
+  position: relative;
+  display: inline-flex;
+  width: var(--avatar-size);
+  height: var(--avatar-size);
+  flex-shrink: 0;
+  overflow: hidden;
+  isolation: isolate;
+  align-items: center;
+  justify-content: center;
+  background: var(--muted);
+  color: var(--muted-foreground);
+}
+
+.sizeXs {
+  --avatar-size: var(--space-6);
+}
+
+.sizeSm {
+  --avatar-size: var(--space-8);
+}
+
+.sizeMd {
+  --avatar-size: var(--space-10);
+}
+
+.sizeLg {
+  --avatar-size: var(--space-12);
+}
+
+.sizeXl {
+  --avatar-size: var(--space-16);
+}
+
+:global([data-density='compact']) .sizeMd {
+  --avatar-size: var(--space-8);
+}
+
+:global([data-density='comfortable']) .sizeMd {
+  --avatar-size: var(--space-12);
+}
+
+.circle {
+  border-radius: var(--radius-full);
+}
+
+.rounded {
+  border-radius: var(--radius-control);
+}
+
+.image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.imageHidden {
+  visibility: hidden;
+}
+
+.imageMuted {
+  filter: grayscale(1);
+}
+
+.fallback {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  width: 100%;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: inherit;
+  background: var(--muted);
+  color: var(--muted-foreground);
+  font-size: var(--type-xs);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-tight);
+  text-align: center;
+}
+
+.fallback.toneBrand,
+.root.toneBrand {
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.fallback.toneSuccess,
+.root.toneSuccess {
+  background: var(--status-success-bg);
+  color: var(--status-success-fg);
+}
+
+.fallback.toneWarning,
+.root.toneWarning {
+  background: var(--status-warning-bg);
+  color: var(--status-warning-fg);
+}
+
+.fallback.toneDanger,
+.root.toneDanger {
+  background: var(--status-danger-bg);
+  color: var(--status-danger-fg);
+}
+
+.fallback.toneInfo,
+.root.toneInfo {
+  background: var(--status-info-bg);
+  color: var(--status-info-fg);
+}
+
+.fallback.toneAi,
+.root.toneAi {
+  background: var(--status-ai-bg);
+  color: var(--status-ai-fg);
+}
+
+.fallbackIcon {
+  width: 60%;
+  height: 60%;
+}
+
+.ringNone {
+  outline: none;
+}
+
+.ringNeutral {
+  --avatar-ring-color: var(--border-strong);
+  outline: var(--space-0-5) solid var(--avatar-ring-color);
+  outline-offset: var(--space-0-5);
+}
+
+.ringBrand {
+  --avatar-ring-color: var(--primary-accent);
+  outline: var(--space-0-5) solid var(--avatar-ring-color);
+  outline-offset: var(--space-0-5);
+}
+
+.ringSuccess {
+  --avatar-ring-color: var(--status-success-fg);
+  outline: var(--space-0-5) solid var(--avatar-ring-color);
+  outline-offset: var(--space-0-5);
+}
+
+.ringWarning {
+  --avatar-ring-color: var(--status-warning-fg);
+  outline: var(--space-0-5) solid var(--avatar-ring-color);
+  outline-offset: var(--space-0-5);
+}
+
+.ringDanger {
+  --avatar-ring-color: var(--status-danger-fg);
+  outline: var(--space-0-5) solid var(--avatar-ring-color);
+  outline-offset: var(--space-0-5);
+}
+
+.ringInfo {
+  --avatar-ring-color: var(--status-info-fg);
+  outline: var(--space-0-5) solid var(--avatar-ring-color);
+  outline-offset: var(--space-0-5);
+}
+
+.ringAi {
+  --avatar-ring-color: var(--status-ai-fg);
+  outline: var(--space-0-5) solid var(--avatar-ring-color);
+  outline-offset: var(--space-0-5);
+}
+
+.ringPulse {
+  animation: avatarRingPulse 2.4s ease-in-out infinite;
+}
+
+@keyframes avatarRingPulse {
+  0%,
+  100% {
+    outline-offset: var(--space-0-5);
+  }
+
+  50% {
+    outline-offset: var(--space-1);
+  }
+}
+
+.loadingOverlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--background);
+  border-radius: inherit;
+}
+
+.loadingIndicator {
+  width: 40%;
+  height: 40%;
+  border: var(--space-0-5) solid var(--border-strong);
+  border-top-color: var(--primary-accent);
+  border-radius: var(--radius-full);
+  animation: avatarLoadingSpin 0.9s linear infinite;
+}
+
+@keyframes avatarLoadingSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.badge {
+  position: absolute;
+  z-index: 3;
+  display: inline-flex;
+  min-width: var(--space-3);
+  height: var(--space-3);
+  align-items: center;
+  justify-content: center;
+  border: var(--space-0-5) solid var(--background);
+  border-radius: var(--radius-full);
+  background: var(--muted-foreground);
+  color: var(--background);
+  font-size: var(--type-2xs);
+  line-height: 1;
+  transform: translate(25%, 25%);
+}
+
+.badgeSizeSm {
+  min-width: var(--space-3);
+  height: var(--space-3);
+}
+
+.badgeSizeMd {
+  min-width: var(--space-4);
+  height: var(--space-4);
+}
+
+/* Corner badges hug the circle's circumference, not the square bounding box
+ * (a fixed 2px corner offset floats outside a circular avatar). Rounded
+ * avatars keep the square-corner inset. */
+.root {
+  --avatar-badge-inset: calc(var(--avatar-size) * 0.08);
+}
+
+.root[data-shape='rounded'] {
+  --avatar-badge-inset: var(--space-0-5);
+}
+
+.badgeTopLeft {
+  top: var(--avatar-badge-inset);
+  left: var(--avatar-badge-inset);
+  transform: none;
+}
+
+.badgeTopRight {
+  top: var(--avatar-badge-inset);
+  right: var(--avatar-badge-inset);
+  transform: none;
+}
+
+.badgeBottomLeft {
+  bottom: var(--avatar-badge-inset);
+  left: var(--avatar-badge-inset);
+  transform: none;
+}
+
+.badgeBottomRight {
+  right: var(--avatar-badge-inset);
+  bottom: var(--avatar-badge-inset);
+  transform: none;
+}
+
+.badge.toneNeutral {
+  background: var(--muted-foreground);
+  color: var(--background);
+}
+
+.badge.toneBrand {
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.badge.toneSuccess {
+  background: var(--status-success-fg);
+  color: var(--background);
+}
+
+.badge.toneWarning {
+  background: var(--status-warning-fg);
+  color: var(--background);
+}
+
+.badge.toneDanger {
+  background: var(--status-danger-fg);
+  color: var(--background);
+}
+
+.badge.toneInfo {
+  background: var(--status-info-fg);
+  color: var(--background);
+}
+
+.badge.toneAi {
+  background: var(--status-ai-fg);
+  color: var(--background);
+}
+
+.badge > svg {
+  width: var(--space-2);
+  height: var(--space-2);
+}
+
+.badgeDot {
+  display: block;
+  width: var(--space-1-5);
+  height: var(--space-1-5);
+  border-radius: var(--radius-full);
+  background: currentColor;
+}
+
+.group {
+  --avatar-group-overlap: var(--space-2);
+  display: inline-flex;
+  align-items: center;
+}
+
+.overlapTight {
+  --avatar-group-overlap: var(--space-1-5);
+}
+
+.overlapDefault {
+  --avatar-group-overlap: var(--space-2);
+}
+
+/* Stack separation: a background ring cuts each member out of the one
+ * behind it, and a hairline keeps the cut readable on pale fallbacks. */
+.group > [data-slot='avatar'],
+.group > [data-slot='avatar-group-count'] {
+  border: var(--space-0-5) solid var(--background);
+  box-shadow: 0 0 0 1px var(--color-border);
+}
+
+.group > [data-slot='avatar'] ~ [data-slot='avatar'],
+.group > [data-slot='avatar'] ~ [data-slot='avatar-group-count'],
+.group > [data-slot='avatar-group-count'] ~ [data-slot='avatar'],
+.group > [data-slot='avatar-group-count'] ~ [data-slot='avatar-group-count'] {
+  margin-inline-start: calc(var(--avatar-group-overlap) * -1);
+}
+
+.count {
+  display: inline-flex;
+  width: var(--avatar-size);
+  height: var(--avatar-size);
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: var(--radius-full);
+  background: var(--muted);
+  color: var(--muted-foreground);
+  font-size: var(--type-2xs);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-tight);
+  white-space: nowrap;
+}
+
+/* Icon content scales with the count bubble instead of its native size. */
+.count > svg {
+  width: 50%;
+  height: 50%;
+}
+
+.count.toneBrand {
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.count.toneSuccess {
+  background: var(--status-success-bg);
+  color: var(--status-success-fg);
+}
+
+.count.toneWarning {
+  background: var(--status-warning-bg);
+  color: var(--status-warning-fg);
+}
+
+.count.toneDanger {
+  background: var(--status-danger-bg);
+  color: var(--status-danger-fg);
+}
+
+.count.toneInfo {
+  background: var(--status-info-bg);
+  color: var(--status-info-fg);
+}
+
+.count.toneAi {
+  background: var(--status-ai-bg);
+  color: var(--status-ai-fg);
+}
+
+.count > svg {
+  width: 45%;
+  height: 45%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ringPulse,
+  .loadingIndicator {
+    animation: none;
+  }
+}

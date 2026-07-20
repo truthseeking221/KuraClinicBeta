@@ -1,0 +1,45 @@
+import { READINESS } from '../../components/foundations/readiness-data';
+
+export const HOME_STORYBOOK_KURA = {
+  readiness: READINESS.home,
+  contract: {
+    status: 'design-target',
+    backendMapping: 'partial',
+    backendRef: 'Kura-med/kura-platform@45ded8f5eaa1cf63140037e7f15d5c9a3b955f9c',
+    consulted: [
+      'ADR-0055-clinic-app-unification.md',
+      'libs/contracts/src/lib/licence.ts',
+      'apps/clinic-bff',
+      'licence-pending-state-ui-tickets.md',
+    ],
+    note:
+      'Licence states map to GET /profile/licence/status and the seven-state licence contract on kura-platform main. Home briefing counts remain demo fixtures because no BFF endpoint aggregates a home/today feed. Stories must not be read as a claim that those aggregate counts are executable today.',
+  },
+  intake: {
+    decision: 'FEATURE-OWN',
+    owner: 'src/features/home',
+    source:
+      'Journey catalog WQ-01/WQ-08/WQ-09 + current kura-platform licence contract and ADR-0055 + legacy DCM Home behavior reference (no code intake)',
+    evidence:
+      'No executable Home aggregation exists locally or in the current clinic BFF. The feature domain-adapts canonical AppShell, Item, Alert, Badge, Button, Skeleton, MoneyText, and EmptyState. ReUI analytics/statistic page compositions were evaluated and rejected because they impose a generic SaaS dashboard model.',
+    exclusions: [
+      'Home does not own result review, booking lifecycle, patient roster, licence submission, or notification-inbox behavior.',
+      'No aggregate count is presented as a live backend capability until a Home/today read model is approved.',
+    ],
+  },
+  journeys: ['WQ-01-home-today-dashboard', 'WQ-08-notification-deep-link', 'WQ-09-empty-error-stale-worklist'],
+  binding: {
+    colors: 'kura-semantic',
+    typography: 'kura',
+    spacing: 'kura',
+    radius: 'kura',
+    elevation: 'kura',
+    icons: 'kura-canonical',
+    focus: 'kura',
+    responsive: 'mobile-first-contract',
+  },
+  hierarchy: {
+    level: 'Page',
+    children: ['AppShell', 'Alert', 'EmptyState', 'HomeSignalItem', 'Item', 'MoneyText'],
+  },
+} as const;

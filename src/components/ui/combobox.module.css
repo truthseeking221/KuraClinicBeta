@@ -1,0 +1,320 @@
+.label {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-inline-icon);
+  color: var(--text-secondary);
+  font-family: var(--font-family-sans);
+  font-size: var(--type-sm);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-normal);
+}
+
+.control,
+.chips {
+  box-sizing: border-box;
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  min-height: var(--control-h);
+  align-items: center;
+  gap: var(--space-inline-control);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  padding-inline-start: var(--space-inset-control);
+  background: var(--card);
+  color: var(--card-foreground);
+  font-family: var(--font-family-sans);
+  transition: border-color var(--duration-fast) var(--ease-standard), box-shadow var(--duration-fast) var(--ease-standard);
+}
+
+.control:focus-within,
+.chips:focus-within {
+  border-color: var(--ring);
+  box-shadow: var(--elevation-focus);
+}
+
+.control:has(.input[aria-invalid='true']),
+.chips:has(.chipsInput[aria-invalid='true']) {
+  border-color: var(--destructive);
+}
+
+.input,
+.chipsInput {
+  min-width: 0;
+  /* The owning control sets the height; an inner minimum would pin it. */
+  min-height: calc(var(--control-h) - var(--space-1));
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: inherit;
+  font-family: inherit;
+  font-size: var(--type-base);
+  font-weight: var(--weight-regular);
+  line-height: var(--leading-normal);
+}
+
+.input {
+  flex: 1;
+}
+
+.input::placeholder,
+.chipsInput::placeholder {
+  color: var(--muted-foreground);
+}
+
+.input:disabled,
+.chipsInput:disabled {
+  cursor: not-allowed;
+  color: var(--text-disabled);
+}
+
+.controls {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+}
+
+.trigger,
+.clear,
+.chipRemove {
+  display: inline-flex;
+  min-width: var(--control-h);
+  min-height: var(--control-h);
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  background: transparent;
+  color: var(--muted-foreground);
+}
+
+.trigger,
+.clear {
+  padding: var(--space-2);
+}
+
+.trigger:hover:not(:disabled),
+.clear:hover:not(:disabled),
+.chipRemove:hover:not(:disabled) {
+  cursor: pointer;
+  background: var(--muted);
+  color: var(--foreground);
+}
+
+.trigger:focus-visible,
+.clear:focus-visible,
+.chipRemove:focus-visible {
+  outline: none;
+  box-shadow: var(--elevation-focus);
+}
+
+.trigger:disabled,
+.clear:disabled,
+.chipRemove:disabled {
+  cursor: not-allowed;
+  opacity: var(--opacity-disabled);
+}
+
+.trigger > svg,
+.clear > svg,
+.chipRemove > svg {
+  width: var(--space-4);
+  height: var(--space-4);
+}
+
+.positioner {
+  z-index: 1;
+  padding: var(--space-1);
+}
+
+.content {
+  box-sizing: border-box;
+  width: var(--anchor-width);
+  min-width: min(var(--anchor-width), calc(100vw - var(--space-4)));
+  max-width: calc(100vw - var(--space-4));
+  max-height: min(calc(100dvh - var(--space-8)), var(--available-height));
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card-surface);
+  padding: var(--space-1);
+  background: var(--card);
+  color: var(--card-foreground);
+  box-shadow: var(--elevation-popover);
+  outline: none;
+  transform-origin: var(--transform-origin);
+  transition:
+    opacity var(--duration-base) var(--ease-out),
+    transform var(--duration-base) var(--ease-out);
+}
+
+.content[data-starting-style],
+.content[data-ending-style] {
+  opacity: 0;
+  transform: scale(0.96);
+}
+
+.list {
+  display: grid;
+  margin: 0;
+  padding: 0;
+}
+
+.group + .group {
+  border-top: 1px solid var(--border);
+}
+
+.groupLabel {
+  padding: var(--space-inset-control) var(--space-inset-control) var(--space-stack-label);
+  color: var(--muted-foreground);
+  font-family: var(--font-family-sans);
+  font-size: var(--type-xs);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-normal);
+}
+
+.item {
+  box-sizing: border-box;
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  min-height: var(--control-h);
+  align-items: center;
+  gap: var(--space-inline-control);
+  border: 0;
+  border-radius: var(--radius-control);
+  padding: var(--space-stack-control) var(--space-inset-control);
+  background: transparent;
+  color: var(--card-foreground);
+  font-family: var(--font-family-sans);
+  font-size: var(--type-base);
+  font-weight: var(--weight-regular);
+  line-height: var(--leading-normal);
+  text-align: start;
+  outline: none;
+}
+
+.item[data-highlighted],
+.item:hover:not([data-disabled]) {
+  background: var(--muted);
+  color: var(--foreground);
+}
+
+.item[data-selected] .itemCopy {
+  font-weight: var(--weight-semibold);
+}
+
+.item[data-disabled] {
+  cursor: not-allowed;
+  opacity: var(--opacity-disabled);
+}
+
+.item:focus-visible {
+  box-shadow: var(--elevation-focus);
+}
+
+.itemCopy {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.itemIndicator {
+  display: inline-flex;
+  flex: 0 0 auto;
+  width: var(--space-5);
+  height: var(--space-5);
+  align-items: center;
+  justify-content: center;
+  margin-inline-start: auto;
+  color: var(--primary);
+}
+
+.itemIndicator > svg {
+  width: var(--space-4);
+  height: var(--space-4);
+}
+
+.empty,
+.status {
+  display: block;
+  padding: var(--space-inset-control);
+  color: var(--muted-foreground);
+  font-family: var(--font-family-sans);
+  font-size: var(--type-sm);
+  font-weight: var(--weight-regular);
+  line-height: var(--leading-normal);
+  text-align: center;
+}
+
+/* Base UI keeps Empty/Status mounted and only fills children when relevant;
+   an empty container must not reserve padding above the list. */
+.empty:empty,
+.status:empty {
+  display: none;
+}
+
+.separator {
+  height: 1px;
+  margin: var(--space-stack-control) calc(var(--space-1) * -1);
+  background: var(--border);
+}
+
+.chips {
+  flex-wrap: wrap;
+  padding: var(--space-stack-control);
+}
+
+.chip {
+  display: inline-flex;
+  min-width: 0;
+  min-height: var(--control-h-xs);
+  align-items: center;
+  gap: var(--space-inline-icon);
+  border-radius: var(--radius-control);
+  padding-inline-start: var(--space-inset-control);
+  background: var(--muted);
+  color: var(--foreground);
+  font-family: var(--font-family-sans);
+  font-size: var(--type-sm);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-normal);
+}
+
+.chipLabel {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.chipRemove {
+  border-radius: var(--radius-control);
+}
+
+.chipsInput {
+  flex: 1 1 var(--space-16);
+  padding-inline: var(--space-inline-icon);
+}
+
+:global([data-density='compact']) .control,
+:global([data-density='compact']) .chips,
+:global([data-density='compact']) .item,
+:global([data-density='compact']) .chip {
+  min-height: var(--field-h);
+}
+
+:global([data-density='comfortable']) .control,
+:global([data-density='comfortable']) .chips,
+:global([data-density='comfortable']) .item,
+:global([data-density='comfortable']) .chip {
+  min-height: var(--row-h);
+}
+
+@media (max-width: 480px) {
+  .content {
+    width: min(var(--anchor-width), calc(100vw - var(--space-4)));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .control,
+  .chips {
+    transition: none;
+  }
+}

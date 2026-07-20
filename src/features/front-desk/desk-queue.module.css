@@ -1,0 +1,194 @@
+.queue {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  max-width: 960px;
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.headerText {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-0-5);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--type-lg);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.subtitle {
+  margin: 0;
+  font-size: var(--type-sm);
+  color: var(--color-text-tertiary);
+}
+
+.staleRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--type-xs);
+  color: var(--color-text-tertiary);
+}
+
+/* ── Rows: dense repeated work items — dividers, no card mosaic ── */
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.list > li + li {
+  border-top: 1px solid var(--color-border);
+}
+
+.rowStatic,
+.rowObserved {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  min-height: var(--row-h);
+  padding-block: var(--space-2);
+}
+
+.rowObserved .name,
+.rowObserved .wait {
+  color: var(--color-text-tertiary);
+}
+
+.queueNumber {
+  flex-shrink: 0;
+  min-width: var(--space-10);
+  font-size: var(--type-sm);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-tertiary);
+}
+
+.rowBody {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-0-5);
+}
+
+.nameLine {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.name {
+  font-size: var(--type-sm);
+  font-weight: var(--weight-medium);
+  color: var(--color-text-primary);
+  overflow-wrap: anywhere;
+}
+
+.nameKhmer {
+  font-size: var(--type-xs);
+  color: var(--color-text-tertiary);
+}
+
+.factLine {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.wait {
+  font-size: var(--type-xs);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-tertiary);
+}
+
+/* Wait pressure is never color-only: the copy carries the escalation word. */
+.wait[data-tone='warn'] {
+  color: var(--color-warn-500);
+  font-weight: var(--weight-medium);
+}
+
+.wait[data-tone='escalate'] {
+  color: var(--destructive);
+  font-weight: var(--weight-medium);
+}
+
+.facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  justify-content: flex-end;
+}
+
+.observedNote {
+  flex-shrink: 0;
+  font-size: var(--type-xs);
+  color: var(--color-text-tertiary);
+}
+
+/* ── Loading skeleton keeps row geometry ─────────────────── */
+
+.skeletonQueue {
+  width: var(--space-8);
+  height: var(--space-4);
+}
+
+.skeletonName {
+  width: 40%;
+  height: var(--space-4);
+}
+
+.skeletonMeta {
+  width: 60%;
+  height: var(--space-3);
+}
+
+/* ── Mobile: stack facts under the name, keep the action reachable ── */
+
+@media (max-width: 640px) {
+  .rowStatic,
+  .rowObserved {
+    flex-wrap: wrap;
+    align-items: flex-start;
+    row-gap: var(--space-2);
+  }
+
+  .queueNumber {
+    min-width: var(--space-8);
+  }
+
+  /* Row 1: number + identity. Row 2: axis facts. Row 3: the one action,
+     full width in thumb reach. The name never gets crushed by the button. */
+  .rowBody {
+    flex: 1 1 0;
+    min-width: 60%;
+  }
+
+  .facts {
+    order: 4;
+    width: 100%;
+    justify-content: flex-start;
+    padding-inline-start: calc(var(--space-8) + var(--space-4));
+  }
+
+  .rowAction {
+    order: 5;
+    width: 100%;
+  }
+
+  .observedNote {
+    order: 5;
+    padding-inline-start: calc(var(--space-8) + var(--space-4));
+  }
+}

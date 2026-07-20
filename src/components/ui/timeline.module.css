@@ -1,0 +1,167 @@
+.root {
+  display: flex;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-family: var(--font-family-sans);
+}
+
+.root[data-orientation='vertical'] {
+  flex-direction: column;
+}
+
+.root[data-orientation='horizontal'] {
+  width: 100%;
+}
+
+.item {
+  position: relative;
+  min-width: 0;
+}
+
+.root[data-orientation='vertical'] .item {
+  padding: 0 0 var(--space-6) var(--space-8);
+}
+
+.root[data-orientation='horizontal'] .item {
+  min-width: calc(var(--space-32) * 1.25);
+  flex: 1 1 0;
+  padding: var(--space-8) var(--space-4) 0 0;
+}
+
+.header {
+  display: grid;
+  min-width: 0;
+  gap: var(--space-stack-label);
+}
+
+.date {
+  color: var(--color-text-tertiary);
+  font-size: var(--type-xs);
+  font-variant-numeric: tabular-nums;
+  line-height: var(--leading-normal);
+}
+
+.title {
+  margin: 0;
+  color: var(--color-text-primary);
+  font-size: var(--type-sm);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-normal);
+  overflow-wrap: anywhere;
+}
+
+.content {
+  margin-top: var(--space-1);
+  color: var(--color-text-tertiary);
+  font-size: var(--type-sm);
+  line-height: var(--leading-normal);
+  overflow-wrap: anywhere;
+}
+
+.indicator {
+  position: absolute;
+  z-index: 1;
+  display: inline-flex;
+  width: var(--space-4);
+  height: var(--space-4);
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--color-border-strong);
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  color: var(--color-text-inverse);
+}
+
+.indicator svg {
+  width: var(--space-3);
+  height: var(--space-3);
+}
+
+.root[data-orientation='vertical'] .indicator {
+  top: var(--space-0-5);
+  left: 0;
+}
+
+.root[data-orientation='horizontal'] .indicator {
+  top: 0;
+  left: 0;
+}
+
+.item[data-completed='true'] .indicator {
+  border-color: var(--primary-accent);
+  background: var(--primary-accent);
+}
+
+.item[data-current='true'] .indicator {
+  border-color: var(--primary-accent);
+  box-shadow: 0 0 0 var(--space-1) var(--color-brand-50);
+}
+
+.separator {
+  position: absolute;
+  display: block;
+  background: var(--color-border);
+}
+
+.root[data-orientation='vertical'] .separator {
+  top: var(--space-5);
+  bottom: 0;
+  left: calc(var(--space-2) - 1px);
+  width: 2px;
+}
+
+.root[data-orientation='horizontal'] .separator {
+  top: calc(var(--space-2) - 1px);
+  right: 0;
+  left: var(--space-5);
+  height: 2px;
+}
+
+.item[data-completed='true'] .separator {
+  background: var(--primary-accent);
+}
+
+.item:last-child .separator {
+  display: none;
+}
+
+@media (max-width: 480px) {
+  .root[data-orientation='horizontal'] {
+    overflow-x: auto;
+    padding-bottom: var(--space-2);
+  }
+}
+
+/* Semantic tones — the marker echoes the event's meaning; the item's text
+ * and badges carry it. Tone wins over the completed brand fill. */
+.item[data-tone='success'] .indicator,
+.item[data-tone='success'][data-completed='true'] .indicator {
+  border-color: var(--color-status-success-fg);
+  background: var(--color-status-success-fg);
+}
+
+.item[data-tone='warning'] .indicator,
+.item[data-tone='warning'][data-completed='true'] .indicator {
+  border-color: var(--color-badge-warning-icon);
+  background: var(--color-badge-warning-icon);
+}
+
+.item[data-tone='danger'] .indicator,
+.item[data-tone='danger'][data-completed='true'] .indicator {
+  border-color: var(--color-status-danger-fg);
+  background: var(--color-status-danger-fg);
+}
+
+.item[data-tone='danger'][data-current='true'] .indicator {
+  box-shadow: 0 0 0 var(--space-1) var(--color-status-danger-bg);
+}
+
+.item[data-tone='warning'][data-current='true'] .indicator {
+  box-shadow: 0 0 0 var(--space-1) var(--color-status-warning-bg);
+}
+
+.item[data-tone='success'][data-current='true'] .indicator {
+  box-shadow: 0 0 0 var(--space-1) var(--color-status-success-bg);
+}

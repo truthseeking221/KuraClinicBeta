@@ -1,0 +1,61 @@
+.frame {
+  width: min(
+    calc(var(--space-32) * 3),
+    calc(100vw - (var(--space-page-gutter) * 2))
+  );
+}
+
+.card {
+  width: 100%;
+}
+
+.optionContent {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-control-gap);
+}
+
+.optionCopy {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-0-5);
+}
+
+.optionTitle {
+  color: var(--foreground);
+  font-size: var(--type-sm);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-normal);
+}
+
+.optionDescription {
+  color: var(--muted-foreground);
+  font-size: var(--type-xs);
+  line-height: var(--leading-normal);
+}
+
+.separator {
+  margin-block: var(--space-1);
+}
+
+.infoTrigger {
+  display: inline-flex;
+  width: var(--space-5);
+  height: var(--space-5);
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+  color: var(--muted-foreground);
+  cursor: help;
+}
+
+.infoTrigger:focus-visible {
+  outline: none;
+  box-shadow: var(--elevation-focus);
+}

@@ -1,0 +1,22 @@
+.empty {
+  display: grid;
+  gap: 4px;
+  text-align: left;
+}
+
+.emptyHint {
+  font-size: var(--type-sm);
+  color: var(--color-text-muted);
+}
+
+.itemBody {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.itemHint {
+  font-size: var(--type-sm);
+  color: var(--color-text-muted);
+  overflow-wrap: anywhere;
+}

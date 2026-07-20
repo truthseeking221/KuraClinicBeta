@@ -1,0 +1,233 @@
+.field {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--space-stack-label);
+}
+
+.field[data-appearance="card"] {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: var(--touch-target-min);
+  gap: 0;
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--card-border-outline);
+  border-radius: var(--radius-card-surface);
+  background: var(--card);
+  box-shadow: var(--elevation-card-outline);
+  transition:
+    background-color var(--duration-fast) var(--ease-standard),
+    border-color var(--duration-fast) var(--ease-standard),
+    box-shadow var(--duration-fast) var(--ease-standard);
+}
+
+.field[data-appearance="card"]:hover:not(
+    :has(.control[data-disabled="true"])
+  ):not(:has(.control[data-read-only="true"])):not(:has(.input:checked)) {
+  background: var(--muted);
+}
+
+.field[data-appearance="card"]:has(.input:checked) {
+  border-color: var(--primary);
+  background: var(--accent);
+}
+
+.field[data-appearance="card"]:has(.control[data-invalid="true"]) {
+  border-color: var(--destructive);
+}
+
+.field[data-appearance="card"]:has(.input:focus-visible) {
+  box-shadow: var(--elevation-focus);
+}
+
+.field[data-appearance="card"] .control {
+  width: 100%;
+  min-height: var(--control-h);
+  align-items: flex-start;
+  padding: 0;
+  border-radius: 0;
+}
+
+.field[data-appearance="card"] .control:hover:not([data-disabled="true"]),
+.field[data-appearance="card"] .control:active:not([data-disabled="true"]) {
+  background: transparent;
+}
+
+.field[data-appearance="card"] .control:has(.input:focus-visible) {
+  box-shadow: none;
+}
+
+.field[data-appearance="card"] .indicator {
+  margin-block-start: var(--space-0-5);
+}
+
+.optionCopy {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-0-5);
+}
+
+.optionCopy .helpText {
+  padding-inline: 0;
+}
+
+.control {
+  box-sizing: border-box;
+  display: inline-flex;
+  width: fit-content;
+  max-width: 100%;
+  min-height: var(--control-h);
+  align-items: center;
+  gap: var(--space-control-gap);
+  border: 0;
+  border-radius: var(--radius-control);
+  padding: var(--space-2) var(--space-2);
+  background: transparent;
+  color: var(--foreground);
+  font-family: var(--font-family-sans);
+  font-size: var(--type-sm);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-normal);
+  cursor: pointer;
+  box-shadow: none;
+  transition:
+    background-color var(--duration-fast) var(--ease-standard),
+    box-shadow var(--duration-fast) var(--ease-standard),
+    color var(--duration-fast) var(--ease-standard);
+}
+
+.control:has(.input:focus-visible) {
+  outline: none;
+  box-shadow: var(--elevation-focus);
+}
+
+.control[data-disabled="true"] {
+  cursor: not-allowed;
+  opacity: var(--opacity-disabled);
+  pointer-events: none;
+}
+
+.control[data-read-only="true"] {
+  cursor: default;
+}
+
+.input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  padding: 0;
+  border: 0;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.indicator {
+  display: inline-flex;
+  width: var(--space-4);
+  height: var(--space-4);
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  background: var(--card);
+  box-shadow: var(--shadow-xs);
+  transition:
+    background-color var(--duration-fast) var(--ease-standard),
+    border-color var(--duration-fast) var(--ease-standard),
+    box-shadow var(--duration-fast) var(--ease-standard),
+    transform var(--duration-fast) var(--ease-standard);
+}
+
+.control:hover:not([data-disabled="true"]) .indicator {
+  border-color: var(--border-strong);
+}
+
+.control:hover:not([data-disabled="true"]):not([data-read-only="true"]) {
+  background: var(--muted);
+}
+
+.control:active:not([data-disabled="true"]):not([data-read-only="true"]) {
+  background: var(--accent);
+}
+
+.control[data-read-only="true"]:hover .indicator {
+  border-color: var(--border);
+}
+
+.control:has(.input:checked) .indicator {
+  border-color: var(--primary);
+  background: var(--primary);
+  box-shadow: var(--elevation-selected);
+}
+
+.control[data-invalid="true"] .indicator {
+  border-color: var(--destructive);
+}
+
+.dot {
+  width: var(--space-2);
+  height: var(--space-2);
+  border-radius: var(--radius-full);
+  background: var(--primary-foreground);
+  opacity: 0;
+  transform: scale(0.5);
+  transition:
+    opacity var(--duration-fast) var(--ease-standard),
+    transform var(--duration-base) var(--ease-standard);
+}
+
+.control:has(.input:checked) .dot {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.labelText {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.helpText,
+.errorText {
+  max-width: 60ch;
+  padding-inline: var(--space-1);
+  font-size: var(--type-xs);
+  line-height: var(--leading-normal);
+}
+
+.helpText {
+  color: var(--muted-foreground);
+}
+
+.errorText {
+  color: var(--destructive);
+}
+
+:global([data-density="compact"]) .control {
+  padding-inline: var(--space-1);
+}
+
+:global([data-density="comfortable"]) .control {
+  min-height: var(--space-12);
+  padding-inline: var(--space-2);
+}
+
+@media (max-width: 479px) {
+  .control {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .field[data-appearance="card"],
+  .control,
+  .indicator,
+  .dot {
+    transition: none;
+  }
+}

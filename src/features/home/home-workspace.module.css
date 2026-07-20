@@ -1,0 +1,364 @@
+.workspace {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  width: 100%;
+  max-width: 1120px;
+  padding: var(--space-8);
+  margin-inline: auto;
+}
+
+.statusStack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.statusStack:empty {
+  display: none;
+}
+
+/* ── Header: a status line, not a hero ────────────────────── */
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding-bottom: var(--space-2);
+}
+
+.date,
+.scope,
+.quietState {
+  margin: 0;
+}
+
+.date {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-text-brand);
+  font-size: var(--type-xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: 0.02em;
+}
+
+/* A single brand grain marks "today" — the one decorative pixel on the page. */
+.date::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-full, 999px);
+  background: var(--brand-500);
+}
+
+.greeting {
+  margin: 0;
+  color: var(--color-text-primary);
+  font-size: var(--type-2xl);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-tight);
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+
+.scope {
+  color: var(--color-text-secondary);
+  font-size: var(--type-sm);
+}
+
+.staleRow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+  color: var(--color-text-tertiary);
+  font-size: var(--type-xs);
+}
+
+/* ── Briefing grid ────────────────────────────────────────── */
+
+.briefing {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(20rem, 0.9fr);
+  align-items: start;
+  gap: var(--space-5);
+}
+
+.mainRail,
+.rail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  min-width: 0;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+/* Three regions, three materials: the attention list is the only white card,
+ * the day runs as a bare timeline, and operational context sits sunken. */
+.attentionCard {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.sectionHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sectionTitle,
+.sectionDescription {
+  margin: 0;
+}
+
+.sectionTitle {
+  color: var(--color-text-primary);
+  font-size: var(--type-base);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-snug);
+}
+
+.sectionDescription,
+.quietState {
+  color: var(--color-text-tertiary);
+  font-size: var(--type-xs);
+  line-height: var(--leading-normal);
+}
+
+.quietState {
+  padding: var(--space-2) 0;
+}
+
+/* Sunken footnote panel — context, one visual level below the canvas. */
+.quietPanel {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: var(--space-2) var(--space-4) var(--space-3);
+  background: var(--color-surface-sunken);
+  border-radius: var(--radius-lg);
+}
+
+.quietPanelTitle {
+  margin: 0;
+  padding: var(--space-2) var(--space-1) 0;
+  color: var(--color-text-tertiary);
+  font-size: var(--type-xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* ── Next today: the day as a time spine ──────────────────── */
+
+.spine {
+  position: relative;
+  padding: 0;
+}
+
+.spineRow {
+  position: relative;
+}
+
+/* Vertical thread connecting the day; drawn per row so it never overshoots. */
+.spineRow::before {
+  content: '';
+  position: absolute;
+  left: 3px;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--color-border);
+}
+
+.spineRow:first-child::before {
+  top: 50%;
+}
+
+.spineRow:last-child::before {
+  bottom: 50%;
+}
+
+.spineRow:only-child::before {
+  display: none;
+}
+
+/* The stop on the thread. */
+.spineRow::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 7px;
+  height: 7px;
+  border-radius: var(--radius-full, 999px);
+  transform: translateY(-50%);
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-border-strong, var(--color-border));
+}
+
+.spineRow[data-next]::after {
+  background: var(--brand-500);
+  border-color: var(--brand-500);
+  box-shadow: 0 0 0 3px var(--color-brand-50);
+}
+
+.spine :global([data-slot='item']) {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: var(--space-3);
+  padding-block: var(--space-2);
+  padding-inline: var(--space-5) var(--space-2);
+  border-radius: var(--radius-md);
+  transition: background-color var(--motion-color);
+}
+
+.spine :global([data-slot='item-actions']) {
+  grid-column: 3;
+  grid-row: 1;
+  justify-content: flex-end;
+}
+
+.spine :global([data-slot='item-media']) {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.spine :global([data-slot='item-content']) {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.spine a:global([data-slot='item']):hover {
+  background: var(--color-surface-sunken);
+}
+
+.spine a:global([data-slot='item']):focus-visible {
+  outline: 2px solid var(--color-border-focus);
+  outline-offset: -2px;
+}
+
+.nextTime {
+  display: inline-flex;
+  justify-content: flex-end;
+  min-width: 2.75rem;
+  color: var(--color-text-tertiary);
+  font-family: var(--font-family-mono);
+  font-size: var(--type-xs);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.spineRow[data-next] .nextTime {
+  color: var(--color-text-brand);
+  font-weight: var(--weight-semibold);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spine :global([data-slot='item']) {
+    transition: none;
+  }
+}
+
+/* ── Overview + closed today ──────────────────────────────── */
+
+.overviewList {
+  display: flex;
+  flex-direction: column;
+}
+
+.overviewList > :global([data-slot='item-separator']) {
+  display: none;
+}
+
+.overviewList > [role='listitem'] + [role='listitem'] {
+  border-top: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent);
+}
+
+.closedList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin: 0;
+}
+
+.closedItem {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full, 999px);
+}
+
+.closedValue {
+  margin: 0;
+  order: -1;
+  color: var(--color-text-primary);
+  font-size: var(--type-lg);
+  font-weight: var(--weight-semibold);
+  font-variant-numeric: tabular-nums;
+}
+
+.closedLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--color-text-tertiary);
+  font-size: var(--type-xs);
+}
+
+.closedLabel svg {
+  color: var(--color-status-success-fg);
+}
+
+/* ── Responsive ───────────────────────────────────────────── */
+
+@media (max-width: 900px) {
+  .briefing {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 767px) {
+  .workspace {
+    gap: var(--space-5);
+    padding: var(--space-6);
+  }
+
+}
+
+@media (max-width: 480px) {
+  .workspace {
+    gap: var(--space-4);
+    padding: var(--space-4);
+  }
+
+  .briefing {
+    gap: var(--space-4);
+  }
+
+  .greeting {
+    font-size: var(--type-xl);
+  }
+
+  .closedList {
+    gap: var(--space-2);
+  }
+
+}

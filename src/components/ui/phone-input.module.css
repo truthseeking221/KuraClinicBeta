@@ -1,0 +1,287 @@
+.field {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--space-stack-label);
+}
+
+.label {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-0-5);
+  color: var(--color-text-secondary);
+  font-size: var(--type-sm);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-normal);
+}
+
+.requiredMark {
+  color: var(--destructive);
+}
+
+.control {
+  display: flex;
+  min-width: 0;
+  min-height: var(--field-h);
+  align-items: stretch;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-control);
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  transition:
+    border-color var(--duration-fast) var(--ease-standard),
+    box-shadow var(--duration-fast) var(--ease-standard);
+}
+
+.control:focus-within {
+  border-color: var(--color-border-focus);
+  box-shadow: var(--shadow-focus);
+}
+
+.field[data-invalid='true'] .control {
+  border-color: var(--destructive);
+}
+
+.field[data-invalid='true'] .control:focus-within {
+  box-shadow: 0 0 0 3px var(--color-danger-100);
+}
+
+.field[data-disabled='true'] .control,
+.field[data-read-only='true'] .control {
+  background: var(--color-surface-sunken);
+}
+
+.field[data-disabled='true'] .control {
+  border-color: var(--color-border);
+}
+
+.countryTrigger {
+  min-width: auto;
+  min-height: auto;
+  align-self: stretch;
+  gap: var(--space-inline-icon);
+  border: 0;
+  border-inline-end: 1px solid var(--color-border);
+  border-radius: calc(var(--radius-control) - 1px) 0 0 calc(var(--radius-control) - 1px);
+  padding-inline: calc(var(--space-2) + var(--space-0-5));
+  background: transparent;
+  color: var(--color-text-tertiary);
+}
+
+.countryTrigger:hover:not(:disabled),
+.countryTrigger[data-popup-open] {
+  background: var(--color-surface-sunken);
+  color: var(--color-text-primary);
+}
+
+.countryTrigger:focus-visible {
+  position: relative;
+  z-index: 1;
+  box-shadow: var(--shadow-focus);
+}
+
+.countryTrigger:disabled {
+  opacity: 1;
+}
+
+.field[data-disabled='true'] .countryTrigger,
+.field[data-disabled='true'] .input {
+  color: var(--color-text-disabled);
+}
+
+.input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  padding: 0 var(--space-inset-control);
+  color: inherit;
+  font: inherit;
+  font-size: var(--type-base);
+  line-height: var(--leading-normal);
+}
+
+.input::placeholder {
+  color: var(--color-text-placeholder);
+}
+
+.input:read-only {
+  cursor: default;
+}
+
+.flag {
+  display: inline-flex;
+  width: var(--space-4);
+  height: var(--space-4);
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: var(--radius-indicator);
+}
+
+.flag > svg {
+  width: 100%;
+  height: 100%;
+}
+
+.selectedCountryCode {
+  color: var(--color-text-secondary);
+  font-size: var(--type-base);
+  line-height: var(--leading-normal);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.countryContent {
+  display: flex;
+  width: min(
+    calc(var(--space-32) + var(--space-32)),
+    calc(100vw - (var(--space-page-gutter) * 2))
+  );
+  min-height: 0;
+  flex-direction: column;
+  overflow: hidden;
+  padding: var(--space-1);
+}
+
+.countryContent [data-slot='combobox-input-control'] {
+  flex: 0 0 auto;
+  min-height: var(--field-h);
+  border: 0;
+  border-radius: 0;
+  border-block-end: 1px solid var(--color-border);
+  padding-inline-start: var(--space-inset-control);
+  box-shadow: none;
+}
+
+.countryContent [data-slot='combobox-input'] {
+  min-height: var(--field-h);
+}
+
+.countryContent [data-slot='combobox-list'] {
+  min-height: 0;
+  max-height: min(calc(var(--space-32) * 3), var(--available-height));
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-color: var(--color-border-strong) transparent;
+  scrollbar-width: thin;
+}
+
+.countryContent [data-slot='combobox-list']::-webkit-scrollbar {
+  width: var(--space-1-5);
+}
+
+.countryContent [data-slot='combobox-list']::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.countryContent [data-slot='combobox-list']::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: var(--radius-full);
+  background: var(--color-border-strong);
+  background-clip: padding-box;
+}
+
+.countryContent [data-slot='combobox-item'] {
+  min-height: var(--space-9);
+  padding-block: var(--space-2);
+  font-size: var(--type-sm);
+}
+
+.countryOption {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  align-items: center;
+  gap: var(--space-inline-icon);
+}
+
+.countryName {
+  min-width: 0;
+  flex: 0 1 auto;
+  overflow-wrap: anywhere;
+}
+
+.countryCode {
+  flex: 0 0 auto;
+  color: var(--color-text-tertiary);
+  font-variant-numeric: tabular-nums;
+}
+
+.helpText,
+.errorText {
+  font-size: var(--type-xs);
+  line-height: var(--leading-normal);
+}
+
+.helpText {
+  color: var(--color-text-tertiary);
+}
+
+.errorText {
+  color: var(--color-status-danger-fg);
+}
+
+.field[data-size='sm'] .control {
+  min-height: var(--space-8);
+}
+
+.field[data-size='sm'] .input {
+  font-size: var(--type-sm);
+}
+
+.field[data-size='sm'] .selectedCountryCode {
+  font-size: var(--type-sm);
+}
+
+.field[data-size='sm'] .countryTrigger {
+  padding-inline: var(--space-1-5);
+}
+
+.field[data-size='lg'] .control {
+  min-height: var(--control-h);
+}
+
+.field[data-size='lg'] .input {
+  font-size: var(--type-md);
+}
+
+.field[data-size='lg'] .selectedCountryCode {
+  font-size: var(--type-md);
+}
+
+:global([data-density='compact']) .field[data-size='md'] .control {
+  min-height: var(--space-9);
+}
+
+:global([data-density='comfortable']) .field[data-size='md'] .control {
+  min-height: var(--control-h);
+}
+
+@media (max-width: 30rem) {
+  .countryContent {
+    width: min(
+      calc(var(--space-32) + var(--space-32)),
+      calc(100vw - (var(--space-page-gutter) * 2))
+    );
+  }
+}
+
+@media (pointer: coarse) {
+  .countryTrigger {
+    min-width: var(--control-h);
+  }
+
+  .countryContent [data-slot='combobox-item'] {
+    min-height: var(--control-h);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .control {
+    transition: none;
+  }
+}

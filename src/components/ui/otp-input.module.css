@@ -1,0 +1,133 @@
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-stack-label);
+  min-width: 0;
+}
+
+.label {
+  font-size: var(--type-sm);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-normal);
+  color: var(--color-text-secondary);
+}
+
+.slots {
+  display: flex;
+  align-items: center;
+  position: relative;
+  gap: var(--space-2);
+  width: fit-content;
+  max-width: 100%;
+}
+
+.group {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.slot {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: var(--space-8);
+  height: var(--space-8);
+  padding: 0;
+  border-block: 1px solid var(--color-border-strong);
+  border-inline-end: 1px solid var(--color-border-strong);
+  border-radius: 0;
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  font-size: var(--type-base);
+  font-weight: var(--weight-medium);
+  font-variant-numeric: tabular-nums;
+  transition:
+    border-color var(--motion-color),
+    box-shadow var(--motion-color);
+}
+
+.slot:first-child {
+  border-inline-start: 1px solid var(--color-border-strong);
+  border-start-start-radius: var(--radius-control);
+  border-end-start-radius: var(--radius-control);
+}
+
+.slot:last-of-type {
+  border-start-end-radius: var(--radius-control);
+  border-end-end-radius: var(--radius-control);
+}
+
+.slot[data-active='true'] {
+  z-index: 1;
+  border-color: var(--color-border-focus);
+  box-shadow: var(--shadow-focus);
+}
+
+.separator {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--space-4);
+  height: var(--space-4);
+  color: var(--color-text-tertiary);
+}
+
+.separator > svg {
+  width: var(--space-4);
+  height: var(--space-4);
+}
+
+.field[data-disabled='true'] .slot {
+  opacity: var(--opacity-disabled);
+  background: var(--color-surface-sunken);
+}
+
+.field[data-disabled='true'] .label {
+  color: var(--color-text-disabled);
+}
+
+.field[data-invalid='true'] .slot {
+  border-color: var(--destructive);
+}
+
+.character {
+  line-height: 1;
+}
+
+.caret {
+  position: absolute;
+  width: 1px;
+  height: var(--type-base);
+  background: currentColor;
+  animation: caret-blink var(--duration-slow) steps(2, start) infinite;
+}
+
+@keyframes caret-blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+.helpText,
+.errorText {
+  margin: 0;
+  font-size: var(--type-xs);
+  line-height: var(--leading-normal);
+}
+
+.helpText {
+  color: var(--muted-foreground);
+}
+
+.errorText {
+  color: var(--destructive);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .caret {
+    animation: none;
+  }
+}

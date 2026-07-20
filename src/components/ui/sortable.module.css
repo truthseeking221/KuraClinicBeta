@@ -1,0 +1,113 @@
+.root {
+  display: grid;
+  min-width: 0;
+  gap: var(--space-2);
+  font-family: var(--font-family-sans);
+}
+
+.root[data-strategy='horizontal'] {
+  display: flex;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.root[data-strategy='grid'] {
+  grid-template-columns: repeat(auto-fit, minmax(calc(var(--space-32) * 1.25), 1fr));
+}
+
+.item {
+  display: flex;
+  min-width: 0;
+  min-height: var(--control-h-lg);
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card-surface);
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  transition: background-color var(--motion-color), border-color var(--motion-color), box-shadow var(--motion-color);
+}
+
+.item:hover {
+  border-color: var(--color-border-strong);
+  background: var(--color-surface-2);
+}
+
+.item[data-dragging='true'] {
+  border-color: var(--color-border-emphasis);
+  box-shadow: var(--shadow-overlay);
+}
+
+.item[data-disabled='true'] {
+  opacity: var(--opacity-disabled);
+}
+
+.overlay {
+  z-index: var(--z-popover);
+}
+
+.overlayItem {
+  box-shadow: var(--shadow-overlay);
+}
+
+.handle {
+  display: inline-flex;
+  width: var(--control-h-sm);
+  height: var(--control-h-sm);
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-control-compact);
+  background: transparent;
+  color: var(--color-text-tertiary);
+  touch-action: none;
+  transition: background-color var(--motion-color), box-shadow var(--motion-color), color var(--motion-color);
+}
+
+.handle:hover {
+  background: var(--color-surface-sunken);
+  color: var(--color-text-primary);
+}
+
+.handle:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+  color: var(--color-text-primary);
+}
+
+.handle:disabled {
+  cursor: not-allowed;
+}
+
+.handleCursor {
+  cursor: grab;
+}
+
+.handleDragging {
+  cursor: grabbing;
+}
+
+.handle svg {
+  width: var(--space-4);
+  height: var(--space-4);
+}
+
+@media (max-width: 480px) {
+  .root[data-strategy='grid'] {
+    grid-template-columns: 1fr;
+  }
+
+  .item {
+    min-height: var(--space-12);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .item,
+  .handle {
+    transition: none;
+  }
+}

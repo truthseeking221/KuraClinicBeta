@@ -1,0 +1,741 @@
+.cart {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 360px;
+  min-height: 480px;
+  max-height: min(56.25rem, calc(100dvh - var(--space-6)));
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* ── Header ── */
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-4) var(--space-2);
+}
+
+.titleGroup {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.title {
+  margin: 0;
+  font-size: var(--type-md);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-primary);
+}
+
+/* ── Items ── */
+
+.body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0 var(--space-4);
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+}
+
+.groupLabel {
+  margin: var(--space-2) 0 0;
+  color: var(--color-text-tertiary);
+  font-size: var(--type-xs);
+}
+
+.lines {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.line {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  min-height: var(--space-8);
+  padding: 0;
+}
+
+.line > .childLines {
+  flex-basis: 100%;
+}
+
+:global([data-density='compact']) .line {
+  min-height: var(--space-7);
+}
+
+/* Keep the 36px touch target while letting the row sit at 32px: the target
+ * bleeds into the row gaps instead of propping the row open. */
+.lineRemove {
+  margin-block: calc((var(--control-h) - var(--space-8)) / -2);
+}
+
+:global([data-density='compact']) .lineRemove {
+  margin-block: calc((var(--control-h) - var(--space-7)) / -2);
+}
+
+.lineName {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex: 1 1 auto;
+  min-width: 0;
+  color: var(--color-text-primary);
+  font-size: var(--type-sm);
+  overflow-wrap: anywhere;
+}
+
+/* A state pill must never break mid-phrase — the test name wraps instead. */
+.lineName > :global([data-slot='badge']) {
+  flex: none;
+  white-space: nowrap;
+}
+
+.line[data-state='cancelled'] .lineName {
+  color: var(--color-text-muted);
+  text-decoration: line-through;
+}
+
+.linePrice {
+  flex: none;
+  color: var(--color-text-tertiary);
+  font-size: var(--type-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.lineRemove {
+  flex: none;
+  color: var(--color-text-tertiary);
+}
+
+/* ── Empty ── */
+
+.empty {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  padding: var(--space-8) var(--space-4);
+  text-align: center;
+}
+
+.emptyIcon {
+  display: inline-flex;
+  margin-bottom: var(--space-2);
+  color: var(--brand-400);
+}
+
+.empty strong {
+  color: var(--color-text-primary);
+  font-size: var(--type-base);
+  font-weight: var(--weight-semibold);
+}
+
+.empty span {
+  color: var(--color-text-secondary);
+  font-size: var(--type-sm);
+}
+
+.empty button {
+  margin-top: var(--space-3);
+}
+
+/* ── Dock (decision card + totals + CTA) ── */
+
+.dock {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4) var(--space-4);
+  border-top: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+/* ── Decision card ── */
+
+.decisionCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.decisionHeader,
+.decisionSummaryRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.decisionTitle {
+  margin: 0;
+  font-size: var(--type-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.decisionSummaryCopy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.decisionSummaryTitle {
+  margin: 0;
+  color: var(--color-text-primary);
+  font-size: var(--type-sm);
+  font-weight: var(--weight-semibold);
+}
+
+.decisionSummaryCopy span {
+  color: var(--color-text-secondary);
+  font-size: var(--type-xs);
+}
+
+.question {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
+/*
+ * Browsers hoist <legend> out of the fieldset's flex flow, so the flex gap
+ * never separates it from the options — the label sat flush on the cards.
+ * Carry the same rhythm on the legend itself.
+ */
+.question > legend {
+  margin-block-end: var(--space-1);
+}
+
+.decisionEditor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+/*
+ * overflow: hidden (needed for the collapse animation) was shearing the
+ * selection and focus rings off cards that touch the container edge. The
+ * padding/negative-margin pair is a net-zero offset — it only carves out
+ * clip clearance, the content position is unaffected (the padding pushes
+ * content back in exactly as far as the margin pulled the box out). Sized to
+ * clear the 3px focus ring plus a full step of slack, not the bare minimum.
+ */
+.decisionCard .decisionMotion {
+  overflow: hidden;
+  margin: calc(var(--space-2) * -1);
+  padding: var(--space-2);
+  color: inherit;
+  font: inherit;
+}
+
+.decisionMotion > :first-child {
+  margin-top: 0;
+}
+
+.decisionMotion[data-state='open'] {
+  animation: decision-editor-open var(--motion-control);
+}
+
+.decisionMotion[data-state='closed'] {
+  display: none;
+}
+
+@keyframes decision-editor-open {
+  from {
+    opacity: 0;
+    transform: translateY(calc(var(--space-1) * -1));
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.questionLabel {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--type-xs);
+  font-weight: var(--weight-medium);
+}
+
+.optionGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr));
+  gap: var(--space-2);
+}
+
+/*
+ * Two options sit side by side; three or more stack full width. auto-fit
+ * alone leaves an odd card orphaned on a half-empty row (reception has three
+ * tender methods). Mirrors the ≤480px composition, so nothing new to learn.
+ */
+.optionGrid:has(> :nth-child(3)) {
+  grid-template-columns: 1fr;
+}
+
+/* Option card: icon top-left, radio top-right, label under — per Figma. */
+.optionCard {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color var(--motion-color), box-shadow var(--motion-color);
+}
+
+.optionCard:hover:not([data-disabled]) {
+  border-color: var(--color-border-strong);
+}
+
+.optionCard:has(.optionInput:focus-visible) {
+  outline: none;
+  border-color: var(--color-border-focus);
+  box-shadow: var(--shadow-focus);
+}
+
+.optionCard[data-selected] {
+  border-color: var(--brand-500);
+  box-shadow: var(--shadow-selected);
+}
+
+.optionCard[data-disabled] {
+  cursor: default;
+  opacity: var(--opacity-disabled);
+}
+
+.optionInput {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.optionTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.optionIcon {
+  display: inline-flex;
+  color: var(--color-text-brand);
+}
+
+.optionRadio {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  flex: none;
+  border: 1.5px solid var(--color-border-strong);
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  transition: border-color var(--motion-color);
+}
+
+.optionRadio[data-selected] {
+  border-color: var(--brand-500);
+}
+
+.optionRadioDot {
+  width: 9px;
+  height: 9px;
+  border-radius: var(--radius-full);
+  background: var(--brand-500);
+}
+
+.optionLabel {
+  color: var(--color-text-primary);
+  font-size: var(--type-sm);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-snug);
+}
+
+.kuraMark {
+  height: 14px;
+  width: auto;
+}
+
+.lockedNote {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-warn-25);
+  border-radius: var(--radius-sm);
+  color: var(--color-warn-600);
+  font-size: var(--type-xs);
+}
+
+/* ── Totals ── */
+
+.totals {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0;
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--color-border);
+}
+
+.totalRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.totalRow dt {
+  color: var(--color-text-secondary);
+  font-size: var(--type-sm);
+}
+
+.totalRow dd {
+  margin: 0;
+  color: var(--color-text-primary);
+  font-size: var(--type-md);
+  font-weight: var(--weight-bold);
+  font-variant-numeric: tabular-nums;
+}
+
+.subtotalValue {
+  font-size: var(--type-lg);
+}
+
+.earnRow dt {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--color-status-success-fg);
+}
+
+.earnRow dd {
+  color: var(--color-status-success-fg);
+  font-size: var(--type-lg);
+}
+
+.earnHelp {
+  display: inline-flex;
+  color: var(--color-status-success-fg);
+  opacity: 0.8;
+}
+
+/* ── Attestation + CTA ── */
+
+.attest {
+  padding-top: var(--space-1);
+}
+
+.footerCta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.ctaReason {
+  margin: 0;
+  color: var(--color-text-tertiary);
+  font-size: var(--type-xs);
+  text-align: center;
+}
+
+/* ── Notices ── */
+
+.pricingLoading {
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-surface-sunken);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-secondary);
+  font-size: var(--type-xs);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .decisionMotion[data-state] {
+    animation: none;
+  }
+}
+
+.repriceList {
+  margin: 0 0 var(--space-1);
+  padding-left: var(--space-4);
+}
+
+.blockers {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.blockers > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  font-size: var(--type-xs);
+  color: var(--color-text-secondary);
+}
+
+.blockers > div[data-tone='warning'] {
+  color: var(--color-status-warning-fg);
+}
+
+.blockers > div[data-tone='danger'] {
+  color: var(--color-status-danger-fg);
+}
+
+/* ── Tube preparation view ── */
+
+.tubeView {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  align-self: flex-start;
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  font-size: var(--type-sm);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+.backLink:hover {
+  color: var(--color-text-primary);
+}
+
+.backLink:focus-visible {
+  outline: 2px solid var(--color-border-focus);
+  outline-offset: 2px;
+  border-radius: var(--radius-xs);
+}
+
+.tubeIntro {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.tubeIntroLabel {
+  margin: 0;
+  color: var(--color-text-primary);
+  font-size: var(--type-sm);
+}
+
+.tubeTestList {
+  margin: 0;
+  padding-left: var(--space-4);
+  color: var(--color-text-primary);
+  font-size: var(--type-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.tubeReadyRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--color-border);
+}
+
+.tubeReadyTitle {
+  margin: 0;
+  font-size: var(--type-base);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.tubeList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+}
+
+.tubeRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.tubeRow:last-child {
+  border-bottom: none;
+}
+
+.tubeStopper {
+  width: 10px;
+  height: 10px;
+  flex: none;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-border-strong);
+}
+
+.tubeCopy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.tubeLabel {
+  color: var(--color-text-primary);
+  font-size: var(--type-sm);
+  font-weight: var(--weight-medium);
+}
+
+.tubeTests {
+  color: var(--color-text-tertiary);
+  font-size: var(--type-xs);
+  overflow-wrap: anywhere;
+}
+
+.tubeCheck {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  flex: none;
+  border-radius: var(--radius-full);
+  background: var(--color-success-500);
+  color: var(--color-ink-0);
+}
+
+/* ── Responsive ── */
+
+@media (max-width: 480px) {
+  .cart {
+    max-width: none;
+    border-radius: 0;
+    border-inline: none;
+  }
+
+  .optionGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Hierarchy: container members + shared-atom credit ───── */
+
+.childLines {
+  list-style: none;
+  margin: var(--space-1) 0 0;
+  padding: 0 0 0 var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  border-left: 2px solid var(--color-border);
+}
+
+.childLine {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  font-size: var(--type-xs);
+  color: var(--color-text-secondary);
+}
+
+.childName {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.childRelation {
+  color: var(--color-text-muted);
+}
+
+.childCredit {
+  color: var(--color-status-success-fg);
+  font-family: var(--font-family-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.childDash {
+  color: var(--color-text-muted);
+}
+
+.struckPrice {
+  margin-right: var(--space-1);
+  text-decoration: line-through;
+  color: var(--color-text-muted);
+}
+
+.creditValue {
+  color: var(--color-status-success-fg);
+}
+
+.lineName {
+  flex-wrap: wrap;
+}
+
+.lineMeta {
+  flex-basis: 100%;
+  font-size: var(--type-xs);
+  color: var(--color-text-secondary);
+}

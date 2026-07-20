@@ -1,0 +1,157 @@
+{
+  "$schema": "./motion-tokens.schema.json",
+  "meta": {
+    "name": "Kura Interaction Motion Tokens",
+    "version": "1.0.0",
+    "principle": "Motion explains state change, preserves causality, and never blocks the user.",
+    "units": {
+      "duration": "ms",
+      "distance": "px"
+    }
+  },
+  "primitive": {
+    "duration": {
+      "instant": 0,
+      "acknowledge": 80,
+      "micro": 140,
+      "standard": 220,
+      "context": 320,
+      "emphasis": 480
+    },
+    "delay": {
+      "none": 0,
+      "hoverIntent": 100,
+      "hoverExitGrace": 180,
+      "tooltip": 400,
+      "stagger": 30
+    },
+    "easing": {
+      "enter": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+      "exit": "cubic-bezier(0.4, 0, 1, 1)",
+      "standard": "cubic-bezier(0.2, 0, 0, 1)",
+      "emphasis": "cubic-bezier(0.2, 1.4, 0.4, 1)",
+      "linear": "linear"
+    },
+    "distance": {
+      "none": 0,
+      "micro": 2,
+      "small": 4,
+      "medium": 8,
+      "large": 16
+    },
+    "opacity": {
+      "hidden": 0,
+      "muted": 0.64,
+      "visible": 1
+    },
+    "scale": {
+      "pressed": 0.98,
+      "rest": 1,
+      "emphasis": 1.02
+    }
+  },
+  "semantic": {
+    "acknowledge": {
+      "duration": "{primitive.duration.acknowledge}",
+      "easing": "{primitive.easing.standard}",
+      "distance": "{primitive.distance.micro}"
+    },
+    "reveal": {
+      "duration": "{primitive.duration.micro}",
+      "delay": "{primitive.delay.none}",
+      "easing": "{primitive.easing.enter}",
+      "distance": "{primitive.distance.small}"
+    },
+    "dismiss": {
+      "duration": "{primitive.duration.micro}",
+      "delay": "{primitive.delay.none}",
+      "easing": "{primitive.easing.exit}",
+      "distance": "{primitive.distance.small}"
+    },
+    "stateChange": {
+      "duration": "{primitive.duration.standard}",
+      "easing": "{primitive.easing.standard}",
+      "distance": "{primitive.distance.medium}"
+    },
+    "contextChange": {
+      "duration": "{primitive.duration.context}",
+      "easing": "{primitive.easing.standard}",
+      "distance": "{primitive.distance.large}"
+    },
+    "attention": {
+      "duration": "{primitive.duration.emphasis}",
+      "easing": "{primitive.easing.emphasis}",
+      "scale": "{primitive.scale.emphasis}",
+      "repeatLimit": 1
+    },
+    "progress": {
+      "duration": "context-dependent",
+      "easing": "{primitive.easing.linear}",
+      "repeatLimit": 0
+    }
+  },
+  "component": {
+    "rowActions": {
+      "enterDuration": "{primitive.duration.micro}",
+      "exitDuration": "{primitive.duration.micro}",
+      "intentDelay": "{primitive.delay.hoverIntent}",
+      "exitGrace": "{primitive.delay.hoverExitGrace}",
+      "easingEnter": "{primitive.easing.enter}",
+      "easingExit": "{primitive.easing.exit}",
+      "distance": "{primitive.distance.small}"
+    },
+    "tooltip": {
+      "enterDuration": "{primitive.duration.micro}",
+      "exitDuration": "{primitive.duration.micro}",
+      "intentDelay": "{primitive.delay.tooltip}",
+      "exitGrace": "{primitive.delay.hoverExitGrace}",
+      "easingEnter": "{primitive.easing.enter}",
+      "easingExit": "{primitive.easing.exit}"
+    },
+    "popover": {
+      "enterDuration": "{primitive.duration.standard}",
+      "exitDuration": "{primitive.duration.micro}",
+      "easingEnter": "{primitive.easing.enter}",
+      "easingExit": "{primitive.easing.exit}",
+      "distance": "{primitive.distance.medium}"
+    },
+    "accordion": {
+      "duration": "{primitive.duration.standard}",
+      "easing": "{primitive.easing.standard}",
+      "interruptible": true
+    },
+    "drawer": {
+      "duration": "{primitive.duration.context}",
+      "easingEnter": "{primitive.easing.enter}",
+      "easingExit": "{primitive.easing.exit}",
+      "interruptible": true
+    },
+    "toast": {
+      "enterDuration": "{primitive.duration.standard}",
+      "exitDuration": "{primitive.duration.micro}",
+      "easingEnter": "{primitive.easing.enter}",
+      "easingExit": "{primitive.easing.exit}",
+      "minimumReadableDuration": 5000
+    }
+  },
+  "reducedMotion": {
+    "removeLargeSpatialMotion": true,
+    "removeParallax": true,
+    "removeDecorativeLoops": true,
+    "preserveStateChange": true,
+    "preferredDuration": "{primitive.duration.instant}",
+    "allowedProperties": [
+      "opacity",
+      "color",
+      "visibility"
+    ]
+  },
+  "policies": {
+    "blockInputDuringAnimation": false,
+    "animateFromCurrentRenderedState": true,
+    "allowUserInterruption": true,
+    "maximumAttentionRepeats": 1,
+    "hoverIsEnhancementOnly": true,
+    "criticalMeaningRequiresNonMotionCue": true
+  }
+}

@@ -1,0 +1,49 @@
+.formStack {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.controlled {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-3);
+}
+
+.status,
+.supporting {
+  margin: 0;
+  color: var(--color-text-tertiary);
+  font-size: var(--type-sm);
+  line-height: var(--leading-normal);
+}
+
+.densityRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.shortcutList {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+}
+
+.shortcutRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.shortcutRow dt {
+  color: var(--color-text-primary);
+  font-size: var(--type-sm);
+}
+
+.shortcutRow dd {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin: 0;
+}

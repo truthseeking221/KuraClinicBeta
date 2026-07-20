@@ -1,0 +1,57 @@
+.content {
+  z-index: 50;
+  max-width: calc(100vw - var(--space-6));
+  padding: var(--space-4);
+  overflow-wrap: anywhere;
+  color: var(--color-text-primary);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-overlay);
+  box-shadow: var(--elevation-popover);
+  outline: none;
+  transform-origin: var(--radix-hover-card-content-transform-origin);
+}
+
+.content[data-state='open'] {
+  animation: hover-card-in var(--duration-base) var(--ease-out);
+}
+
+.content[data-state='closed'] {
+  animation: hover-card-out var(--duration-fast) var(--ease-in) forwards;
+}
+
+@keyframes hover-card-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+
+@keyframes hover-card-out {
+  to {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+}
+
+.content:focus-visible {
+  box-shadow: var(--elevation-popover), var(--shadow-focus);
+}
+
+.sm {
+  width: min(16rem, calc(100vw - var(--space-6)));
+}
+
+.md {
+  width: min(22rem, calc(100vw - var(--space-6)));
+}
+
+.lg {
+  width: min(28rem, calc(100vw - var(--space-6)));
+}
+
+@media (max-width: 30rem) {
+  .content {
+    padding: var(--space-3);
+  }
+}

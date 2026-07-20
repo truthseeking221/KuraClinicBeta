@@ -1,0 +1,569 @@
+/* ReUI settings-7 architecture, promoted into Kura ownership: compact page
+ * header, responsive side tabs, named cards, and dense setting rows. All
+ * visual values remain bound to Kura tokens and canonical components. */
+
+/* The query container must wrap the grid: a container query cannot restyle
+ * the element that declares container-type. */
+.root {
+  container-type: inline-size;
+  display: flex;
+  width: 100%;
+  max-width: 64rem;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--space-8);
+  margin-inline: auto;
+}
+
+.pageHeader {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding-inline: var(--space-1);
+}
+
+.pageTitle {
+  margin: 0;
+  color: var(--color-text-primary);
+  font-size: var(--type-xl);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-tight);
+}
+
+.pageDescription {
+  max-width: 40rem;
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--type-sm);
+  line-height: var(--leading-normal);
+}
+
+.settingsTabs {
+  gap: var(--space-8);
+}
+
+/* ── Responsive side-tab navigation ───────────────────────── */
+
+.rail {
+  display: flex;
+  flex: 0 0 10rem;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.settingsTabs[data-appearance='subtle'] .railList {
+  width: 100%;
+  padding: 0;
+  background: transparent;
+  border-radius: 0;
+}
+
+.settingsTabs[data-appearance='subtle'] .railItem[data-active] {
+  background: var(--color-surface-sunken);
+  box-shadow: none;
+}
+
+.railGroup {
+  padding: var(--space-4) var(--space-3) var(--space-1);
+  color: var(--color-text-secondary);
+  font-size: var(--type-xs);
+  font-weight: var(--weight-medium);
+}
+
+.railItem {
+  min-height: var(--space-9);
+  padding-inline: var(--space-3);
+}
+
+@media (min-width: 480px) {
+  .railList .railItem {
+    width: 100%;
+  }
+}
+
+.railIcon {
+  display: inline-flex;
+  flex-shrink: 0;
+  color: inherit;
+}
+
+.railIcon > svg {
+  width: var(--space-4);
+  height: var(--space-4);
+}
+
+.railLabel {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Body & sections ─────────────────────────────────────── */
+
+.body {
+  flex: 1;
+  min-width: 0;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.sectionHeader {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.sectionTitleRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.sectionTitle {
+  margin: 0;
+  color: var(--color-text-primary);
+  font-size: var(--type-lg);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-tight);
+}
+
+.sectionSub {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--type-sm);
+}
+
+.sectionFootnote {
+  margin: 0;
+  color: var(--color-text-tertiary);
+  font-size: var(--type-xs);
+}
+
+.block {
+  gap: 0;
+}
+
+.blockHeader {
+  padding: var(--space-3) var(--space-5);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.blockTitle {
+  color: var(--color-text-primary);
+  font-size: var(--type-md);
+  font-weight: var(--weight-semibold);
+}
+
+.blockContent,
+.rowsCardContent {
+  padding: 0;
+}
+
+/* ── Rows ─────────────────────────────────────────────────── */
+
+.rowsCard {
+  gap: 0;
+}
+
+.rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.rows > .row + .row {
+  border-top: 1px solid var(--color-border);
+}
+
+.rows > .row {
+  padding-inline: var(--space-5);
+}
+
+.row {
+  padding-block: var(--space-3);
+}
+
+/* Label | value | action columns (adapted from ReUI settings-7). Rows that lead
+ * with media (members, sessions) keep the Item default grid instead. Item
+ * pins content/actions to columns 2/3, so this row shape re-pins them. */
+.settingGrid {
+  grid-template-columns: minmax(8rem, 12rem) minmax(0, 1fr) auto;
+  align-items: start;
+  column-gap: var(--space-4);
+}
+
+.settingGrid > [data-slot='item-content'] {
+  grid-column: 1;
+}
+
+.settingGrid > .rowValueCell,
+.settingGrid > .editCell {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.settingGrid > [data-slot='item-actions'] {
+  grid-column: 3;
+  grid-row: 1;
+}
+
+.rowLabelCell {
+  min-width: 0;
+}
+
+.rowLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1-5);
+  color: var(--color-text-primary);
+  font-size: var(--type-sm);
+  font-weight: var(--weight-medium);
+}
+
+.rowLock {
+  display: inline-flex;
+  color: var(--color-text-tertiary);
+}
+
+.rowLock > svg {
+  width: var(--space-3);
+  height: var(--space-3);
+}
+
+.rowValueCell {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-0-5);
+}
+
+.rowValue {
+  color: var(--color-text-primary);
+  font-size: var(--type-sm);
+  overflow-wrap: anywhere;
+}
+
+.rowSub {
+  color: var(--color-text-tertiary);
+  font-size: var(--type-xs);
+  overflow-wrap: anywhere;
+}
+
+.rowActions {
+  flex-shrink: 0;
+}
+
+.rowActionStack {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.valueWithMedia {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.valueWithBadge {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-1-5);
+}
+
+.valueIcon {
+  width: var(--space-4);
+  height: var(--space-4);
+  color: var(--color-status-success-fg);
+}
+
+/* ── Inline editors ──────────────────────────────────────── */
+
+.editCell {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.editControls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.editorFields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  max-width: 26rem;
+}
+
+.editorError {
+  margin: 0;
+  color: var(--color-status-danger-fg);
+  font-size: var(--type-xs);
+}
+
+.editorPreview {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--type-xs);
+}
+
+.dayFieldset {
+  margin: 0;
+  padding: 0;
+  border: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.dayLegend {
+  padding: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--type-xs);
+  font-weight: var(--weight-medium);
+}
+
+.dayChecks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+}
+
+.dayRows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.dayRow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-3);
+}
+
+.dayRow > :first-child {
+  flex-basis: 8rem;
+}
+
+.dayTimes {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.dayTimesTo {
+  color: var(--color-text-tertiary);
+  font-size: var(--type-xs);
+}
+
+/* ── Chips ───────────────────────────────────────────────── */
+
+.chipArea {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.chips {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-1-5);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-0-5);
+}
+
+.chipInputRow {
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.hiddenFileInput {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ── Section specifics ───────────────────────────────────── */
+
+.channelRank {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--space-5);
+  height: var(--space-5);
+  border-radius: var(--radius-full);
+  background: var(--color-surface-2);
+  color: var(--color-text-secondary);
+  font-size: var(--type-2xs);
+  font-weight: var(--weight-semibold);
+  font-variant-numeric: tabular-nums;
+}
+
+.qrRow {
+  align-items: center;
+}
+
+.qrMark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: var(--space-10);
+  height: var(--space-10);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-2);
+  color: var(--color-text-secondary);
+}
+
+.qrMark > svg {
+  width: var(--space-6);
+  height: var(--space-6);
+}
+
+.roleEdit {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.inviteForm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  max-width: 26rem;
+}
+
+/* ── Dialog frame: Settings as an overlay ────────────────── */
+
+/* Fixed height so the rail and scroll position stay put while sections swap. */
+.dialogContent {
+  --dialog-width: 64rem;
+  height: min(46rem, calc(100dvh - (var(--space-page-gutter) * 2)));
+}
+
+.rootDialog {
+  height: 100%;
+  max-width: none;
+  margin: 0;
+  gap: 0;
+}
+
+.rootDialog .settingsTabs {
+  flex: 1;
+  min-height: 0;
+  gap: 0;
+}
+
+/* Rail and body scroll independently; the border marks the scroll boundary.
+ * 15rem fits the longest label ("Account & verification") untruncated. */
+.rootDialog .rail {
+  flex-basis: 15rem;
+  padding: var(--space-4) var(--space-3);
+  overflow-y: auto;
+  border-inline-end: 1px solid var(--color-border);
+}
+
+.rootDialog .body {
+  overflow-y: auto;
+  padding: var(--space-6) var(--space-8);
+}
+
+/* The dialog is already the elevated surface: inner cards flatten to plain
+ * row groups — hairline dividers and titles carry the structure instead. */
+.rootDialog .rowsCard,
+.rootDialog .block {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.rootDialog .rows > .row,
+.rootDialog .blockHeader {
+  padding-inline: 0;
+}
+
+/* ── Responsive: rail becomes a horizontal strip ─────────── */
+
+@container (max-width: 52rem) {
+  /* Stack label, value, then action; the primary action stays reachable. */
+  .settingGrid {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: var(--space-1-5);
+  }
+
+  .settingGrid > [data-slot='item-content'],
+  .settingGrid > .rowValueCell,
+  .settingGrid > .editCell,
+  .settingGrid > [data-slot='item-actions'] {
+    grid-column: 1;
+    grid-row: auto;
+  }
+
+  .settingGrid > .rowActions {
+    justify-self: start;
+  }
+}
+
+/* The vertical Tabs primitive flips its list to a horizontal strip under
+ * 480px; match that breakpoint for the rail wrapper and drop the group
+ * labels, which only read correctly in the stacked list. */
+@media (max-width: 479px) {
+  .rail {
+    flex: none;
+    width: 100%;
+  }
+
+  .railGroup {
+    display: none;
+  }
+
+  /* Full-screen dialog: the strip sits above the body, so the boundary flips.
+   * flex: none cancels the desktop rail basis (it would become height here);
+   * the end padding keeps the strip clear of the close button. */
+  .rootDialog .rail {
+    flex: none;
+    padding: var(--space-3);
+    padding-inline-end: var(--space-12);
+    overflow: visible;
+    border-inline-end: none;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .rootDialog .body {
+    padding: var(--space-4);
+  }
+}

@@ -1,0 +1,121 @@
+.iconButton {
+  --icon-button-bg: var(--card);
+  --icon-button-fg: var(--foreground);
+  --icon-button-border: var(--border);
+  --icon-button-hover-bg: var(--muted);
+  box-sizing: border-box;
+  display: inline-flex;
+  width: var(--control-h);
+  min-width: var(--control-h);
+  min-height: var(--control-h);
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--icon-button-border);
+  border-radius: var(--radius-control);
+  padding: var(--space-2);
+  background: var(--icon-button-bg);
+  color: var(--icon-button-fg);
+  font-family: var(--font-family-sans);
+  transition:
+    background-color var(--duration-fast) var(--ease-standard),
+    border-color var(--duration-fast) var(--ease-standard),
+    box-shadow var(--duration-fast) var(--ease-standard),
+    color var(--duration-fast) var(--ease-standard);
+}
+
+.iconButton > svg {
+  flex: 0 0 auto;
+  width: var(--space-5);
+  height: var(--space-5);
+}
+
+.iconButton:focus-visible {
+  border-color: var(--ring);
+  outline: none;
+  box-shadow: var(--elevation-focus);
+}
+
+.iconButton:hover:not(:disabled):not([data-disabled='true']) {
+  cursor: pointer;
+  background: var(--icon-button-hover-bg);
+}
+
+.iconButton[aria-pressed='true'] {
+  box-shadow: var(--elevation-selected);
+}
+
+.iconButton:disabled,
+.iconButton[data-disabled='true'] {
+  cursor: not-allowed;
+  opacity: var(--opacity-disabled);
+  pointer-events: none;
+}
+
+.variantPrimary {
+  --icon-button-bg: var(--primary);
+  --icon-button-fg: var(--primary-foreground);
+  --icon-button-border: var(--primary);
+  --icon-button-hover-bg: var(--primary-hover);
+}
+
+.variantTertiary {
+  --icon-button-bg: transparent;
+  --icon-button-fg: var(--foreground);
+  --icon-button-border: transparent;
+  --icon-button-hover-bg: var(--muted);
+}
+
+.toneCritical {
+  --icon-button-bg: var(--status-danger-bg);
+  --icon-button-fg: var(--status-danger-fg);
+  --icon-button-border: var(--status-danger-bg);
+  --icon-button-hover-bg: var(--status-danger-bg);
+}
+
+.toneSuccess {
+  --icon-button-bg: var(--status-success-bg);
+  --icon-button-fg: var(--status-success-fg);
+  --icon-button-border: var(--status-success-bg);
+  --icon-button-hover-bg: var(--status-success-bg);
+}
+
+.sizeMicro > svg {
+  width: var(--space-4);
+  height: var(--space-4);
+}
+
+.sizeLarge {
+  width: var(--control-h-lg);
+  min-width: var(--control-h-lg);
+  min-height: var(--control-h-lg);
+}
+
+.sizeLarge > svg {
+  width: var(--space-6);
+  height: var(--space-6);
+}
+
+.loadingIcon {
+  animation: icon-button-spin 800ms linear infinite;
+}
+
+:global([data-density='compact']) .iconButton {
+  padding: var(--space-1-5);
+}
+
+
+@keyframes icon-button-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .iconButton {
+    transition: none;
+  }
+
+  .loadingIcon {
+    animation: none;
+  }
+}

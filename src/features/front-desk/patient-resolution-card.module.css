@@ -1,0 +1,323 @@
+.card {
+  max-width: 56rem;
+  padding: var(--space-4, 16px) var(--space-4, 16px);
+}
+
+.card.selectable {
+  cursor: pointer;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.card.selectable:hover {
+  border-color: var(--color-border-strong, var(--color-border));
+}
+
+.card.selectable:focus-visible {
+  outline: none;
+  border-color: var(--color-border-focus);
+  box-shadow: var(--shadow-focus);
+}
+
+.card[data-selected] {
+  border-color: var(--brand-500);
+  box-shadow: var(--shadow-selected);
+}
+
+.layout {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4, 16px);
+}
+
+.iconBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  flex: none;
+  border-radius: var(--radius-inset);
+}
+
+.iconBadge[data-tone='success'] {
+  background: var(--color-status-success-bg);
+  color: var(--color-status-success-fg);
+}
+
+.iconBadge[data-tone='warning'] {
+  background: var(--color-status-warning-bg);
+  color: var(--color-status-low-fg);
+}
+
+.iconBadge[data-tone='info'] {
+  background: var(--color-status-info-bg);
+  color: var(--color-status-info-fg);
+}
+
+.iconBadge[data-tone='neutral'] {
+  background: var(--color-status-neutral-bg);
+  color: var(--color-status-neutral-fg);
+}
+
+.iconBadge[data-tone='primary'] {
+  background: var(--color-brand-50, #e8f3ff);
+  color: var(--color-text-brand);
+}
+
+.body {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.headerRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3, 12px);
+}
+
+.identity {
+  min-width: 0;
+}
+
+.eyebrow {
+  margin: 0 0 2px;
+  font-size: var(--type-2xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.nameLine {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.heading {
+  margin: 0;
+  font-size: var(--type-xl);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-tight);
+  color: var(--color-text-primary);
+  overflow-wrap: anywhere;
+}
+
+.nameKhmer {
+  margin: 2px 0 0;
+  font-size: var(--type-base);
+  color: var(--color-text-muted);
+}
+
+.headerright {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+}
+
+.selectionMark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: var(--radius-full);
+  border: 2px solid var(--color-border-strong, var(--color-border));
+  background: var(--color-surface);
+  color: transparent;
+  transition: background-color 120ms ease, border-color 120ms ease;
+}
+
+.selectionMark[data-selected] {
+  border-color: var(--brand-500);
+  background: var(--brand-500);
+  color: var(--color-text-on-brand, #ffffff);
+}
+
+.match {
+  background: var(--color-warn-100);
+  color: inherit;
+  border-radius: var(--radius-indicator);
+  padding: 0 2px;
+  margin: 0 -2px;
+}
+
+.mono {
+  font-family: var(--font-family-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.metaRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: var(--space-4, 16px);
+  row-gap: 6px;
+  margin-top: var(--space-3, 12px);
+  padding-top: var(--space-3, 12px);
+  border-top: 1px solid var(--color-border);
+  font-size: var(--type-sm);
+  color: var(--color-text-secondary);
+}
+
+.metaItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.metaMuted {
+  color: var(--color-text-muted);
+}
+
+.lastVisit {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: var(--space-3, 12px) 0 0;
+  font-size: var(--type-sm);
+  color: var(--color-text-secondary);
+}
+
+/* One line of trust facts; the leading (worst) tone colors the line. */
+.trustLine {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: var(--space-2, 8px) 0 0;
+  font-size: var(--type-sm);
+}
+
+.trustSignal {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.trustSignal[data-tone='success'] { color: var(--color-status-success-fg); }
+.trustSignal[data-tone='info'] { color: var(--color-status-info-fg); }
+.trustSignal[data-tone='neutral'] { color: var(--color-text-secondary); }
+.trustSignal[data-tone='warning'] { color: var(--color-status-low-fg); }
+.trustSignal[data-tone='danger'] { color: var(--color-status-critical-fg, var(--destructive)); }
+
+.trustDivider {
+  color: var(--color-text-muted);
+}
+
+.evidence {
+  margin: var(--space-2, 8px) 0 0;
+  font-size: var(--type-xs);
+  color: var(--color-text-muted);
+}
+
+.bookings {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: var(--space-4, 16px);
+}
+
+.bookingsHeader {
+  font-size: var(--type-2xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.bookingRow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px dashed var(--color-border-strong, var(--color-border));
+  border-radius: var(--radius-control-compact);
+  font-size: var(--type-sm);
+}
+
+/* Actionable booking rows: check-in binds to ONE booking, so each row is a
+   real button with its own focus treatment. */
+button.bookingRow {
+  width: 100%;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 120ms ease, background-color 120ms ease;
+}
+
+button.bookingRow:hover {
+  border-style: solid;
+  border-color: var(--brand-500);
+  background: var(--color-brand-50, #e8f3ff);
+}
+
+button.bookingRow:focus-visible {
+  outline: none;
+  border-style: solid;
+  border-color: var(--color-border-focus);
+  box-shadow: var(--shadow-focus);
+}
+
+.bookingCreator {
+  color: var(--color-text-muted);
+  font-size: var(--type-xs);
+}
+
+.bookingIcon {
+  color: var(--color-text-brand);
+  flex: none;
+}
+
+.bookingCode {
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.bookingMeta {
+  color: var(--color-text-secondary);
+  min-width: 0;
+}
+
+.bookingRow > :last-child {
+  margin-left: auto;
+}
+
+.helper {
+  margin: var(--space-3, 12px) 0 0;
+  font-size: var(--type-sm);
+  line-height: var(--leading-normal);
+  color: var(--color-text-secondary);
+}
+
+.searchedValue {
+  color: var(--color-text-brand);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: var(--space-4, 16px);
+}
+
+@media (max-width: 480px) {
+  .layout {
+    gap: var(--space-3, 12px);
+  }
+
+  .headerRow {
+    flex-direction: column;
+  }
+
+  .headerright {
+    order: -1;
+    align-self: flex-end;
+  }
+}

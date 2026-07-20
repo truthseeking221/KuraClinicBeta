@@ -1,0 +1,135 @@
+.channel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.subTitle {
+  margin: 0;
+  font-size: var(--type-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.hint {
+  margin: 0;
+  font-size: var(--type-xs);
+  color: var(--color-text-secondary);
+}
+
+.choiceRow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.choiceLabel {
+  font-size: var(--type-sm);
+  color: var(--color-text-primary);
+}
+
+.phoneRow {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-2);
+}
+
+.phoneRow > :first-child {
+  flex: 1;
+  min-width: 0;
+}
+
+.verifiedRow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.verifiedMeta {
+  font-size: var(--type-sm);
+  color: var(--color-text-secondary);
+  font-family: var(--font-family-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Customer-display handoff: one bordered surface, its own waiting state. */
+.telegramCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  background: var(--color-surface);
+}
+
+.telegramText {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-0-5);
+}
+
+.telegramTitle {
+  margin: 0;
+  font-size: var(--type-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.telegramActions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.waiting {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1-5);
+  font-size: var(--type-xs);
+  color: var(--color-text-secondary);
+}
+
+.waitingSpinner {
+  animation: contact-spin 900ms linear infinite;
+}
+
+@keyframes contact-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .waitingSpinner {
+    animation: none;
+  }
+}
+
+.unverifiedForm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px dashed var(--color-border-strong, var(--color-border));
+  border-radius: var(--radius-control);
+}
+
+.unverifiedActions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.unverifiedLink {
+  align-self: flex-start;
+}
+
+@media (max-width: 480px) {
+  .phoneRow {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

@@ -1,0 +1,112 @@
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--type-lg);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-snug);
+  color: var(--color-text-primary);
+}
+
+.subtitle {
+  margin: 0;
+  font-size: var(--type-sm);
+  line-height: var(--leading-normal);
+  color: var(--color-text-secondary);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: flex;
+  width: calc(100% + var(--space-4));
+  align-items: center;
+  gap: var(--space-3);
+  margin-inline: calc(var(--space-2) * -1);
+  padding: var(--space-2);
+  border: none;
+  border-radius: var(--radius-control);
+  background: none;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--motion-color);
+}
+
+.row:hover {
+  background: var(--color-surface-sunken);
+}
+
+.row:focus-visible {
+  outline: 2px solid var(--color-border-focus);
+  outline-offset: -2px;
+}
+
+.avatar {
+  display: grid;
+  width: var(--space-10);
+  height: var(--space-10);
+  flex: none;
+  place-items: center;
+  border-radius: var(--radius-inset);
+  background: var(--color-brand-50);
+  color: var(--color-brand-700);
+  font-size: var(--type-md);
+  font-weight: var(--weight-semibold);
+}
+
+.rowText {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+}
+
+.rowName {
+  color: var(--color-text-primary);
+  font-size: var(--type-base);
+  font-weight: var(--weight-medium);
+  overflow-wrap: anywhere;
+}
+
+.rowMeta {
+  color: var(--color-text-tertiary);
+  font-size: var(--type-xs);
+}
+
+.inlineStart {
+  align-self: flex-start;
+}
+
+.actionRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.pending {
+  margin: 0;
+  padding-block: var(--space-6);
+  color: var(--color-text-secondary);
+  font-size: var(--type-sm);
+  text-align: center;
+}

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Kura Clean UI"
+  short_description: "Design clear, safe, responsive Kura interfaces"
+  default_prompt: "Use $kura-clean-ui to design or review this Kura interface for clarity, responsive behavior, accessibility, and system consistency."

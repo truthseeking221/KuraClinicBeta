@@ -1,0 +1,20 @@
+.root { position: relative; display: flex; inline-size: max-content; max-inline-size: 100%; }
+.list { display: flex; align-items: center; gap: var(--space-1); margin: 0; padding: 0; list-style: none; }
+.trigger, .link { display: inline-flex; min-block-size: var(--field-h); align-items: center; justify-content: center; gap: var(--space-1); border: 0; border-radius: var(--radius-control); padding-inline: var(--space-3); background: transparent; color: var(--color-text-secondary); font: inherit; font-size: var(--type-sm); font-weight: var(--weight-medium); text-decoration: none; transition: background-color var(--duration-fast) var(--ease-standard), color var(--duration-fast) var(--ease-standard); }
+.trigger:hover, .link:hover, .trigger[data-popup-open], .link[data-active] { background: var(--color-surface-sunken); color: var(--color-text-primary); }
+.trigger:focus-visible, .link:focus-visible { outline: none; box-shadow: var(--shadow-focus); }
+.icon { display: inline-flex; transition: transform var(--duration-fast) var(--ease-standard); }
+.trigger[data-popup-open] .icon { transform: rotate(180deg); }
+.positioner { max-inline-size: calc(100vw - var(--space-4)); }
+.popup { overflow: hidden; border: 1px solid var(--color-border); border-radius: var(--radius-card-surface); background: var(--color-surface); box-shadow: var(--elevation-popover); transform-origin: var(--transform-origin); }
+.popup[data-open] { animation: navigation-in var(--duration-base) var(--ease-out); }
+.viewport { inline-size: var(--viewport-width); block-size: var(--viewport-height); max-inline-size: calc(100vw - var(--space-4)); transition: inline-size var(--duration-base) var(--ease-standard), block-size var(--duration-base) var(--ease-standard); }
+.content { box-sizing: border-box; inline-size: min(calc(var(--space-32) * 2.5), calc(100vw - var(--space-8))); padding: var(--space-3); }
+.link { justify-content: flex-start; }
+.content .link { inline-size: 100%; min-block-size: var(--control-h); }
+.content .link > span { display: grid; gap: var(--space-1); }
+.content .link strong { color: var(--color-text-primary); font-weight: var(--weight-medium); }
+.content .link small { color: var(--color-text-tertiary); font-size: var(--type-xs); font-weight: var(--weight-regular); line-height: var(--leading-normal); }
+@keyframes navigation-in { from { opacity: 0; transform: scale(.98); } }
+@media (prefers-reduced-motion: reduce) { .popup[data-open] { animation: none; } .viewport, .icon { transition-duration: 0ms; } }
+@media (max-width: 480px) { .root { inline-size: 100%; overflow-x: auto; } .list { inline-size: max-content; } }

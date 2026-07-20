@@ -1,0 +1,114 @@
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-stack-label);
+  min-width: 0;
+}
+
+.label {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-0-5);
+  font-size: var(--type-sm);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-normal);
+  color: var(--color-text-secondary);
+}
+
+.requiredMark {
+  color: var(--destructive);
+}
+
+.control {
+  display: flex;
+  align-items: center;
+  gap: var(--space-inline-icon);
+  min-height: var(--field-h);
+  padding-inline: var(--space-inset-control);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-control);
+  transition: border-color var(--duration-fast) var(--ease-standard), box-shadow var(--duration-fast) var(--ease-standard);
+}
+
+.control:focus-within {
+  border-color: var(--color-border-focus);
+  box-shadow: var(--shadow-focus);
+}
+
+.field[data-invalid='true'] .control {
+  border-color: var(--destructive);
+}
+
+.field[data-invalid='true'] .control:focus-within {
+  box-shadow: 0 0 0 3px var(--color-danger-100);
+}
+
+.field[data-disabled='true'] .control {
+  background: var(--color-surface-sunken);
+  border-color: var(--color-border);
+}
+
+.field[data-read-only='true'] .control {
+  background: var(--color-surface-sunken);
+}
+
+.field[data-disabled='true'] .label,
+.field[data-disabled='true'] .input {
+  color: var(--color-text-disabled);
+}
+
+.input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  padding: 0;
+  font: inherit;
+  font-size: var(--type-base);
+  line-height: var(--leading-normal);
+  color: var(--color-text-primary);
+}
+
+.input:focus {
+  outline: none;
+}
+
+.input::placeholder {
+  color: var(--color-text-placeholder);
+}
+
+.prefix,
+.suffix {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-0-5);
+  flex-shrink: 0;
+  color: var(--color-text-tertiary);
+  font-size: var(--type-sm);
+}
+
+.helpText {
+  font-size: var(--type-xs);
+  line-height: var(--leading-normal);
+  color: var(--color-text-tertiary);
+}
+
+.errorText {
+  font-size: var(--type-xs);
+  line-height: var(--leading-normal);
+  color: var(--color-status-danger-fg);
+}
+
+.sizeSm {
+  min-height: var(--control-h-sm);
+  padding-inline: var(--space-2);
+}
+
+.sizeSm .input {
+  font-size: var(--type-sm);
+}
+
+.sizeLg {
+  min-height: var(--control-h-lg);
+}

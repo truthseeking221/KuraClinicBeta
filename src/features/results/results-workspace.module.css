@@ -1,0 +1,68 @@
+.workspace {
+  box-sizing: border-box;
+  display: flex;
+  width: 100%;
+  max-width: calc(var(--space-32) * 9);
+  margin: 0 auto;
+  padding: var(--space-page-gutter);
+  flex-direction: column;
+  gap: var(--space-stack-section);
+  color: var(--color-text-primary);
+  font-family: var(--font-family-sans);
+}
+
+.pageHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-inline-group);
+}
+
+.eyebrow,
+.patient,
+.filterStatus {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--type-sm);
+  line-height: var(--leading-normal);
+}
+
+.eyebrow {
+  font-size: var(--type-xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.pageTitle {
+  margin: var(--space-1) 0;
+  color: var(--color-text-primary);
+  font-size: var(--type-3xl);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-tight);
+}
+
+.filterStatus {
+  text-align: right;
+}
+
+@media (max-width: 48rem) {
+  .workspace {
+    padding: var(--space-4);
+  }
+
+  .pageHeader {
+    flex-direction: column;
+  }
+
+  .filterStatus {
+    text-align: left;
+  }
+}
+
+@media (max-width: 22.5rem) {
+  .workspace {
+    padding-inline: var(--space-3);
+  }
+}

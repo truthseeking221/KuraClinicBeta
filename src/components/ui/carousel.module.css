@@ -1,0 +1,115 @@
+.carousel {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+}
+
+.viewport {
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  touch-action: pan-y pinch-zoom;
+}
+
+.track {
+  display: flex;
+  margin-left: calc(var(--space-4) * -1);
+}
+
+.verticalTrack {
+  flex-direction: column;
+  margin-top: calc(var(--space-4) * -1);
+  margin-left: 0;
+}
+
+.item {
+  min-width: 0;
+  flex: 0 0 100%;
+  padding-left: var(--space-4);
+}
+
+.verticalTrack .item {
+  padding-top: var(--space-4);
+  padding-left: 0;
+}
+
+.control {
+  position: absolute;
+  z-index: 1;
+  touch-action: manipulation;
+}
+
+.previousHorizontal {
+  top: 50%;
+  left: var(--space-2);
+  transform: translateY(-50%);
+}
+
+.nextHorizontal {
+  top: 50%;
+  right: var(--space-2);
+  transform: translateY(-50%);
+}
+
+.previousVertical {
+  top: var(--space-2);
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.nextVertical {
+  bottom: var(--space-2);
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.dots {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  margin-top: var(--space-2);
+}
+
+.dotButton {
+  display: inline-flex;
+  width: var(--control-h);
+  min-width: var(--control-h);
+  height: var(--control-h);
+  min-height: var(--control-h);
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: var(--radius-track);
+  background: transparent;
+  cursor: pointer;
+}
+
+.dotButton:focus-visible {
+  outline: none;
+  box-shadow: var(--elevation-focus);
+}
+
+.dotButton:disabled {
+  cursor: not-allowed;
+  opacity: var(--opacity-disabled);
+}
+
+.dot {
+  width: var(--space-2);
+  height: var(--space-2);
+  border-radius: var(--radius-track);
+  background: var(--muted-foreground);
+  transition: width var(--duration-fast) var(--ease-standard), opacity var(--duration-fast) var(--ease-standard), background-color var(--duration-fast) var(--ease-standard);
+}
+
+.dotButton[data-selected='true'] .dot {
+  width: var(--space-6);
+  background: var(--primary-accent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dot {
+    transition: none;
+  }
+}

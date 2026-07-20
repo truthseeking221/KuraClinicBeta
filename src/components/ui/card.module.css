@@ -1,0 +1,206 @@
+.card {
+  --card-inset: var(--space-inset-card);
+  --card-section-gap: var(--space-stack-control);
+  box-sizing: border-box;
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--card-border, var(--border));
+  border-radius: var(--radius-card-surface);
+  background: var(--card);
+  color: var(--card-foreground);
+  box-shadow: var(--elevation-card);
+  font-family: var(--font-family-sans);
+  overflow-wrap: anywhere;
+}
+
+.card[data-variant='outline'] {
+  border-color: var(--card-border-outline);
+  box-shadow: var(--elevation-card-outline);
+}
+
+.card[data-size='sm'] {
+  --card-inset: var(--space-inset-control);
+}
+
+.card[data-size='md'] {
+  --card-inset: var(--space-inset-card);
+}
+
+.header {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: var(--space-stack-label) var(--space-inline-group);
+  padding: var(--card-inset) var(--card-inset) var(--card-section-gap);
+}
+
+.header:has(.action) {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.title,
+.description,
+.meta {
+  min-width: 0;
+  grid-column: 1;
+  margin: 0;
+}
+
+.title {
+  color: var(--card-foreground);
+  font-size: var(--type-md);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-snug);
+  text-wrap: balance;
+}
+
+.description {
+  color: var(--muted-foreground);
+  font-size: var(--type-sm);
+  font-weight: var(--weight-regular);
+  line-height: var(--leading-normal);
+  text-wrap: pretty;
+}
+
+.meta {
+  color: var(--muted-foreground);
+  font-size: var(--type-xs);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-normal);
+}
+
+.action {
+  display: flex;
+  min-width: 0;
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-control-gap);
+}
+
+.content {
+  min-width: 0;
+  padding: var(--card-section-gap) var(--card-inset);
+  color: var(--card-foreground);
+  font-size: var(--type-base);
+  line-height: var(--leading-normal);
+  text-wrap: pretty;
+}
+
+.content > :first-child {
+  margin-top: 0;
+}
+
+.content > :last-child {
+  margin-bottom: 0;
+}
+
+.footer {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-control-gap);
+  margin-top: auto;
+  padding: var(--card-section-gap) var(--card-inset) var(--card-inset);
+}
+
+.footerStart {
+  justify-content: flex-start;
+}
+
+.footerEnd {
+  justify-content: flex-end;
+}
+
+.footerBetween {
+  justify-content: space-between;
+}
+
+.media {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.media[data-placement='inset'] {
+  margin: var(--card-inset) var(--card-inset) 0;
+  border-radius: var(--radius-control);
+}
+
+.card > .header:last-child,
+.card > .content:first-child,
+.card > .footer:first-child {
+  padding-top: var(--card-inset);
+}
+
+.card > .header:last-child,
+.card > .content:last-child,
+.card > .footer:last-child {
+  padding-bottom: var(--card-inset);
+}
+
+.card[data-dividers='true'] > .header {
+  padding: var(--card-inset);
+  border-bottom: 1px solid var(--border);
+}
+
+.card[data-dividers='true'] > .content {
+  padding: var(--card-inset);
+}
+
+.card[data-dividers='true'] > .footer {
+  padding: var(--card-inset);
+  border-top: 1px solid var(--border);
+}
+
+:global([data-density='compact']) .card:not([data-size]) {
+  --card-inset: var(--space-inset-control);
+}
+
+:global([data-density='comfortable']) .card:not([data-size]) {
+  --card-inset: var(--space-inset-panel);
+}
+
+@media (max-width: 480px) {
+  .header:has(.action) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .action[data-mobile-layout='stack'] {
+    grid-column: 1;
+    grid-row: auto;
+    justify-content: flex-start;
+    margin-top: var(--space-stack-control);
+  }
+
+  .header:has(.action[data-mobile-layout='inline']) {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .action[data-mobile-layout='inline'] {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .footer {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .footer :global([data-slot='button']) {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card * {
+    transition: none;
+  }
+}

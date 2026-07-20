@@ -1,0 +1,214 @@
+.badge {
+  --badge-bg: var(--color-status-neutral-bg);
+  --badge-fg: var(--color-status-neutral-fg);
+  --badge-border: var(--badge-neutral-border);
+  --badge-solid-bg: var(--foreground);
+  --badge-solid-fg: var(--background);
+  --badge-dot: var(--color-ink-400);
+  display: inline-flex;
+  width: fit-content;
+  min-width: var(--space-5);
+  max-width: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  border: 1px solid transparent;
+  border-radius: var(--radius-badge);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-tight);
+  overflow-wrap: anywhere;
+  text-align: center;
+  vertical-align: middle;
+  /* Status changes cross-fade instead of jumping between tones. */
+  transition:
+    background-color var(--motion-color),
+    color var(--motion-color),
+    border-color var(--motion-color);
+}
+
+/* Pill geometry: horizontal inset ≈ half the height so the text never
+ * crowds the curve. Icons ride at 1em and scale with the size. */
+.sizeSm {
+  min-height: var(--space-5);
+  padding-inline: var(--space-2);
+  font-size: var(--type-2xs);
+}
+
+.sizeMd {
+  min-height: var(--space-6);
+  padding-inline: var(--space-3);
+  font-size: var(--type-xs);
+}
+
+.sizeLg {
+  min-height: var(--space-7);
+  padding-inline: var(--space-3);
+  font-size: var(--type-sm);
+}
+
+.variantNeutral {
+  --badge-bg: var(--color-status-neutral-bg);
+  --badge-fg: var(--color-status-neutral-fg);
+  --badge-border: var(--badge-neutral-border);
+  --badge-solid-bg: var(--foreground);
+  --badge-solid-fg: var(--background);
+  --badge-dot: var(--color-ink-400);
+}
+
+.variantPrimary {
+  --badge-bg: var(--brand-50);
+  --badge-fg: var(--brand-700);
+  --badge-border: var(--brand-100);
+  --badge-solid-bg: var(--primary);
+  --badge-solid-fg: var(--primary-foreground);
+  --badge-dot: var(--brand-500);
+}
+
+.variantSecondary {
+  --badge-bg: var(--secondary);
+  --badge-fg: var(--secondary-foreground);
+  --badge-border: var(--border);
+  --badge-solid-bg: var(--secondary);
+  --badge-solid-fg: var(--secondary-foreground);
+  --badge-dot: var(--color-ink-400);
+}
+
+.variantSuccess {
+  --badge-bg: var(--status-success-bg);
+  --badge-fg: var(--status-success-fg);
+  --badge-border: var(--success-100);
+  --badge-solid-bg: var(--color-success-500);
+  --badge-solid-fg: var(--color-ink-0);
+  --badge-dot: var(--color-success-500);
+}
+
+.variantWarning {
+  --badge-bg: var(--status-warning-bg);
+  --badge-fg: var(--status-warning-fg);
+  --badge-border: var(--warn-100);
+  --badge-solid-bg: var(--color-warn-500);
+  --badge-solid-fg: var(--color-ink-0);
+  --badge-dot: var(--color-warn-500);
+}
+
+.variantDanger {
+  --badge-bg: var(--status-danger-bg);
+  --badge-fg: var(--status-danger-fg);
+  --badge-border: var(--danger-100);
+  --badge-solid-bg: var(--color-danger-500);
+  --badge-solid-fg: var(--color-ink-0);
+  --badge-dot: var(--color-danger-500);
+}
+
+.variantInfo {
+  --badge-bg: var(--status-info-bg);
+  --badge-fg: var(--status-info-fg);
+  --badge-border: var(--info-100);
+  --badge-solid-bg: var(--color-info-500);
+  --badge-solid-fg: var(--color-ink-0);
+  --badge-dot: var(--color-info-500);
+}
+
+.variantAi {
+  --badge-bg: var(--status-ai-bg);
+  --badge-fg: var(--status-ai-fg);
+  --badge-border: var(--purple-50);
+  --badge-solid-bg: var(--purple-500);
+  --badge-solid-fg: var(--color-ink-0);
+  --badge-dot: var(--purple-500);
+}
+
+/* Soft is the default reading: a quiet tonal chip with no border — the tint
+ * is the boundary. */
+.appearanceSoft {
+  border-color: transparent;
+  background: var(--badge-bg);
+  color: var(--badge-fg);
+}
+
+/* Solid is the salient chip: the true -500 hue, reserved for the one status
+ * that must carry across a dense surface. */
+.appearanceSolid {
+  border-color: transparent;
+  background: var(--badge-solid-bg);
+  color: var(--badge-solid-fg);
+}
+
+/* Outline is the lightest reading: hairline drawn from the tone itself. */
+.appearanceOutline {
+  border-color: color-mix(in srgb, var(--badge-fg) 32%, transparent);
+  background: transparent;
+  color: var(--badge-fg);
+}
+
+.appearanceOutline.variantNeutral,
+.appearanceOutline.variantSecondary {
+  border-color: var(--badge-border);
+}
+
+.link {
+  text-decoration: none;
+}
+
+.link:hover {
+  text-decoration: underline;
+  text-underline-offset: var(--space-0-5);
+}
+
+.link:focus-visible {
+  outline: var(--space-0-5) solid var(--ring);
+  outline-offset: var(--space-0-5);
+}
+
+.label {
+  min-width: 0;
+  /* Counts and codes align without opting in. */
+  font-variant-numeric: tabular-nums;
+}
+
+.dot {
+  width: var(--space-1-5);
+  height: var(--space-1-5);
+  flex: 0 0 auto;
+  border-radius: var(--radius-full);
+  background: var(--badge-dot);
+}
+
+.appearanceSolid .dot {
+  background: currentColor;
+  opacity: 0.9;
+}
+
+.leading,
+.trailing {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+}
+
+.leading > svg,
+.trailing > svg {
+  width: 1em;
+  height: 1em;
+}
+
+:global([data-density='compact']) .sizeMd {
+  min-height: var(--space-5);
+  padding-inline: var(--space-2);
+  font-size: var(--type-2xs);
+}
+
+:global([data-density='comfortable']) .sizeMd {
+  min-height: var(--space-7);
+  padding-inline: var(--space-3);
+  font-size: var(--type-sm);
+}
+
+/* Brand tint has no dark alias in the ramp — restate the primary chip for
+ * dark so soft stays a tint, never a white pill. */
+:global([data-theme='dark']) .variantPrimary {
+  --badge-bg: rgba(var(--brand-rgb), 0.16);
+  --badge-fg: var(--brand-300);
+  --badge-border: rgba(var(--brand-rgb), 0.4);
+}

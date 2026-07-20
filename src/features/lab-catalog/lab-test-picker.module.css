@@ -1,0 +1,368 @@
+.root {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card-surface);
+  background: var(--card);
+  color: var(--foreground);
+  font-family: var(--font-family-sans);
+}
+
+.toolbar {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--space-stack-control);
+  padding: var(--space-inset-card);
+}
+
+.toolbarHeader,
+.titleGroup,
+.testLabel,
+.sectionTitle {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+}
+
+.toolbarHeader {
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-inline-group);
+}
+
+.titleGroup {
+  flex: 1 1 auto;
+  gap: var(--space-control-gap);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--type-lg);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-snug);
+}
+
+.search {
+  width: 100%;
+}
+
+.categoryTrigger {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.categoryTriggerLabel {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.categoryMenu {
+  display: flex;
+  width: min(calc(var(--space-32) * 2.5), calc(100vw - (var(--space-page-gutter) * 2)));
+  flex-direction: column;
+  padding: var(--space-inset-compact);
+}
+
+.categoryOptions {
+  display: grid;
+  max-block-size: min(calc(100dvh - var(--space-20)), calc(var(--space-32) * 2));
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+.categoryOptions :global([data-slot='checkbox-field']) {
+  min-height: var(--touch-target-min);
+  padding: var(--space-stack-control) var(--space-inset-control);
+  border-radius: var(--radius-control);
+}
+
+.categoryOptions :global([data-slot='checkbox-field']):hover {
+  background: var(--muted);
+}
+
+.categoryOptionLabel {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-inline-group);
+}
+
+.categoryOptionName {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.categoryOptionCount {
+  flex: 0 0 auto;
+  color: var(--muted-foreground);
+  font-size: var(--type-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+.categoryMenuFooter {
+  display: flex;
+  justify-content: flex-end;
+  margin-block-start: var(--space-1);
+  border-block-start: 1px solid var(--border);
+  padding-block-start: var(--space-1);
+}
+
+.body {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--space-stack-control);
+  border-top: 1px solid var(--border);
+  padding: var(--space-inset-card);
+}
+
+.groups {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+
+.groups > :global([data-slot='collapsible']) + :global([data-slot='collapsible']) {
+  border-top: 1px solid var(--border);
+}
+
+.sectionTrigger {
+  min-height: var(--touch-target-min);
+  border-radius: var(--radius-none);
+  padding: var(--space-2) 0;
+  font-size: var(--type-sm);
+  font-weight: var(--weight-semibold);
+}
+
+.sectionTrigger[data-state='open'] {
+  color: var(--foreground);
+}
+
+.sectionTrigger:hover:not(:disabled) {
+  background: var(--muted);
+}
+
+.sectionTitle {
+  gap: var(--space-control-gap);
+}
+
+.sectionChevron {
+  transition: transform var(--duration-fast) var(--ease-standard);
+}
+
+.sectionTrigger[data-state='closed'] .sectionChevron {
+  transform: rotate(-90deg);
+}
+
+.sectionContent {
+  padding: 0 0 var(--space-stack-control);
+  color: var(--foreground);
+}
+
+.sectionContent > :first-child {
+  margin-top: 0;
+}
+
+.testGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-stack-label) var(--space-inline-group);
+}
+
+.testRow {
+  position: relative;
+  min-width: 0;
+  border-radius: var(--radius-control);
+  transition:
+    background-color var(--duration-fast) var(--ease-standard),
+    box-shadow var(--duration-fast) var(--ease-standard);
+}
+
+.testRow:hover:not([data-disabled='true']),
+.testRow:focus-within:not([data-disabled='true']) {
+  background: var(--muted);
+}
+
+.testRow[data-disabled='true'] {
+  color: var(--muted-foreground);
+}
+
+.testCheckbox {
+  width: 100%;
+  min-height: var(--touch-target-min);
+  padding-inline: var(--space-2);
+}
+
+.testLabel {
+  width: 100%;
+  justify-content: flex-start;
+  gap: var(--space-control-gap);
+  font-size: var(--type-sm);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-normal);
+}
+
+.testLabel > :first-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.testLabel > :global([data-slot='badge']) {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.warningIcon {
+  flex: 0 0 auto;
+  color: var(--status-warning-fg);
+}
+
+.unavailableReason {
+  display: block;
+  /* Left inset mirrors checkbox anatomy: row padding + control width + control gap. */
+  margin: calc(var(--space-1) * -1) var(--space-2) var(--space-2)
+    calc(var(--space-2) + var(--space-4) + var(--space-control-gap));
+  color: var(--status-warning-fg);
+  font-size: var(--type-2xs);
+  line-height: var(--leading-normal);
+}
+
+.skeleton,
+.skeletonSection {
+  display: flex;
+  flex-direction: column;
+}
+
+.skeleton {
+  gap: var(--space-stack-section);
+  padding-block: var(--space-stack-control);
+}
+
+.skeletonSection {
+  gap: var(--space-stack-control);
+}
+
+.skeletonHeading,
+.skeletonRow {
+  border-radius: var(--radius-indicator);
+  background: var(--muted);
+  animation: catalog-pulse var(--duration-slow) var(--ease-standard) infinite
+    alternate;
+}
+
+.skeletonHeading {
+  width: var(--space-32);
+  height: var(--space-5);
+}
+
+.skeletonGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-control-gap);
+}
+
+.skeletonRow {
+  min-height: var(--touch-target-min);
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  padding: 0;
+  border: 0;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@keyframes catalog-pulse {
+  from {
+    opacity: 0.55;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+:global([data-density='compact']) .toolbar,
+:global([data-density='compact']) .body {
+  padding: var(--space-inset-control);
+}
+
+:global([data-density='comfortable']) .toolbar,
+:global([data-density='comfortable']) .body {
+  padding: var(--space-inset-panel);
+}
+
+@media (min-width: 30rem) {
+  .testGrid,
+  .skeletonGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 48rem) {
+  .testGrid,
+  .skeletonGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 56rem) {
+  .testGrid,
+  .skeletonGrid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 47.999rem) {
+  /* Promote the header's children so search can slot between the title and
+     the category trigger: search is the primary path on narrow screens. */
+  .toolbarHeader {
+    display: contents;
+  }
+
+  .titleGroup {
+    order: 1;
+  }
+
+  .search {
+    order: 2;
+  }
+
+  .categoryTrigger {
+    order: 3;
+    width: 100%;
+  }
+
+  .search :global([data-slot='input']) {
+    min-height: var(--touch-target-min);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .testRow {
+    transition: none;
+  }
+
+  .sectionChevron {
+    transition: none;
+  }
+
+  .skeletonHeading,
+  .skeletonRow {
+    animation: none;
+  }
+}

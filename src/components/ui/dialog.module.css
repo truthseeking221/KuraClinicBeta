@@ -1,0 +1,227 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: var(--foreground);
+  opacity: var(--opacity-scrim);
+}
+
+.overlay[data-state='open'] {
+  animation: dialog-overlay-in var(--duration-base) var(--ease-out);
+}
+
+.overlay[data-state='closed'] {
+  animation: dialog-overlay-out var(--duration-fast) var(--ease-in) forwards;
+}
+
+@keyframes dialog-overlay-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes dialog-overlay-out {
+  to {
+    opacity: 0;
+  }
+}
+
+.content {
+  --dialog-inset: var(--space-inset-card);
+  box-sizing: border-box;
+  position: fixed;
+  z-index: 51;
+  inset: 50% auto auto 50%;
+  display: flex;
+  width: min(var(--dialog-width), calc(100vw - (var(--space-page-gutter) * 2)));
+  max-width: 100%;
+  max-height: calc(100dvh - (var(--space-page-gutter) * 2));
+  flex-direction: column;
+  overflow: hidden;
+  transform: translate(-50%, -50%);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-overlay);
+  background: var(--card);
+  color: var(--card-foreground);
+  box-shadow: var(--elevation-modal);
+  font-family: var(--font-family-sans);
+  outline: none;
+}
+
+.content[data-state='open'] {
+  animation: dialog-content-in var(--duration-base) var(--ease-out);
+}
+
+.content[data-state='closed'] {
+  animation: dialog-content-out var(--duration-fast) var(--ease-in) forwards;
+}
+
+@keyframes dialog-content-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.97);
+  }
+}
+
+@keyframes dialog-content-out {
+  to {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.98);
+  }
+}
+
+.content[data-size='sm'] {
+  --dialog-width: calc(var(--space-32) * 3);
+}
+
+.content[data-size='md'] {
+  --dialog-width: calc(var(--space-32) * 4);
+}
+
+.content[data-size='lg'] {
+  --dialog-width: calc(var(--space-32) * 6);
+}
+
+.content[data-size='full'] {
+  --dialog-width: calc(100vw - (var(--space-page-gutter) * 2));
+  --dialog-inset: var(--space-inset-panel);
+  height: calc(100dvh - (var(--space-page-gutter) * 2));
+}
+
+.header {
+  display: grid;
+  min-width: 0;
+  gap: var(--space-stack-control);
+  padding: var(--dialog-inset);
+  padding-inline-end: var(--space-12);
+}
+
+.body {
+  min-width: 0;
+  min-height: 0;
+  flex: 1;
+  overflow: auto;
+  padding: var(--dialog-inset);
+  color: var(--card-foreground);
+  font-size: var(--type-base);
+  line-height: var(--leading-normal);
+}
+
+.footer {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-control-gap);
+  padding: var(--dialog-inset);
+}
+
+/* Dividers earn their place only when a scrollable work region needs a boundary. */
+.header:has(+ .body) {
+  border-bottom: 1px solid var(--border);
+}
+
+.body + .footer {
+  border-top: 1px solid var(--border);
+}
+
+.title {
+  margin: 0;
+  color: var(--card-foreground);
+  font-size: var(--type-lg);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-snug);
+  overflow-wrap: anywhere;
+}
+
+.description {
+  max-width: 62ch;
+  margin: 0;
+  color: var(--muted-foreground);
+  font-size: var(--type-base);
+  line-height: var(--leading-normal);
+  overflow-wrap: anywhere;
+}
+
+.close {
+  position: absolute;
+  inset-block-start: var(--space-2);
+  inset-inline-end: var(--space-2);
+  z-index: 1;
+}
+
+:global([data-density='compact']) .content {
+  --dialog-inset: var(--space-inset-card);
+}
+
+:global([data-density='comfortable']) .content {
+  --dialog-inset: var(--space-inset-page);
+}
+
+@media (max-width: 480px) {
+  .content[data-mobile-presentation='full'] {
+    inset: 0;
+    width: 100vw;
+    height: 100dvh;
+    max-height: 100dvh;
+    transform: none;
+    border: 0;
+    border-radius: var(--radius-none);
+  }
+
+  /* Full-screen presentation is not centered via transform; fade + rise instead. */
+  .content[data-mobile-presentation='full'][data-state='open'] {
+    animation: dialog-content-in-full var(--duration-base) var(--ease-out);
+  }
+
+  .content[data-mobile-presentation='full'][data-state='closed'] {
+    animation: dialog-content-out-full var(--duration-fast) var(--ease-in) forwards;
+  }
+
+  .content[data-mobile-presentation='dialog'] {
+    width: calc(100vw - (var(--space-inset-control) * 2));
+    max-height: calc(100dvh - (var(--space-inset-control) * 2));
+  }
+
+  .header,
+  .body {
+    padding: var(--space-inset-card);
+  }
+
+  .footer {
+    align-items: stretch;
+    flex-direction: column-reverse;
+    padding: var(--space-inset-card);
+    padding-bottom: max(var(--space-inset-card), env(safe-area-inset-bottom));
+  }
+
+  .footer > :global([data-slot='button']) {
+    width: 100%;
+  }
+}
+
+@keyframes dialog-content-in-full {
+  from {
+    opacity: 0;
+    transform: translateY(var(--space-3));
+  }
+
+  to {
+    transform: none;
+  }
+}
+
+@keyframes dialog-content-out-full {
+  to {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .overlay,
+  .content,
+  .body {
+    animation: none !important;
+    scroll-behavior: auto;
+  }
+}
