@@ -7,10 +7,11 @@ import { Radio, RadioGroup } from "./index";
 const meta = {
   title: "Design System/Primitives/Radio",
   component: Radio,
-  tags: ["autodocs", "adapted-kura"],
+  tags: ["autodocs", "source-kura", "adapted-kura"],
   parameters: {
     layout: "centered",
     kura: {
+      source: { vendor: "Kura", registryItem: "radio", visualReference: "Kura radio" },
       intake: {
         decision: "CREATE",
         owner: "src/components/ui",
@@ -38,6 +39,7 @@ const meta = {
   },
   argTypes: {
     appearance: { control: "radio", options: ["default", "card"] },
+    density: { control: "radio", options: ["standard", "comfortable"] },
     disabled: { control: "boolean" },
   },
 } satisfies Meta<typeof Radio>;
@@ -149,6 +151,50 @@ export const LongContentAndNarrow: Story = {
       </Radio>
     </div>
   ),
+};
+
+export const ComfortableCards: Story = {
+  render: () => (
+    <div className="w-full max-w-md">
+      <RadioGroup
+        defaultValue="yes"
+        legend="Medical licence status"
+        name="comfortable-medical-licence-status"
+      >
+        <Radio
+          appearance="card"
+          density="comfortable"
+          helpText="Choose your profession, then upload now or later."
+          value="yes"
+        >
+          Yes — I have a medical licence
+        </Radio>
+        <Radio
+          appearance="card"
+          density="comfortable"
+          helpText="No credential is created or requested. You can change this later."
+          value="no"
+        >
+          No — not at this time
+        </Radio>
+      </RadioGroup>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const yes = canvas.getByRole("radio", {
+      name: /Yes — I have a medical licence/,
+    });
+    const no = canvas.getByRole("radio", { name: /No — not at this time/ });
+    await expect(yes).toBeChecked();
+    await userEvent.click(no);
+    await expect(no).toBeChecked();
+  },
+};
+
+export const ComfortableCardsMobile320: Story = {
+  ...ComfortableCards,
+  parameters: { viewport: { defaultViewport: "kura320" } },
 };
 
 export const MobileInteractive: Story = {

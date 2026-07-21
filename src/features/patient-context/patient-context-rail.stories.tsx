@@ -4,7 +4,7 @@ import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 
 import { PATIENT_CONTEXT_FIXTURES } from './demo-data';
 import { PatientContextRail } from './patient-context-rail';
-import { patientContextRailMetadata } from './storybook-metadata';
+import { PATIENT_CONTEXT_STORYBOOK_KURA } from './storybook-metadata';
 
 const meta = {
   title: 'Clinic/Clinical/Patient Context Rail',
@@ -12,7 +12,7 @@ const meta = {
   tags: ['autodocs', 'source-figma', 'adapted-kura', 'play-fn'],
   parameters: {
     layout: 'padded',
-    kura: patientContextRailMetadata,
+    kura: PATIENT_CONTEXT_STORYBOOK_KURA,
     docs: {
       description: {
         component:
@@ -37,6 +37,11 @@ export const Established: Story = {
 };
 
 export const NewPatient: Story = { args: PATIENT_CONTEXT_FIXTURES.newPatient };
+
+/** Inside the patient chart the workbar owns identity; the rail must not repeat it. */
+export const IdentityHidden: Story = {
+  args: { ...PATIENT_CONTEXT_FIXTURES.established, showIdentity: false },
+};
 
 export const ActiveProblems: Story = {
   args: { ...PATIENT_CONTEXT_FIXTURES.activeProblems, defaultExpanded: ['problems'] },

@@ -1,0 +1,108 @@
+/*
+ * Registry chrome stays minimal: the page surface carries the header by
+ * spacing alone; the DataGrid owns the only visible container (a dense
+ * clinical table keeps its row hairlines by design).
+ */
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-inline-size: 0;
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.title {
+  color: var(--color-text-primary);
+  font-size: var(--type-lg);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-snug);
+}
+
+.description {
+  color: var(--color-text-tertiary);
+  font-size: var(--type-xs);
+  line-height: var(--leading-normal);
+}
+
+.toolbar {
+  justify-content: flex-start;
+}
+
+/* ── Patient cell ─────────────────────────────────────────── */
+
+.patientCell {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-inline-size: 0;
+}
+
+.patientCopy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-inline-size: 0;
+}
+
+.name {
+  color: var(--color-text-primary);
+  font-weight: var(--weight-medium);
+  overflow-wrap: anywhere;
+}
+
+.nameUnavailable {
+  color: var(--color-text-tertiary);
+  font-style: italic;
+}
+
+.identity {
+  color: var(--color-text-secondary);
+  font-size: var(--type-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Data cells ───────────────────────────────────────────── */
+
+.masked {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.statusQuiet {
+  color: var(--color-text-secondary);
+}
+
+/* ── Triage (target-contract layer) ───────────────────────── */
+
+.triage {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-text-primary);
+  font-weight: var(--weight-medium);
+}
+
+.triageDot {
+  inline-size: 6px;
+  block-size: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.triage[data-tone='danger'] .triageDot {
+  background: var(--color-status-danger-fg);
+}
+
+.triage[data-tone='warning'] .triageDot {
+  background: var(--color-status-warning-fg);
+}
+
+.triage[data-tone='info'] .triageDot {
+  background: var(--color-status-info-fg);
+}

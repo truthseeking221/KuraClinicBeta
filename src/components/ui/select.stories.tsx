@@ -6,7 +6,7 @@ import { Select } from './index';
 const meta = {
   title: 'Design System/Primitives/Select',
   component: Select,
-  tags: ['autodocs', 'source-reui', 'adapted-kura'],
+  tags: ['autodocs', 'source-kura', 'adapted-kura'],
   parameters: {
     layout: 'centered',
     kura: {
@@ -14,9 +14,9 @@ const meta = {
         decision: 'REUSE',
         owner: 'src/components/ui',
         evidence:
-          'No canonical Kura select existed. ReUI/Base UI Select supplies the custom listbox, popup positioning, keyboard navigation, focus restoration, and hidden form input. Kura owns the field anatomy, tokens, states, copy, and responsive treatment.',
+          'Base UI supplies listbox behavior while Kura owns the field contract and adopts Kura trigger, panel, row, and motion finish.',
       },
-      source: { vendor: 'ReUI', registryItem: 'select' },
+      source: { vendor: 'Kura', registryItem: 'select', visualReference: 'Kura select' },
       binding: {
         colors: 'kura-semantic',
         typography: 'kura',
@@ -32,7 +32,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'Single-select with Kura field anatomy (label, help, error) and a custom ReUI-style popup. Keyboard navigation, focus restoration, collision-safe positioning, and form submission remain owned by Base UI.',
+          'Single-select with Kura field anatomy and a Kura-finished popup. Keyboard navigation, focus restoration, collision-safe positioning, and form submission remain owned by Base UI.',
       },
     },
   },

@@ -1,72 +1,115 @@
-/* Kura foundation tokens — the shared visual language used by Storybook. */
+/* Kura color foundation.
+ * This file is the single runtime owner for primitive, semantic, component,
+ * and temporary compatibility color tokens. Components must consume semantic
+ * or component-role tokens; primitive ramps are implementation detail. */
+@theme {
+  --color-slate-200: #ebeff5;
+  --color-neutral-100: #f7f7f7;
+  --color-neutral-200: #ebebeb;
+  /* Tailwind blue utilities resolve to Kura's primary ramp during migration. */
+  --color-blue-50: var(--color-brand-50);
+  --color-blue-100: var(--color-brand-100);
+  --color-blue-200: var(--color-brand-200);
+  --color-blue-300: var(--color-brand-300);
+  --color-blue-400: var(--color-brand-400);
+  --color-blue-500: var(--color-brand-500);
+  --color-blue-600: var(--color-brand-600);
+  --color-blue-700: var(--color-brand-700);
+  --color-blue-800: var(--color-brand-800);
+  --color-blue-900: var(--color-brand-900);
+}
+
 :root {
   --color-brand-25: #eef7ff;
   --color-brand-50: #e9f3ff;
   --color-brand-100: #d4e8ff;
+  --color-brand-200: #a3d0ff;
+  --color-brand-300: #7dbaff;
+  --color-brand-400: #52a2ff;
   --color-brand-500: #268cff;
   --color-brand-600: #1e70cc;
   --color-brand-700: #175499;
   --color-brand-800: #0f3866;
+  --color-brand-900: #04234d;
 
-  --color-ink-0: #ffffff;
-  --color-ink-25: #f8f9fc;
-  --color-ink-50: #f6f7fa;
-  --color-ink-100: #eef0f5;
-  --color-ink-150: #e3e6ee;
-  --color-ink-200: #d6dae5;
-  --color-ink-400: #8d94a8;
-  --color-ink-500: #6b7388;
-  --color-ink-600: #475066;
-  --color-ink-700: #2a3447;
-  --color-ink-900: #0b1424;
+  --color-secondary-deep-500: #10069f;
+  --color-secondary-deep-600: #0c0483;
+  --color-secondary-deep-700: #090364;
+  --color-secondary-light-300: #60cdff;
+  --color-secondary-light-500: #0ab0e5;
+  --color-secondary-light-700: #0787af;
 
-  --color-success-500: #1aa163;
-  --color-success-50: #e7f8ee;
-  --color-warn-500: #d97706;
-  --color-warn-50: #fff8e6;
-  --color-danger-500: #d83a3a;
-  --color-danger-50: #fdecec;
-  --color-info-500: #0e7490;
-  --color-info-50: #e6f9fd;
+  --color-text-primary: var(--color-neutral-950);
+  --color-text-secondary: var(--color-neutral-500);
+  --color-text-tertiary: var(--color-neutral-400);
+  --color-text-disabled: var(--color-neutral-300);
+  --color-text-inverse: var(--color-foreground-full);
+  --color-text-on-brand: var(--color-foreground-full);
+  --color-text-brand: var(--color-brand-700);
+  --color-text-link: var(--color-brand-700);
+  --color-text-link-hover: var(--color-brand-800);
+  --color-text-placeholder: var(--color-text-tertiary);
 
-  --color-text-primary: #1a2335;
-  --color-text-secondary: #475066;
-  /* Slightly darker than ink-500 so 12px metadata clears AA on ink-25. */
-  --color-text-tertiary: #687185;
-  --color-text-disabled: #b3b9c9;
-  --color-text-inverse: #ffffff;
-  --color-text-on-brand: #ffffff;
-  --color-text-brand: #268cff;
-  --color-text-link: #175499;
-
-  --color-surface: #ffffff;
-  --color-surface-2: #fafbfd;
-  --color-surface-sunken: #eef0f5;
-  --color-surface-bg: #f6f7fa;
-  --color-border: #e6e9f1;
-  --color-border-strong: #d6dae5;
+  /* BoardUI surface sandwich: white page canvas → flat gray tray cards →
+   * white tiles (feather shadow) nested back inside the tray. Contrast makes
+   * the structure; borders stay on controls and tables only. */
+  --color-surface: var(--color-white);
+  --color-surface-2: var(--color-neutral-100);
+  --color-surface-sunken: var(--color-neutral-200);
+  --color-surface-bg: var(--color-white);
+  /* Filled field rest state: between surface-2 and sunken, so the fill stays
+   * quiet on white yet still separates from a gray tray behind it. */
+  --color-field-bg: color-mix(
+    in srgb,
+    var(--color-neutral-100) 55%,
+    var(--color-neutral-200)
+  );
+  --color-background-canvas-subtle: var(--color-neutral-50);
+  --color-overlay-scrim: color-mix(in srgb, var(--color-neutral-950) 48%, transparent);
+  --color-border: var(--color-neutral-200);
+  --color-border-strong: var(--color-neutral-300);
 
   --background: var(--color-surface-bg);
   --foreground: var(--color-text-primary);
-  --card: var(--color-surface);
+  /* Cards are the gray tray layer; overlays and tiles use --color-surface. */
+  --card: var(--color-surface-2);
   --card-foreground: var(--color-text-primary);
   /* White text needs the darker brand roles for WCAG AA at normal UI sizes. */
-  --primary: var(--color-brand-600);
-  --primary-hover: var(--color-brand-700);
-  --primary-foreground: var(--color-text-on-brand);
+  --color-brand-primary: var(--color-brand-500);
+  --color-brand-primary-strong: var(--color-brand-700);
+  --color-brand-secondary-deep: var(--color-secondary-deep-500);
+  --color-brand-secondary-light: var(--color-secondary-light-500);
+  --color-action-primary-bg: var(--color-brand-600);
+  --color-action-primary-bg-hover: var(--color-brand-700);
+  --color-action-primary-bg-active: var(--color-brand-800);
+  --color-action-primary-bg-disabled: var(--color-neutral-300);
+  --color-action-primary-fg: var(--color-text-on-brand);
+  --color-action-primary-accent: var(--color-brand-500);
+  --color-action-primary-subtle: var(--color-brand-50);
+  --color-action-primary-subtle-hover: var(--color-brand-100);
+  --color-action-secondary-bg: var(--color-neutral-200);
+  --color-action-secondary-bg-hover: var(--color-neutral-300);
+  --color-action-secondary-fg: var(--color-neutral-700);
+  --color-selection-bg: var(--color-brand-50);
+  --color-selection-bg-strong: var(--color-brand-100);
+  --color-selection-fg: var(--color-brand-700);
+
+  --primary: var(--color-action-primary-bg);
+  --primary-hover: var(--color-action-primary-bg-hover);
+  --primary-foreground: var(--color-action-primary-fg);
   /* Brighter brand for non-text accents only (indicator bars, progress/slider
    * fills, rings, connectors). brand-500 clears the 3:1 non-text bar (3.35:1)
    * but not the 4.5:1 text bar, so text/filled controls stay on --primary. */
-  --primary-accent: var(--color-brand-500);
-  --secondary: var(--color-ink-100);
-  --secondary-foreground: var(--color-ink-700);
-  --destructive: var(--color-danger-500);
-  --destructive-hover: var(--color-danger-500);
-  --destructive-foreground: var(--color-ink-0);
+  --primary-accent: var(--color-action-primary-accent);
+  --secondary: var(--color-action-secondary-bg);
+  --secondary-foreground: var(--color-action-secondary-fg);
+  --destructive: var(--color-status-danger-solid);
+  --destructive-hover: var(--color-status-danger-solid-hover);
+  --destructive-foreground: var(--color-status-on-solid);
   --muted: var(--color-surface-2);
   --muted-foreground: var(--color-text-tertiary);
   --border: var(--color-border);
-  --ring: var(--color-brand-500);
+  --ring: var(--color-border-focus-ring);
   --opacity-disabled: 0.56;
   --opacity-scrim: 0.48;
 
@@ -100,161 +143,51 @@
   --radius-lg: 14px;
 }
 
-[data-theme='dark'] {
-  --color-text-primary: #e8edf6;
-  --color-text-secondary: #a8b8d0;
-  --color-text-tertiary: #7888a0;
-  --color-text-disabled: #4a5870;
-  --color-text-inverse: #0b1424;
-  --color-text-on-brand: #0b1424;
-  --color-text-brand: #52a2ff;
-  --color-text-link: #7dbaff;
-  --color-surface: #111c30;
-  --color-surface-2: #182540;
-  --color-surface-sunken: #0d1828;
-  --color-surface-bg: #0b1424;
-  --color-border: #1f2a40;
-  --color-border-strong: #2a3a55;
-  --primary: #52a2ff;
-  --primary-hover: var(--brand-400);
-  --primary-foreground: #0b1424;
-  /* Dark keeps accents on the resolved --primary; light #1e70cc→brand-500 swap
-   * does not apply here. */
-  --primary-accent: var(--primary);
-  --destructive: var(--color-danger-400);
-  --destructive-hover: var(--color-danger-400);
-  --destructive-foreground: #ffffff;
-  --secondary: var(--color-surface-2);
-  --secondary-foreground: #e8edf6;
-  --muted: var(--color-surface-2);
-  --muted-foreground: var(--color-text-tertiary);
-  --ring: #52a2ff;
-}
+/* Kura is light-only until a separately validated dark semantic graph ships. */
 
-/* DCM color contract imported from DCMPROD.
- * Primitive ramps stay immutable; semantic roles adapt below in dark mode. */
+/* Kura semantic, component-role, and compatibility layers. */
 :root {
-  --color-secondary-deep-500: #10069f;
+  --color-surface-bg: var(--color-white);
+  --color-border-emphasis: var(--color-neutral-400);
+  --color-border-focus: var(--color-border-focus-ring);
 
-  --color-success-25: #edf9f3;
-  --color-success-100: #c7eed7;
-  --color-success-200: #9ee4b9;
-  --color-success-600: #128a52;
+  --color-status-success-fg: var(--color-green-800);
+  --color-status-success-bg: var(--color-green-100);
+  --color-status-success-solid: var(--color-green-600);
+  --color-status-warning-fg: var(--color-yellow-800);
+  --color-status-warning-bg: var(--color-yellow-200);
+  --color-status-warning-solid: var(--color-yellow-500);
+  --color-status-low-fg: var(--color-orange-600);
+  --color-status-danger-fg: var(--color-red-800);
+  --color-status-danger-bg: var(--color-red-100);
+  --color-status-danger-solid: var(--color-red-600);
+  --color-status-danger-solid-hover: var(--color-red-500);
+  --color-status-critical-fg: var(--color-red-800);
+  --color-status-critical-bg: var(--color-red-100);
+  --color-status-neutral-fg: var(--color-neutral-600);
+  --color-status-neutral-bg: var(--color-neutral-200);
+  --color-status-neutral-solid: var(--color-neutral-600);
+  --color-status-info-fg: var(--color-cyan-800);
+  --color-status-info-bg: var(--color-cyan-200);
+  --color-status-info-solid: var(--color-cyan-600);
+  --color-status-ai-fg: var(--color-purple-600);
+  --color-status-ai-bg: var(--color-purple-100);
+  --color-status-ai-solid: var(--color-purple-500);
+  --color-status-on-solid: var(--color-foreground-full);
 
-  --color-warn-25: #fff9ea;
-  --color-warn-100: #fdecc4;
-  --color-warn-200: #fbdb91;
-  --color-warn-600: #8a5600;
+  --color-focus-ring: color-mix(in srgb, var(--color-brand-primary) 32%, transparent);
+  --color-text-placeholder: var(--color-neutral-400);
+  --color-presence-online: var(--color-status-success-solid);
+  --color-presence-busy: var(--color-status-danger-solid);
+  --color-presence-offline: var(--color-neutral-400);
 
-  --color-danger-25: #fff1f1;
-  --color-danger-100: #fbd1d1;
-  --color-danger-200: #f7a8a8;
-  --color-danger-400: #e75f5f;
-  --color-danger-600: #b22929;
-  --color-danger-700: #891f1f;
-
-  --color-info-100: #c3eef7;
-  --color-info-600: #0a5a72;
-
-  --color-surface-bg: var(--surface-bg, #ffffff);
-  --color-border-emphasis: #b3b9c9;
-  --color-border-focus: #268cff;
-
-  /* Success text must clear WCAG AA on the success tint at normal UI sizes. */
-  --color-status-success-fg: #13744a;
-  --color-status-success-bg: #e7f8ee;
-  --color-status-warning-fg: #8a5600;
-  --color-status-warning-bg: #fff8e6;
-  --color-status-low-fg: #c5651c;
-  --color-status-danger-fg: #b22929;
-  --color-status-danger-bg: #fdecec;
-  --color-status-neutral-fg: #475066;
-  --color-status-neutral-bg: #eef0f5;
-  --color-status-info-fg: #0e7490;
-  --color-status-info-bg: #e6f9fd;
-  --color-status-ai-fg: #6a35c0;
-  --color-status-ai-bg: #f1ecfb;
-
-  --color-badge-neutral-bg: #f8f9fc;
-  --color-badge-neutral-fg: #2a3447;
-  --color-badge-neutral-border: #e3e6ee;
-  --color-badge-neutral-icon: #6b7388;
-  --color-badge-warning-bg: #fff9ea;
-  --color-badge-warning-fg: #6a4200;
-  --color-badge-warning-icon: #d97706;
-  --color-focus-ring: rgba(38, 140, 255, 0.32);
-
-  --color-text-muted: var(--color-text-tertiary);
-  --color-text-placeholder: var(--color-ink-400);
-  --color-text-link-hover: var(--color-brand-700);
-
-  --brand-25: var(--color-brand-25);
-  --brand-50: var(--color-brand-50);
-  --brand-100: var(--color-brand-100);
-  --brand-200: #a3d0ff;
-  --brand-300: #7dbaff;
-  --brand-400: #52a2ff;
-  --brand-500: var(--color-brand-500);
-  --brand-600: var(--color-brand-600);
-  --brand-700: var(--color-brand-700);
-  --brand-800: var(--color-brand-800);
-  --brand-900: #04234d;
-  --brand-rgb: 38, 140, 255;
-  --secondary-deep-rgb: 16, 6, 159;
-  --secondary-light-rgb: 10, 176, 229;
-  --surface-rgb: 255, 255, 255;
-  --secondary-deep-500: var(--color-secondary-deep-500);
-  --secondary-deep-600: #0c0483;
-  --secondary-deep-700: #090364;
-  --secondary-light-300: #60cdff;
-  --secondary-light-500: #0ab0e5;
-  --secondary-light-700: #0787af;
-
-  --ink-0: var(--color-ink-0);
-  --ink-25: var(--color-ink-25);
-  --ink-50: var(--color-ink-50);
-  --ink-100: var(--color-ink-100);
-  --ink-150: var(--color-ink-150);
-  --ink-200: var(--color-ink-200);
-  --ink-300: #c2c7d4;
-  --ink-400: var(--color-ink-400);
-  --ink-500: var(--color-ink-500);
-  --ink-600: var(--color-ink-600);
-  --ink-700: var(--color-ink-700);
-  --ink-800: #1a2335;
-  --ink-900: var(--color-ink-900);
-
-  --success-25: var(--color-success-25);
-  --success-100: var(--color-success-100);
-  --success-200: var(--color-success-200);
-  --success-600: var(--color-success-600);
-  --success-700: #13744a;
-  --warn-25: var(--color-warn-25);
-  --warn-100: var(--color-warn-100);
-  --warn-200: var(--color-warn-200);
-  --warn-600: var(--color-warn-600);
-  --warn-700: #a55b04;
-  --danger-25: var(--color-danger-25);
-  --danger-100: var(--color-danger-100);
-  --danger-200: var(--color-danger-200);
-  --danger-400: var(--color-danger-400);
-  --danger-600: var(--color-danger-600);
-  --danger-700: var(--color-danger-700);
-  --info-100: var(--color-info-100);
-  --info-600: var(--color-info-600);
-  --info-700: #0a5870;
-  --purple-50: #f0eafb;
-  --purple-500: #6a35c0;
-  --purple-700: #4e2490;
-
-  --surface-bg: #ffffff;
+  --color-auth-ambient-primary-rgb: 38, 140, 255;
+  --color-auth-ambient-deep-rgb: 16, 6, 159;
+  --color-auth-ambient-light-rgb: 10, 176, 229;
+  --color-auth-surface-rgb: 255, 255, 255;
   --surface: var(--color-surface);
-  --surface-2: var(--color-surface-2);
-  --surface-raised: var(--color-surface);
   --surface-sunken: var(--color-surface-sunken);
-  --border-color: var(--color-border);
   --border-strong: var(--color-border-strong);
-  --border-emphasis: var(--color-border-emphasis);
   --border-focus: var(--color-border-focus);
 
   --status-neutral-bg: var(--color-status-neutral-bg);
@@ -267,110 +200,137 @@
   --status-danger-fg: var(--color-status-danger-fg);
   --status-info-bg: var(--color-status-info-bg);
   --status-info-fg: var(--color-status-info-fg);
-  --status-low-fg: var(--color-status-low-fg);
   --status-ai-bg: var(--color-status-ai-bg);
   --status-ai-fg: var(--color-status-ai-fg);
-  --badge-neutral-bg: var(--color-badge-neutral-bg);
-  --badge-neutral-fg: var(--color-badge-neutral-fg);
-  --badge-neutral-border: var(--color-badge-neutral-border);
-  --badge-neutral-icon: var(--color-badge-neutral-icon);
-  --badge-warning-bg: var(--color-badge-warning-bg);
-  --badge-warning-fg: var(--color-badge-warning-fg);
-  --badge-warning-icon: var(--color-badge-warning-icon);
-  --text-primary: var(--color-text-primary);
   --text-secondary: var(--color-text-secondary);
-  --text-tertiary: var(--color-text-tertiary);
-  --text-muted: var(--color-ink-400);
   --text-link: var(--color-text-link);
-  --text-on-brand: var(--color-text-on-brand);
-  --color-text-placeholder: var(--color-ink-400);
-  --color-text-link-hover: var(--color-brand-700);
-  --bg: var(--color-surface-bg);
-  --surface-raised: var(--color-surface);
+  --text-disabled: var(--color-text-disabled);
+  --accent: var(--color-selection-bg);
 
-  /* App-shell sidebar roles. Mapped onto existing ramps only — the shell must
+  /* App-shell sidebar roles. Mapped onto existing semantics only — the shell must
    * not mint colors. Active state pairs brand tint with readable brand text. */
-  --sidebar-bg: var(--color-ink-25);
+  --sidebar-bg: var(--color-background-canvas-subtle);
   --sidebar-fg: var(--color-text-secondary);
   --sidebar-fg-muted: var(--color-text-tertiary);
-  --sidebar-hover-bg: var(--color-ink-100);
-  --sidebar-active-bg: var(--color-brand-50);
-  --sidebar-active-fg: var(--color-brand-700);
+  --sidebar-hover-bg: var(--color-action-secondary-bg);
+  --sidebar-active-bg: var(--color-selection-bg);
+  --sidebar-active-fg: var(--color-selection-fg);
   --sidebar-border: var(--color-border);
   --sidebar-ring: var(--ring);
 
   /* Lab reference-range band roles. Mapped onto existing status ramps only —
    * the zone holding the value carries full tint; reference zones stay muted
    * so the reading is loud and the scale is calm. */
-  --lab-range-optimal: var(--color-success-200);
-  --lab-range-caution: var(--color-warn-200);
-  --lab-range-out: var(--color-danger-200);
-  --lab-range-optimal-muted: var(--color-success-100);
-  --lab-range-caution-muted: var(--color-warn-100);
-  --lab-range-out-muted: var(--color-danger-100);
+  --lab-range-optimal: color-mix(in srgb, var(--color-status-success-fg) 22%, var(--color-surface));
+  --lab-range-caution: var(--color-status-warning-bg);
+  --lab-range-out: color-mix(in srgb, var(--color-status-danger-fg) 22%, var(--color-surface));
+  --lab-range-optimal-muted: var(--color-status-success-bg);
+  --lab-range-caution-muted: color-mix(in srgb, var(--color-status-warning-bg) 60%, var(--color-surface));
+  --lab-range-out-muted: var(--color-status-danger-bg);
   --lab-dot-optimal: var(--color-status-success-fg);
   --lab-dot-caution: var(--color-status-low-fg);
   --lab-dot-out: var(--color-status-danger-fg);
   --lab-dot-ring: var(--color-surface);
 
   /* Stepper resolved-step tint — light brand wash that stays quiet in dark. */
-  --stepper-done-bg: var(--color-brand-50);
-  --stepper-done-fg: var(--color-brand-600);
+  --stepper-done-bg: var(--color-selection-bg);
+  --stepper-done-fg: var(--color-action-primary-bg);
   /* Halo behind the active indicator and the traversed rail segment. */
-  --stepper-active-ring: var(--color-brand-100);
-  --stepper-rail-done: var(--brand-200);
+  --stepper-active-ring: var(--color-selection-bg-strong);
+  --stepper-rail-done: var(--color-brand-200);
+
+  /* Physical specimen colors are domain identity, never status meaning. */
+  --color-specimen-yellow-sps: var(--color-yellow-200);
+  --color-specimen-yellow-sps-stripe: var(--color-yellow-800);
+  --color-specimen-light-blue: var(--color-cyan-100);
+  --color-specimen-light-blue-stripe: var(--color-cyan-800);
+  --color-specimen-red: var(--color-red-100);
+  --color-specimen-red-stripe: var(--color-red-600);
+  --color-specimen-gold: var(--color-yellow-100);
+  --color-specimen-gold-stripe: var(--color-yellow-500);
+  --color-specimen-green: var(--color-green-100);
+  --color-specimen-green-stripe: var(--color-green-800);
+  --color-specimen-gray-green: var(--color-green-50);
+  --color-specimen-gray-green-stripe: var(--color-green-800);
+  --color-specimen-lavender: var(--color-purple-50);
+  --color-specimen-lavender-stripe: var(--color-purple-500);
+  --color-specimen-pink: var(--color-red-50);
+  --color-specimen-pink-stripe: var(--color-red-400);
+  --color-specimen-white: var(--color-neutral-100);
+  --color-specimen-white-stripe: var(--color-neutral-400);
+  --color-specimen-dark-gray: var(--color-slate-200);
+  --color-specimen-dark-gray-stripe: var(--color-neutral-600);
+
+  /* Kura core interaction semantics. */
+  --color-foreground-full: var(--color-white);
+  --color-foreground-icon-primary: var(--color-neutral-950);
+  --color-foreground-icon-secondary: var(--color-neutral-500);
+  --color-foreground-icon-tertiary: var(--color-neutral-400);
+  --color-foreground-icon-quaternary: var(--color-neutral-300);
+  --color-foreground-icon-error: var(--color-red-600);
+  --color-foreground-icon-disabled: var(--color-neutral-300);
+  --color-foreground-disabled: var(--color-neutral-400);
+  --color-foreground-disabled-danger: var(--color-red-300);
+  --color-text-disabled-danger: var(--color-red-300);
+  --color-text-error-primary: var(--color-red-500);
+  --color-text-error-placeholder: var(--color-red-400);
+  --color-background-primary-default: var(--color-white);
+  --color-background-primary-hover: var(--color-neutral-100);
+  --color-background-primary-active: var(--color-neutral-200);
+  --color-background-primary-disabled: var(--color-neutral-100);
+  --color-background-secondary-default: var(--color-neutral-100);
+  --color-background-secondary-hover: var(--color-neutral-200);
+  --color-background-secondary-active: var(--color-neutral-300);
+  --color-background-tertiary-default: var(--color-neutral-200);
+  --color-background-tertiary-hover: var(--color-neutral-300);
+  --color-background-tertiary-error: var(--color-red-100);
+  --color-background-quaternary-default: var(--color-neutral-300);
+  --color-tab-count-bg: color-mix(in srgb, var(--color-text-primary) 10%, transparent);
+  --color-border-button-default: var(--color-neutral-200);
+  --color-border-button-hover: var(--color-neutral-300);
+  --color-border-button-active: var(--color-neutral-400);
+  --color-border-button-white: var(--color-white);
+  --color-border-checkbox-default: var(--color-neutral-300);
+  --color-border-focus-ring: var(--color-blue-500);
+  --color-chart-track: var(--color-neutral-200);
+  --color-chart-cursor: var(--color-neutral-300);
+  --color-chart-neutral: var(--color-neutral-300);
+  --color-chart-1: var(--color-teal-400);
+  --color-chart-1-active: var(--color-teal-500);
+  --color-chart-2: var(--color-lime-400);
+  --color-chart-2-active: var(--color-lime-500);
+  --color-chart-3: var(--color-pink-400);
+  --color-chart-3-active: var(--color-pink-500);
+  --color-chart-4: var(--color-sky-400);
+  --color-chart-4-active: var(--color-sky-500);
+  --color-chart-5: var(--color-purple-400);
+  --color-chart-5-active: var(--color-purple-500);
+  --color-chart-6: var(--color-blue-400);
+  --color-chart-6-active: var(--color-blue-500);
+  --color-chart-7: var(--color-emerald-400);
+  --color-chart-7-active: var(--color-emerald-500);
+  --color-chart-8: var(--color-yellow-400);
+  --color-chart-8-active: var(--color-yellow-500);
+
+  /* Kura control gradients. */
+  --gradient-button-primary-default:
+    linear-gradient(180deg, var(--color-blue-500) 0%, var(--color-blue-600) 100%);
+  --gradient-button-primary-hover:
+    linear-gradient(180deg, var(--color-blue-400) 0%, var(--color-blue-500) 100%);
+  --gradient-button-primary-active:
+    linear-gradient(180deg, var(--color-blue-600) 0%, var(--color-blue-700) 100%);
+  --gradient-button-primary-disabled:
+    linear-gradient(180deg, var(--color-neutral-200) 0%, var(--color-neutral-300) 100%);
+  --gradient-button-danger-default:
+    linear-gradient(180deg, var(--color-red-500) 0%, var(--color-red-600) 100%);
+  --gradient-button-danger-hover:
+    linear-gradient(180deg, var(--color-red-400) 0%, var(--color-red-500) 100%);
+  --gradient-button-danger-active:
+    linear-gradient(180deg, var(--color-red-600) 0%, var(--color-red-700) 100%);
+  --gradient-button-danger-disabled:
+    linear-gradient(180deg, var(--color-red-100) 0%, var(--color-red-200) 100%);
 }
 
-[data-theme='dark'] {
-  --color-surface-bg: #0b1424;
-  --stepper-done-bg: rgba(var(--brand-rgb), 0.18);
-  --stepper-done-fg: var(--brand-300);
-  --stepper-active-ring: rgba(var(--brand-rgb), 0.28);
-  --stepper-rail-done: rgba(var(--brand-rgb), 0.45);
-  --background: var(--color-surface-bg);
-  --color-border-emphasis: #3d5070;
-  --color-border-focus: #52a2ff;
-  --color-status-success-fg: #22c97a;
-  --color-status-success-bg: rgba(34, 201, 122, 0.12);
-  --color-status-warning-fg: #f59e0b;
-  --color-status-warning-bg: rgba(245, 158, 11, 0.12);
-  --color-status-low-fg: #f59e0b;
-  /* Red-400 clears AA against the translucent danger surface in dark mode. */
-  --color-status-danger-fg: #f87171;
-  --color-status-danger-bg: rgba(245, 101, 101, 0.12);
-  --color-status-neutral-fg: #a8b8d0;
-  --color-status-neutral-bg: #182540;
-  --color-status-info-fg: #22d3ee;
-  --color-status-info-bg: rgba(34, 211, 238, 0.12);
-  --color-status-ai-fg: #a78bfa;
-  --color-status-ai-bg: rgba(167, 139, 250, 0.12);
-  --color-badge-neutral-bg: #182540;
-  --color-badge-neutral-fg: #e8edf6;
-  --color-badge-neutral-border: #2a3a55;
-  --color-badge-neutral-icon: #a8b8d0;
-  --color-badge-warning-bg: rgba(245, 158, 11, 0.12);
-  --color-badge-warning-fg: #f59e0b;
-  --color-badge-warning-icon: #f59e0b;
-  --color-focus-ring: rgba(38, 140, 255, 0.36);
-  --color-text-placeholder: #4a5870;
-  --surface-bg: var(--color-surface-bg);
-  --bg: var(--color-surface-bg);
-  --sidebar-bg: var(--color-surface-sunken);
-  --sidebar-hover-bg: var(--color-surface-2);
-  --sidebar-active-bg: var(--color-surface-2);
-  --sidebar-active-fg: var(--brand-300);
-  --surface-rgb: 17, 28, 48;
-  --lab-range-optimal: rgba(34, 201, 122, 0.3);
-  --lab-range-caution: rgba(245, 158, 11, 0.3);
-  --lab-range-out: rgba(245, 101, 101, 0.32);
-  --lab-range-optimal-muted: rgba(34, 201, 122, 0.12);
-  --lab-range-caution-muted: rgba(245, 158, 11, 0.12);
-  --lab-range-out-muted: rgba(245, 101, 101, 0.14);
-  --lab-dot-optimal: var(--color-status-success-fg);
-  --lab-dot-caution: var(--color-status-low-fg);
-  --lab-dot-out: var(--color-status-danger-fg);
-  --lab-dot-ring: var(--color-surface);
-}
 
 /* Small layout/type bridges used by the imported color reference story. */
 :root {
@@ -392,6 +352,8 @@
   --field-h: var(--control-h);
   --touch-target-min: 44px;
   --row-h: 44px;
+  --menu-width: 266px;
+  --file-upload-min-height: 164px;
 }
 
 [data-density='compact'] {
@@ -427,19 +389,24 @@
 .k-h5 { font-size: var(--type-lg); font-weight: var(--weight-semibold); line-height: var(--leading-snug); }
 .k-body { font-size: var(--type-base); font-weight: var(--weight-regular); line-height: var(--leading-normal); }
 .k-body-sm { font-size: var(--type-sm); font-weight: var(--weight-regular); line-height: var(--leading-normal); }
-.k-caption { font-size: var(--type-xs); font-weight: var(--weight-regular); line-height: var(--leading-normal); color: var(--color-text-muted); }
+.k-caption { font-size: var(--type-xs); font-weight: var(--weight-regular); line-height: var(--leading-normal); color: var(--color-text-tertiary); }
 .k-label { font-size: var(--type-sm); font-weight: var(--weight-medium); line-height: var(--leading-normal); color: var(--color-text-secondary); }
 
 /* ── Foundation scales: spacing, radius, elevation ───────── */
 :root {
   /* 4px base rhythm with half-steps for compact controls. */
   --space-0: 0px;
+  --space-px: 1px;
   --space-0-5: 2px;
+  --space-0-75: 3px;
   --space-1: 4px;
   --space-1-5: 6px;
   --space-2: 8px;
+  --space-2-5: 10px;
   --space-3: 12px;
+  --space-3-5: 14px;
   --space-4: 16px;
+  --space-4-5: 18px;
   --space-5: 20px;
   --space-6: 24px;
   --space-7: 28px;
@@ -475,6 +442,7 @@
   /* Radius primitives: size-named value scale. Components never consume these
      directly — they bind to the semantic roles below. */
   --radius-none: 0px;
+  --radius-2xs: 4px;
   --radius-xs: 6px;
   --radius-sm: 8px;
   --radius: 10px;
@@ -509,9 +477,12 @@
   --radius-control-compact: var(--radius-sm);
   --radius-indicator: var(--radius-xs);
   --radius-inset: var(--radius-md);
-  --radius-card-surface: var(--radius-lg);
-  --radius-popover: var(--radius-lg);
+  /* Depth reads through radius: tray 16 → tile 10 → controls below. */
+  --radius-card-surface: 16px;
+  --radius-card-tile: var(--radius-md);
+  --radius-popover: 16px;
   --radius-overlay: var(--radius-xl);
+  --radius-settings-modal: 24px;
   --radius-badge: var(--radius-full);
   --radius-track: var(--radius-full);
 
@@ -523,17 +494,62 @@
 
   /* Elevation scale and semantic aliases. */
   /* Soft separation: depth should clarify layering without making surfaces feel heavy. */
-  --shadow-xs: 0 1px 2px rgba(11, 20, 36, 0.02);
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.05);
   --shadow-sm: 0 1px 3px rgba(11, 20, 36, 0.03);
   --shadow-md: 0 4px 10px rgba(11, 20, 36, 0.045);
   --shadow-lg: 0 8px 18px rgba(11, 20, 36, 0.06);
   --shadow-xl: 0 14px 28px rgba(11, 20, 36, 0.075);
   --shadow-focus: 0 0 0 3px var(--color-focus-ring);
-  --shadow-selected: 0 0 0 2px var(--brand-500);
-  /* Cards separate from the page by surface contrast + one feather shadow. */
-  /* Light theme drops the card border; dark theme restores it (shadows die on dark). */
+  --shadow-selected: 0 0 0 2px var(--color-action-primary-accent);
+  /* Tray cards separate from the white page by surface contrast alone —
+   * no border, no shadow. The feather shadow belongs to white tiles nested
+   * inside a tray (BoardUI shadow-card: 0 1px 1px 5%). */
   --card-border: transparent;
-  --shadow-card: 0 1px 2px rgba(11, 20, 36, 0.05);
+  --shadow-card: 0 1px 1px rgba(0, 0, 0, 0.05);
+  --shadow-dropdown:
+    0 1px 1px rgba(0, 0, 0, 0.04),
+    0 4px 4px rgba(0, 0, 0, 0.02);
+  --shadow-sidebar:
+    0 1px 0 rgba(0, 0, 0, 0.0196),
+    0 1px 12px rgba(0, 0, 0, 0.0588),
+    0 0 1px rgba(0, 0, 0, 0.3216);
+  --shadow-nav-selected:
+    0 0 0 1px var(--color-blue-500),
+    inset 0 1px 0 rgba(255, 255, 255, 0.251);
+  --shadow-checkbox-selected:
+    inset 0 2px 0 rgba(255, 255, 255, 0.25),
+    inset 0 0 0 1px var(--color-blue-500);
+  --shadow-slider-track: inset 0 1px 1px rgba(0, 0, 0, 0.06);
+  --shadow-slider-range: inset 0 1px 0 rgba(255, 255, 255, 0.24);
+  --shadow-slider-thumb:
+    0 2px 4px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  --shadow-switch-thumb:
+    0 3px 3px rgba(0, 0, 0, 0.03),
+    0 0.75px 0 rgba(0, 0, 0, 0.05);
+  --shadow-switch-chip-sm: 0 2px 2px rgba(0, 0, 0, 0.03);
+  --shadow-switch-chip-md: 0 3px 3px rgba(0, 0, 0, 0.03);
+  --shadow-switch-chip-lg: 0 4px 4px rgba(0, 0, 0, 0.03);
+  --shadow-switch-selected-sm:
+    inset 0 1px 0 rgba(255, 255, 255, 0.25),
+    inset 0 0 0 0.5px var(--color-blue-500);
+  --shadow-switch-selected-md:
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.25),
+    inset 0 0 0 0.75px var(--color-blue-500);
+  --gradient-switch-thumb:
+    linear-gradient(
+      180deg,
+      var(--color-background-primary-default) 43.837%,
+      var(--color-background-primary-hover)
+    );
+  --gradient-switch-chip-off:
+    linear-gradient(
+      0deg,
+      var(--color-background-primary-default) 43.837%,
+      var(--color-neutral-100)
+    );
+  --gradient-switch-chip-on:
+    linear-gradient(0deg, var(--color-blue-500) 43.837%, var(--color-blue-600));
   --shadow-table: none;
   --shadow-button-raised:
     0 1px 2px 0 #0b14240d, 0 1px 0 0 #0b14240a, inset 0 -1px 0 0 var(--ink-200);
@@ -547,7 +563,8 @@
   --elevation-4: var(--shadow-lg);
   --elevation-5: var(--shadow-xl);
   --elevation-surface: var(--elevation-0);
-  --elevation-card: var(--shadow-card);
+  --elevation-card: none;
+  --elevation-card-tile: var(--shadow-card);
   /* Outline surface: border replaces the shadow entirely, in every theme. */
   --elevation-card-outline: none;
   --card-border-outline: var(--color-border);

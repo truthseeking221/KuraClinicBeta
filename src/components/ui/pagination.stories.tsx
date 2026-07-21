@@ -10,11 +10,11 @@ function Example({ current = 2, disabledPrevious = false }: { current?: number; 
 const meta = {
   title: 'Design System/Components/Pagination',
   component: Pagination,
-  tags: ['autodocs', 'source-reui', 'adapted-kura'],
+  tags: ['autodocs', 'source-kura', 'adapted-kura'],
   parameters: {
     layout: 'centered',
     kura: {
-      source: { vendor: 'ReUI', registryItem: 'pagination', familySize: 8 },
+      source: { vendor: 'Kura', registryItem: 'pagination', visualReference: 'Kura pagination', familySize: 8 },
       intake: { decision: 'CREATE', owner: 'src/components/ui', evidence: 'DataGrid owns table-specific pagination, but no navigation-semantic standalone composition existed for search, directories, or non-tabular collections.' },
       binding: { colors: 'kura-semantic', typography: 'kura', spacing: 'kura', radius: 'kura-control', icons: 'kura-canonical', responsive: 'direction labels collapse at 320px' },
       exclusions: [{ capability: 'Rows-per-page selector', replacement: 'DataGridPagination owns table page size; compose Select in the feature for non-tabular collections.' }],

@@ -1,0 +1,237 @@
+/*
+ * Prescribe rail: dense review list, spacing-grouped sections, boxes only
+ * where a row expands into its own decision scope. Stop is the single
+ * destructive action and the only saturated control.
+ */
+
+.rail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+
+.title {
+  color: var(--color-text-primary);
+  font-size: var(--type-base);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-snug);
+}
+
+.subtitle {
+  margin-block-start: 2px;
+  color: var(--color-text-tertiary);
+  font-size: var(--type-xs);
+  line-height: var(--leading-normal);
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.sectionLabel {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--color-text-secondary);
+  font-size: var(--type-sm);
+  font-weight: var(--weight-medium);
+}
+
+.rows {
+  display: flex;
+  flex-direction: column;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding-block: var(--space-2);
+  border-block-end: 1px solid var(--color-border);
+}
+
+.row:last-child {
+  border-block-end: none;
+}
+
+.rowCopy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-inline-size: 0;
+  flex: 1;
+}
+
+.rowDrug {
+  color: var(--color-text-primary);
+  font-size: var(--type-sm);
+  font-weight: var(--weight-medium);
+  overflow-wrap: anywhere;
+}
+
+.rowDrugStopped {
+  color: var(--color-text-tertiary);
+  font-size: var(--type-sm);
+  font-weight: var(--weight-medium);
+  text-decoration: line-through;
+}
+
+.rowMeta {
+  color: var(--color-text-tertiary);
+  font-size: var(--type-xs);
+  line-height: var(--leading-normal);
+}
+
+/* ── Diagnoses ───────────────────────────────────────────── */
+
+.diagnosis {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  padding-block: var(--space-2);
+}
+
+.diagnosisCode {
+  color: var(--color-text-secondary);
+  font-size: var(--type-xs);
+  font-weight: var(--weight-semibold);
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+.diagnosisWarning {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--color-status-warning-bg);
+  color: var(--color-status-warning-fg);
+  font-size: var(--type-sm);
+  line-height: var(--leading-normal);
+}
+
+/* ── Needs review ────────────────────────────────────────── */
+
+.reviewItem {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  margin-block-end: var(--space-2);
+}
+
+.reviewTrigger {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  inline-size: 100%;
+  padding: var(--space-3);
+  background: none;
+  border: none;
+  text-align: start;
+  cursor: pointer;
+  border-radius: var(--radius-md);
+  transition: background-color var(--motion-color);
+}
+
+.reviewTrigger:hover {
+  background: var(--color-surface-sunken);
+}
+
+.reviewTrigger:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.chevron,
+.chevronOpen {
+  color: var(--color-text-tertiary);
+  flex-shrink: 0;
+  transition: rotate var(--motion-control);
+}
+
+.chevronOpen {
+  rotate: 180deg;
+}
+
+.reviewBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  padding-block-start: 0;
+}
+
+.risk {
+  color: var(--color-status-warning-fg);
+  font-size: var(--type-xs);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-normal);
+}
+
+.decisions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.adjust {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.adjustActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+/* ── Suggestions & reviewed ──────────────────────────────── */
+
+.suggestionNote {
+  color: var(--color-text-tertiary);
+  font-size: var(--type-2xs);
+  line-height: var(--leading-normal);
+}
+
+.addedMark {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--color-status-success-fg);
+  font-size: var(--type-xs);
+  font-weight: var(--weight-medium);
+}
+
+.decisionLabel {
+  color: var(--color-text-secondary);
+  font-size: var(--type-xs);
+  font-weight: var(--weight-medium);
+}
+
+/* ── Search & footer ─────────────────────────────────────── */
+
+.searchEmpty {
+  color: var(--color-text-tertiary);
+  font-size: var(--type-sm);
+  line-height: var(--leading-normal);
+}
+
+.footer {
+  display: flex;
+  flex-direction: column;
+  padding-block-start: var(--space-2);
+  border-block-start: 1px solid var(--color-border);
+}

@@ -115,7 +115,7 @@
 
 /* Wait pressure is never color-only: the copy carries the escalation word. */
 .wait[data-tone='warn'] {
-  color: var(--color-warn-500);
+  color: var(--color-status-warning-fg);
   font-weight: var(--weight-medium);
 }
 

@@ -1,6 +1,7 @@
 .content,
 .subContent {
   box-sizing: border-box;
+  inline-size: var(--menu-width);
   min-inline-size: var(--space-32);
   max-inline-size: calc(100vw - var(--space-4));
   max-block-size: min(
@@ -10,10 +11,10 @@
   overflow: auto;
   border: 1px solid var(--border);
   border-radius: var(--radius-popover);
-  padding: var(--space-1);
-  background: var(--card);
+  padding: var(--space-2-5);
+  background: var(--color-background-primary-default);
   color: var(--card-foreground);
-  box-shadow: var(--elevation-popover);
+  box-shadow: var(--shadow-dropdown);
   outline: none;
   transform-origin: var(--radix-dropdown-menu-content-transform-origin);
 }
@@ -32,13 +33,15 @@
   from {
     opacity: 0;
     transform: scale(0.96);
+    filter: blur(var(--space-0-5));
   }
 }
 
 @keyframes menu-out {
   to {
     opacity: 0;
-    transform: scale(0.98);
+    transform: scale(0.96);
+    filter: blur(var(--space-0-5));
   }
 }
 
@@ -71,15 +74,15 @@
   min-inline-size: 0;
   min-block-size: var(--control-h);
   align-items: center;
-  gap: var(--space-inline-control);
+  gap: var(--space-2);
   border: 0;
   border-radius: var(--radius-control);
-  padding: var(--space-stack-control) var(--space-inset-control);
+  padding: var(--space-2);
   background: transparent;
   color: var(--card-foreground);
   font-family: var(--font-family-sans);
   font-size: var(--type-base);
-  font-weight: var(--weight-regular);
+  font-weight: var(--weight-medium);
   line-height: var(--leading-normal);
   text-align: start;
   overflow-wrap: anywhere;
@@ -110,7 +113,7 @@
 .radioItem[data-highlighted],
 .subTrigger[data-highlighted],
 .subTrigger[data-state='open'] {
-  background: var(--muted);
+  background: var(--color-background-primary-hover);
   color: var(--foreground);
 }
 

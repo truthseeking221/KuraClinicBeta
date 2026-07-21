@@ -6,7 +6,7 @@ import { Button, ChevronRightIcon, PlusIcon } from './index';
 const meta = {
   title: 'Design System/Primitives/Button',
   component: Button,
-  tags: ['autodocs', 'source-reui', 'adapted-kura'],
+  tags: ['autodocs', 'source-kura', 'adapted-kura'],
   parameters: {
     layout: 'centered',
     kura: {
@@ -14,13 +14,12 @@ const meta = {
         decision: 'REUSE',
         owner: 'src/components/ui',
         evidence:
-          'Fresh source and Storybook search found the canonical Kura Button already owning this action primitive. ReUI c-button-1 is a thin default-button composition; the existing Kura Button is reused and remains the single owner while related compositions keep separate owners.',
+          'The canonical Kura Button remains the action owner and adopts Kura geometry, gradients, borders, shadows, and states.',
       },
       source: {
-        vendor: 'ReUI',
-        registryItem: '@reui/c-button-1',
-        registryDependency: '@reui/button',
-        sourceUrl: 'https://reui.io/components/button',
+        vendor: 'Kura',
+        registryItem: 'button',
+        visualReference: 'Kura button',
       },
       binding: {
         colors: 'kura-semantic',

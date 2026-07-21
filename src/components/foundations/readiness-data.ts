@@ -101,6 +101,12 @@ export const READINESS = {
     note: 'The signal strip composes other domains; it has no dedicated backend endpoint and inherits each source domain’s readiness.',
     owner: 'src/features/home',
   },
+  patients: {
+    area: 'Clinic/Clinical/Patients',
+    level: 'partial',
+    note: 'The registry consumes the ListWorkspacePatients contract verbatim: eight masked fields, recency order, offset pagination, no name search (names are encrypted with no searchable index). The "why now" triage column and assurance filtering are target-contract scaffolding with no backend model or filter parameter yet.',
+    owner: 'src/features/patients',
+  },
   patientContext: {
     area: 'Clinic/Clinical/Patient Context Rail',
     level: 'gap',

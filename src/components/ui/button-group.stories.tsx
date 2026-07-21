@@ -5,7 +5,7 @@ import { Badge, Button, ButtonGroup, IconButton, PlusIcon } from './index';
 const meta = {
   title: 'Design System/Patterns/ButtonGroup',
   component: ButtonGroup,
-  tags: ['autodocs', 'source-reui', 'adapted-kura'],
+  tags: ['autodocs', 'source-kura', 'adapted-kura'],
   parameters: {
     layout: 'centered',
     kura: {
@@ -13,12 +13,12 @@ const meta = {
         decision: 'EXTEND',
         owner: 'src/components/ui',
         evidence:
-          'Kura already owns ButtonGroup for related action layout. The ReUI Button Group page adds evidence for stateful segmented selection, icon/text composition, nested groups, and toolbar compositions; the stateful selection contract is promoted to SegmentedToggle while ButtonGroup remains the layout owner.',
+          'Kura keeps ButtonGroup as the related-action layout owner and adopts Kura joined-control geometry and finish.',
       },
       source: {
-        vendor: 'ReUI',
-        registryItem: 'button-group — grouped action, segmented, toolbar, and view-switcher examples',
-        sourceUrl: 'https://reui.io/components/button-group',
+        vendor: 'Kura',
+        registryItem: 'button-group',
+        visualReference: 'Kura button-group',
       },
       binding: {
         colors: 'delegated-to-kura-children',

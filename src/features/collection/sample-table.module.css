@@ -14,43 +14,43 @@
 }
 
 .tubeDot[data-tube='yellow-sps'] {
-  background: var(--warn-600);
+  background: var(--color-specimen-yellow-sps-stripe);
 }
 
 .tubeDot[data-tube='light-blue'] {
-  background: var(--info-600);
+  background: var(--color-specimen-light-blue-stripe);
 }
 
 .tubeDot[data-tube='red'] {
-  background: var(--danger-600);
+  background: var(--color-specimen-red-stripe);
 }
 
 .tubeDot[data-tube='gold-sst'] {
-  background: var(--warn-500);
+  background: var(--color-specimen-gold-stripe);
 }
 
 .tubeDot[data-tube='green'] {
-  background: var(--success-600);
+  background: var(--color-specimen-green-stripe);
 }
 
 .tubeDot[data-tube='gray-green'] {
-  background: var(--success-700);
+  background: var(--color-specimen-gray-green-stripe);
 }
 
 .tubeDot[data-tube='lavender'] {
-  background: var(--purple-500);
+  background: var(--color-specimen-lavender-stripe);
 }
 
 .tubeDot[data-tube='pink'] {
-  background: var(--danger-400);
+  background: var(--color-specimen-pink-stripe);
 }
 
 .tubeDot[data-tube='white'] {
-  background: var(--ink-400);
+  background: var(--color-specimen-white-stripe);
 }
 
 .tubeDot[data-tube='dark-gray'] {
-  background: var(--ink-600);
+  background: var(--color-specimen-dark-gray-stripe);
 }
 
 .mono {

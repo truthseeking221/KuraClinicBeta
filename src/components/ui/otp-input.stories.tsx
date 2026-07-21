@@ -51,28 +51,50 @@ type Story = StoryObj<typeof meta>;
 
 function Playground({
   error,
+  fullWidth = false,
   onComplete,
 }: {
   error?: string;
+  fullWidth?: boolean;
   onComplete?: (value: string) => void;
 }) {
   const [value, setValue] = useState('');
   return (
-    <OtpInput
-      error={error}
-      helpText={error ? undefined : 'Enter the 6-digit code from the SMS.'}
-      label="SMS code"
-      onComplete={onComplete}
-      onValueChange={setValue}
-      value={value}
-    />
+    <div style={{ width: 'min(24rem, calc(100vw - 2rem))' }}>
+      <OtpInput
+        error={error}
+        fullWidth={fullWidth}
+        helpText={error ? undefined : 'Enter the 6-digit code from the SMS.'}
+        label="SMS code"
+        onComplete={onComplete}
+        onValueChange={setValue}
+        value={value}
+      />
+    </div>
   );
 }
 
-/** ReUI default anatomy: two joined groups of three slots with one separator. */
+/** ReUI default anatomy: two compact joined groups with one separator. */
 export const Default: Story = {
   args: { value: '', onValueChange: () => {}, label: 'SMS code' },
   render: () => <Playground />,
+};
+
+/** Auth forms can stretch both groups to the available field width. */
+export const FullWidth: Story = {
+  args: { ...Default.args, fullWidth: true },
+  render: () => <Playground fullWidth />,
+  play: async ({ canvasElement }) => {
+    const field = canvasElement.querySelector<HTMLElement>('[data-slot="otp-input"]');
+    const slots = canvasElement.querySelector<HTMLElement>('[data-input-otp-container]');
+
+    await expect(field).not.toBeNull();
+    await expect(slots).not.toBeNull();
+
+    const fieldWidth = field?.getBoundingClientRect().width ?? 0;
+    const slotsWidth = slots?.getBoundingClientRect().width ?? 0;
+    await expect(Math.abs(fieldWidth - slotsWidth)).toBeLessThanOrEqual(1);
+  },
 };
 
 /** Typing advances through the same logical input; the sixth digit fires onComplete once. */
@@ -175,11 +197,37 @@ export const FourDigits: Story = {
     length: 4,
     groupSize: 4,
   },
+  play: async ({ canvasElement }) => {
+    const slots = Array.from(
+      canvasElement.querySelectorAll<HTMLElement>('[data-slot="otp-group"] > span'),
+    );
+
+    await expect(slots).toHaveLength(4);
+    for (const slot of slots) {
+      await expect(slot.getBoundingClientRect().width).toBe(44);
+      await expect(slot.getBoundingClientRect().height).toBe(44);
+      await expect(getComputedStyle(slot).fontSize).toBe('20px');
+    }
+  },
 };
 
-/** At 320px, the six-slot row remains contained without horizontal overflow. */
+/** At 320px, the six-slot row fills its field without horizontal overflow. */
 export const Mobile320: Story = {
-  args: Default.args,
+  args: { ...Default.args, fullWidth: true },
   parameters: { viewport: { defaultViewport: 'kura320' } },
-  render: () => <Playground />,
+  render: () => <Playground fullWidth />,
+  play: async ({ canvasElement }) => {
+    const field = canvasElement.querySelector<HTMLElement>('[data-slot="otp-input"]');
+    const slots = canvasElement.querySelector<HTMLElement>('[data-input-otp-container]');
+
+    await expect(field).not.toBeNull();
+    await expect(slots).not.toBeNull();
+
+    const fieldRect = field?.getBoundingClientRect();
+    const slotsRect = slots?.getBoundingClientRect();
+    await expect(Math.abs((fieldRect?.width ?? 0) - (slotsRect?.width ?? 0))).toBeLessThanOrEqual(
+      1,
+    );
+    await expect((slotsRect?.right ?? 0) <= (fieldRect?.right ?? 0) + 1).toBe(true);
+  },
 };

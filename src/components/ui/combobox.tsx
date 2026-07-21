@@ -145,7 +145,7 @@ export const ComboboxInput = forwardRef<
 ) {
   const labelId = useContext(ComboboxLabelContext);
   return (
-    <div className={styles.control} data-slot="combobox-input-control">
+    <ComboboxPrimitive.InputGroup className={styles.control} data-slot="combobox-input-control">
       <ComboboxPrimitive.Input
         ref={ref}
         aria-labelledby={labelId ?? undefined}
@@ -159,7 +159,7 @@ export const ComboboxInput = forwardRef<
         {showClear ? <ComboboxClear aria-label={clearLabel} disabled={disabled} /> : null}
         {showTrigger ? <ComboboxTrigger aria-label={triggerLabel} disabled={disabled} /> : null}
       </div>
-    </div>
+    </ComboboxPrimitive.InputGroup>
   );
 });
 
@@ -171,18 +171,22 @@ export type ComboboxContentProps = ComboboxPrimitive.Popup.Props &
 
 export function ComboboxContent({
   align = 'start',
+  alignOffset,
   anchor,
   className,
   side = 'bottom',
+  sideOffset = 4,
   ...props
 }: ComboboxContentProps) {
   return (
     <ComboboxPrimitive.Portal>
       <ComboboxPrimitive.Positioner
         align={align}
+        alignOffset={alignOffset}
         anchor={anchor}
         className={styles.positioner}
         side={side}
+        sideOffset={sideOffset}
       >
         <ComboboxPrimitive.Popup
           data-slot="combobox-content"

@@ -63,29 +63,53 @@ export type PhoneGateOutcome =
       auditReason: 'different_patient' | 'shared_phone_override' | 'no_match';
     };
 
+/**
+ * Each step title names the question that step asks, so the heading and the
+ * controls below it never disagree.
+ */
 export const PHONE_GATE_COPY = {
-  title: 'Choose patient',
-  subtitle: 'Start with a patient, guardian, or guarantor phone.',
-  verifyTitle: 'Verify number',
-  changePhone: 'Change phone',
+  phoneTitle: 'Patient phone',
+  phoneSubtitle: 'The patient, a guardian, or a guarantor.',
+  otpTitle: 'Enter the code',
   matchTitle: 'Is this the patient?',
-  someoneElse: 'Patient is someone else',
-  differentTitle: 'This looks like a different patient',
+  sharedTitle: 'Which patient?',
+  newPatientTitle: 'New patient',
+  lookupTitle: 'Patient lookup',
+
+  sendCode: 'Send SMS code',
+  verifyCode: 'Verify code',
+  verifying: 'Checking code…',
+  resendCode: 'Resend code',
+  useThisPatient: 'Use this patient',
+  someoneElse: 'Someone else',
+  choosePatient: 'Use selected patient',
+  noneOfThese: 'None of these',
+  createTemporary: 'Create temporary patient',
+  creating: 'Creating…',
+  changePhone: 'Change',
+  changePhoneLabel: 'Change phone number',
+
+  verifiedLabel: 'Verified phone',
+  sentToLabel: 'Code sent to',
+  /** The one fact the gate exists to protect: possession is not identity. */
+  identityCaveat: 'SMS confirms the number, not who is being tested.',
+  differentTitle: 'This may be a different patient',
   differentBody:
-    'This phone belongs to another Kura patient. Confirm this is a different person.',
-  noMatchTitle: 'No match found',
-  noMatchBody: 'Add details. Kura will check for possible duplicates.',
-  beforeSendLabel: 'BEFORE YOU SEND',
-  beforeSendBody:
-    'Confirm the phone and the person taking the tests. Reception can finish ID checks later.',
+    'This number already belongs to a Kura patient. Creating a record here is logged as a possible duplicate.',
+  noMatchBody: 'No Kura patient uses this number.',
+
   invalidPhone: 'Enter a valid Cambodia phone number.',
   rateLimited: 'Too many codes requested — try again in a few minutes.',
   invalidCode: 'Incorrect or expired code — try again.',
+  lookupErrorTitle: 'Lookup unavailable',
   lookupError: 'The patient lookup did not respond. Your entries are kept.',
-  unlockPhone: 'Unlock phone number',
+  nameRequired: 'Enter the full name.',
+  dobRequired: 'Enter a date of birth or age.',
+  sexRequired: 'Select a sex.',
+  noSelection: 'Select a patient, or add a temporary one.',
+
   phoneChecked: 'Phone checked',
   pscConfirms: 'PSC will confirm identity',
-  detailsRequired: 'Add the full name, DOB or age, and sex to continue.',
   closeLabel: 'Close patient identity gate',
 } as const;
 
@@ -120,12 +144,27 @@ export function stateAfterLookup(result: PhoneLookupResult): PhoneGateState {
   return 'error';
 }
 
-/** Creation gate for both temporary-patient forms (spec §8/§9). */
-export function draftPatientError(draft: DraftPatient): string | null {
-  if (!draft.name.trim() || !draft.dobOrAge.trim() || draft.sex === null) {
-    return PHONE_GATE_COPY.detailsRequired;
-  }
-  return null;
+export type DraftPatientErrors = {
+  name?: string;
+  dobOrAge?: string;
+  sex?: string;
+};
+
+/**
+ * Creation gate for both temporary-patient forms (spec §8/§9). Errors are
+ * returned per field so each message lands on the control that is missing,
+ * instead of one lumped sentence under the form.
+ */
+export function draftPatientErrors(draft: DraftPatient): DraftPatientErrors {
+  const errors: DraftPatientErrors = {};
+  if (!draft.name.trim()) errors.name = PHONE_GATE_COPY.nameRequired;
+  if (!draft.dobOrAge.trim()) errors.dobOrAge = PHONE_GATE_COPY.dobRequired;
+  if (draft.sex === null) errors.sex = PHONE_GATE_COPY.sexRequired;
+  return errors;
+}
+
+export function hasDraftErrors(errors: DraftPatientErrors): boolean {
+  return Object.keys(errors).length > 0;
 }
 
 /**

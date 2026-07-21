@@ -7,8 +7,8 @@ type DoneCheck = Readonly<{
 }>;
 
 /**
- * Distilled from AGENTS.md and the ReUI × BoardUI × Kura component build
- * guide (§5): a component or story ships only when every row here passes.
+ * Distilled from AGENTS.md and the Kura component build guide (§5): a
+ * component or story ships only when every row here passes.
  * Installation is intake; only this list is integration.
  */
 const CHECKS: readonly DoneCheck[] = [
@@ -31,7 +31,7 @@ const CHECKS: readonly DoneCheck[] = [
     proof: 'Module CSS review; no literal values',
   },
   {
-    step: 'BoardUI finish checklist passes',
+    step: 'Kura finish gate passes',
     detail:
       'Border diet, weight-swap hierarchy, ≤3 font sizes, loud data / calm chrome, all four interaction states, motion composed from tokens.',
     proof: 'Guide §2 checklist against rendered UI',
@@ -161,7 +161,7 @@ export function DefinitionOfDoneReference() {
               <code className="font-mono">.codex/skills/design-kura-ui/SKILL.md</code> — UI craft and verification standard
             </li>
             <li className="k-body-sm text-[var(--color-text-secondary)]">
-              <code className="font-mono">.codex/skills/design-kura-ui/references/reui-boardui-kura-component-build-guide.md</code> — pipeline, finish checklist, story contract
+              Kura component build guide — pipeline, finish checklist, story contract
             </li>
             <li className="k-body-sm text-[var(--color-text-secondary)]">
               <code className="font-mono">AGENTS.md</code> — repository-wide authority: language, icons, Storybook

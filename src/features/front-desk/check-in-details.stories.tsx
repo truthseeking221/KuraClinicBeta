@@ -102,7 +102,8 @@ export const ReviewLockedIdentity: Story = {
     await expect(canvas.getByLabelText(/Sex at birth/)).toBeDisabled();
     await expect(canvas.getByLabelText(/Full name \(Khmer\)/)).toBeEnabled();
     await expect(canvas.getByLabelText(/National ID number/)).toBeEnabled();
-    await expect(canvas.getByLabelText(/Preferred language/)).toBeEnabled();
+    // Language moved to the contact section: it decides message language.
+    await expect(canvas.getByLabelText(/Language for messages/)).toBeEnabled();
 
     // Unlock is an explicit, confirmed decision — never one accidental click.
     await userEvent.click(canvas.getByRole('button', { name: 'Unlock fields' }));
@@ -143,13 +144,11 @@ export const ReviewContactGate: Story = {
     const canvas = within(canvasElement);
     await expect(canvas.getByRole('button', { name: 'Continue' })).toBeDisabled();
     await expect(
-      canvas.getByText(
-        'Confirm date of birth and sex, then verify a contact channel — or record why it stays unverified.',
-      ),
+      canvas.getByText('Date of birth, sex, and a contact channel are required.'),
     ).toBeVisible();
 
-    // Channel-first: the desk asks how the patient wants to be reached.
-    await userEvent.click(canvas.getByRole('button', { name: 'SMS' }));
+    // Channel-first: picking how to reach the patient is a value choice.
+    await userEvent.click(canvas.getByRole('radio', { name: 'SMS' }));
     await userEvent.click(canvas.getByRole('button', { name: 'Send SMS code' }));
     await userEvent.type(canvas.getByLabelText('SMS code'), '123456');
     await userEvent.click(canvas.getByRole('button', { name: 'Verify' }));
@@ -164,7 +163,7 @@ export const TelegramChannel: Story = {
   render: () => <DetailsPlayground initial={capturedPatient()} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await userEvent.click(canvas.getByRole('button', { name: 'Telegram' }));
+    await userEvent.click(canvas.getByRole('radio', { name: 'Telegram' }));
     await expect(
       await canvas.findByText('Telegram QR pushed to the patient display'),
     ).toBeVisible();
@@ -183,9 +182,7 @@ export const SaveUnverifiedReason: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getByRole('button', { name: 'Continue' })).toBeDisabled();
-    await userEvent.click(
-      canvas.getByRole('button', { name: 'No channel available? Save unverified' }),
-    );
+    await userEvent.click(canvas.getByRole('button', { name: 'Continue without verifying' }));
     const save = canvas.getByRole('button', { name: 'Save unverified' });
     await expect(save).toBeDisabled();
     // House Select is a combobox, not a native <select>.

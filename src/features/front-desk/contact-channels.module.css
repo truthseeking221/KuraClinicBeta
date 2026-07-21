@@ -1,7 +1,33 @@
 .channel {
   display: flex;
   flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-inset-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card-surface, var(--radius-lg));
+  background: var(--color-surface);
+}
+
+.channelHeader {
+  display: flex;
+  align-items: baseline;
   gap: var(--space-2);
+}
+
+.requiredTag {
+  font-size: var(--type-xs);
+  color: var(--color-text-tertiary);
+}
+
+/* Shown once verified, where over-trusting the green badge is the real risk. */
+.assuranceNote {
+  margin: 0;
+  font-size: var(--type-xs);
+  color: var(--color-text-secondary);
+}
+
+.languageField {
+  max-width: 220px;
 }
 
 .subTitle {
@@ -19,9 +45,30 @@
 
 .choiceRow {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
+  justify-content: space-between;
   flex-wrap: wrap;
-  gap: var(--space-2);
+  gap: var(--space-3);
+}
+
+/* Channel names are short proper nouns — they never wrap mid-word. */
+.choiceRow :global([data-slot='segmented-toggle']) button {
+  white-space: nowrap;
+}
+
+@media (max-width: 480px) {
+  .choiceRow {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .choiceRow :global([data-slot='segmented-toggle']) {
+    width: 100%;
+  }
+
+  .choiceRow :global([data-slot='segmented-toggle']) button {
+    flex: 1;
+  }
 }
 
 .choiceLabel {
@@ -121,10 +168,6 @@
   display: flex;
   align-items: center;
   gap: var(--space-2);
-}
-
-.unverifiedLink {
-  align-self: flex-start;
 }
 
 @media (max-width: 480px) {

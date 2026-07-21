@@ -11,11 +11,11 @@
   grid-template-columns: minmax(0, 1fr);
   align-items: start;
   gap: var(--space-3);
-  padding: var(--space-3);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-card-surface);
-  background: var(--color-surface);
-  box-shadow: var(--shadow-overlay);
+  padding: var(--space-4);
+  border: 1px solid var(--color-border-button-default);
+  border-radius: var(--radius-popover);
+  background: var(--color-background-primary-default);
+  box-shadow: var(--shadow-dropdown);
   color: var(--color-text-primary);
 }
 
@@ -58,22 +58,22 @@
 .title {
   color: var(--color-text-primary);
   font-size: var(--type-sm);
-  font-weight: var(--weight-semibold);
+  font-weight: var(--weight-medium);
   line-height: var(--leading-normal);
   overflow-wrap: anywhere;
 }
 
 .description {
-  color: var(--color-text-tertiary);
-  font-size: var(--type-xs);
+  color: var(--color-text-secondary);
+  font-size: var(--type-base);
   line-height: var(--leading-normal);
   overflow-wrap: anywhere;
 }
 
 .icon {
   display: inline-flex;
-  width: var(--space-6);
-  height: var(--space-6);
+  width: var(--space-10);
+  height: var(--space-10);
   align-items: center;
   justify-content: center;
   border-radius: var(--radius-full);
@@ -82,8 +82,8 @@
 }
 
 .icon svg {
-  width: var(--space-4);
-  height: var(--space-4);
+  width: var(--space-5);
+  height: var(--space-5);
 }
 
 .success .icon {

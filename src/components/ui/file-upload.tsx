@@ -96,7 +96,7 @@ function statusLabel(status: FileUploadStatus | undefined, progress: number | un
 
 export function FileUpload({
   accept = '*',
-  browseLabel = 'Choose files',
+  browseLabel = 'select',
   className,
   defaultValue = [],
   description,
@@ -252,20 +252,24 @@ export function FileUpload({
           />
           <UploadIcon aria-hidden size={24} />
           <div className={styles.dropzoneCopy}>
-            <strong>{dragging ? 'Drop files here' : 'Drag files here or browse'}</strong>
+            <div className={styles.dropzonePrompt}>
+              <strong>{dragging ? 'Drop files here' : 'Drag and drop to upload or'}</strong>
+              {!dragging ? (
+                <Button
+                  disabled={unavailable}
+                  onClick={() => inputRef.current?.click()}
+                  size="sm"
+                  variant="link"
+                >
+                  {atLimit ? 'File limit reached' : browseLabel}
+                </Button>
+              ) : null}
+            </div>
             <span>
               {maxFiles === 1 ? 'One file' : `Up to ${maxFiles} files`}
               {Number.isFinite(maxSize) ? ` · ${formatFileSize(maxSize)} each` : ''}
             </span>
           </div>
-          <Button
-            disabled={unavailable}
-            onClick={() => inputRef.current?.click()}
-            size="sm"
-            variant="outline"
-          >
-            {atLimit ? 'File limit reached' : browseLabel}
-          </Button>
         </div>
       ) : null}
 

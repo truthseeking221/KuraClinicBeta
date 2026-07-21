@@ -27,6 +27,8 @@ export type RadioProps = Omit<
   readOnly?: boolean;
   /** Card appearance makes the complete labelled option one compact selectable surface. */
   appearance?: "default" | "card";
+  /** Gives descriptive card choices more inset and label-to-help spacing. */
+  density?: "standard" | "comfortable";
   /** Stable value used by RadioGroup and native form submission. */
   value?: string;
   /** Controlled-friendly callback with the next selected state. */
@@ -55,6 +57,7 @@ export function Radio({
   children,
   className,
   defaultChecked = false,
+  density = "standard",
   disabled,
   error,
   helpText,
@@ -105,6 +108,9 @@ export function Radio({
     <div
       className={joinClasses(styles.field, className)}
       data-appearance={appearance}
+      data-card-density={
+        appearance === "card" && density !== "standard" ? density : undefined
+      }
       data-slot="radio-field"
     >
       <label

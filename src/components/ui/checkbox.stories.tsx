@@ -6,7 +6,7 @@ import { Checkbox, CheckboxGroup } from './index';
 const meta = {
   title: 'Design System/Primitives/Checkbox',
   component: Checkbox,
-  tags: ['autodocs', 'source-reui', 'adapted-kura'],
+  tags: ['autodocs', 'source-kura', 'adapted-kura'],
   parameters: {
     layout: 'centered',
     kura: {
@@ -14,12 +14,12 @@ const meta = {
         decision: 'EXTEND',
         owner: 'src/components/ui',
         evidence:
-          'Kura already owns the native binary and mixed-choice primitive. The ReUI checkbox review adds group semantics, documented composition coverage, and explicit variant decisions without importing a second checkbox implementation.',
+          'Kura keeps the native binary and mixed-choice contract while adopting Kura box geometry, selected gradient, and inset highlight.',
       },
       source: {
-        vendor: 'ReUI',
-        registryItem: 'checkbox — basic, state, group, card, and layout examples',
-        sourceUrl: 'https://reui.io/components/checkbox',
+        vendor: 'Kura',
+        registryItem: 'checkbox',
+        visualReference: 'Kura checkbox',
       },
       binding: {
         colors: 'kura-semantic',

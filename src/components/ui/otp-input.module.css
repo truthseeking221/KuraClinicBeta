@@ -33,20 +33,39 @@
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
-  width: var(--space-8);
-  height: var(--space-8);
+  width: var(--control-h-lg);
+  height: var(--control-h-lg);
   padding: 0;
   border-block: 1px solid var(--color-border-strong);
   border-inline-end: 1px solid var(--color-border-strong);
   border-radius: 0;
   background: var(--color-surface);
   color: var(--color-text-primary);
-  font-size: var(--type-base);
+  font-size: var(--type-xl);
   font-weight: var(--weight-medium);
   font-variant-numeric: tabular-nums;
   transition:
     border-color var(--motion-color),
     box-shadow var(--motion-color);
+}
+
+.field[data-full-width='true'] {
+  width: 100%;
+}
+
+.field[data-full-width='true'] .slots {
+  width: 100%;
+}
+
+.field[data-full-width='true'] .group {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.field[data-full-width='true'] .slot {
+  flex: 1 1 0;
+  width: auto;
+  min-width: 0;
 }
 
 .slot:first-child {
@@ -100,7 +119,7 @@
 .caret {
   position: absolute;
   width: 1px;
-  height: var(--type-base);
+  height: var(--type-xl);
   background: currentColor;
   animation: caret-blink var(--duration-slow) steps(2, start) infinite;
 }

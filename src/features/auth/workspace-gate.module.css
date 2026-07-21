@@ -66,8 +66,8 @@
   flex: none;
   place-items: center;
   border-radius: var(--radius-inset);
-  background: var(--color-brand-50);
-  color: var(--color-brand-700);
+  background: var(--color-selection-bg);
+  color: var(--color-selection-fg);
   font-size: var(--type-md);
   font-weight: var(--weight-semibold);
 }

@@ -17,16 +17,16 @@ import {
 const meta = {
   title: 'Design System/Primitives/Table',
   component: Table,
-  tags: ['autodocs', 'source-reui', 'adapted-kura'],
+  tags: ['autodocs', 'source-kura', 'adapted-kura'],
   parameters: {
     layout: 'padded',
     kura: {
-      source: { vendor: 'ReUI', registryItem: '@reui/c-table-1' },
+      source: { vendor: 'Kura', registryItem: 'table', visualReference: 'Kura table' },
       intake: {
         decision: 'REUSE-AND-EXTEND',
         owner: 'src/components/ui',
         evidence:
-          'The canonical semantic Kura table already served operational lists. ReUI table examples and current Kura platform evidence added the missing footer state without importing a heavier data-grid or duplicating the owner.',
+          'The canonical semantic Kura table keeps operational-list behavior while adopting Kura header, row, border, and density finish.',
         exclusions: ['Dashboard cards, action menus, sorting, filtering, and selection models belong to composed tables or DataGrid.', 'Interactive rows keep a nested semantic action instead of turning tr into a button.'],
       },
       binding: {

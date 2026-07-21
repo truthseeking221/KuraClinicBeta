@@ -6,7 +6,8 @@ import type { ReactNode } from 'react';
 
 import styles from './switch.module.css';
 
-export type SwitchSize = 'sm' | 'md';
+export type SwitchSize = 'sm' | 'md' | 'lg';
+export type SwitchShape = 'pill' | 'rectangle';
 
 export type SwitchProps = Omit<SwitchPrimitive.Root.Props, 'className'> & {
   className?: string;
@@ -15,6 +16,7 @@ export type SwitchProps = Omit<SwitchPrimitive.Root.Props, 'className'> & {
   /** Supporting text that explains what the setting changes. */
   description?: ReactNode;
   size?: SwitchSize;
+  shape?: SwitchShape;
 };
 
 function joinClasses(...classes: Array<string | undefined | false>) {
@@ -29,6 +31,7 @@ export function Switch({
   id,
   readOnly = false,
   size = 'md',
+  shape = 'pill',
   ...props
 }: SwitchProps) {
   const generatedId = useId();
@@ -41,12 +44,15 @@ export function Switch({
       aria-describedby={descriptionId}
       className={styles.control}
       data-size={size}
+      data-shape={shape}
       data-slot="switch-control"
       disabled={disabled}
       id={switchId}
       readOnly={readOnly}
     >
-      <SwitchPrimitive.Thumb className={styles.thumb} />
+      <SwitchPrimitive.Thumb className={styles.thumb}>
+        <span className={styles.chip} />
+      </SwitchPrimitive.Thumb>
     </SwitchPrimitive.Root>
   );
 

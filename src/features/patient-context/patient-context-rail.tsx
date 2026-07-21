@@ -59,6 +59,11 @@ export type PatientContextPatient = {
 export type PatientContextRailProps = Omit<ComponentPropsWithoutRef<'aside'>, 'children'> & {
   /** The rail is fixture-only until a patient-chart context contract exists. */
   patient: PatientContextPatient;
+  /**
+   * Hide the identity block when a surrounding chart header already carries
+   * it, so identity is never stated twice with room to disagree.
+   */
+  showIdentity?: boolean;
   safety?: readonly PatientContextLine[];
   todaySummary?: string;
   reasonForVisit?: readonly string[];
@@ -260,6 +265,7 @@ export function PatientContextRail({
   reasonForVisit,
   safety,
   sections,
+  showIdentity = true,
   state = 'ready',
   todaySummary,
   onRetry,
@@ -275,8 +281,12 @@ export function PatientContextRail({
       data-read-only={readOnly || undefined}
       data-state={state}
     >
-      {state === 'loading' ? <RailLoading patient={patient} /> : <PatientIdentity patient={patient} />}
-      {state !== 'loading' ? <RailDivider /> : null}
+      {state === 'loading' ? (
+        <RailLoading patient={patient} />
+      ) : showIdentity ? (
+        <PatientIdentity patient={patient} />
+      ) : null}
+      {state !== 'loading' && showIdentity ? <RailDivider /> : null}
       {state !== 'loading' ? <StateNotice state={state} onRetry={onRetry} /> : null}
       {canShowRecord ? (
         <>

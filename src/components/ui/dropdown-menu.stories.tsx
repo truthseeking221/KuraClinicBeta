@@ -31,7 +31,7 @@ import {
 const meta = {
   title: 'Design System/Components/Dropdown Menu',
   component: DropdownMenu,
-  tags: ['autodocs', 'source-reui', 'adapted-kura'],
+  tags: ['autodocs', 'source-kura', 'adapted-kura'],
   parameters: {
     layout: 'centered',
     kura: {
@@ -40,12 +40,12 @@ const meta = {
         owner: 'src/components/ui',
         hierarchy: 'Component',
         evidence:
-          'The fresh Storybook index, canonical exports, source search, and ButtonGroup exclusions show that Kura has no anchored contextual-menu owner. Button and IconButton provide triggers, while Autocomplete is a search-and-select listbox rather than a menu of actions. ReUI supplies the Radix interaction foundation; Kura owns the public contract, visual binding, responsive behavior, and Storybook scenarios.',
+          'Kura owns the contextual-menu contract and Radix behavior while adopting Kura panel, row, shadow, and overlay motion finish.',
       },
       source: {
-        vendor: 'ReUI',
-        registryItem: '@reui/dropdown-menu and the Dropdown Menu family',
-        sourceUrl: 'https://reui.io/components/dropdown-menu',
+        vendor: 'Kura',
+        registryItem: 'dropdown',
+        visualReference: 'Kura dropdown',
       },
       binding: {
         colors: 'kura-semantic',

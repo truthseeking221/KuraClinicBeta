@@ -29,7 +29,7 @@ a.item:focus-visible {
 }
 
 a.item[data-tone='critical']:hover {
-  background: color-mix(in srgb, var(--color-status-danger-bg) 80%, var(--color-danger-100));
+  background: var(--color-status-danger-bg);
 }
 
 .iconBadge {
@@ -50,7 +50,7 @@ a.item[data-tone='critical']:hover {
 }
 
 .item[data-tone='critical'] .iconBadge {
-  background: var(--color-danger-100);
+  background: var(--color-status-danger-bg);
   color: var(--color-status-danger-fg);
 }
 
@@ -142,7 +142,7 @@ a.item:hover .actionLabel svg {
 :global([data-signal-density='compact']) .iconBadge {
   width: 30px;
   height: 30px;
-  background: var(--color-surface);
+  background: var(--color-surface-2);
   color: var(--color-text-secondary);
 }
 

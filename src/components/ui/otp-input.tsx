@@ -22,6 +22,8 @@ export type OtpInputProps = {
   helpText?: ReactNode;
   /** Error text; also flags the digits invalid. */
   error?: ReactNode;
+  /** Stretches the visual slot groups to the width of their containing form. */
+  fullWidth?: boolean;
   disabled?: boolean;
   autoFocus?: boolean;
   id?: string;
@@ -83,6 +85,7 @@ export function OtpInput({
   className,
   disabled = false,
   error,
+  fullWidth = false,
   groupSize,
   helpText,
   id,
@@ -103,6 +106,7 @@ export function OtpInput({
     <div
       className={joinClasses(styles.field, className)}
       data-disabled={disabled ? 'true' : undefined}
+      data-full-width={fullWidth ? 'true' : undefined}
       data-invalid={error ? 'true' : undefined}
       data-slot="otp-input"
     >

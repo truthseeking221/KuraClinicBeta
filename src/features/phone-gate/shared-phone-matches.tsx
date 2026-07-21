@@ -1,46 +1,55 @@
-import { Alert, AlertDescription, AlertTitle, Button } from '../../components/ui';
+'use client';
 
+import { Alert, AlertDescription, AlertTitle, Radio, RadioGroup } from '../../components/ui';
+
+import { PHONE_GATE_COPY } from './logic';
 import type { MatchedPatient } from './logic';
-import { PatientMatchCard } from './patient-match-card';
+import { patientMeta } from './patient-identity';
 import styles from './phone-gate.module.css';
 
 export type SharedPhoneMatchesProps = {
   candidates: MatchedPatient[];
-  onChoose: (patient: MatchedPatient) => void;
-  onCreateProvisional: () => void;
+  selectedId: string | null;
+  error: string | null;
+  onSelect: (patientId: string) => void;
 };
 
 /**
- * Phone possession does not establish which person is being tested. This
- * feature-owned section requires an explicit selection for every shared-phone
- * candidate and preserves a safe provisional-patient path.
+ * Phone possession does not establish which person is being tested, so the
+ * candidates are a single-choice radio set: one deliberate selection and one
+ * primary action, instead of one competing primary button per row.
  */
 export function SharedPhoneMatches({
   candidates,
-  onChoose,
-  onCreateProvisional,
+  error,
+  onSelect,
+  selectedId,
 }: SharedPhoneMatchesProps) {
   return (
-    <div className={styles.sharedMatches}>
+    <div className={styles.stack}>
       <Alert tone="warning">
         <AlertTitle>This number is linked to {candidates.length} patients</AlertTitle>
-        <AlertDescription>
-          SMS confirms the phone, not the person being tested. Choose the correct patient.
-        </AlertDescription>
+        <AlertDescription>{PHONE_GATE_COPY.identityCaveat}</AlertDescription>
       </Alert>
-      <div className={styles.candidateList} aria-label="Matching patients">
-        {candidates.map((candidate, index) => (
-          <PatientMatchCard
-            autoFocusChoose={index === 0}
+      <RadioGroup
+        className={styles.candidates}
+        error={error ?? undefined}
+        legend="Matching patients"
+        onValueChange={onSelect}
+        required
+        value={selectedId ?? undefined}
+      >
+        {candidates.map((candidate) => (
+          <Radio
+            appearance="card"
+            helpText={patientMeta(candidate)}
             key={candidate.patientId}
-            onChoose={() => onChoose(candidate)}
-            patient={candidate}
-          />
+            value={candidate.patientId}
+          >
+            {candidate.name}
+          </Radio>
         ))}
-      </div>
-      <Button fullWidth onClick={onCreateProvisional} variant="outline">
-        None of these, add provisional patient
-      </Button>
+      </RadioGroup>
     </div>
   );
 }

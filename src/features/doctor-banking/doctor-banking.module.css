@@ -313,7 +313,7 @@
 }
 
 .amountVoided {
-  color: var(--color-text-muted);
+  color: var(--color-text-tertiary);
   text-decoration: line-through;
 }
 

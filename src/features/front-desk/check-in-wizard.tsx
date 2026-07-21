@@ -22,7 +22,7 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-  ChevronDownIcon,
+  Checkbox,
   ChevronRightIcon,
   Collapsible,
   CollapsibleContent,
@@ -46,10 +46,18 @@ import {
   StepperTitle,
   StepperTrigger,
 } from '../../components/ui';
+import { LabTestPicker } from '../lab-catalog';
 
 import { CartRail } from './cart-rail';
 import { ContactChannels } from './contact-channels';
-import { ORDER_CATALOG, type CatalogEntry } from './catalog';
+import {
+  ORDER_CATALOG,
+  OTHER_ORDER_ENTRIES,
+  ORDER_PICKER_CATEGORIES,
+  ORDER_PICKER_TESTS,
+  orderEntryForPickerTest,
+  type CatalogEntry,
+} from './catalog';
 import { PaymentReceipt } from './payment-receipt';
 import {
   DEMO_BOOKING_QR_PAYLOAD,
@@ -130,7 +138,7 @@ const STEP_DEFS: Array<{ id: StepId; title: string }> = [
 /** Shown next to a blocked Continue so the disabled state explains itself. */
 const STEP_REQUIREMENTS: Record<Exclude<StepId, 6>, string> = {
   1: 'Find the patient or create a new record to continue.',
-  2: 'Confirm date of birth and sex, then verify a contact channel — or record why it stays unverified.',
+  2: 'Date of birth, sex, and a contact channel are required.',
   3: 'Attach a policy or choose self-pay to continue.',
   4: 'Add at least one order to continue.',
   5: 'Resolve the teleconsult booking to continue.',
@@ -271,7 +279,7 @@ export function CheckInWizard({
         </StepperNav>
       </Stepper>
 
-      <div className={styles.workspace}>
+      <div className={styles.workspace} data-cart-rail={showCartRail ? 'visible' : 'hidden'}>
         <div className={styles.stepPanel}>
           {step === 1 ? (
             <StepIdentity
@@ -405,6 +413,7 @@ function ContinueFooter({
         ? 'Record payment before finishing this reception flow.'
         : STEP_REQUIREMENTS[step]
       : null;
+  const actionLabel = step === 6 ? 'Finish' : step === 1 ? 'Review details' : 'Continue';
 
   return (
     <footer className={styles.stepFooter}>
@@ -422,7 +431,7 @@ function ContinueFooter({
           onClick={step === 6 ? onFinish : onContinue}
           variant="primary"
         >
-          {step === 6 ? 'Finish' : 'Continue'}
+          {actionLabel}
         </Button>
       </div>
     </footer>
@@ -489,13 +498,17 @@ function StepIdentity({
       patient.identity.source === 'qr'
         ? 'QR scan'
         : patient.identity.source === 'existing'
-          ? 'existing record'
-          : 'manual entry';
+          ? 'Existing Kura record'
+          : 'Manual entry';
+    const hasCaptureFacts =
+      patient.identity.lockedFields.length > 0 || Boolean(patient.boundBookingCode);
     return (
       <section aria-label="Identity" className={styles.step}>
         <h2 className={styles.stepTitle}>Identity captured</h2>
         <p className={styles.stepSubtitle}>
-          Edit details on the next step — locked fields require unlock first.
+          {patient.identity.lockedFields.length > 0
+            ? 'Review details next. Locked fields must be unlocked before editing.'
+            : 'Review and edit details on the next step.'}
         </p>
         <PatientResolutionCard
           variant="captured"
@@ -509,30 +522,29 @@ function StepIdentity({
             assurance: 'unverified',
             registeredHere: true,
           }}
-          status={{
-            label: `Captured via ${sourceLabel}${patient.identity.capturedAtLabel ? ` · ${patient.identity.capturedAtLabel}` : ''}`,
-            variant: 'success',
-          }}
+          provenance={`Source: ${sourceLabel}${patient.identity.capturedAtLabel ? ` · Captured ${patient.identity.capturedAtLabel}` : ''}`}
           helperText={
-            <>
-              {patient.identity.lockedFields.length > 0 ? (
-                <Badge size="sm" variant="neutral">
-                  {patient.identity.lockedFields.length} fields locked
-                </Badge>
-              ) : null}{' '}
-              {patient.boundBookingCode ? (
-                <Badge size="sm" variant="info">
-                  Booking {patient.boundBookingCode}
-                </Badge>
-              ) : null}
-            </>
+            hasCaptureFacts ? (
+              <>
+                {patient.identity.lockedFields.length > 0 ? (
+                  <Badge size="sm" variant="neutral">
+                    {patient.identity.lockedFields.length} fields locked
+                  </Badge>
+                ) : null}{' '}
+                {patient.boundBookingCode ? (
+                  <Badge size="sm" variant="info">
+                    Booking {patient.boundBookingCode}
+                  </Badge>
+                ) : null}
+              </>
+            ) : undefined
           }
           actions={
             recaptureAsked
               ? undefined
               : [
                   {
-                    label: 'Re-capture',
+                    label: 'Capture again',
                     variant: 'ghost',
                     icon: <RefreshIcon size={14} aria-hidden />,
                     onClick: () => setRecaptureAsked(true),
@@ -542,10 +554,10 @@ function StepIdentity({
         />
         {recaptureAsked ? (
           <Alert tone="warning">
-            <AlertTitle>Re-capture identity?</AlertTitle>
+            <AlertTitle>Capture identity again?</AlertTitle>
             <AlertDescription>
-              You start over with search, QR, or manual entry. Captured data stays until a new
-              method overwrites it.
+              Search, scan, or enter the identity again. Current data stays until a new method
+              overwrites it.
             </AlertDescription>
             <AlertAction>
               <Button onClick={() => setRecaptureAsked(false)} size="sm" variant="outline">
@@ -565,7 +577,7 @@ function StepIdentity({
                 size="sm"
                 variant="primary"
               >
-                Yes, re-capture
+                Start again
               </Button>
             </AlertAction>
           </Alert>
@@ -1079,20 +1091,30 @@ function StepReview({
 
   return (
     <section aria-label="Review and confirm" className={styles.step}>
-      <div className={styles.stepHeaderRow}>
-        <div>
-          <h2 className={styles.stepTitle}>Review &amp; confirm</h2>
-          <p className={styles.stepSubtitle}>
-            Verify details captured from the record, then verify a contact channel.
-          </p>
-        </div>
-        {hasLocks && !unlockAsked ? (
-          <Button onClick={() => setUnlockAsked(true)} size="sm" variant="outline">
-            <LockKeyIcon size={13} aria-hidden />
-            Unlock fields
-          </Button>
-        ) : null}
-      </div>
+      <h2 className={styles.stepTitle}>Review &amp; confirm</h2>
+
+      {/* A blocking duplicate is about the identity below it and gates Continue —
+          it leads the step instead of trailing the optional disclosures. */}
+      <CollisionList
+        collisions={collisions}
+        onAcknowledge={(id) => onUpdate({ collisionAcked: [...patient.collisionAcked, id] })}
+        onLoadExisting={(existing) =>
+          onUpdate({
+            ...recordPatch({
+              id: existing.id,
+              name: existing.name,
+              nameKhmer: existing.nameKhmer || undefined,
+              dob: existing.dob || undefined,
+              sexAtBirth: existing.sexAtBirth,
+              nid: existing.idNumber || undefined,
+              phone: existing.phoneNumber || undefined,
+              assurance: 'unverified',
+              registeredHere: true,
+            }),
+            collisionAcked: [existing.id],
+          })
+        }
+      />
 
       {unlockAsked ? (
         <Alert tone="warning">
@@ -1119,18 +1141,25 @@ function StepReview({
         </Alert>
       ) : null}
 
-      <Card className={styles.sectionCard}>
-        <div className={styles.sectionCardHeader}>
+      {/* Identity is a section of this step, not an independent object — it
+          groups by heading and spacing, never by a card boundary. */}
+      <div className={styles.formSection}>
+        <div className={styles.sectionHeader}>
           <h3 className={styles.subTitle}>Identity</h3>
-          {patient.identity.source === 'existing' ? (
-            <Badge size="sm" variant="success">
-              From Kura record
-            </Badge>
-          ) : (
-            <Badge size="sm" variant="neutral">
-              Manual entry
-            </Badge>
-          )}
+          <span className={styles.sectionProvenance}>
+            {patient.identity.source === 'existing' ? 'From Kura record' : 'Entered at the desk'}
+          </span>
+          {hasLocks && !unlockAsked ? (
+            <Button
+              className={styles.sectionAction}
+              onClick={() => setUnlockAsked(true)}
+              size="sm"
+              variant="ghost"
+            >
+              <LockKeyIcon size={13} aria-hidden />
+              Unlock fields
+            </Button>
+          ) : null}
         </div>
         <div className={styles.fieldGrid3}>
           <LockedOrEditableInput
@@ -1189,30 +1218,20 @@ function StepReview({
             placeholder="012345678"
             value={patient.idNumber}
           />
-          <Select
-            label="Preferred language"
-            onChange={(event) =>
-              onUpdate({
-                preferredLanguage: event.target.value as FrontDeskPatient['preferredLanguage'],
-              })
-            }
-            options={[
-              { value: 'Khmer', label: 'Khmer' },
-              { value: 'English', label: 'English' },
-            ]}
-            value={patient.preferredLanguage}
-          />
         </div>
-      </Card>
+      </div>
 
+      {/* The contact channel owns its own state machine and gates this step —
+          the one boundary on the screen that represents a real object. */}
       <ContactChannels onUpdate={onUpdate} patient={patient} />
 
-      <Card className={styles.sectionCard}>
+      <div className={styles.disclosures}>
         <Collapsible>
           <CollapsibleTrigger className={styles.collapsibleTrigger}>
-            <ChevronDownIcon size={14} aria-hidden className={styles.collapsibleChevron} />
-            <span className={styles.subTitle}>Address</span>
-            <span className={styles.optionalTag}>Optional</span>
+            <span className={styles.disclosureLabel}>
+              <span className={styles.subTitle}>Address</span>
+              <span className={styles.optionalTag}>Optional</span>
+            </span>
           </CollapsibleTrigger>
           <CollapsibleContent>
             <div className={styles.fieldGrid3}>
@@ -1244,14 +1263,13 @@ function StepReview({
             </div>
           </CollapsibleContent>
         </Collapsible>
-      </Card>
 
-      <Card className={styles.sectionCard}>
         <Collapsible>
           <CollapsibleTrigger className={styles.collapsibleTrigger}>
-            <ChevronDownIcon size={14} aria-hidden className={styles.collapsibleChevron} />
-            <span className={styles.subTitle}>Refund account</span>
-            <span className={styles.optionalTag}>Optional</span>
+            <span className={styles.disclosureLabel}>
+              <span className={styles.subTitle}>Refund account</span>
+              <span className={styles.optionalTag}>Optional</span>
+            </span>
           </CollapsibleTrigger>
           <CollapsibleContent>
             {patient.refundAccount ? (
@@ -1289,28 +1307,7 @@ function StepReview({
             )}
           </CollapsibleContent>
         </Collapsible>
-      </Card>
-
-      <CollisionList
-        collisions={collisions}
-        onAcknowledge={(id) => onUpdate({ collisionAcked: [...patient.collisionAcked, id] })}
-        onLoadExisting={(existing) =>
-          onUpdate({
-            ...recordPatch({
-              id: existing.id,
-              name: existing.name,
-              nameKhmer: existing.nameKhmer || undefined,
-              dob: existing.dob || undefined,
-              sexAtBirth: existing.sexAtBirth,
-              nid: existing.idNumber || undefined,
-              phone: existing.phoneNumber || undefined,
-              assurance: 'unverified',
-              registeredHere: true,
-            }),
-            collisionAcked: [existing.id],
-          })
-        }
-      />
+      </div>
     </section>
   );
 }
@@ -1724,6 +1721,30 @@ function StepOrders({
     }));
   }
 
+  function removeEntry(entryId: string) {
+    guardPaidEdit((current) => ({
+      ...current,
+      cart: {
+        ...current.cart,
+        items: current.cart.items.filter((item) => item.id !== entryId),
+      },
+    }));
+  }
+
+  function setEntrySelected(entry: CatalogEntry, selected: boolean) {
+    if (!selected) {
+      removeEntry(entry.id);
+      return;
+    }
+
+    // Imaging for a Female patient passes the pregnancy screen first.
+    if (pregnancyGateApplies(entry, patient)) {
+      setPregnancyGateEntry(entry);
+      return;
+    }
+    addEntry(entry);
+  }
+
   function patchConsent(itemId: string, consent: LineConsent) {
     onUpdate({
       cart: {
@@ -1880,53 +1901,55 @@ function StepOrders({
           setVerbalForId(null);
         }}
       />
-      <ul className={styles.catalog}>
-        {ORDER_CATALOG.map((entry) => {
-          const added = inCart.has(entry.id);
-          return (
-            <li className={styles.catalogRow} key={entry.id}>
-              <div className={styles.lineTextWide}>
-                <span className={styles.lineName}>{entry.name}</span>
-                <span className={styles.lineMeta}>
-                  {entry.category}
-                  {entry.fasting ? ' · Fasting' : ''}
-                  {entry.unsupported ? ' · Not orderable at this lab yet' : ''}
-                </span>
-              </div>
-              <MoneyText
-                className={styles.linePrice}
-                currency={entry.currencyCode}
-                minor={entry.priceMinor}
-              />
-              <Button
-                disabled={entry.unsupported && !added}
-                onClick={() => {
-                  if (added) {
-                    guardPaidEdit((current) => ({
-                      ...current,
-                      cart: {
-                        ...current.cart,
-                        items: current.cart.items.filter((item) => item.id !== entry.id),
-                      },
-                    }));
-                    return;
-                  }
-                  // Imaging for a Female patient passes the pregnancy screen first.
-                  if (pregnancyGateApplies(entry, patient)) {
-                    setPregnancyGateEntry(entry);
-                    return;
-                  }
-                  addEntry(entry);
-                }}
-                size="sm"
-                variant={added ? 'outline' : 'secondary'}
-              >
-                {added ? 'Remove' : 'Add'}
-              </Button>
-            </li>
-          );
+      <Collapsible className={styles.otherOrders}>
+        <CollapsibleTrigger className={styles.otherOrdersTrigger}>
+          <span className={styles.otherOrdersTitle}>
+            Other orders
+            <Badge size="sm">{OTHER_ORDER_ENTRIES.length}</Badge>
+          </span>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <ul className={styles.otherOrderList}>
+            {OTHER_ORDER_ENTRIES.map((entry) => (
+              <li className={styles.otherOrderRow} key={entry.id}>
+                <Checkbox
+                  aria-label={entry.name}
+                  checked={inCart.has(entry.id)}
+                  onCheckedChange={(checked) => setEntrySelected(entry, checked)}
+                >
+                  <span className={styles.lineTextWide}>
+                    <span className={styles.lineName}>{entry.name}</span>
+                    <span className={styles.lineMeta}>
+                      {entry.category}
+                      {entry.fasting ? ' · Fasting' : ''}
+                    </span>
+                  </span>
+                </Checkbox>
+                <MoneyText
+                  className={styles.otherOrderPrice}
+                  currency={entry.currencyCode}
+                  minor={entry.priceMinor}
+                />
+              </li>
+            ))}
+          </ul>
+        </CollapsibleContent>
+      </Collapsible>
+
+      <LabTestPicker
+        categories={ORDER_PICKER_CATEGORIES}
+        onSelectedTestIdsChange={(_selectedIds, change) => {
+          const entry = orderEntryForPickerTest(change.test.testCatalogId);
+          if (!entry) return;
+          setEntrySelected(entry, change.checked);
+        }}
+        selectedTestIds={ORDER_PICKER_TESTS.flatMap((test) => {
+          const entry = orderEntryForPickerTest(test.testCatalogId);
+          return entry && inCart.has(entry.id) ? [test.testCatalogId] : [];
         })}
-      </ul>
+        tests={ORDER_PICKER_TESTS}
+        totalCount={67}
+      />
     </section>
   );
 }

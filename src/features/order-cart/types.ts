@@ -184,7 +184,7 @@ export type OrderCartTube = {
   id: string;
   /** e.g. "Serum tube · 5 mL". */
   label: string;
-  /** Stopper tint token, e.g. 'var(--danger-100)' — physical color, token-mapped. */
+  /** Physical stopper identity expressed through a Kura specimen token. */
   stopperColor: string;
   stopperLabel: string;
   tests: string[];

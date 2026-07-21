@@ -63,14 +63,14 @@ const meta = {
     docs: {
       description: {
         component:
-          'A flat surface for one meaningful content unit. Use it only when the boundary clarifies ownership, state, comparison, or action; leave ordinary page sections unboxed.',
+          'A flat surface for one meaningful content unit. The default card is a gray tray on the white page — contrast only, no border or shadow. Nest white `tile` cards inside a tray when an inner unit needs its own surface. Use a card only when the boundary clarifies ownership, state, comparison, or action; leave ordinary page sections unboxed.',
       },
     },
   },
   argTypes: {
     as: { control: 'radio', options: ['article', 'section', 'div'] },
     size: { control: 'radio', options: [undefined, 'sm', 'md'] },
-    variant: { control: 'radio', options: [undefined, 'elevated', 'outline'] },
+    variant: { control: 'radio', options: [undefined, 'elevated', 'outline', 'tile'] },
     dividers: { control: 'boolean' },
   },
 } satisfies Meta<typeof Card>;
@@ -166,6 +166,47 @@ export const OutlineVariant: Story = {
     const canvas = within(canvasElement);
     const card = canvas.getByRole('article', { name: 'Haematology' });
     await expect(card).toHaveAttribute('data-variant', 'outline');
+  },
+};
+
+export const TileInsideTray: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'The surface sandwich: a gray tray card groups related units on the white page, and each unit that needs its own surface renders as a white tile with a feather shadow. Tiles never nest inside tiles.',
+      },
+    },
+  },
+  render: () => (
+    <Card className="max-w-md" aria-labelledby="tray-title">
+      <CardHeader>
+        <CardTitle id="tray-title">Today's results</CardTitle>
+        <CardDescription>Two panels returned since this morning.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="grid gap-[var(--space-control-gap)]">
+          {(
+            [
+              ['Lipid panel', 'Sokha Chan · returned 08:12'],
+              ['HbA1c', 'Dara Phally · returned 09:45'],
+            ] as const
+          ).map(([title, meta], index) => (
+            <Card key={title} variant="tile" size="sm" aria-labelledby={`tile-title-${index}`}>
+              <CardHeader>
+                <CardTitle as="h4" id={`tile-title-${index}`}>{title}</CardTitle>
+                <CardDescription>{meta}</CardDescription>
+              </CardHeader>
+            </Card>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const tile = canvas.getByRole('article', { name: 'Lipid panel' });
+    await expect(tile).toHaveAttribute('data-variant', 'tile');
   },
 };
 

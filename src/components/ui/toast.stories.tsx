@@ -7,13 +7,14 @@ import styles from "./intake-components.stories.module.css";
 const meta = {
   title: "Design System/Components/Toast",
   component: Toaster,
-  tags: ["autodocs", "source-reui", "adapted-kura"],
+  tags: ["autodocs", "source-kura", "adapted-kura"],
   parameters: {
     layout: "padded",
     kura: {
       source: {
-        vendor: "ReUI",
-        registryItem: "@reui/c-sonner-1",
+        vendor: "Kura",
+        registryItem: "notification",
+        visualReference: "Kura notification",
         behaviorDependency: "sonner",
       },
       intake: {

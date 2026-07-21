@@ -4,12 +4,12 @@ const colorGroups = [
     tokens: ['--color-brand-25', '--color-brand-50', '--color-brand-100', '--color-brand-500', '--color-brand-600', '--color-brand-700', '--color-brand-800'],
   },
   {
-    label: 'Ink',
-    tokens: ['--color-ink-0', '--color-ink-50', '--color-ink-100', '--color-ink-200', '--color-ink-400', '--color-ink-600', '--color-ink-900'],
+    label: 'Content and surfaces',
+    tokens: ['--color-text-primary', '--color-text-secondary', '--color-text-tertiary', '--color-surface', '--color-surface-2', '--color-surface-sunken'],
   },
   {
     label: 'Status',
-    tokens: ['--color-success-500', '--color-success-50', '--color-warn-500', '--color-warn-50', '--color-danger-500', '--color-danger-50', '--color-info-500'],
+    tokens: ['--color-status-success-bg', '--color-status-success-fg', '--color-status-warning-bg', '--color-status-warning-fg', '--color-status-danger-bg', '--color-status-danger-fg', '--color-status-info-fg'],
   },
 ] as const;
 
@@ -97,7 +97,7 @@ export function DesignSystemFoundation() {
               <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">03 · Color</p>
               <h2 id="color-heading" className="mt-2 text-2xl font-semibold">Token palette</h2>
             </div>
-            <p className="text-sm text-muted-foreground">Light and dark themes use the same semantic roles.</p>
+            <p className="text-sm text-muted-foreground">Kura semantic roles backed by controlled blue primitives.</p>
           </div>
           <div className="mt-7 grid gap-7 md:grid-cols-3">
             {colorGroups.map((group) => (

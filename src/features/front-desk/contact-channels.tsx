@@ -92,10 +92,10 @@ export function ContactChannels({ onUpdate, patient }: ContactChannelsProps) {
 
   return (
     <div className={styles.channel}>
-      <h3 className={styles.subTitle}>Contact channel</h3>
-      <p className={styles.hint}>
-        Verification confirms control of the channel — it does not prove identity.
-      </p>
+      <div className={styles.channelHeader}>
+        <h3 className={styles.subTitle}>Contact channel</h3>
+        <span className={styles.requiredTag}>Required</span>
+      </div>
 
       {patient.telegramVerified ? (
         <div className={styles.verifiedRow}>
@@ -139,6 +139,12 @@ export function ContactChannels({ onUpdate, patient }: ContactChannelsProps) {
         </div>
       ) : null}
 
+      {anyVerified ? (
+        <p className={styles.assuranceNote}>
+          Confirms the patient controls this channel — it does not prove who they are.
+        </p>
+      ) : null}
+
       {patient.otpVerified && patient.telegramVerified ? (
         <SegmentedToggle
           label="Preferred channel"
@@ -154,15 +160,25 @@ export function ContactChannels({ onUpdate, patient }: ContactChannelsProps) {
         />
       ) : null}
 
+      {/* Picking a channel is a value choice, not two competing actions; the
+          unverified escape sits on the same line as its alternative. */}
       {!anyVerified && channel === null ? (
         <div className={styles.choiceRow}>
-          <span className={styles.choiceLabel}>How does the patient prefer to be contacted?</span>
-          <Button onClick={() => setChannel('telegram')} variant="outline">
-            Telegram
-          </Button>
-          <Button onClick={() => setChannel('sms')} variant="outline">
-            SMS
-          </Button>
+          <SegmentedToggle
+            label="Verify by"
+            labelVisible
+            onValueChange={(value) => setChannel(value as 'sms' | 'telegram')}
+            options={[
+              { value: 'telegram', label: 'Telegram' },
+              { value: 'sms', label: 'SMS' },
+            ]}
+            value=""
+          />
+          {!unverifiedOpen ? (
+            <Button onClick={() => setUnverifiedOpen(true)} size="sm" variant="ghost">
+              Continue without verifying
+            </Button>
+          ) : null}
         </div>
       ) : null}
 
@@ -312,17 +328,33 @@ export function ContactChannels({ onUpdate, patient }: ContactChannelsProps) {
               </Button>
             </div>
           </div>
-        ) : (
-          <Button
-            className={styles.unverifiedLink}
-            onClick={() => setUnverifiedOpen(true)}
-            size="sm"
-            variant="ghost"
-          >
-            No channel available? Save unverified
-          </Button>
-        )
+        ) : null
       ) : null}
+
+      <LanguageField onUpdate={onUpdate} patient={patient} />
     </div>
+  );
+}
+
+/**
+ * Preferred language belongs with the channel: it decides what language the
+ * reminder, intake link, and results notice go out in.
+ */
+function LanguageField({ onUpdate, patient }: ContactChannelsProps) {
+  return (
+    <Select
+      className={styles.languageField}
+      label="Language for messages"
+      onChange={(event) =>
+        onUpdate({
+          preferredLanguage: event.target.value as FrontDeskPatient['preferredLanguage'],
+        })
+      }
+      options={[
+        { value: 'Khmer', label: 'Khmer' },
+        { value: 'English', label: 'English' },
+      ]}
+      value={patient.preferredLanguage}
+    />
   );
 }

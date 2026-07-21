@@ -1,0 +1,249 @@
+/*
+ * Chart geometry: pinned identity bar over 300px rail + fluid work area,
+ * each scrolling independently. The rail keeps safety context on screen on
+ * every tab. Below 768px the columns stack; the rail (safety first) stays
+ * above the work area and its collapsed-by-default sections keep it short.
+ */
+
+.chart {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr);
+  block-size: 100%;
+  min-block-size: 0;
+  background: var(--color-surface);
+}
+
+/* Third column appears only when a situational action rail is supplied. */
+.chart[data-action-rail] {
+  grid-template-columns: 300px minmax(0, 1fr) 320px;
+}
+
+.actionRail {
+  grid-column: 3;
+  grid-row: 2;
+  overflow-y: auto;
+  border-inline-start: 1px solid var(--color-border);
+  padding: var(--space-5);
+}
+
+.workbar {
+  grid-column: 1 / -1;
+  grid-row: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  min-block-size: 72px;
+  padding-inline: var(--space-5);
+  padding-block: var(--space-3);
+  border-block-end: 1px solid var(--color-border);
+}
+
+.identity {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-inline-size: 0;
+}
+
+.identityCopy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-inline-size: 0;
+}
+
+.nameRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-inline-size: 0;
+}
+
+.name {
+  color: var(--color-text-primary);
+  font-size: var(--type-lg);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-snug);
+  overflow-wrap: anywhere;
+}
+
+.meta {
+  color: var(--color-text-secondary);
+  font-size: var(--type-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+.rail {
+  grid-column: 1;
+  grid-row: 2;
+  overflow-y: auto;
+  border-inline-end: 1px solid var(--color-border);
+  padding: var(--space-4);
+}
+
+.work,
+.workFull {
+  grid-row: 2;
+  overflow-y: auto;
+  padding: var(--space-5);
+}
+
+.work {
+  grid-column: 2;
+}
+
+.workFull {
+  grid-column: 1 / -1;
+}
+
+/* Terminal guard replaces the whole row-2 region. */
+.terminal {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  align-self: start;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-4);
+  padding: var(--space-6);
+  max-inline-size: 36rem;
+}
+
+.stateFrame {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-6);
+}
+
+/* ── Overview ────────────────────────────────────────────── */
+
+.facts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: 0;
+  padding-block-start: var(--space-4);
+  max-inline-size: 28rem;
+}
+
+.fact {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-4);
+}
+
+.factLabel {
+  flex: 0 0 6rem;
+  color: var(--color-text-secondary);
+  font-size: var(--type-sm);
+}
+
+.factValue {
+  margin: 0;
+  color: var(--color-text-primary);
+  font-size: var(--type-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.verify {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-block-start: var(--space-5);
+  padding-block-start: var(--space-4);
+  border-block-start: 1px solid var(--color-border);
+  max-inline-size: 28rem;
+}
+
+.verifyHint {
+  color: var(--color-text-secondary);
+  font-size: var(--type-sm);
+  line-height: var(--leading-normal);
+}
+
+.verifyControls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+/* ── Stacked layout ──────────────────────────────────────── */
+
+/* Three columns need real width; narrow them first, then stack. */
+@media (max-width: 1279px) {
+  .chart[data-action-rail] {
+    grid-template-columns: 280px minmax(0, 1fr) 280px;
+  }
+}
+
+@media (max-width: 1023px) {
+  .chart[data-action-rail] {
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    block-size: auto;
+  }
+
+  .chart[data-action-rail] .workbar {
+    position: sticky;
+    inset-block-start: 0;
+    z-index: 2;
+    background: var(--color-surface);
+  }
+
+  .chart[data-action-rail] .rail {
+    overflow-y: visible;
+    border-inline-end: none;
+    border-block-end: 1px solid var(--color-border);
+  }
+
+  .chart[data-action-rail] .work,
+  .chart[data-action-rail] .workFull {
+    overflow-y: visible;
+  }
+
+  .chart[data-action-rail] .actionRail {
+    overflow-y: visible;
+    border-inline-start: none;
+    border-block-start: 1px solid var(--color-border);
+  }
+}
+
+@media (max-width: 768px) {
+  .chart,
+  .chart[data-action-rail] {
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    block-size: auto;
+  }
+
+  /* Next actions follow the work area as an inline section. */
+  .actionRail {
+    overflow-y: visible;
+    border-inline-start: none;
+    border-block-start: 1px solid var(--color-border);
+  }
+
+  .workbar {
+    position: sticky;
+    inset-block-start: 0;
+    z-index: 2;
+    background: var(--color-surface);
+  }
+
+  .rail {
+    overflow-y: visible;
+    border-inline-end: none;
+    border-block-end: 1px solid var(--color-border);
+  }
+
+  .work,
+  .workFull {
+    overflow-y: visible;
+  }
+}

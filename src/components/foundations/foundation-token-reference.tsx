@@ -56,8 +56,9 @@ const radiusSemantics: readonly ScaleToken[] = [
   { label: 'Control compact', variable: '--radius-control-compact', value: 'radius-sm · 8px', role: 'Dense interactive rows inside panels: menu items, option rows, breadcrumb links, list-row hover targets.' },
   { label: 'Indicator', variable: '--radius-indicator', value: 'radius-xs · 6px', role: 'Smallest marks: checkbox boxes, kbd keys, swatches, range-band zones, skeleton lines, tiny tags.' },
   { label: 'Inset', variable: '--radius-inset', value: 'radius-md · 10px', role: 'Nested media and wells inside a surface: thumbnails, icon containers, square avatars, empty-state wells.' },
-  { label: 'Card surface', variable: '--radius-card-surface', value: 'radius-lg · 14px', role: 'Cards, alerts, panels, tables, dropzones.' },
-  { label: 'Popover', variable: '--radius-popover', value: 'radius-lg · 14px', role: 'Anchored floating panels: popovers, dropdown menus, context menus, autocomplete lists.' },
+  { label: 'Card surface', variable: '--radius-card-surface', value: '16px', role: 'Tray cards, alerts, panels, tables, dropzones.' },
+  { label: 'Card tile', variable: '--radius-card-tile', value: 'radius-md · 10px', role: 'White tiles nested inside a gray tray — one level deeper than the tray.' },
+  { label: 'Popover', variable: '--radius-popover', value: '16px', role: 'Anchored floating panels: popovers, dropdown menus, context menus, autocomplete lists.' },
   { label: 'Overlay', variable: '--radius-overlay', value: 'radius-xl · 20px', role: 'Modal-weight surfaces: dialogs, sheets, drawers, command palettes.' },
   { label: 'Badge', variable: '--radius-badge', value: 'radius-full', role: 'Badges, chips, counters, and pill-shaped controls.' },
   { label: 'Track', variable: '--radius-track', value: 'radius-full', role: 'Progress and slider tracks, carousel dots, scrollbar thumbs, resize handles.' },
@@ -75,7 +76,8 @@ const elevationTokens: readonly ScaleToken[] = [
 
 const elevationSemantics: readonly ScaleToken[] = [
   { label: 'Surface', variable: '--elevation-surface', value: 'elevation-0', role: 'Default page and workspace surface.' },
-  { label: 'Card', variable: '--elevation-card', value: 'shadow-card · none', role: 'Cards use border and grouping before shadow.' },
+  { label: 'Card', variable: '--elevation-card', value: 'none', role: 'Tray cards are flat; contrast separates them from the white page.' },
+  { label: 'Tile', variable: '--elevation-card-tile', value: 'shadow-card', role: 'White tiles nested inside a gray tray carry the feather shadow.' },
   { label: 'Popover', variable: '--elevation-popover', value: 'shadow-md', role: 'Menus, tooltips, and anchored utility.' },
   { label: 'Modal', variable: '--elevation-modal', value: 'shadow-lg', role: 'Dialog and blocking workflow surface.' },
   { label: 'Floating', variable: '--elevation-floating', value: 'shadow-xl', role: 'Transient layer needing clear separation.' },
@@ -675,17 +677,17 @@ export function ElevationReference() {
       <section className="flex flex-col gap-4">
         <SectionHeading title="Layering specimen" description="The sequence stays flat until content leaves document flow. Depth is reserved for transient layers; focus and selection remain separate signals." />
         <div className="grid gap-4 rounded-[var(--radius-overlay)] bg-[var(--color-surface-2)] p-4 sm:gap-6 sm:p-6 lg:grid-cols-3">
-          <div className="rounded-[var(--radius-card-surface)] bg-card p-5" style={{ boxShadow: 'var(--elevation-card)' }}>
-            <p className="k-label">Level 0</p>
-            <h3 className="mt-2 font-semibold">Flat card</h3>
-            <p className="k-body-sm mt-2 text-muted-foreground">Surface contrast and grouping carry the boundary.</p>
+          <div className="rounded-[var(--radius-card-tile)] bg-[var(--color-surface)] p-5" style={{ boxShadow: 'var(--elevation-card-tile)' }}>
+            <p className="k-label">Tile</p>
+            <h3 className="mt-2 font-semibold">White tile</h3>
+            <p className="k-body-sm mt-2 text-muted-foreground">A feather shadow lifts the tile off the gray tray.</p>
           </div>
-          <div className="rounded-[var(--radius-card-surface)] bg-card p-5" style={{ boxShadow: 'var(--elevation-popover)' }}>
+          <div className="rounded-[var(--radius-card-surface)] bg-[var(--color-surface)] p-5" style={{ boxShadow: 'var(--elevation-popover)' }}>
             <p className="k-label">Level 3</p>
             <h3 className="mt-2 font-semibold">Anchored utility</h3>
             <p className="k-body-sm mt-2 text-muted-foreground">Popover depth separates transient content.</p>
           </div>
-          <div className="rounded-[var(--radius-overlay)] bg-card p-5" style={{ boxShadow: 'var(--elevation-modal)' }}>
+          <div className="rounded-[var(--radius-overlay)] bg-[var(--color-surface)] p-5" style={{ boxShadow: 'var(--elevation-modal)' }}>
             <p className="k-label">Level 4</p>
             <h3 className="mt-2 font-semibold">Blocking surface</h3>
             <p className="k-body-sm mt-2 text-muted-foreground">Modal depth signals an interruption.</p>

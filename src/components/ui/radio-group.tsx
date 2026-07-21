@@ -144,7 +144,16 @@ export function RadioGroup({
         data-slot="radio-group"
         disabled={disabled}
       >
-        <legend className={styles.legend}>{legend}</legend>
+        <legend className={styles.legend}>
+          {legend}
+          {/* Visual only: `required` is already on every radio, so assistive
+              technology announces the requirement without renaming the group. */}
+          {required ? (
+            <span aria-hidden="true" className={styles.requiredMark}>
+              *
+            </span>
+          ) : null}
+        </legend>
         {description ? (
           <p className={styles.description} id={descriptionId}>
             {description}

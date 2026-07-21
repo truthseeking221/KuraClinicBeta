@@ -17,7 +17,6 @@ import {
   CheckIcon,
   CheckInIcon,
   HistoryIcon,
-  IdentityVerifiedIcon,
   UserAddIcon,
   UserCheckIcon,
   UserIdentityIcon,
@@ -75,6 +74,8 @@ export type PatientResolutionCardProps = {
   searchedValue?: string;
   searchedKind?: string;
   status?: PatientResolutionStatus;
+  /** Plain capture/source context. This is provenance, never verification status. */
+  provenance?: ReactNode;
   lastVisitLabel?: string;
   /** Trust facts (verification recency, cross-PSC origin). Worst tone leads. */
   trustSignals?: TrustSignal[];
@@ -113,9 +114,8 @@ const VARIANT_META: Record<
   },
   candidate: { icon: <UserSearchIcon size={20} />, tone: 'primary' },
   captured: {
-    eyebrow: 'Identity captured',
-    icon: <IdentityVerifiedIcon size={20} />,
-    tone: 'success',
+    icon: <UserIdentityIcon size={20} />,
+    tone: 'neutral',
   },
 };
 
@@ -339,6 +339,7 @@ export function PatientResolutionCard({
   matchedOnLabel,
   onBookingSelect,
   onSelect,
+  provenance,
   record,
   searchedKind,
   searchedValue,
@@ -424,9 +425,16 @@ export function PatientResolutionCard({
                   <Highlight on={matched?.name}>{resolved.name}</Highlight>
                 </h3>
                 {resolved.sexAtBirth ? (
-                  <Badge size="sm" variant="neutral">
-                    {resolved.sexAtBirth}
-                  </Badge>
+                  variant === 'captured' ? (
+                    <span className={styles.demographic}>
+                      <span className={styles.srOnly}>Sex at birth: </span>
+                      {resolved.sexAtBirth}
+                    </span>
+                  ) : (
+                    <Badge size="sm" variant="neutral">
+                      {resolved.sexAtBirth}
+                    </Badge>
+                  )
                 ) : null}
                 {resolved.minor ? (
                   <Badge size="sm" variant="warning">
@@ -440,27 +448,30 @@ export function PatientResolutionCard({
                 </p>
               ) : null}
             </div>
-            <div className={styles.headerright}>
-              {confidence ? (
-                <Badge size="sm" variant={CONFIDENCE_META[confidence.tier].variant}>
-                  {CONFIDENCE_META[confidence.tier].label}
-                  <span className={styles.mono}> {confidence.score}</span>
-                </Badge>
-              ) : null}
-              {status ? (
-                <Badge size="sm" variant={status.variant}>
-                  {status.label}
-                </Badge>
-              ) : null}
-              {isSelectable ? (
-                <span className={styles.selectionMark} data-selected={selected || undefined} aria-hidden>
-                  {selected ? <CheckIcon size={12} /> : null}
-                </span>
-              ) : null}
-            </div>
+            {confidence || status || isSelectable ? (
+              <div className={styles.headerright}>
+                {confidence ? (
+                  <Badge size="sm" variant={CONFIDENCE_META[confidence.tier].variant}>
+                    {CONFIDENCE_META[confidence.tier].label}
+                    <span className={styles.mono}> {confidence.score}</span>
+                  </Badge>
+                ) : null}
+                {status ? (
+                  <Badge size="sm" variant={status.variant}>
+                    {status.label}
+                  </Badge>
+                ) : null}
+                {isSelectable ? (
+                  <span className={styles.selectionMark} data-selected={selected || undefined} aria-hidden>
+                    {selected ? <CheckIcon size={12} /> : null}
+                  </span>
+                ) : null}
+              </div>
+            ) : null}
           </div>
 
           <MetaRow record={resolved} matched={matched} />
+          {provenance ? <p className={styles.provenance}>{provenance}</p> : null}
           <TrustLine signals={trustSignals} />
           {matchedOnLabel ? <p className={styles.evidence}>{matchedOnLabel}</p> : null}
           {lastVisitLabel ? (

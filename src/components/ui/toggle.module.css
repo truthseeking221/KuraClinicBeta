@@ -28,7 +28,7 @@
 }
 
 .toggle[data-pressed] {
-  background: var(--color-brand-50);
+  background: var(--color-selection-bg);
   color: var(--color-text-brand);
 }
 
@@ -39,7 +39,7 @@
 
 .toggle[data-variant='outline'][data-pressed] {
   border-color: var(--color-border-emphasis);
-  background: var(--color-brand-50);
+  background: var(--color-selection-bg);
 }
 
 .toggle:focus-visible {

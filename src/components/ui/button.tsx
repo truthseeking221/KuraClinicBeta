@@ -98,11 +98,12 @@ export function Button({
   ...props
 }: ButtonProps) {
   const isDisabled = disabled || loading;
+  const isIconOnly = size === 'icon' || size === 'icon-xs' || size === 'icon-sm' || size === 'icon-lg';
   const resolvedTrailingIcon = trailingIcon ?? (disclosure === true ? <ChevronDownIcon aria-hidden="true" /> : disclosure);
   const renderContent = (content: ReactNode) => (
     <>
       {loading ? <SpinnerGapIcon className={styles.loadingIcon} aria-hidden="true" /> : leadingIcon}
-      {content}
+      {isIconOnly ? content : <span className={styles.label}>{content}</span>}
       {resolvedTrailingIcon}
     </>
   );

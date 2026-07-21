@@ -38,7 +38,7 @@ const meta = {
         decision: 'CREATE (flow) + COMPOSE (primitives)',
         owner: 'src/features/front-desk',
         evidence:
-          'ReUI searched: stepper intaken as the wizard nav; checkout/onboarding blocks are references only. The order cart now consumes minor-unit priced lines, renders through MoneyText, and receives FX as an injected config contract.',
+          'ReUI searched: stepper intaken as the wizard nav; checkout/onboarding blocks are references only. Order selection composes the canonical LabTestPicker; the order cart consumes minor-unit priced lines, renders through MoneyText, and receives FX as an injected config contract.',
         exclusions: [
           'NFC/chip National ID capture (hardware ceremony — shown as Coming soon in Other ID methods)',
           'Patient photo capture (camera ceremony, deferred)',
@@ -102,7 +102,7 @@ export const Default: Story = {
     const canvas = within(canvasElement);
     await expect(canvas.getByRole('tab', { name: /2 Review/ })).toBeDisabled();
     await expect(canvas.getByRole('tab', { name: /6 Payment/ })).toBeDisabled();
-    await expect(canvas.getByRole('button', { name: 'Continue' })).toBeDisabled();
+    await expect(canvas.getByRole('button', { name: 'Review details' })).toBeDisabled();
   },
 };
 
@@ -122,7 +122,16 @@ export const DuplicateGuard: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(await canvas.findByText(/Exact identity match — Sokha Chan/)).toBeVisible();
+    const alertTitle = await canvas.findByText(/Exact identity match — Sokha Chan/);
+    await expect(alertTitle).toBeVisible();
+
+    // A blocking duplicate leads the step: it must sit above the identity it
+    // questions, never below the optional disclosures.
+    const identityFirstField = canvas.getByLabelText(/Full name \(Latin\)/);
+    await expect(
+      alertTitle.compareDocumentPosition(identityFirstField) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
 
     const candidates = findCollisionCandidates(
       {
@@ -262,7 +271,7 @@ export const FullCheckInFlow: Story = {
     // Step 2 — review + OTP.
     await userEvent.type(canvas.getByLabelText(/Date of birth/), '1990-05-05');
     await userEvent.click(canvas.getByRole('radio', { name: 'Female' }));
-    await userEvent.click(canvas.getByRole('button', { name: 'SMS' }));
+    await userEvent.click(canvas.getByRole('radio', { name: 'SMS' }));
     await userEvent.type(canvas.getByLabelText(/^Phone/), '99887766');
     await userEvent.click(canvas.getByRole('button', { name: 'Send SMS code' }));
     await userEvent.type(canvas.getByLabelText('SMS code'), DEMO_OTP);
@@ -275,8 +284,10 @@ export const FullCheckInFlow: Story = {
     await userEvent.click(canvas.getByRole('button', { name: 'Continue' }));
 
     // Step 4 — add CBC and attribute the ordering clinician (ADR-0057).
-    const cbcRow = canvas.getByText('CBC').closest('li');
-    await userEvent.click(within(cbcRow as HTMLElement).getByRole('button', { name: 'Add' }));
+    await expect(canvas.getByLabelText('67 tests')).toBeVisible();
+    await userEvent.click(
+      canvas.getByRole('checkbox', { name: /Complete blood count/ }),
+    );
     await userEvent.click(canvas.getByLabelText('Ordering clinician'));
     await userEvent.click(
       await within(canvasElement.ownerDocument.body).findByRole('option', {
@@ -629,11 +640,10 @@ export const OrderCompositionBlockers: Story = {
     await expect(canvas.getByText(/not orderable at this lab yet. Remove it/)).toBeVisible();
 
     // Removing the overlapping analyte and the unsupported test clears the gate.
-    const rows = canvas.getAllByRole('listitem');
-    const glucoseRow = rows.find((row) => within(row).queryByText('Glucose (fasting)'))!;
-    await userEvent.click(within(glucoseRow).getByRole('button', { name: 'Remove' }));
-    const lpaRow = rows.find((row) => within(row).queryByText('Lipoprotein(a)'))!;
-    await userEvent.click(within(lpaRow).getByRole('button', { name: 'Remove' }));
+    await userEvent.click(
+      canvas.getByRole('button', { name: 'Remove Glucose (fasting)' }),
+    );
+    await userEvent.click(canvas.getByRole('button', { name: 'Remove Lipoprotein(a)' }));
     await waitFor(async () => {
       await expect(canvas.queryByText(/Resolve \d order blockers?/)).not.toBeInTheDocument();
     });

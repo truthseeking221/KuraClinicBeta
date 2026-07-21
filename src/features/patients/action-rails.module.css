@@ -1,0 +1,125 @@
+/*
+ * Action rails: quiet chrome, one accent. Each action row is an independent
+ * launcher (own action scope) — the one justified box. Everything else
+ * groups by spacing.
+ */
+
+.rail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.title {
+  color: var(--color-text-primary);
+  font-size: var(--type-base);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-snug);
+  text-wrap: balance;
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.action {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  inline-size: 100%;
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  text-align: start;
+  cursor: pointer;
+  transition: background-color var(--motion-color);
+}
+
+.action:hover {
+  background: var(--color-surface-sunken);
+}
+
+.action:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.action:active {
+  background: var(--color-surface-sunken);
+}
+
+.actionIcon {
+  display: inline-flex;
+  color: var(--color-text-secondary);
+  flex-shrink: 0;
+}
+
+.actionCopy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-inline-size: 0;
+  flex: 1;
+}
+
+.actionLabel {
+  color: var(--color-text-primary);
+  font-size: var(--type-sm);
+  font-weight: var(--weight-medium);
+}
+
+.actionDescription {
+  color: var(--color-text-tertiary);
+  font-size: var(--type-xs);
+  line-height: var(--leading-normal);
+}
+
+.actionDescriptionUrgent {
+  color: var(--color-status-danger-fg);
+  font-size: var(--type-xs);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-normal);
+}
+
+.actionChevron {
+  color: var(--color-text-tertiary);
+  flex-shrink: 0;
+}
+
+/* ── Results progress ────────────────────────────────────── */
+
+.progressHead {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.progressCount {
+  color: var(--color-text-secondary);
+  font-size: var(--type-sm);
+}
+
+.progressResulted {
+  color: var(--color-text-primary);
+  font-size: var(--type-xl);
+  font-weight: var(--weight-semibold);
+  font-variant-numeric: tabular-nums;
+}
+
+.progressNote {
+  color: var(--color-text-tertiary);
+  font-size: var(--type-xs);
+  line-height: var(--leading-normal);
+}
+
+.notifyConfirmed {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-text-secondary);
+  font-size: var(--type-xs);
+  line-height: var(--leading-normal);
+}

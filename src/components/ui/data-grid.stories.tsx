@@ -299,7 +299,7 @@ function BookingsGrid({
 const meta = {
   title: 'Design System/Components/Data Grid',
   component: BookingsGrid,
-  tags: ['autodocs', 'source-reui', 'adapted-kura'],
+  tags: ['autodocs', 'source-kura', 'adapted-kura'],
   parameters: {
     layout: 'padded',
     kura: {
@@ -310,10 +310,9 @@ const meta = {
           'Table remains the light semantic owner for static operational rows. Data Grid adds TanStack-managed sorting, filtering, pagination, selection, expansion, visibility, resizing, pinning, loading, aggregates, and incremental loading without duplicating Table.',
       },
       source: {
-        vendor: 'ReUI',
-        registryItem:
-          'data-grid family, 10 composable source modules, and c-data-grid-1 through c-data-grid-29',
-        sourceUrl: 'https://reui.io/components/data-grid',
+        vendor: 'Kura',
+        registryItem: 'data-table',
+        visualReference: 'Kura data-table',
       },
       binding: {
         colors: 'kura-semantic',
@@ -345,27 +344,27 @@ const meta = {
       ],
       exclusions: [
         {
-          reuiExamples: 'c-data-grid-12, 13, and 14 movable/draggable columns and rows',
+          upstreamExamples: 'Movable or draggable columns and rows',
           reason:
             'Drag order has domain consequences and needs an explicit keyboard reorder contract, persistence, permission, undo, and audit behavior. No current Kura owner proves that shared contract.',
           replacement:
             'Feature-owned reorder pattern composed with Data Grid after a stable order model is approved.',
         },
         {
-          reuiExamples: 'c-data-grid-22 and 23 CRUD demos',
+          upstreamExamples: 'Inline CRUD demos',
           reason:
             'CRUD validation, permissions, confirmation, optimistic updates, conflict recovery, and audit events belong to the owning feature.',
           replacement:
             'Compose Data Grid with Dialog, AlertDialog, DropdownMenu, and feature commands.',
         },
         {
-          reuiExamples: 'c-data-grid-27 and 28 automatic infinite scroll',
+          upstreamExamples: 'Automatic infinite scroll',
           reason:
             'Automatic loading can move focus and obscure completion. Kura retains explicit incremental loading with announced status; the owning API controls cursor and retry behavior.',
           replacement: 'DataGridLoadMore',
         },
         {
-          reuiExample: 'virtualized rendering',
+          upstreamExample: 'Virtualized rendering',
           reason:
             'Virtualization changes screen-reader and dynamic-row-height behavior. It should be enabled only for a measured large-data consumer with a known row-height and accessibility contract.',
           replacement:

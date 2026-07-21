@@ -88,8 +88,11 @@
   color: var(--foreground);
 }
 
+/* Inside the gray tray the icon chip flips to a white tile so it stays
+   visible against the matching tray surface. */
 .root[data-surface='muted'] .media[data-variant='icon'] {
-  background: var(--card);
+  background: var(--color-surface);
+  box-shadow: var(--elevation-card-tile);
 }
 
 .media[data-variant='icon'] > :global(svg) {

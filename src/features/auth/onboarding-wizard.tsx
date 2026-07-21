@@ -441,6 +441,7 @@ export function OnboardingWizard({
                   <OtpInput
                     autoFocus
                     error={codeError}
+                    fullWidth
                     label="SMS code"
                     onValueChange={(next) => {
                       setCode(next);
@@ -541,7 +542,6 @@ export function OnboardingWizard({
 
               <RadioGroup
                 error={mlAnswerError}
-                layout="grid"
                 legend="Medical licence status"
                 name="medical-licence-status"
                 onValueChange={(value) => {
@@ -559,6 +559,7 @@ export function OnboardingWizard({
               >
                 <Radio
                   appearance="card"
+                  density="comfortable"
                   helpText="Choose your profession, then upload now or later."
                   value="yes"
                 >
@@ -566,6 +567,7 @@ export function OnboardingWizard({
                 </Radio>
                 <Radio
                   appearance="card"
+                  density="comfortable"
                   helpText="No credential is created or requested. You can change this later."
                   value="no"
                 >
@@ -648,7 +650,9 @@ export function OnboardingWizard({
                 </>
               ) : null}
 
-              <div className={styles.actionRow}>
+              <div
+                className={`${styles.actionRow} ${styles.licenceActionRow}`}
+              >
                 <Button onClick={skipMl} variant="ghost">
                   Skip for now
                 </Button>

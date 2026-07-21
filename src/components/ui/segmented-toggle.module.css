@@ -3,7 +3,9 @@
   max-width: 100%;
   border-radius: var(--radius-control);
   padding: var(--space-1);
-  background: var(--muted);
+  border: 0;
+  background: var(--color-background-tertiary-default);
+  box-shadow: none;
 }
 
 /* Doubled attribute selector outranks button-group's per-position radius
@@ -16,7 +18,8 @@
   border-radius: var(--radius-control);
   padding-block: 0;
   padding-inline: var(--space-1-5);
-  color: var(--muted-foreground);
+  color: var(--color-text-secondary);
+  font-weight: var(--weight-regular);
   transition:
     color var(--duration-fast) var(--ease-standard),
     background-color var(--duration-fast) var(--ease-standard);
@@ -24,9 +27,10 @@
 
 .toggle > :global([data-slot='button'][data-selected='true']) {
   border-radius: var(--radius-control);
-  background: var(--card);
-  color: var(--card-foreground);
-  box-shadow: var(--elevation-2);
+  background: var(--color-background-primary-default);
+  color: var(--color-text-primary);
+  font-weight: var(--weight-medium);
+  box-shadow: var(--shadow-xs);
 }
 
 .toggle > :global([data-slot='button']:hover:not(:disabled):not([data-selected='true'])) {

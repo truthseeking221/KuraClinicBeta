@@ -71,6 +71,7 @@ export type DialogContentProps = ComponentPropsWithoutRef<typeof DialogPrimitive
   mobilePresentation?: DialogMobilePresentation;
   showCloseButton?: boolean;
   closeLabel?: string;
+  overlayClassName?: string;
 };
 
 export const DialogContent = forwardRef<
@@ -82,6 +83,7 @@ export const DialogContent = forwardRef<
     className,
     closeLabel = 'Close dialog',
     mobilePresentation = 'full',
+    overlayClassName,
     showCloseButton = true,
     size = 'md',
     ...props
@@ -90,7 +92,7 @@ export const DialogContent = forwardRef<
 ) {
   return (
     <DialogPortal>
-      <DialogOverlay />
+      <DialogOverlay className={overlayClassName} />
       <DialogPrimitive.Content
         ref={ref}
         data-slot="dialog-content"

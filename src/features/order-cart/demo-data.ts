@@ -77,7 +77,7 @@ export const DEMO_TUBES: OrderCartTube[] = [
   {
     id: 'serum-5',
     label: 'Serum tube · 5 mL',
-    stopperColor: 'var(--danger-400)',
+    stopperColor: 'var(--color-specimen-red-stripe)',
     stopperLabel: 'Red',
     tests: ['Iron panel', 'Ferritin', 'Cystatin C'],
     scanned: false,
@@ -85,7 +85,7 @@ export const DEMO_TUBES: OrderCartTube[] = [
   {
     id: 'urine-10',
     label: 'Urine cup · 10 mL',
-    stopperColor: 'var(--warn-200)',
+    stopperColor: 'var(--color-specimen-yellow-sps)',
     stopperLabel: 'Yellow',
     tests: ['Albumin/creatinine ratio'],
     scanned: false,

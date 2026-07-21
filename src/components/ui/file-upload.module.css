@@ -26,14 +26,17 @@
 
 .dropzone {
   display: flex;
-  min-height: var(--space-20);
+  min-height: var(--file-upload-min-height);
+  flex-direction: column;
   align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-4);
+  justify-content: center;
+  gap: var(--space-3-5);
+  padding: var(--space-6);
   color: var(--color-text-secondary);
-  background: var(--color-surface);
-  border: 1px dashed var(--color-border-strong);
-  border-radius: var(--radius-card-surface);
+  background: var(--color-background-secondary-default);
+  border: 2px dashed var(--color-border-checkbox-default);
+  border-radius: var(--radius-popover);
+  text-align: center;
   transition:
     background-color var(--duration-fast) var(--ease-standard),
     border-color var(--duration-fast) var(--ease-standard),
@@ -42,9 +45,9 @@
 }
 
 .dropzone[data-dragging='true'] {
-  color: var(--primary);
-  background: var(--accent);
-  border-color: var(--primary-accent);
+  color: var(--color-text-link);
+  background: var(--color-selection-bg);
+  border-color: var(--color-border-button-active);
   box-shadow: var(--shadow-focus);
 }
 
@@ -64,11 +67,37 @@
 }
 
 .dropzoneCopy {
-  display: grid;
+  display: flex;
   min-width: 0;
-  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--type-base);
+}
+
+.dropzone > svg {
+  box-sizing: content-box;
+  padding: var(--space-2-5);
+  border-radius: var(--radius-full);
+  background: var(--color-background-quaternary-default);
+  color: var(--color-foreground-icon-secondary);
+}
+
+.dropzonePrompt {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   gap: var(--space-1);
-  font-size: var(--type-sm);
+}
+
+.dropzonePrompt strong {
+  font-weight: var(--weight-medium);
+}
+
+.dropzonePrompt button {
+  min-height: auto;
+  padding: 0;
+  font-size: inherit;
 }
 
 .dropzoneCopy span {
@@ -98,9 +127,10 @@
   align-items: center;
   gap: var(--space-3);
   padding: var(--space-3);
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-control);
+  background: var(--color-background-primary-default);
+  border: 1px solid var(--color-border-button-default);
+  border-radius: var(--radius-popover);
+  box-shadow: var(--shadow-xs);
 }
 
 .item[data-status='error'] {
@@ -171,13 +201,16 @@
 
 @media (max-width: 30rem) {
   .dropzone {
-    flex-direction: column;
     align-items: stretch;
     text-align: center;
   }
 
   .dropzone > svg {
     align-self: center;
+  }
+
+  .dropzonePrompt {
+    flex-wrap: wrap;
   }
 
   .item {

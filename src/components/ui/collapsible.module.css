@@ -31,7 +31,7 @@
 
 .trigger:hover:not(:disabled) {
   cursor: pointer;
-  background: var(--muted);
+  background: var(--color-background-secondary-hover);
 }
 
 .trigger[data-state='open'] {

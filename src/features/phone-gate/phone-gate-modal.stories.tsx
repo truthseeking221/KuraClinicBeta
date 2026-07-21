@@ -20,11 +20,12 @@ const meta = {
         decision: 'COMPOSE',
         owner: 'src/features/phone-gate',
         evidence:
-          'Built against kura-platform docs/design/phone-gate/phone-gate-ui-spec.md (canonical, Figma 742:52132) with clinic-phone-gate-mf as the behavior reference. Composed from Dialog, PhoneInput, OtpInput, Avatar, Alert, SegmentedToggle, Input, Button, AlertDialog; spec pixel values mapped to Kura tokens (shell 790→control scale, banner hexes→status tokens).',
+          'Built against kura-platform docs/design/phone-gate/phone-gate-ui-spec.md (canonical, Figma 742:52132) with clinic-phone-gate-mf as the behavior reference. Composed from Dialog (header/body/footer, mobile full presentation, built-in close), PhoneInput, OtpInput, RadioGroup, Input, Alert, Button, AlertDialog; spec pixel values mapped to Kura tokens.',
         exclusions: [
           'recentPatients chooser (reference-MF addition outside the canonical modal spec scope)',
           'Per-digit “Digit 1 of 6” inputs (OtpInput renders one logical input with equivalent autofill/paste/SR behavior)',
-          'Brand illustration in the safety pane (replaced by the canonical UserIdentityIcon — no vendor artwork)',
+          'Persistent BEFORE YOU SEND pane (identical in every state; its one safety fact now appears on the two steps that bind a person)',
+          'Per-candidate Choose buttons (replaced by one radio set and one primary action so a shared phone needs a deliberate selection)',
         ],
       },
       journeys: [
@@ -37,7 +38,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'Safety checkpoint before a booking code is sent: verify a Cambodia phone by OTP, detect an existing patient, attach it or create a temporary patient. The verified phone becomes the delivery address for results and payment links; “Phone checked” never claims identity — PSC confirms it later. Demo scaffolding: code 123456; 070 123 496 → known match (Sokha Chann); 070 123 497 → shared phone (three candidates); numbers ending 000 → lookup error; ending 999 → OTP rate limit; anything else → no match.',
+          'Safety checkpoint before a booking code is sent: verify a Cambodia phone by OTP, detect an existing patient, attach it or create a temporary patient. One column, one question per step; the bound number stays visible from the code step onward, with a single Change control on its own row. “Phone checked” never claims identity — PSC confirms it later. Demo scaffolding: code 123456; 070 123 496 → known match (Sokha Chann); 070 123 497 → shared phone (three candidates); numbers ending 000 → lookup error; ending 999 → OTP rate limit; anything else → no match.',
       },
     },
   },
@@ -55,27 +56,28 @@ function body(canvasElement: HTMLElement) {
   return within(canvasElement.ownerDocument.body);
 }
 
-/** State 1 — enter phone: focus lands in the field, Send SMS code validates. */
+/** State 1 — enter phone: the title names the step, Send SMS code validates. */
 export const EnterPhone: Story = {
   play: async ({ canvasElement }) => {
     const screen = body(canvasElement);
     await expect(await screen.findByRole('dialog')).toBeVisible();
-    await expect(screen.getByText('Choose patient')).toBeVisible();
-    await expect(screen.getByText('BEFORE YOU SEND')).toBeVisible();
+    await expect(screen.getByRole('heading', { name: 'Patient phone' })).toBeVisible();
+    await expect(screen.getByText('The patient, a guardian, or a guarantor.')).toBeVisible();
 
     await userEvent.click(screen.getByRole('button', { name: 'Send SMS code' }));
     await expect(await screen.findByText(/valid Cambodia phone/)).toBeVisible();
   },
 };
 
-/** State 2 — OTP empty→partial→invalid→resend; Change phone recovers. */
+/** State 2 — OTP: destination and its single Change control sit on one row. */
 export const VerifyOtp: Story = {
   play: async ({ canvasElement }) => {
     const screen = body(canvasElement);
     await userEvent.type(await screen.findByLabelText(/Phone number/), FRESH_PHONE);
     await userEvent.click(screen.getByRole('button', { name: 'Send SMS code' }));
 
-    await expect(await screen.findByText('Verify number')).toBeVisible();
+    await expect(await screen.findByRole('heading', { name: 'Enter the code' })).toBeVisible();
+    await expect(screen.getByText('Code sent to')).toBeVisible();
     await expect(screen.getByText(/\+855 99 \.\.\. 222/)).toBeVisible();
 
     const verify = screen.getByRole('button', { name: 'Verify code' });
@@ -86,21 +88,28 @@ export const VerifyOtp: Story = {
     await expect(await screen.findByRole('alert')).toHaveTextContent(/Incorrect or expired/);
     await expect(screen.getByRole('button', { name: /Resend in/ })).toBeDisabled();
 
-    await userEvent.click(screen.getByRole('button', { name: 'Change phone' }));
-    await expect(await screen.findByText('Choose patient')).toBeVisible();
+    await userEvent.click(screen.getByRole('button', { name: 'Change phone number' }));
+    await expect(await screen.findByRole('heading', { name: 'Patient phone' })).toBeVisible();
   },
 };
 
-/** State 3 — known match: minimal PHI card, Choose attaches and closes. */
+/** State 3 — known match: the verified number stays on screen beside the record. */
 export const KnownMatch: Story = {
   args: { initial: { state: 'knownMatch', phone: '+85570123496' } },
   play: async ({ canvasElement, args }) => {
     const screen = body(canvasElement);
-    await expect(await screen.findByText('Is this the patient?')).toBeVisible();
+    await expect(
+      await screen.findByRole('heading', { name: 'Is this the patient?' }),
+    ).toBeVisible();
+    await expect(screen.getByText('Verified phone')).toBeVisible();
+    await expect(screen.getByText('070 123 496')).toBeVisible();
+    await expect(
+      screen.getByText('SMS confirms the number, not who is being tested.'),
+    ).toBeVisible();
     await expect(screen.getByText('Sokha Chann')).toBeVisible();
     await expect(screen.getByText('Female · 32y · MRN ··34')).toBeVisible();
 
-    await userEvent.click(screen.getByRole('button', { name: 'Choose' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Use this patient' }));
     await waitFor(() =>
       expect(args.onOutcome).toHaveBeenCalledWith(
         expect.objectContaining({ kind: 'existing' }),
@@ -110,7 +119,7 @@ export const KnownMatch: Story = {
   },
 };
 
-/** State 3B — shared phone: doctor must explicitly select one redacted candidate. */
+/** State 3B — shared phone: one radio set, one primary, no silent default. */
 export const SharedPhoneMatches: Story = {
   args: {
     initial: {
@@ -123,13 +132,22 @@ export const SharedPhoneMatches: Story = {
     const screen = body(canvasElement);
     await expect(await screen.findByText('This number is linked to 3 patients')).toBeVisible();
     await expect(
-      screen.getByText(/SMS confirms the phone, not the person being tested/),
+      screen.getByText('SMS confirms the number, not who is being tested.'),
     ).toBeVisible();
-    const chooseButtons = screen.getAllByRole('button', { name: 'Choose' });
-    await expect(chooseButtons).toHaveLength(3);
-    await expect(chooseButtons[0]).toHaveFocus();
 
-    await userEvent.click(chooseButtons[1]!);
+    const candidates = screen.getAllByRole('radio');
+    await expect(candidates).toHaveLength(3);
+    for (const candidate of candidates) {
+      await expect(candidate).not.toBeChecked();
+    }
+
+    // Attaching without a deliberate choice is refused, not guessed.
+    await userEvent.click(screen.getByRole('button', { name: 'Use selected patient' }));
+    await expect(await screen.findByRole('alert')).toHaveTextContent(/Select a patient/);
+    await expect(args.onOutcome).not.toHaveBeenCalled();
+
+    await userEvent.click(screen.getByRole('radio', { name: 'Rithy Khem' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Use selected patient' }));
     await waitFor(() =>
       expect(args.onOutcome).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -142,32 +160,30 @@ export const SharedPhoneMatches: Story = {
   },
 };
 
-/** OTP verification is distinct from the post-verification lookup result. */
+/** Verification pends on the action, so the step never blanks out. */
 export const VerifyingOtp: Story = {
   args: { initial: { state: 'verifyingOtp', phone: '+85599111222' } },
   play: async ({ canvasElement }) => {
     const screen = body(canvasElement);
-    await expect(await screen.findByRole('status')).toHaveTextContent('Checking your code…');
+    const pending = await screen.findByRole('button', { name: 'Checking code…' });
+    await expect(pending).toHaveAttribute('aria-busy', 'true');
+    await expect(screen.getByRole('textbox', { name: 'SMS code' })).toBeVisible();
   },
 };
 
-/** State 4 — different patient: warning banner, locked phone, audit-flagged creation. */
+/** State 4 — different patient: warning banner, audit-flagged creation. */
 export const DifferentPatient: Story = {
   args: { initial: { state: 'knownMatch', phone: '+85570123496' }, createDelayMs: 0 },
   play: async ({ canvasElement, args }) => {
     const screen = body(canvasElement);
-    await userEvent.click(
-      await screen.findByRole('button', { name: 'Patient is someone else' }),
-    );
-    await expect(
-      await screen.findByText('This looks like a different patient'),
-    ).toBeVisible();
+    await userEvent.click(await screen.findByRole('button', { name: 'Someone else' }));
+    await expect(await screen.findByText('This may be a different patient')).toBeVisible();
     await expect(screen.getByText('070 123 496')).toBeVisible();
 
     await userEvent.click(screen.getByRole('button', { name: 'Create temporary patient' }));
-    await expect(await screen.findByRole('alert', { name: '' })).toHaveTextContent(
-      /full name, DOB or age, and sex/,
-    );
+    await expect(await screen.findByText('Enter the full name.')).toBeVisible();
+    await expect(screen.getByText('Enter a date of birth or age.')).toBeVisible();
+    await expect(screen.getByText('Select a sex.')).toBeVisible();
 
     await userEvent.type(screen.getByLabelText(/Full name/), 'Pierre');
     await userEvent.type(screen.getByLabelText(/DOB or age/), '32');
@@ -182,13 +198,13 @@ export const DifferentPatient: Story = {
   },
 };
 
-/** State 5 — no match: calm info banner, temporary patient without override flag. */
+/** State 5 — no match: the fact is a description line, not a tinted banner. */
 export const NoMatch: Story = {
   args: { initial: { state: 'noMatch', phone: '+85599111222' }, createDelayMs: 0 },
   play: async ({ canvasElement, args }) => {
     const screen = body(canvasElement);
-    await expect(await screen.findByText('No match found')).toBeVisible();
-    await expect(screen.getByText(/possible duplicates/)).toBeVisible();
+    await expect(await screen.findByRole('heading', { name: 'New patient' })).toBeVisible();
+    await expect(screen.getByText('No Kura patient uses this number.')).toBeVisible();
 
     await userEvent.type(screen.getByLabelText(/Full name/), 'Pierre');
     await userEvent.type(screen.getByLabelText(/DOB or age/), '32');
@@ -203,19 +219,21 @@ export const NoMatch: Story = {
   },
 };
 
-/** Unlocking the verified phone returns to entry — OTP and lookup invalidated. */
-export const UnlockPhone: Story = {
+/** One control changes the bound number, from every post-verification step. */
+export const ChangeVerifiedPhone: Story = {
   args: { initial: { state: 'noMatch', phone: '+85599111222' } },
   play: async ({ canvasElement }) => {
     const screen = body(canvasElement);
-    await userEvent.click(
-      await screen.findByRole('button', { name: 'Unlock phone number' }),
-    );
-    await expect(await screen.findByText('Choose patient')).toBeVisible();
+    await expect(
+      await screen.findAllByRole('button', { name: 'Change phone number' }),
+    ).toHaveLength(1);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Change phone number' }));
+    await expect(await screen.findByRole('heading', { name: 'Patient phone' })).toBeVisible();
   },
 };
 
-/** Submitting — the pending state stays visible while creation is in flight. */
+/** Submitting — the form stays put; the action carries the pending state. */
 export const SubmittingTemporaryPatient: Story = {
   args: { initial: { state: 'noMatch', phone: '+85599111222' }, createDelayMs: 60000 },
   play: async ({ canvasElement }) => {
@@ -224,13 +242,14 @@ export const SubmittingTemporaryPatient: Story = {
     await userEvent.type(screen.getByLabelText(/DOB or age/), '32');
     await userEvent.click(screen.getByRole('radio', { name: 'Female' }));
     await userEvent.click(screen.getByRole('button', { name: 'Create temporary patient' }));
-    await expect(await screen.findByRole('status')).toHaveTextContent(
-      /Creating the temporary patient/,
-    );
+
+    const pending = await screen.findByRole('button', { name: 'Creating…' });
+    await expect(pending).toHaveAttribute('aria-busy', 'true');
+    await expect(screen.getByDisplayValue('Pierre')).toBeVisible();
   },
 };
 
-/** Lookup failure: entries kept, retry + change phone offered. */
+/** Lookup failure: entries kept, retry offered, the number still changeable. */
 export const LookupError: Story = {
   play: async ({ canvasElement }) => {
     const screen = body(canvasElement);
@@ -241,6 +260,7 @@ export const LookupError: Story = {
 
     await expect(await screen.findByText('Lookup unavailable')).toBeVisible();
     await expect(screen.getByRole('button', { name: 'Retry' })).toBeVisible();
+    await expect(screen.getByRole('button', { name: 'Change phone number' })).toBeVisible();
   },
 };
 
@@ -281,7 +301,7 @@ export const FullJourneyTemporary: Story = {
     await userEvent.type(screen.getByRole('textbox', { name: 'SMS code' }), DEMO_OTP);
     await userEvent.click(screen.getByRole('button', { name: 'Verify code' }));
 
-    await expect(await screen.findByText('No match found')).toBeVisible();
+    await expect(await screen.findByText('No Kura patient uses this number.')).toBeVisible();
     await userEvent.type(screen.getByLabelText(/Full name/), 'Pierre');
     await userEvent.type(screen.getByLabelText(/DOB or age/), '32');
     await userEvent.click(screen.getByRole('radio', { name: 'Female' }));
@@ -300,18 +320,19 @@ export const FullJourneyKnownMatch: Story = {
     await userEvent.type(screen.getByRole('textbox', { name: 'SMS code' }), DEMO_OTP);
     await userEvent.click(screen.getByRole('button', { name: 'Verify code' }));
 
-    await userEvent.click(await screen.findByRole('button', { name: 'Choose' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Use this patient' }));
     await waitFor(() => expect(args.onClose).toHaveBeenCalledWith('completed'));
   },
 };
 
-/** 320px: panes stack, the safety message stays above the form. */
+/** 320px: the step is the first thing on screen, full-width presentation. */
 export const Mobile320: Story = {
   parameters: { viewport: { defaultViewport: 'kura320' } },
   play: async ({ canvasElement }) => {
     const screen = body(canvasElement);
-    await expect(await screen.findByText('BEFORE YOU SEND')).toBeVisible();
+    await expect(await screen.findByRole('heading', { name: 'Patient phone' })).toBeVisible();
     await expect(screen.getByLabelText(/Phone number/)).toBeVisible();
+    await expect(screen.getByRole('button', { name: 'Send SMS code' })).toBeVisible();
   },
 };
 
@@ -328,11 +349,11 @@ export const MobileSharedPhoneMatches: Story = {
   play: async ({ canvasElement }) => {
     const screen = body(canvasElement);
     await expect(await screen.findByText('This number is linked to 3 patients')).toBeVisible();
-    await expect(screen.getAllByRole('button', { name: 'Choose' })).toHaveLength(3);
+    await expect(screen.getAllByRole('radio')).toHaveLength(3);
   },
 };
 
-/** 320px long-content state: fields, selected sex, and the final action remain visible. */
+/** 320px long content: the body scrolls, the primary action stays reachable. */
 export const MobileNoMatchLongContent: Story = {
   args: {
     initial: {
@@ -353,7 +374,7 @@ export const MobileNoMatchLongContent: Story = {
   },
 };
 
-/** 320px recoverable lookup failure: retry and change-phone actions remain usable. */
+/** 320px recoverable lookup failure: retry and change actions remain usable. */
 export const MobileLookupError: Story = {
   args: { initial: { state: 'error', phone: '+85599111000' } },
   parameters: { viewport: { defaultViewport: 'kura320' } },

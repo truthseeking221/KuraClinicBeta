@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "check:color-tokens": "node scripts/check-color-token-usage.mjs",
     "check:reui-ownership": "node scripts/check-reui-ownership.mjs",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build"

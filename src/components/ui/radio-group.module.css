@@ -23,6 +23,14 @@
   overflow-wrap: anywhere;
 }
 
+/* Matches FieldLabel: a required group states it the same way a required
+ * field does, instead of leaving the requirement visible only on failure. */
+.requiredMark {
+  /* Matches the label/marker gap Input sets with `gap: var(--space-0-5)`. */
+  margin-inline-start: var(--space-0-5);
+  color: var(--destructive);
+}
+
 .description,
 .error {
   max-width: 60ch;

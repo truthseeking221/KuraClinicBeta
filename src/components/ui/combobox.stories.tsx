@@ -167,7 +167,13 @@ export const Default: Story = {
     await userEvent.click(input);
 
     const body = within(canvasElement.ownerDocument.body);
-    await expect(body.getByRole('option', { name: /Nguyễn Minh Khôi/i })).toBeVisible();
+    const firstOption = body.getByRole('option', { name: /Nguyễn Minh Khôi/i });
+    await expect(firstOption).toBeVisible();
+    const control = canvasElement.querySelector<HTMLElement>("[data-slot='combobox-input-control']");
+    const popup = firstOption.closest<HTMLElement>("[data-slot='combobox-content']");
+    await expect(Math.round(popup?.getBoundingClientRect().width ?? 0)).toBe(
+      Math.round(control?.getBoundingClientRect().width ?? 0),
+    );
     await userEvent.keyboard('{ArrowDown}{Enter}');
     await expect(input).toHaveValue('BS. Nguyễn Minh Khôi');
   },

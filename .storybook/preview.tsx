@@ -105,7 +105,7 @@ const preview: Preview = {
             'Shell',
             'Auth',
             'Clinical',
-            ['Home', 'Results', 'Lab Catalog', 'Phone Gate', 'Patient Context Rail', 'Patient Workspace (Planned)'],
+            ['Home', 'Patients', 'Results', 'Lab Catalog', 'Phone Gate', 'Patient Context Rail', 'Patient Workspace (Planned)'],
             'Front Desk',
             [
               'Check-In Wizard',

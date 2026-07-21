@@ -43,7 +43,7 @@
 }
 
 .field[data-invalid='true'] .control:focus-within {
-  box-shadow: 0 0 0 3px var(--color-danger-100);
+  box-shadow: 0 0 0 3px var(--color-status-danger-bg);
 }
 
 .field[data-disabled='true'] .control,

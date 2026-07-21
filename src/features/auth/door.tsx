@@ -230,6 +230,7 @@ export function Door({
               <OtpInput
                 autoFocus
                 error={codeError}
+                fullWidth
                 label={method === 'phone' ? 'SMS code' : 'Email code'}
                 onValueChange={(next) => {
                   setCode(next);

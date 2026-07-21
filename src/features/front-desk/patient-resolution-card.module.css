@@ -1,11 +1,11 @@
 .card {
   max-width: 56rem;
-  padding: var(--space-4, 16px) var(--space-4, 16px);
+  padding: var(--space-inset-card);
 }
 
 .card.selectable {
   cursor: pointer;
-  transition: border-color 120ms ease, box-shadow 120ms ease;
+  transition: border-color var(--motion-color), box-shadow var(--motion-color);
 }
 
 .card.selectable:hover {
@@ -19,22 +19,22 @@
 }
 
 .card[data-selected] {
-  border-color: var(--brand-500);
+  border-color: var(--color-action-primary-accent);
   box-shadow: var(--shadow-selected);
 }
 
 .layout {
   display: flex;
   align-items: flex-start;
-  gap: var(--space-4, 16px);
+  gap: var(--space-4);
 }
 
 .iconBadge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 44px;
-  height: 44px;
+  width: var(--space-10);
+  height: var(--space-10);
   flex: none;
   border-radius: var(--radius-inset);
 }
@@ -60,7 +60,7 @@
 }
 
 .iconBadge[data-tone='primary'] {
-  background: var(--color-brand-50, #e8f3ff);
+  background: var(--color-selection-bg);
   color: var(--color-text-brand);
 }
 
@@ -73,7 +73,7 @@
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: var(--space-3, 12px);
+  gap: var(--space-3);
 }
 
 .identity {
@@ -86,14 +86,31 @@
   font-weight: var(--weight-semibold);
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--color-text-muted);
+  color: var(--color-text-tertiary);
 }
 
 .nameLine {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: var(--space-2);
+}
+
+.demographic {
+  font-size: var(--type-sm);
+  color: var(--color-text-secondary);
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .heading {
@@ -108,7 +125,7 @@
 .nameKhmer {
   margin: 2px 0 0;
   font-size: var(--type-base);
-  color: var(--color-text-muted);
+  color: var(--color-text-tertiary);
 }
 
 .headerright {
@@ -132,13 +149,13 @@
 }
 
 .selectionMark[data-selected] {
-  border-color: var(--brand-500);
-  background: var(--brand-500);
-  color: var(--color-text-on-brand, #ffffff);
+  border-color: var(--color-action-primary-accent);
+  background: var(--color-action-primary-accent);
+  color: var(--color-text-on-brand);
 }
 
 .match {
-  background: var(--color-warn-100);
+  background: var(--color-status-warning-bg);
   color: inherit;
   border-radius: var(--radius-indicator);
   padding: 0 2px;
@@ -154,13 +171,19 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  column-gap: var(--space-4, 16px);
-  row-gap: 6px;
-  margin-top: var(--space-3, 12px);
-  padding-top: var(--space-3, 12px);
+  column-gap: var(--space-4);
+  row-gap: var(--space-1-5);
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
   border-top: 1px solid var(--color-border);
   font-size: var(--type-sm);
   color: var(--color-text-secondary);
+}
+
+.provenance {
+  margin: var(--space-2) 0 0;
+  font-size: var(--type-xs);
+  color: var(--color-text-tertiary);
 }
 
 .metaItem {
@@ -171,7 +194,7 @@
 }
 
 .metaMuted {
-  color: var(--color-text-muted);
+  color: var(--color-text-tertiary);
 }
 
 .lastVisit {
@@ -206,13 +229,13 @@
 .trustSignal[data-tone='danger'] { color: var(--color-status-critical-fg, var(--destructive)); }
 
 .trustDivider {
-  color: var(--color-text-muted);
+  color: var(--color-text-tertiary);
 }
 
 .evidence {
   margin: var(--space-2, 8px) 0 0;
   font-size: var(--type-xs);
-  color: var(--color-text-muted);
+  color: var(--color-text-tertiary);
 }
 
 .bookings {
@@ -227,7 +250,7 @@
   font-weight: var(--weight-semibold);
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--color-text-muted);
+  color: var(--color-text-tertiary);
 }
 
 .bookingRow {
@@ -254,8 +277,8 @@ button.bookingRow {
 
 button.bookingRow:hover {
   border-style: solid;
-  border-color: var(--brand-500);
-  background: var(--color-brand-50, #e8f3ff);
+  border-color: var(--color-action-primary-accent);
+  background: var(--color-selection-bg);
 }
 
 button.bookingRow:focus-visible {
@@ -266,7 +289,7 @@ button.bookingRow:focus-visible {
 }
 
 .bookingCreator {
-  color: var(--color-text-muted);
+  color: var(--color-text-tertiary);
   font-size: var(--type-xs);
 }
 
@@ -303,13 +326,13 @@ button.bookingRow:focus-visible {
 .actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-top: var(--space-4, 16px);
+  gap: var(--space-2);
+  margin-top: var(--space-4);
 }
 
 @media (max-width: 480px) {
   .layout {
-    gap: var(--space-3, 12px);
+    gap: var(--space-3);
   }
 
   .headerRow {

@@ -46,7 +46,7 @@
 }
 
 .item[data-pressed] {
-  background: var(--color-brand-50);
+  background: var(--color-selection-bg);
   color: var(--color-text-brand);
 }
 
@@ -78,7 +78,7 @@
 }
 
 .group[data-variant='outline'] .item[data-pressed] {
-  background: var(--color-brand-50);
+  background: var(--color-selection-bg);
 }
 
 .item[data-size='sm'] {

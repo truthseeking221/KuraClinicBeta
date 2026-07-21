@@ -45,13 +45,14 @@ it is, Kura decides everything else.
 ## 2. The BoardUI finish checklist (what "clean" means, in numbers)
 
 ### Surface & borders — the border diet
-- Separate regions with surface contrast first (--color-surface on
---color-surface-bg), spacing second, borders last.
-- Borders only on: control edges (input, select, OTP slot) and boundaries that
-carry meaning (totals divider, action bar).
-- Cards: border: 1px solid var(--card-border) + box-shadow: var(--shadow-card)
-— transparent border in light, restored in dark. Never border + shadow
-stacked on an ordinary surface.
+- Surface sandwich (BoardUI): white page canvas (--color-surface-bg) → flat
+gray tray cards (--card = --color-surface-2, no border, no shadow, 16px
+radius) → white tiles nested inside a tray (--color-surface +
+--elevation-card-tile, 10px radius). Contrast makes the structure.
+- Borders only on: control edges (input, select, OTP slot), bordered table
+containers, and boundaries that carry meaning (totals divider, action bar).
+- Never border + shadow stacked on an ordinary surface; the feather shadow
+belongs to tiles and controls, never to trays.
 - Rows: no hairline per row. Hover = background shift at --motion-color, with
 negative-margin bleed so text stays aligned:
 

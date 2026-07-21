@@ -6,7 +6,7 @@ import { CalendarIcon, ClockIcon, HistoryIcon, SegmentedToggle, UserMultipleIcon
 const meta = {
   title: 'Design System/Patterns/SegmentedToggle',
   component: SegmentedToggle,
-  tags: ['autodocs', 'source-reui', 'adapted-kura'],
+  tags: ['autodocs', 'source-kura', 'adapted-kura'],
   parameters: {
     layout: 'centered',
     kura: {
@@ -14,12 +14,12 @@ const meta = {
         decision: 'EXTEND',
         owner: 'src/components/ui',
         evidence:
-          'Kura already owns SegmentedToggle as the canonical compact mutually-exclusive mode pattern. ReUI c-tabs-9 provides the matching segmented-tabs anatomy and visual density; Kura retains radiogroup semantics because this component changes a mode or filter rather than navigating peer panels.',
+          'Kura keeps radiogroup semantics for mutually-exclusive modes while adopting Kura track, selected surface, and compact density.',
       },
       source: {
-        vendor: 'ReUI',
-        registryItem: 'c-tabs-9 — segmented control tabs',
-        sourceUrl: 'https://reui.io/components/tabs',
+        vendor: 'Kura',
+        registryItem: 'segmented-control',
+        visualReference: 'Kura segmented-control',
       },
       binding: {
         colors: 'kura-semantic',
@@ -83,7 +83,7 @@ export const FilterMode: Story = {
   },
 };
 
-/** ReUI segmented-tabs anatomy with canonical Kura icons and mode semantics. */
+/** Kura segmented-control finish with canonical Kura icons and mode semantics. */
 export const WithIcons: Story = {
   args: {
     label: 'Reporting period',

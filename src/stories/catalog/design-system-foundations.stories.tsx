@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import { expect } from 'storybook/test';
 
 import { ColorsReference } from '../../components/foundations/colors-reference';
+import { DCM_COLOR_TOKENS } from '../../components/foundations/color-tokens';
 import { ContentGrammarReference } from '../../components/foundations/content-grammar-reference';
 import { DataGrammarReference } from '../../components/foundations/data-grammar-reference';
 import {
@@ -25,13 +26,28 @@ type Story = StoryObj<typeof meta>;
 
 export const Colors: Story = {
   render: () => <ColorsReference />,
+  parameters: {
+    chromatic: { viewports: [320, 1440] },
+    kura: {
+      owner: 'src/styles/tokens.css',
+      layer: 'Foundation',
+      decision: 'CREATE',
+      source: 'Kura design system',
+      binding: 'All component colors resolve through Kura semantic or component-role tokens; primitives are foundation-only',
+    },
+    docs: {
+      description: {
+        story: 'The complete Kura color contract across core UI, brand actions, status, data visualization, and clinical identity.',
+      },
+    },
+  },
   play: async () => {
     const rows = [...document.querySelectorAll<HTMLElement>('[data-canonical-token]')];
     const names = rows.map((row) => row.dataset.tokenName).filter(Boolean);
 
-    await expect(rows).toHaveLength(79);
-    await expect(new Set(names)).toHaveLength(79);
-    for (const section of ['provenance', 'tone-meanings', 'primitives', 'semantics', 'theme-comparison', 'focus', 'compatibility']) {
+    await expect(rows).toHaveLength(DCM_COLOR_TOKENS.length);
+    await expect(new Set(names)).toHaveLength(DCM_COLOR_TOKENS.length);
+    for (const section of ['provenance', 'primitives', 'semantics', 'theme-comparison', 'compatibility']) {
       await expect(document.querySelector(`[data-color-section="${section}"]`)).toBeTruthy();
     }
   },

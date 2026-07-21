@@ -23,11 +23,11 @@ function BookingTabs({ appearance = 'underline', orientation = 'horizontal' }: {
 const meta = {
   title: 'Design System/Components/Tabs',
   component: Tabs,
-  tags: ['autodocs', 'source-reui', 'adapted-kura'],
+  tags: ['autodocs', 'source-kura', 'adapted-kura'],
   parameters: {
     layout: 'padded',
     kura: {
-      source: { vendor: 'ReUI', registryItem: '@reui/c-tabs-1' },
+      source: { vendor: 'Kura', registryItem: 'tabs', visualReference: 'Kura tabs' },
       intake: {
         decision: 'EXTEND',
         owner: 'src/components/ui',

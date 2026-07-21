@@ -142,7 +142,7 @@ function DurationRow({ token }: { token: DurationToken }) {
       >
         <span
           aria-hidden="true"
-          className="dcm-motion-dot absolute top-1/2 block rounded-full bg-[var(--color-brand-500)]"
+          className="dcm-motion-dot absolute top-1/2 block rounded-full bg-[var(--color-action-primary-accent)]"
           data-run={run ? 'true' : 'false'}
           style={{ transitionDuration: `var(${token.name})` }}
         />
@@ -169,7 +169,7 @@ function EasingCurve({ token }: { token: EasingToken }) {
         viewBox="-4 -4 108 108"
       >
         <path d="M 0 100 L 100 0" fill="none" stroke="var(--color-border)" strokeDasharray="4 4" strokeWidth="1.5" />
-        <path d={path} fill="none" stroke="var(--color-brand-500)" strokeLinecap="round" strokeWidth="3" />
+        <path d={path} fill="none" stroke="var(--color-action-primary-accent)" strokeLinecap="round" strokeWidth="3" />
       </svg>
       <code className="k-body-sm mt-3 block select-text break-all font-mono font-medium">{token.name}</code>
       <code className="k-caption block select-text break-all font-mono text-[var(--color-text-tertiary)]">{token.value}</code>

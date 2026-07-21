@@ -9,11 +9,11 @@ import { FileUpload, type FileUploadItem } from './index';
 const meta = {
   title: 'Design System/Components/File Upload',
   component: FileUpload,
-  tags: ['autodocs', 'source-reui', 'adapted-kura'],
+  tags: ['autodocs', 'source-kura', 'adapted-kura'],
   parameters: {
     layout: 'centered',
     kura: {
-      source: { vendor: 'ReUI', registryItem: 'file-upload', familySize: 10 },
+      source: { vendor: 'Kura', registryItem: 'file-upload', visualReference: 'Kura file-upload', familySize: 10 },
       intake: {
         decision: 'CREATE',
         owner: 'src/components/ui',

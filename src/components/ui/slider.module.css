@@ -39,24 +39,39 @@
   width: 100%;
   height: var(--space-1-5);
   border-radius: var(--radius-track);
-  background: var(--color-surface-sunken);
+  background: var(--color-background-tertiary-default);
+  box-shadow: var(--shadow-slider-track);
 }
 
 .indicator {
   border-radius: inherit;
-  background: var(--primary-accent);
+  background-image: var(--gradient-button-primary-default);
+  box-shadow: var(--shadow-slider-range);
 }
 
 .thumb {
   width: var(--space-5);
   height: var(--space-5);
-  border: 1px solid var(--color-border-emphasis);
+  border: 1px solid var(--color-border-button-default);
   border-radius: var(--radius-full);
-  background: var(--color-surface);
-  box-shadow: var(--shadow-xs);
+  background: linear-gradient(
+    180deg,
+    var(--color-background-primary-default),
+    var(--color-background-primary-hover)
+  );
+  box-shadow: var(--shadow-slider-thumb);
   transition:
     box-shadow var(--duration-fast) var(--ease-standard),
     transform var(--duration-fast) var(--ease-standard);
+}
+
+.thumb::after {
+  width: var(--space-2);
+  height: var(--space-2);
+  border-radius: var(--radius-full);
+  background-image: var(--gradient-button-primary-default);
+  box-shadow: var(--shadow-slider-range);
+  content: '';
 }
 
 .thumb:hover {

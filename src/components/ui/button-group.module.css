@@ -13,12 +13,20 @@
 
 .segmented {
   gap: 0;
+  border: 1px solid var(--color-border-button-default);
+  border-radius: var(--radius-control);
+  background: var(--color-background-primary-default);
+  box-shadow: var(--shadow-xs);
+  overflow: hidden;
 }
 
 .segmented > :global([data-slot='button']),
 .segmented > :global([data-slot='icon-button']) {
+  border: 0;
+  border-inline-start: 1px solid var(--color-border-button-default);
   border-radius: 0;
-  margin-inline-start: -1px;
+  margin-inline-start: 0;
+  box-shadow: none;
 }
 
 .segmented > :global([data-slot='button']):first-child,
@@ -26,6 +34,7 @@
   border-start-start-radius: var(--radius-control);
   border-end-start-radius: var(--radius-control);
   margin-inline-start: 0;
+  border-inline-start: 0;
 }
 
 .segmented > :global([data-slot='button']):last-child,
@@ -38,12 +47,15 @@
 .vertical.segmented > :global([data-slot='icon-button']) {
   width: 100%;
   margin-inline-start: 0;
-  margin-block-start: -1px;
+  margin-block-start: 0;
+  border-inline-start: 0;
+  border-block-start: 1px solid var(--color-border-button-default);
 }
 
 .vertical.segmented > :global([data-slot='button']):first-child,
 .vertical.segmented > :global([data-slot='icon-button']):first-child {
   margin-block-start: 0;
+  border-block-start: 0;
   border-start-start-radius: var(--radius-control);
   border-start-end-radius: var(--radius-control);
   border-end-start-radius: 0;

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-  draftPatientError,
+  draftPatientErrors,
   EMPTY_DRAFT,
   hasUnsavedEntries,
   isValidKhLocalPhone,
@@ -58,11 +58,19 @@ describe('verification and branching', () => {
 });
 
 describe('temporary patient gate', () => {
-  it('requires name, DOB-or-age, and sex (spec §8/§9)', () => {
-    expect(draftPatientError(EMPTY_DRAFT)).not.toBeNull();
-    expect(draftPatientError({ name: 'Pierre', dobOrAge: '', sex: 'Female' })).not.toBeNull();
-    expect(draftPatientError({ name: 'Pierre', dobOrAge: '32', sex: null })).not.toBeNull();
-    expect(draftPatientError({ name: 'Pierre', dobOrAge: '32', sex: 'Female' })).toBeNull();
+  it('reports every missing field on the control that is missing (spec §8/§9)', () => {
+    expect(draftPatientErrors(EMPTY_DRAFT)).toEqual({
+      name: 'Enter the full name.',
+      dobOrAge: 'Enter a date of birth or age.',
+      sex: 'Select a sex.',
+    });
+    expect(draftPatientErrors({ name: 'Pierre', dobOrAge: '', sex: 'Female' })).toEqual({
+      dobOrAge: 'Enter a date of birth or age.',
+    });
+    expect(draftPatientErrors({ name: 'Pierre', dobOrAge: '32', sex: null })).toEqual({
+      sex: 'Select a sex.',
+    });
+    expect(draftPatientErrors({ name: 'Pierre', dobOrAge: '32', sex: 'Female' })).toEqual({});
   });
 
   it('never overclaims identity in the downstream context (spec §10)', () => {

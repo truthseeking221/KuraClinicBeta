@@ -147,7 +147,7 @@
 }
 
 .sectionTrigger:hover:not(:disabled) {
-  background: var(--muted);
+  background: var(--color-surface-sunken);
 }
 
 .sectionTitle {
@@ -188,7 +188,7 @@
 
 .testRow:hover:not([data-disabled='true']),
 .testRow:focus-within:not([data-disabled='true']) {
-  background: var(--muted);
+  background: var(--color-surface-sunken);
 }
 
 .testRow[data-disabled='true'] {
@@ -253,7 +253,7 @@
 .skeletonHeading,
 .skeletonRow {
   border-radius: var(--radius-indicator);
-  background: var(--muted);
+  background: var(--color-surface-sunken);
   animation: catalog-pulse var(--duration-slow) var(--ease-standard) infinite
     alternate;
 }

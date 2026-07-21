@@ -2,15 +2,16 @@
 
 import { useRouter } from 'next/navigation';
 
-import { ComingSoonPage } from '../../../components/shared/coming-soon';
+import { PatientsRegistry } from '../../../features/patients';
+import { DEMO_PATIENTS, DEMO_TRIAGE } from '../../../features/patients/demo-data';
 
 export default function PatientsPage() {
   const router = useRouter();
   return (
-    <ComingSoonPage
-      onBack={() => router.back()}
-      description="The longitudinal patient registry with identity, episodes, and results history."
-      title="Patients"
+    <PatientsRegistry
+      onOpenPatient={(userId) => router.push(`/patients/${userId}`)}
+      patients={DEMO_PATIENTS}
+      triage={DEMO_TRIAGE}
     />
   );
 }

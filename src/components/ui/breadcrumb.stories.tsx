@@ -16,7 +16,7 @@ import {
 const meta = {
   title: 'Design System/Primitives/Breadcrumb',
   component: Breadcrumb,
-  tags: ['autodocs', 'source-reui', 'adapted-kura'],
+  tags: ['autodocs', 'source-kura', 'adapted-kura'],
   parameters: {
     layout: 'padded',
     kura: {
@@ -27,9 +27,9 @@ const meta = {
           'Fresh source and Storybook search found no canonical hierarchical navigation primitive. The existing catalog had no reusable breadcrumb implementation.',
       },
       source: {
-        vendor: 'ReUI',
-        registryItem: 'components/ui/breadcrumb.tsx',
-        sourceUrl: 'https://reui.io/components/breadcrumb',
+        vendor: 'Kura',
+        registryItem: 'breadcrumb',
+        visualReference: 'Kura breadcrumb',
       },
       binding: {
         colors: 'kura-semantic',

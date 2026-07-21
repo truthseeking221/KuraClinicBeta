@@ -28,7 +28,7 @@
   font: inherit;
   font-size: var(--type-xs);
   font-weight: var(--weight-medium);
-  color: var(--color-text-muted);
+  color: var(--color-text-tertiary);
   border-radius: var(--radius-control-compact);
   cursor: pointer;
 }
@@ -56,7 +56,7 @@
 
 .methodHint {
   font-size: var(--type-2xs);
-  color: var(--color-text-muted);
+  color: var(--color-text-tertiary);
 }
 
 .methodSoon {
@@ -65,7 +65,7 @@
   font-weight: var(--weight-bold);
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--color-text-muted);
+  color: var(--color-text-tertiary);
 }
 
 .demoHint {

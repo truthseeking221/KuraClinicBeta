@@ -6,9 +6,13 @@
 
 .workspace {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) calc(var(--space-16) * 5);
+  grid-template-columns: minmax(0, 56rem);
   gap: var(--space-5);
   align-items: start;
+}
+
+.workspace[data-cart-rail='visible'] {
+  grid-template-columns: minmax(0, 1fr) calc(var(--space-16) * 5);
 }
 
 .stepPanel {
@@ -91,28 +95,6 @@
   padding-top: var(--space-2);
 }
 
-.catalog {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-}
-
-.catalogRow {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  margin-inline: calc(var(--space-2) * -1);
-  padding: var(--space-2);
-  border-radius: var(--radius-control-compact);
-  transition: background-color var(--motion-color);
-}
-
-.catalogRow:hover {
-  background: var(--color-surface);
-}
-
 .lineTextWide {
   flex: 1;
   min-width: 0;
@@ -131,7 +113,45 @@
   color: var(--color-text-tertiary);
 }
 
-.linePrice {
+.otherOrders {
+  border-block: 1px solid var(--color-border);
+}
+
+.otherOrdersTrigger {
+  width: 100%;
+  padding-inline: 0;
+}
+
+.otherOrdersTitle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.otherOrderList {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.otherOrderRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: var(--touch-target-min);
+  padding: var(--space-2);
+  border-radius: var(--radius-control-compact);
+  transition: background-color var(--motion-color);
+}
+
+.otherOrderRow:hover {
+  background: var(--color-background-primary-hover);
+}
+
+.otherOrderPrice {
   font-size: var(--type-sm);
   font-variant-numeric: tabular-nums;
   color: var(--color-text-primary);
@@ -212,7 +232,8 @@
 }
 
 @media (max-width: 1023px) {
-  .workspace {
+  .workspace,
+  .workspace[data-cart-rail='visible'] {
     grid-template-columns: 1fr;
   }
 }
@@ -232,7 +253,7 @@
 /* ── Step 1 · identity resolution ─────────────────────────── */
 
 .stepSubtitle {
-  margin: -8px 0 0;
+  margin: calc(var(--space-2) * -1) 0 0;
   font-size: var(--type-sm);
   color: var(--color-text-secondary);
 }
@@ -243,7 +264,7 @@
   font-weight: var(--weight-semibold);
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--color-text-muted);
+  color: var(--color-text-tertiary);
 }
 
 .identityGroupIntro {
@@ -292,12 +313,12 @@
   align-items: center;
   gap: 4px;
   padding: 4px 8px;
-  border: 1px solid var(--color-warn-100);
+  border: 1px solid var(--color-status-warning-bg);
   border-radius: var(--radius-indicator);
-  background: var(--color-warn-25);
+  background: color-mix(in srgb, var(--color-status-warning-bg) 40%, var(--color-surface));
   font-size: var(--type-xs);
   font-weight: var(--weight-semibold);
-  color: var(--color-warn-600);
+  color: var(--color-status-warning-fg);
 }
 
 /* ── Step 2/3 · section cards, data points, insurance ─────── */
@@ -318,8 +339,8 @@
 }
 
 .sectionCard[data-tone='brand'] {
-  border-color: var(--brand-200);
-  background: var(--brand-25);
+  border-color: var(--color-selection-bg-strong);
+  background: var(--color-action-primary-subtle);
 }
 
 .sectionCardHeader {
@@ -346,17 +367,14 @@
 }
 
 .collapsibleTrigger {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  padding: 2px 0;
-  border: none;
-  background: none;
-  font: inherit;
-  cursor: pointer;
-  text-align: left;
-  border-radius: var(--radius-control-compact);
+  padding-inline: 0;
+}
+
+.disclosureLabel {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  min-width: 0;
 }
 
 .collapsibleTrigger:focus-visible {
@@ -364,25 +382,9 @@
   outline-offset: 2px;
 }
 
-.collapsibleChevron {
-  color: var(--color-text-muted);
-  transition: transform var(--motion-control);
-}
-
-.collapsibleTrigger[data-state='closed'] .collapsibleChevron {
-  transform: rotate(-90deg);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .collapsibleChevron {
-    transition: none;
-  }
-}
-
 .optionalTag {
-  margin-left: auto;
   font-size: var(--type-xs);
-  color: var(--color-text-muted);
+  color: var(--color-text-tertiary);
 }
 
 .refundRow {
@@ -448,7 +450,7 @@
   font-weight: var(--weight-medium);
   letter-spacing: 0.03em;
   text-transform: uppercase;
-  color: var(--color-text-muted);
+  color: var(--color-text-tertiary);
 }
 
 .dataPointValue {
@@ -553,13 +555,17 @@
   .checkingSpinner {
     animation: none;
   }
+
+  .otherOrderRow {
+    transition: none;
+  }
 }
 
 .checkingTitle {
   margin: 0;
   font-size: var(--type-sm);
   font-weight: var(--weight-semibold);
-  color: var(--brand-700);
+  color: var(--color-text-brand);
 }
 
 /* ── Order attribution ──────────────────────────────────── */
@@ -601,7 +607,7 @@
   gap: var(--space-2) var(--space-4);
   margin: var(--space-2) 0 0;
   padding: var(--space-2) var(--space-3);
-  background: var(--color-surface);
+  background: var(--color-surface-2);
   border-radius: var(--radius-control-compact);
 }
 
@@ -610,7 +616,7 @@
   font-weight: var(--weight-semibold);
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--color-text-muted);
+  color: var(--color-text-tertiary);
 }
 
 .collisionRecord dd {
@@ -723,4 +729,45 @@
   margin: 0;
   font-size: var(--type-sm);
   color: var(--color-text-secondary);
+}
+
+
+/* ── Step 2 sections (flat, no card-per-section) ─────────── */
+
+.formSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.sectionProvenance {
+  font-size: var(--type-xs);
+  color: var(--color-text-tertiary);
+}
+
+.sectionAction {
+  margin-left: auto;
+  align-self: center;
+}
+
+/* Optional disclosures share one continuous surface; a divider separates the
+   rows without implying two independent objects. */
+.disclosures {
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--color-border);
+}
+
+.disclosures > * + * {
+  border-top: 1px solid var(--color-border);
+}
+
+.disclosures > * {
+  padding-block: var(--space-2);
 }
