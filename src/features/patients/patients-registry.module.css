@@ -96,6 +96,24 @@
   color: var(--color-text-secondary);
 }
 
+.workItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  min-inline-size: 0;
+}
+
+.workItem > span:first-child {
+  color: var(--color-text-secondary);
+  font-size: var(--type-sm);
+  overflow-wrap: anywhere;
+}
+
+.workItem :global([data-slot='button']) {
+  flex-shrink: 0;
+}
+
 /* ── Triage (target-contract layer) ───────────────────────── */
 
 .triage {

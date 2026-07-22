@@ -47,7 +47,13 @@ export const Default: Story = {
   tags: ["play-fn"],
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement);
-    await userEvent.click(canvas.getByRole("button", { name: "Switch patient" }));
+    const trigger = canvas.getByRole("button", { name: "Switch patient" });
+    const restingBackground = getComputedStyle(trigger).backgroundColor;
+
+    await expect(getComputedStyle(trigger).marginInlineStart).toBe("-4px");
+    await userEvent.hover(trigger);
+    await expect(getComputedStyle(trigger).backgroundColor).toBe(restingBackground);
+    await userEvent.click(trigger);
 
     const body = within(canvasElement.ownerDocument.body);
     const dialog = await body.findByRole("dialog", { name: "Switch patient" });

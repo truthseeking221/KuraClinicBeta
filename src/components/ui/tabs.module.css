@@ -19,7 +19,12 @@
   gap: var(--space-1);
   border-bottom: 1px solid var(--color-border);
   overflow-x: auto;
-  scrollbar-width: thin;
+  overflow-y: hidden;
+  scrollbar-width: none;
+}
+
+.list::-webkit-scrollbar {
+  display: none;
 }
 
 .root[data-orientation='vertical'] .list {

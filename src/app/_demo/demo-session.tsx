@@ -14,9 +14,14 @@
 import { createContext, useContext, useMemo, useSyncExternalStore } from 'react';
 import type { ReactNode } from 'react';
 
-import type { ClinicMode, ClinicShift } from '../../components/shared/app-shell';
+import type {
+  ClinicMode,
+  ClinicShift,
+  ShellDemoAccessProfile,
+} from '../../components/shared/app-shell';
 import type { LicenceState } from '../../features/licence/logic';
 import type { DemoOnboardingScenarioId } from '../../features/auth/demo-data';
+import type { PatientAcquisitionJourneySnapshot } from '../../features/care-loop/patient-acquisition-flow';
 import type { Locale } from '../../components/foundations/i18n';
 import { ME } from '../../features/settings/demo-data';
 import {
@@ -26,8 +31,10 @@ import {
 
 export type DemoSession = {
   signedIn: boolean;
-  /** Cohort contract for route fixtures; the current app demo always starts here. */
-  demoProfile: 'new-doctor' | 'established-doctor';
+  /** Cohort contract for route fixtures; role and permission remain separate. */
+  demoProfile: 'new-doctor' | 'established-doctor' | 'clinic-staff';
+  demoActor: 'doctor' | 'nurse' | 'receptionist' | 'phlebotomist';
+  accessProfile: ShellDemoAccessProfile;
   /** Storybook-owned phone fixture that selected this app-wide demo state. */
   demoScenarioId: DemoOnboardingScenarioId;
   userName: string;
@@ -47,11 +54,17 @@ export type DemoSession = {
    * Settings language row, so the two controls can never disagree.
    */
   locale: Locale;
+  /** Prototype-only resumable work; patient identity remains a separate record. */
+  patientJourney?: PatientAcquisitionJourneySnapshot;
+  /** Starts the deterministic courier event replay; never a backend timestamp. */
+  patientJourneyLogisticsStartedAtMs?: number;
 };
 
 export const DEMO_DEFAULT_SESSION: DemoSession = {
   signedIn: false,
   demoProfile: 'new-doctor',
+  demoActor: 'doctor',
+  accessProfile: 'full-clinic',
   demoScenarioId: 'new-sign-up',
   userName: ME.name,
   userEmail: ME.email,
@@ -63,8 +76,8 @@ export const DEMO_DEFAULT_SESSION: DemoSession = {
   locale: 'en',
 };
 
-// v5 makes the onboarding phone select the app-wide Storybook scenario pack.
-const STORAGE_KEY = 'kura.demo.session.v5';
+// v6 adds Storybook-owned actor and capability profiles to phone scenarios.
+const STORAGE_KEY = 'kura.demo.session.v6';
 
 /* localStorage-backed store. Snapshot caching keeps getSnapshot referentially
  * stable between writes, which useSyncExternalStore requires. */

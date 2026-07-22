@@ -7,6 +7,12 @@ import {
   PATIENTS_REGISTRY_DEMO_SCENARIOS,
 } from '../patients/demo-data';
 import { RESULTS_DEMO_SCENARIOS } from '../results/demo-data';
+import {
+  FRONT_DESK_CHECK_IN_DEMO_SCENARIOS,
+  FRONT_DESK_PAYMENT_DEMO_SCENARIOS,
+  FRONT_DESK_QUEUE_DEMO_SCENARIOS,
+} from '../front-desk/demo-data';
+import { COLLECTION_DEMO_SCENARIOS } from '../collection/demo-data';
 
 import { DEMO_ACCOUNTS, DEMO_OTP } from './demo-data';
 import { DEMO_ONBOARDING_SCENARIOS } from './demo-scenario-registry';
@@ -59,10 +65,35 @@ describe('onboarding-driven demo scenario registry', () => {
   });
 
   it('covers the source-backed routed scenario set', () => {
-    expect(DEMO_ONBOARDING_SCENARIOS).toHaveLength(71);
+    expect(DEMO_ONBOARDING_SCENARIOS).toHaveLength(90);
     expect(new Set(DEMO_ONBOARDING_SCENARIOS.map((scenario) => scenario.surface))).toEqual(
-      new Set(['onboarding', 'home', 'patients', 'patient-chart', 'results', 'earnings']),
+      new Set([
+        'onboarding',
+        'home',
+        'patients',
+        'patient-chart',
+        'results',
+        'earnings',
+        'front-desk-queue',
+        'front-desk-check-in',
+        'front-desk-payments',
+        'collection',
+      ]),
     );
+  });
+
+  it('keeps staff identity separate from capability and Storybook access evidence', () => {
+    const staffScenarios = DEMO_ONBOARDING_SCENARIOS.filter(
+      (scenario) => scenario.actor && scenario.actor !== 'doctor',
+    );
+
+    expect(staffScenarios.length).toBeGreaterThan(0);
+    for (const scenario of staffScenarios) {
+      expect(scenario.accessProfile).toBeTruthy();
+      expect(scenario.mode).toMatch(/^(front-desk|collection)$/);
+      expect(scenario.accessSource).toContain('Clinic/Shell/App Shell#');
+      expect(scenario.workspace).toBeTruthy();
+    }
   });
 
   it('does not issue demo phones for open, deferred, or design-gap journeys', () => {
@@ -111,6 +142,18 @@ describe('onboarding-driven demo scenario registry', () => {
       }
       if (scenario.surface === 'earnings') {
         expect(scenario.variant in EARNINGS_DEMO_SCENARIOS).toBe(true);
+      }
+      if (scenario.surface === 'front-desk-queue') {
+        expect(scenario.variant in FRONT_DESK_QUEUE_DEMO_SCENARIOS).toBe(true);
+      }
+      if (scenario.surface === 'front-desk-check-in') {
+        expect(scenario.variant in FRONT_DESK_CHECK_IN_DEMO_SCENARIOS).toBe(true);
+      }
+      if (scenario.surface === 'front-desk-payments') {
+        expect(scenario.variant in FRONT_DESK_PAYMENT_DEMO_SCENARIOS).toBe(true);
+      }
+      if (scenario.surface === 'collection') {
+        expect(scenario.variant in COLLECTION_DEMO_SCENARIOS).toBe(true);
       }
     }
   });

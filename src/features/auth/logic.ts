@@ -116,7 +116,8 @@ export const WIZARD_STEP_LABELS: Record<WizardStepKey, string> = {
 };
 
 export const WIZARD_COPY = {
-  nameRequired: 'Enter your name to continue.',
+  firstNameRequired: 'Enter your first name to continue.',
+  lastNameRequired: 'Enter your last name to continue.',
   invalidPhone: 'Enter a valid phone number.',
   invalidCode: 'That code is incorrect or expired. Try again.',
   clinicNameRequired: 'Clinic name is required.',
@@ -133,6 +134,28 @@ type WizardEntryBase = {
   /** Editable account-provider prefill. */
   initialName?: string;
 };
+
+/**
+ * The account carries one display name; the Name step collects it as two
+ * fields. A prefill arrives as one string, so the last whitespace-separated
+ * token becomes the last name and everything before it the first name. A
+ * single-token prefill fills the first name only — never guess a family name
+ * the person did not give.
+ */
+export function splitPersonName(full: string): { firstName: string; lastName: string } {
+  const trimmed = full.trim().replace(/\s+/g, ' ');
+  const lastSpace = trimmed.lastIndexOf(' ');
+  if (lastSpace === -1) return { firstName: trimmed, lastName: '' };
+  return {
+    firstName: trimmed.slice(0, lastSpace),
+    lastName: trimmed.slice(lastSpace + 1),
+  };
+}
+
+/** Rejoin the two fields into the one display name the account stores. */
+export function joinPersonName(firstName: string, lastName: string): string {
+  return [firstName.trim(), lastName.trim()].filter(Boolean).join(' ');
+}
 
 export type WizardEntryState = WizardEntryBase &
   (

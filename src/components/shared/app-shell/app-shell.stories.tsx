@@ -5,6 +5,10 @@ import { useState } from 'react';
 import { Alert, AlertDescription, AlertTitle, Button } from '../../ui';
 
 import { AppShell } from './app-shell';
+import {
+  SHELL_DEMO_ACCESS_PROFILES,
+  SHELL_DEMO_MODULES,
+} from './demo-data';
 import styles from './app-shell.module.css';
 import type { AppShellProps } from './app-shell';
 import { deriveAvailableModes, MODE_REGISTRY } from './mode-registry';
@@ -39,41 +43,19 @@ const nurseUser: ShellUser = {
   licenceVerified: false,
 };
 
+const receptionistUser: ShellUser = {
+  name: 'Linh Nguyen',
+  email: 'linh@mekong.clinic',
+  licenceVerified: false,
+};
+
+const phlebotomistUser: ShellUser = {
+  name: 'Srey Neang',
+  email: 'neang@mekong.clinic',
+  licenceVerified: false,
+};
+
 const psc01: Station = { id: 'PSC-01', role: 'phlebotomy', shift: 'morning' };
-
-/** Permission sets that mirror the proposed clinical capability catalog. */
-const PERMISSIONS = {
-  doctorFull: [
-    'patient.read',
-    'order.create',
-    'result.review',
-    'reception.check_in',
-    'booking.manage',
-    'payment.collect',
-    'sample.collect',
-    'member.manage',
-    'branch.manage',
-    'role.manage',
-    'workspace.settings.manage',
-    'doctor.banking.view.self',
-  ],
-  soloDoctor: ['patient.read', 'order.create', 'result.review', 'doctor.banking.view.self'],
-  nurseFrontDeskCollection: [
-    'reception.check_in',
-    'booking.manage',
-    'payment.collect',
-    'sample.collect',
-    'sample.label',
-    'sample.handoff',
-    'vitals.record',
-  ],
-};
-
-const ALL_MODULES = {
-  clinical: true,
-  reception: true,
-  collection: true,
-};
 
 function DemoContent({ label }: { label: string }) {
   return (
@@ -104,7 +86,7 @@ function ShellPlayground(
   const { initialMode, licenceVerified = true, permissions, ...rest } = props;
   const availableModes = deriveAvailableModes({
     permissions,
-    enabledModules: ALL_MODULES,
+    enabledModules: SHELL_DEMO_MODULES,
     licenceVerified,
   });
   const [mode, setMode] = useState<ClinicMode>(initialMode);
@@ -207,7 +189,7 @@ export const FullClinic: Story = {
         </Button>
       }
       initialMode="clinical"
-      permissions={PERMISSIONS.doctorFull}
+      permissions={[...SHELL_DEMO_ACCESS_PROFILES['full-clinic'].permissions]}
       workspaces={allWorkspaces}
     />
   ),
@@ -275,7 +257,7 @@ export const FullBleedWorkspace: Story = {
     <ShellPlayground
       contentInset="none"
       initialMode="clinical"
-      permissions={PERMISSIONS.doctorFull}
+      permissions={[...SHELL_DEMO_ACCESS_PROFILES['full-clinic'].permissions]}
     />
   ),
   play: async ({ canvasElement }) => {
@@ -301,15 +283,15 @@ export const SoloDoctor: Story = {
   render: () => (
     <ShellPlayground
       initialMode="clinical"
-      permissions={PERMISSIONS.soloDoctor}
+      permissions={[...SHELL_DEMO_ACCESS_PROFILES['solo-doctor'].permissions]}
       workspace={soloCabinet}
     />
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const modes = deriveAvailableModes({
-      permissions: PERMISSIONS.soloDoctor,
-      enabledModules: ALL_MODULES,
+      permissions: [...SHELL_DEMO_ACCESS_PROFILES['solo-doctor'].permissions],
+      enabledModules: SHELL_DEMO_MODULES,
       licenceVerified: true,
     });
     await expect(modes).toEqual(['clinical']);
@@ -321,7 +303,10 @@ export const SoloDoctor: Story = {
 export const ExistingDestinationsOnly: Story = {
   args: requiredArgs,
   render: () => (
-    <ShellPlayground initialMode="clinical" permissions={PERMISSIONS.doctorFull} />
+    <ShellPlayground
+      initialMode="clinical"
+      permissions={[...SHELL_DEMO_ACCESS_PROFILES['full-clinic'].permissions]}
+    />
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
@@ -349,7 +334,7 @@ export const MultiRoleNurse: Story = {
   render: () => (
     <ShellPlayground
       initialMode="front-desk"
-      permissions={PERMISSIONS.nurseFrontDeskCollection}
+      permissions={[...SHELL_DEMO_ACCESS_PROFILES['front-desk-collection'].permissions]}
       licenceVerified={false}
       user={nurseUser}
       station={{ id: 'DESK-02', shift: 'morning' }}
@@ -357,8 +342,8 @@ export const MultiRoleNurse: Story = {
   ),
   play: async ({ canvasElement }) => {
     const modes = deriveAvailableModes({
-      permissions: PERMISSIONS.nurseFrontDeskCollection,
-      enabledModules: ALL_MODULES,
+      permissions: [...SHELL_DEMO_ACCESS_PROFILES['front-desk-collection'].permissions],
+      enabledModules: SHELL_DEMO_MODULES,
       licenceVerified: false,
     });
     await expect(modes).toEqual(['front-desk', 'collection']);
@@ -374,11 +359,68 @@ export const MultiRoleNurse: Story = {
   },
 };
 
+/** Reception-only access opens the desk and does not expose clinical or collection work. */
+export const ReceptionistOnly: Story = {
+  args: requiredArgs,
+  render: () => (
+    <ShellPlayground
+      initialMode="front-desk"
+      licenceVerified={false}
+      permissions={[...SHELL_DEMO_ACCESS_PROFILES.receptionist.permissions]}
+      station={{ id: 'DESK-01', shift: 'morning' }}
+      user={receptionistUser}
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const modes = deriveAvailableModes({
+      permissions: [...SHELL_DEMO_ACCESS_PROFILES.receptionist.permissions],
+      enabledModules: SHELL_DEMO_MODULES,
+      licenceVerified: false,
+    });
+    await expect(modes).toEqual(['front-desk']);
+
+    const canvas = within(canvasElement);
+    await expect(canvas.getByRole('button', { name: 'Arrivals' })).toBeVisible();
+    await expect(canvas.queryByText('Switch work area')).not.toBeInTheDocument();
+    await expect(canvas.queryByRole('button', { name: 'Scan' })).not.toBeInTheDocument();
+  },
+};
+
+/** Phlebotomy-only access opens the collection station without desk or clinical work. */
+export const PhlebotomistOnly: Story = {
+  args: requiredArgs,
+  render: () => (
+    <ShellPlayground
+      initialMode="collection"
+      licenceVerified={false}
+      permissions={[...SHELL_DEMO_ACCESS_PROFILES.phlebotomist.permissions]}
+      station={psc01}
+      user={phlebotomistUser}
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const modes = deriveAvailableModes({
+      permissions: [...SHELL_DEMO_ACCESS_PROFILES.phlebotomist.permissions],
+      enabledModules: SHELL_DEMO_MODULES,
+      licenceVerified: false,
+    });
+    await expect(modes).toEqual(['collection']);
+
+    const canvas = within(canvasElement);
+    await expect(canvas.getByRole('button', { name: 'Scan' })).toBeVisible();
+    await expect(canvas.queryByText('Switch work area')).not.toBeInTheDocument();
+    await expect(canvas.queryByRole('button', { name: 'Arrivals' })).not.toBeInTheDocument();
+  },
+};
+
 /** Switching modes swaps navigation and lands on the mode's entry destination. */
 export const ModeSwitch: Story = {
   args: requiredArgs,
   render: () => (
-    <ShellPlayground initialMode="clinical" permissions={PERMISSIONS.doctorFull} />
+    <ShellPlayground
+      initialMode="clinical"
+      permissions={[...SHELL_DEMO_ACCESS_PROFILES['full-clinic'].permissions]}
+    />
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
@@ -401,7 +443,7 @@ export const CollectionSidebar: Story = {
   render: () => (
     <ShellPlayground
       initialMode="front-desk"
-      permissions={PERMISSIONS.nurseFrontDeskCollection}
+      permissions={[...SHELL_DEMO_ACCESS_PROFILES['front-desk-collection'].permissions]}
       licenceVerified={false}
       user={nurseUser}
     />
@@ -432,7 +474,7 @@ export const CollectionStation: Story = {
   render: () => (
     <ShellPlayground
       initialMode="collection"
-      permissions={PERMISSIONS.nurseFrontDeskCollection}
+      permissions={[...SHELL_DEMO_ACCESS_PROFILES['front-desk-collection'].permissions]}
       licenceVerified={false}
       user={nurseUser}
       posture="station"
@@ -458,7 +500,7 @@ export const WithLicenceBanner: Story = {
   render: () => (
     <ShellPlayground
       initialMode="front-desk"
-      permissions={PERMISSIONS.doctorFull}
+      permissions={[...SHELL_DEMO_ACCESS_PROFILES['full-clinic'].permissions]}
       licenceVerified={false}
       banner={
         <Alert tone="warning">
@@ -490,7 +532,7 @@ export const WithBadgeCounts: Story = {
     return (
       <ShellPlayground
         initialMode="front-desk"
-        permissions={PERMISSIONS.nurseFrontDeskCollection}
+        permissions={[...SHELL_DEMO_ACCESS_PROFILES['front-desk-collection'].permissions]}
         licenceVerified={false}
         user={nurseUser}
         nav={nav}
@@ -506,7 +548,7 @@ export const EarningsPersonGlobalScope: Story = {
     <ShellPlayground
       activeKey="earnings"
       initialMode="clinical"
-      permissions={PERMISSIONS.doctorFull}
+      permissions={[...SHELL_DEMO_ACCESS_PROFILES['full-clinic'].permissions]}
       scopeLabel="All Kura workspaces"
     />
   ),
@@ -540,7 +582,7 @@ export const CollapsedRail: Story = {
   render: () => (
     <ShellPlayground
       initialMode="clinical"
-      permissions={PERMISSIONS.doctorFull}
+      permissions={[...SHELL_DEMO_ACCESS_PROFILES['full-clinic'].permissions]}
       defaultCollapsed
     />
   ),
@@ -557,6 +599,7 @@ export const CollapsedRail: Story = {
     await expect(expandToggle).toBeInTheDocument();
     await expect(canvas.getByRole('button', { name: 'Patients' })).toBeVisible();
     await expect(homeButton).toHaveAttribute('aria-current', 'page');
+    expect(getComputedStyle(homeButton).boxShadow).toBe('none');
     await expect(within(homeButton).getByText('Home')).toBeVisible();
     await waitFor(() => expect(sidebar.getBoundingClientRect().width).toBeGreaterThan(70));
     const homeIcon = homeButton.querySelector('svg');
@@ -598,7 +641,10 @@ export const CollapsedRail: Story = {
 export const LanguageSwitch: Story = {
   args: requiredArgs,
   render: () => (
-    <ShellPlayground initialMode="clinical" permissions={PERMISSIONS.doctorFull} />
+    <ShellPlayground
+      initialMode="clinical"
+      permissions={[...SHELL_DEMO_ACCESS_PROFILES['full-clinic'].permissions]}
+    />
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
@@ -633,7 +679,10 @@ export const Mobile: Story = {
     viewport: { defaultViewport: 'mobile1' },
   },
   render: () => (
-    <ShellPlayground initialMode="clinical" permissions={PERMISSIONS.doctorFull} />
+    <ShellPlayground
+      initialMode="clinical"
+      permissions={[...SHELL_DEMO_ACCESS_PROFILES['full-clinic'].permissions]}
+    />
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
@@ -643,13 +692,102 @@ export const Mobile: Story = {
   },
 };
 
+/**
+ * The workspace row opened on a multi-branch clinic: change workspace, change
+ * branch, then the workspace-scoped destinations. Both radio groups keep the
+ * current value checked, so the menu also answers "where am I".
+ */
+export const WorkspaceMenu: Story = {
+  args: requiredArgs,
+  render: () => (
+    <ShellPlayground
+      initialMode="clinical"
+      onOpenTeamAccess={() => {}}
+      onOpenWorkspaceSettings={() => {}}
+      permissions={[...SHELL_DEMO_ACCESS_PROFILES['full-clinic'].permissions]}
+      workspaces={allWorkspaces}
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const body = within(canvasElement.ownerDocument.body);
+
+    await userEvent.click(canvas.getByRole('button', { name: 'Workspace: Mekong Clinic' }));
+    const menu = await body.findByRole('menu');
+    const scoped = within(menu);
+
+    await expect(scoped.getByRole('menuitemradio', { name: 'Mekong Clinic' })).toBeChecked();
+    await expect(scoped.getByRole('menuitemradio', { name: 'BKK1 Branch' })).toBeChecked();
+    await expect(scoped.getByRole('menuitem', { name: 'Workspace settings' })).toBeVisible();
+    await expect(scoped.getByRole('menuitem', { name: 'Team access' })).toBeVisible();
+
+    await userEvent.click(scoped.getByRole('menuitemradio', { name: 'Toul Kork Branch' }));
+    await waitFor(async () => {
+      await expect(canvas.getByText('Toul Kork Branch')).toBeVisible();
+    });
+  },
+};
+
+/**
+ * One cabinet, one branch: nothing to switch, so the menu carries only the
+ * workspace-scoped destinations. The row still opens, because those
+ * destinations are real.
+ */
+export const SoloCabinetMenu: Story = {
+  args: requiredArgs,
+  render: () => (
+    <ShellPlayground
+      initialMode="clinical"
+      onOpenTeamAccess={() => {}}
+      onOpenWorkspaceSettings={() => {}}
+      permissions={[...SHELL_DEMO_ACCESS_PROFILES['solo-doctor'].permissions]}
+      workspace={soloCabinet}
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const body = within(canvasElement.ownerDocument.body);
+
+    await userEvent.click(canvas.getByRole('button', { name: 'Workspace: Dr. Vanna Cabinet' }));
+    const menu = await body.findByRole('menu');
+    const scoped = within(menu);
+
+    await expect(scoped.getByRole('menuitem', { name: 'Workspace settings' })).toBeVisible();
+    await expect(scoped.getByRole('menuitem', { name: 'Team access' })).toBeVisible();
+    await expect(scoped.queryByRole('menuitemradio')).not.toBeInTheDocument();
+  },
+};
+
+/**
+ * Nothing to switch and no workspace destination the actor may reach: the row
+ * is the cabinet name and nothing else. A control that opens nothing is worse
+ * than a label.
+ */
+export const WorkspaceIdentityOnly: Story = {
+  args: requiredArgs,
+  render: () => (
+    <ShellPlayground
+      initialMode="clinical"
+      permissions={[...SHELL_DEMO_ACCESS_PROFILES['solo-doctor'].permissions]}
+      workspace={soloCabinet}
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByLabelText('Workspace: Dr. Vanna Cabinet')).toBeVisible();
+    await expect(
+      canvas.queryByRole('button', { name: 'Workspace: Dr. Vanna Cabinet' }),
+    ).not.toBeInTheDocument();
+  },
+};
+
 /** Long Khmer + English workspace and branch names must truncate, not break layout. */
 export const LongContent: Story = {
   args: requiredArgs,
   render: () => (
     <ShellPlayground
       initialMode="front-desk"
-      permissions={PERMISSIONS.doctorFull}
+      permissions={[...SHELL_DEMO_ACCESS_PROFILES['full-clinic'].permissions]}
       workspace={{
         id: 'ws-long',
         name: 'គ្លីនិកវេជ្ជសាស្ត្រ Mekong International Family Medicine & Diagnostics',

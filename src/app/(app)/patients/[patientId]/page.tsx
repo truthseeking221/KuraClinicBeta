@@ -7,13 +7,21 @@ import {
   NextActionsRail,
   PatientChart,
   PrescribeFlow,
+  patientSummaryFromJourney,
 } from "../../../../features/patients";
 import {
-  LabOrderSampleCollectionFlow,
-  type LabOrderPlaced,
-} from "../../../../features/care-loop/lab-order-collection-flow";
-import type { CareLoopPatientManifest } from "../../../../features/care-loop/demo-data";
-import { LAB_CATALOG_TESTS } from "../../../../features/lab-catalog/demo-data";
+  LabJourneyProgress,
+  labJourneyStatusFromCollectionStage,
+} from "../../../../features/care-loop/lab-journey-progress";
+import {
+  CARE_LOOP_CART_ITEMS,
+  CARE_LOOP_LINE_ECONOMICS,
+} from "../../../../features/care-loop/demo-data";
+import { LabOrderRail } from "../../../../features/lab-catalog";
+import {
+  LAB_CATALOG_CATEGORIES,
+  LAB_CATALOG_TESTS,
+} from "../../../../features/lab-catalog/demo-data";
 import {
   FloatingOrderCart,
   type DoctorOrderCartWorkflow,
@@ -22,6 +30,7 @@ import {
   DEMO_TUBES,
   cartWith,
   doctorWorkflow,
+  earningsForItems,
   returningPatientCart,
 } from "../../../../features/order-cart/demo-data";
 import {
@@ -55,6 +64,7 @@ import {
   LEGACY_LAB_LATEST_DRAW,
 } from "../../../../features/results/legacy-lab-history-demo-data";
 import { useDemoSession } from "../../../_demo/demo-session";
+import { useDemoJourneyProgress } from "../../../_demo/use-demo-journey-progress";
 
 /** Demo stand-in for merged_into_user_id, which the list row does not carry. */
 const MERGE_TARGET = "p-sok-nimol";
@@ -66,6 +76,7 @@ type PatientChartLocalState = {
   placedOrders: readonly PatientOrder[] | null;
   selectedTab: "overview" | "orders" | "results";
   focusedOrderId?: string;
+  showJourney: boolean;
 };
 
 type FloatingCartLocalState = {
@@ -82,7 +93,15 @@ export default function PatientChartPage({
   const { patientId } = use(params);
   const router = useRouter();
   const { session } = useDemoSession();
+  useDemoJourneyProgress();
   const selected = demoOnboardingScenarioById(session.demoScenarioId);
+  const activeJourney =
+    session.patientJourney?.patient.id === patientId
+      ? session.patientJourney
+      : undefined;
+  const journeyPatient = activeJourney
+    ? patientSummaryFromJourney(activeJourney)
+    : undefined;
   const chartScenario: PatientChartDemoScenario | undefined =
     selected.surface === "patient-chart" &&
     selected.variant in PATIENT_CHART_DEMO_SCENARIOS
@@ -93,22 +112,25 @@ export default function PatientChartPage({
   // A new doctor has no patients of their own, but the seeded tour record must
   // still open — it is the one the first-use home offers.
   const found =
-    session.demoProfile === "new-doctor"
+    journeyPatient ??
+    (session.demoProfile === "new-doctor"
       ? DEMO_PATIENTS.find(
           (row) =>
             row.userId === patientId && row.userId === DEMO_TOUR_PATIENT_ID,
         )
-      : DEMO_PATIENTS.find((row) => row.userId === patientId);
+      : DEMO_PATIENTS.find((row) => row.userId === patientId));
   // Verify-identity is local demo state: the endpoint returns the updated ref.
   const [verified, setVerified] = useState<PatientSummary | null>(null);
   const [floatingCartState, setFloatingCartState] =
     useState<FloatingCartLocalState | null>(null);
+  const [floatingCartOpen, setFloatingCartOpen] = useState(false);
   const initialTab = chartScenario?.defaultTab ?? "overview";
   const [chartState, setChartState] = useState<PatientChartLocalState>({
     patientId,
     railMode: "actions",
     placedOrders: null,
     selectedTab: initialTab,
+    showJourney: true,
   });
   const localState =
     chartState.patientId === patientId
@@ -118,6 +140,7 @@ export default function PatientChartPage({
           railMode: "actions" as const,
           placedOrders: null,
           selectedTab: initialTab,
+          showJourney: true,
         };
   const updateLocalState = (patch: Partial<PatientChartLocalState>) => {
     setChartState((current) => ({
@@ -175,51 +198,25 @@ export default function PatientChartPage({
     ? []
     : (chart?.orders ?? DEMO_ORDERS);
   const orders = localState.placedOrders ?? baseOrders;
+  const labJourneyStatus = activeJourney?.labOrder
+    ? labJourneyStatusFromCollectionStage(activeJourney.labOrder.stage)
+    : null;
+  const patientList = journeyPatient
+    ? [journeyPatient, ...DEMO_PATIENTS.filter((row) => row.userId !== journeyPatient.userId)]
+    : DEMO_PATIENTS;
 
-  const draftOrderCode = `AB${12800 + orders.length + 1}`;
-  const labOrderPatient: CareLoopPatientManifest = {
-    id: patient.userId,
-    pid: patient.mrnMasked || undefined,
-    name: patientName,
-    initials: patientName
-      .split(/\s+/)
-      .slice(0, 2)
-      .map((part) => part.charAt(0).toUpperCase())
-      .join(""),
-    sex:
-      patient.sexAtBirth === "M" || patient.sexAtBirth === "F"
-        ? patient.sexAtBirth
-        : undefined,
-    sexLabel:
-      patient.sexAtBirth === "M"
-        ? "Male"
-        : patient.sexAtBirth === "F"
-          ? "Female"
-          : "Not recorded",
-    age: patient.age,
-    orderId: draftOrderCode,
-  };
+  const selectedTestIds = floatingCart.cart.items.map((item) => item.id);
 
-  const placeOrder = ({
-    orderId,
-    selectedTestIds,
-  }: LabOrderPlaced): PatientOrder => {
-    const nextOrder: PatientOrder = {
-      ordId: `demo-order-${orders.length + 1}`,
-      code: orderId,
-      placedAtLabel: "Placed just now",
-      status: "placed",
-      lineItems: LAB_CATALOG_TESTS.filter((test) =>
-        selectedTestIds.includes(test.testCatalogId),
-      ).map((test) => ({
-        code: test.abbrv ?? test.code,
-        displayName: test.displayName,
-      })),
-    };
-    updateLocalState({
-      placedOrders: [nextOrder, ...(localState.placedOrders ?? baseOrders)],
+  const updateSelectedTests = (nextSelectedTestIds: string[]) => {
+    const selected = new Set(nextSelectedTestIds);
+    const items = CARE_LOOP_CART_ITEMS.filter((item) => selected.has(item.id));
+    updateFloatingCart({
+      cart: repriceFloatingCart(items),
+      workflow: {
+        ...floatingCart.workflow,
+        earnings: earningsForItems(items, CARE_LOOP_LINE_ECONOMICS),
+      },
     });
-    return nextOrder;
   };
 
   return (
@@ -235,7 +232,16 @@ export default function PatientChartPage({
             onSchedule={() => router.push("/soon/care-plan")}
             patientName={patientName}
           />
-        ) : localState.railMode === "prescribe" ? (
+        ) : localState.railMode === "order" ? (
+          <LabOrderRail
+            categories={LAB_CATALOG_CATEGORIES}
+            onClose={() => updateLocalState({ railMode: "actions" })}
+            onReview={() => setFloatingCartOpen(true)}
+            onSelectedTestIdsChange={updateSelectedTests}
+            selectedTestIds={selectedTestIds}
+            tests={LAB_CATALOG_TESTS}
+          />
+        ) : (
           <PrescribeFlow
             diagnoses={chart?.diagnoses ?? DEMO_DIAGNOSES}
             diagnosisSearchCandidates={DEMO_LEGACY_ICD10_SEARCH_POOL}
@@ -254,62 +260,56 @@ export default function PatientChartPage({
             settled={DEMO_SETTLED}
             suggestions={DEMO_SUGGESTIONS}
           />
-        ) : undefined
+        )
       }
       headerActions={
-        isSokhaChann && localState.railMode !== "order" ? (
-          <FloatingOrderCart
-            cart={floatingCart.cart}
-            onAttestChange={(attested) =>
-              patchFloatingWorkflow({ attested })
+        <FloatingOrderCart
+          cart={floatingCart.cart}
+          onAttestChange={(attested) => patchFloatingWorkflow({ attested })}
+          onBackToCart={() => patchFloatingWorkflow({ stage: "draft" })}
+          onClear={() => updateSelectedTests([])}
+          onDecisionsChange={(decisions) =>
+            patchFloatingWorkflow({ decisions })
+          }
+          onPanelChange={(panel) => patchFloatingWorkflow({ panel })}
+          onOpenChange={setFloatingCartOpen}
+          onPrimaryAction={() => {
+            const workflow = floatingCart.workflow;
+            if (workflow.stage === "tubes") {
+              patchFloatingWorkflow({ stage: "confirmed" });
+            } else if (
+              workflow.stage !== "code-sent" &&
+              workflow.stage !== "collected"
+            ) {
+              patchFloatingWorkflow(
+                workflow.decisions.collectBy === "self"
+                  ? { stage: "tubes", tubes: workflow.tubes ?? DEMO_TUBES }
+                  : {
+                      stage: "code-sent",
+                      panel: "summary",
+                      paymentLocked: true,
+                    },
+              );
             }
-            onBackToCart={() => patchFloatingWorkflow({ stage: "draft" })}
-            onClear={() =>
-              updateFloatingCart({ cart: repriceFloatingCart([]) })
-            }
-            onDecisionsChange={(decisions) =>
-              patchFloatingWorkflow({ decisions })
-            }
-            onPanelChange={(panel) => patchFloatingWorkflow({ panel })}
-            onPrimaryAction={() => {
-              const workflow = floatingCart.workflow;
-              if (workflow.stage === "tubes") {
-                patchFloatingWorkflow({ stage: "confirmed" });
-              } else if (
-                workflow.stage !== "code-sent" &&
-                workflow.stage !== "collected"
-              ) {
-                patchFloatingWorkflow(
-                  workflow.decisions.collectBy === "self"
-                    ? { stage: "tubes", tubes: workflow.tubes ?? DEMO_TUBES }
-                    : {
-                        stage: "code-sent",
-                        panel: "summary",
-                        paymentLocked: true,
-                      },
-                );
-              }
-            }}
-            onRemoveItem={(itemId) =>
-              updateFloatingCart({
-                cart: repriceFloatingCart(
-                  floatingCart.cart.items.filter((item) => item.id !== itemId),
-                ),
-              })
-            }
-            onTubeMethodChange={(tubeMethod) =>
-              patchFloatingWorkflow({ tubeMethod })
-            }
-            onTubeScan={(tubeId, scanned) =>
-              patchFloatingWorkflow({
-                tubes: (floatingCart.workflow.tubes ?? []).map((tube) =>
-                  tube.id === tubeId ? { ...tube, scanned } : tube,
-                ),
-              })
-            }
-            workflow={floatingCart.workflow}
-          />
-        ) : undefined
+          }}
+          onRemoveItem={(itemId) =>
+            updateSelectedTests(
+              selectedTestIds.filter((testId) => testId !== itemId),
+            )
+          }
+          onTubeMethodChange={(tubeMethod) =>
+            patchFloatingWorkflow({ tubeMethod })
+          }
+          onTubeScan={(tubeId, scanned) =>
+            patchFloatingWorkflow({
+              tubes: (floatingCart.workflow.tubes ?? []).map((tube) =>
+                tube.id === tubeId ? { ...tube, scanned } : tube,
+              ),
+            })
+          }
+          open={floatingCartOpen}
+          workflow={floatingCart.workflow}
+        />
       }
       onBack={() => router.push("/patients")}
       defaultTab={chartScenario?.defaultTab}
@@ -324,7 +324,7 @@ export default function PatientChartPage({
       }
       orders={orders}
       patient={patient}
-      patients={DEMO_PATIENTS}
+      patients={patientList}
       rail={
         chart ? (
           <PatientContextRail
@@ -361,13 +361,19 @@ export default function PatientChartPage({
       }
       selectedTab={localState.selectedTab}
       workflow={
-        localState.railMode === "order" ? (
-          <LabOrderSampleCollectionFlow
-            key={`${patient.userId}-${draftOrderCode}`}
-            onClose={() => updateLocalState({ railMode: "actions" })}
-            onOrderPlaced={(order) => placeOrder(order)}
-            patient={labOrderPatient}
-            presentation="workspace"
+        localState.showJourney && activeJourney?.labOrder && labJourneyStatus ? (
+          <LabJourneyProgress
+            courierEtaLabel="in 15–25 minutes"
+            flagged={activeJourney.labOrder.flagged}
+            onReviewResults={
+              labJourneyStatus === "partially_complete"
+                ? () => updateLocalState({ selectedTab: "results", showJourney: false })
+                : undefined
+            }
+            orderId={activeJourney.labOrder.orderId}
+            resulted={activeJourney.labOrder.resulted}
+            status={labJourneyStatus}
+            total={activeJourney.labOrder.total}
           />
         ) : undefined
       }

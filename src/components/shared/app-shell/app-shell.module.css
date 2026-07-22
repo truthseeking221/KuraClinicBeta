@@ -225,6 +225,17 @@
   background: var(--sidebar-hover-bg);
 }
 
+/* Identity with nothing behind it: a solo cabinet with no second workspace, no
+   second branch, and no workspace destination, or a person-global scope. It
+   must not offer the affordances of a control that opens nothing. */
+.workspaceTrigger[data-static] {
+  cursor: default;
+}
+
+.workspaceTrigger[data-static]:hover {
+  background: transparent;
+}
+
 .workspaceTrigger:focus-visible {
   outline: none;
   box-shadow: var(--shadow-focus);
@@ -685,7 +696,7 @@
 }
 
 .sidebarCollapsed .navItem[data-active='true'] {
-  box-shadow: var(--shadow-nav-selected);
+  box-shadow: none;
 }
 
 .sidebarCollapsed .sidebarActionRow {

@@ -22,6 +22,18 @@ type Story = StoryObj<typeof meta>;
 
 export const Ready: Story = {};
 
+export const EmptySelection: Story = {
+  args: { selectedCount: 0 },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const button = canvas.getByRole('button', { name: 'Choose patient' });
+    const styles = window.getComputedStyle(button);
+    await expect(button).toBeDisabled();
+    await expect(button).toHaveTextContent('Choose patient');
+    expect(styles.color).not.toBe(styles.backgroundColor);
+  },
+};
+
 export const NewDoctorBlocked: Story = {
   args: { canPlaceOrder: false },
   play: async ({ args, canvasElement }) => {

@@ -5,6 +5,19 @@
   padding: var(--space-2);
 }
 
+/* The chevron is part of the name row, not a separate toolbar control. Keep
+ * the full micro target for keyboard and touch, but remove its hover/active
+ * chrome so the identity line stays quiet until focus or the menu is open. */
+.trigger {
+  margin-inline-start: calc(var(--space-1) * -1);
+}
+
+.trigger:hover:not(:disabled):not([data-disabled='true']),
+.trigger:active:not(:disabled):not([data-disabled='true']) {
+  border-color: transparent;
+  background: transparent;
+}
+
 .list {
   display: grid;
   gap: var(--space-1);

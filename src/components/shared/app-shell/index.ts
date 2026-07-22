@@ -1,5 +1,11 @@
 export { AppShell } from './app-shell';
 export type { AppShellProps } from './app-shell';
+export {
+  permissionsForDemoAccessProfile,
+  SHELL_DEMO_ACCESS_PROFILES,
+  SHELL_DEMO_MODULES,
+} from './demo-data';
+export type { ShellDemoAccessProfile } from './demo-data';
 export { GlobalSearch } from './global-search';
 export type {
   GlobalSearchItem,

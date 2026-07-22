@@ -1,8 +1,8 @@
 .queue {
   display: flex;
+  width: 100%;
   flex-direction: column;
   gap: var(--space-4);
-  width: 100%;
 }
 
 .header {
@@ -20,97 +20,191 @@
 
 .title {
   margin: 0;
+  color: var(--color-text-primary);
   font-size: var(--type-lg);
   font-weight: var(--weight-semibold);
-  color: var(--color-text-primary);
 }
 
 .subtitle {
   margin: 0;
-  font-size: var(--type-sm);
   color: var(--color-text-tertiary);
+  font-size: var(--type-sm);
 }
 
 .staleRow {
   display: flex;
   align-items: center;
   gap: var(--space-2);
+  color: var(--color-text-tertiary);
   font-size: var(--type-xs);
+}
+
+/* The desktop queue is one flat operational region. The canonical DataGrid
+   owns its boundary and row dividers; no additional Card shell is added. */
+.desktopWorklist {
+  display: block;
+  min-width: 0;
+}
+
+.mobileWorklist {
+  display: none;
+}
+
+.patientIdentity {
+  display: flex;
+  min-width: 0;
+  align-items: baseline;
+  gap: var(--space-3);
+}
+
+.queueNumber,
+.mobileQueueNumber {
+  flex: 0 0 auto;
   color: var(--color-text-tertiary);
-}
-
-/* ── Rows ─────────────────────────────────────────────────────
- * Anatomy comes from the canonical Item family (media · content ·
- * actions); this file only supplies queue-specific tone and the
- * boundary that keeps a single row from floating on the page. */
-
-.listSurface {
-  padding: 0;
-  overflow: hidden;
-}
-
-.rowObserved .name,
-.rowObserved .wait {
-  color: var(--color-text-tertiary);
-}
-
-.queueNumber {
-  min-width: var(--space-10);
-  font-size: var(--type-sm);
+  font-size: var(--type-xs);
   font-variant-numeric: tabular-nums;
-  color: var(--color-text-tertiary);
+}
+
+.patientNames {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-2);
 }
 
 .nameLine {
   display: flex;
-  align-items: baseline;
-  gap: var(--space-2);
   min-width: 0;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-2);
 }
 
 .name {
+  min-width: 0;
+  color: var(--color-text-primary);
   font-size: var(--type-sm);
   font-weight: var(--weight-medium);
-  color: var(--color-text-primary);
   overflow-wrap: anywhere;
 }
 
 .nameKhmer {
-  font-size: var(--type-xs);
+  min-width: 0;
   color: var(--color-text-tertiary);
+  font-size: var(--type-xs);
+  overflow-wrap: anywhere;
 }
 
-.wait {
-  font-size: var(--type-xs);
+.timing {
+  display: inline-flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--space-0-5);
   font-variant-numeric: tabular-nums;
-  color: var(--color-text-tertiary);
 }
 
-/* Wait pressure is never color-only: the copy carries the escalation word. */
-.wait[data-tone='warn'] {
+.timingPrimary {
+  color: var(--color-text-secondary);
+  font-size: var(--type-sm);
+  line-height: var(--leading-snug);
+}
+
+.timingSecondary {
+  color: var(--color-text-tertiary);
+  font-size: var(--type-xs);
+  line-height: var(--leading-normal);
+}
+
+/* Wait pressure is never color-only: the escalation word remains in copy. */
+.timingPrimary[data-tone='warn'] {
   color: var(--color-status-warning-fg);
   font-weight: var(--weight-medium);
 }
 
-.wait[data-tone='escalate'] {
+.timingPrimary[data-tone='escalate'] {
   color: var(--destructive);
   font-weight: var(--weight-medium);
 }
 
-.facts {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-1);
-  justify-content: flex-end;
+.fact,
+.noAction {
+  color: var(--color-text-secondary);
+  font-size: var(--type-sm);
+  line-height: var(--leading-snug);
 }
 
-.observedNote {
-  flex-shrink: 0;
-  font-size: var(--type-xs);
+.fact[data-tone='success'] {
+  color: var(--color-status-success-fg);
+}
+
+.fact[data-tone='warning'] {
+  color: var(--color-status-warning-fg);
+  font-weight: var(--weight-medium);
+}
+
+.noAction {
   color: var(--color-text-tertiary);
 }
 
-/* ── Loading skeleton keeps row geometry ─────────────────── */
+.actionHeader,
+.actionCell {
+  text-align: end;
+}
+
+.actionCell > * {
+  margin-inline-start: auto;
+}
+
+.completedSection {
+  border-block-start: 1px solid var(--color-border-button-default);
+  padding-block-start: var(--space-1);
+}
+
+.completedContent {
+  padding-block-end: 0;
+}
+
+.noActiveVisits {
+  margin: 0;
+  padding-block: var(--space-4);
+  color: var(--color-text-tertiary);
+  font-size: var(--type-sm);
+}
+
+.mobileSurface {
+  overflow: hidden;
+  padding: 0;
+}
+
+.mobileSurface :global([data-slot='item']) {
+  align-items: start;
+}
+
+.mobileSurface :global([data-slot='item-media']) {
+  align-self: start;
+  padding-block-start: var(--space-0-5);
+}
+
+.mobileFacts {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-3);
+  padding-block-start: var(--space-2);
+}
+
+.mobileActions {
+  grid-column: 2 / -1;
+  width: 100%;
+  justify-content: flex-start;
+  padding-block-start: var(--space-2);
+}
+
+.rowAction {
+  width: 100%;
+}
 
 .skeletonQueue {
   width: var(--space-8);
@@ -127,32 +221,47 @@
   height: var(--space-3);
 }
 
-/* ── Mobile: badges and the action drop under the identity ──────
- * The canonical Item only reflows its actions below 359px; a desk row
- * carries three badges plus a button, so it needs the break earlier. */
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
 
-@media (max-width: 640px) {
-  .rowActions {
-    grid-column: 2 / -1;
-    justify-content: flex-start;
-    width: 100%;
+@media (max-width: 760px) {
+  .desktopWorklist {
+    display: none;
   }
 
-  .facts {
-    justify-content: flex-start;
+  .mobileWorklist {
+    display: block;
   }
 
-  .rowAction {
-    width: 100%;
+  .header {
+    align-items: center;
   }
 
-  .queueNumber {
-    min-width: var(--space-8);
+  .header > :global([data-slot='button']) {
+    flex: 0 0 auto;
   }
 }
 
-/* Badges and the one action share the actions slot; the badges stay a
-   group so they wrap together rather than interleaving with the button. */
-.rowActions {
-  gap: var(--space-3);
+@media (max-width: 420px) {
+  .header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .header > :global([data-slot='button']) {
+    width: 100%;
+  }
+
+  .mobileQueueNumber {
+    min-width: var(--space-7);
+  }
 }

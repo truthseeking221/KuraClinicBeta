@@ -14,6 +14,7 @@ import type { WizardResult } from '../../features/auth/onboarding-wizard';
 import { WorkspaceGate } from '../../features/auth/workspace-gate';
 import {
   DEMO_BRANCHES,
+  DEMO_DOOR_HINT,
   DEMO_LAST_ACTIVE_BRANCH,
   DEMO_LAST_ACTIVE_WORKSPACE,
   DEMO_WORKSPACES,
@@ -53,18 +54,27 @@ export function OnboardingFlowPage() {
     workspace: GateWorkspace,
     wizardResult?: WizardResult,
     scenario?: DemoOnboardingScenario,
+    branchId = '',
   ) => {
     const fresh = Boolean(wizardResult) || scenario?.kind === 'fresh-workspace';
+    const actor = scenario?.actor ?? 'doctor';
     const wizardSubmittedLicence =
       wizardResult?.mlDeclaration?.answer === 'yes' &&
       wizardResult.mlDeclaration.licenceFiles.length > 0;
     signIn({
-      demoProfile: fresh ? 'new-doctor' : 'established-doctor',
+      demoProfile: fresh
+        ? 'new-doctor'
+        : actor === 'doctor'
+          ? 'established-doctor'
+          : 'clinic-staff',
+      demoActor: actor,
+      accessProfile: scenario?.accessProfile ?? 'full-clinic',
       demoScenarioId:
         scenario?.id ?? (fresh ? 'new-sign-up' : 'established-member'),
       workspaceId: workspace.workspaceId,
-      branchId: '',
-      customWorkspaceName: fresh ? workspace.name : undefined,
+      branchId,
+      customWorkspaceName:
+        fresh || scenario?.workspace ? workspace.name : undefined,
       userName: wizardResult?.name ?? scenario?.userName,
       userContact: wizardResult?.phone ?? scenario?.phone,
       licence:
@@ -74,7 +84,7 @@ export function OnboardingFlowPage() {
             ? 'pending_review'
             : 'none'
           : 'verified'),
-      mode: 'clinical' as const,
+      mode: scenario?.mode ?? 'clinical',
     });
     router.push(scenario?.entryPath ?? '/home');
   };
@@ -122,11 +132,11 @@ export function OnboardingFlowPage() {
             scenario,
           )
         }
-        onEnter={(workspaceId) => {
+        onEnter={(workspaceId, branchId) => {
           const workspace = workspaces.find(
             (candidate) => candidate.workspaceId === workspaceId,
           );
-          if (workspace) enterApp(workspace, wizardResult, scenario);
+          if (workspace) enterApp(workspace, wizardResult, scenario, branchId);
         }}
         workspaces={workspaces}
       />
@@ -135,6 +145,7 @@ export function OnboardingFlowPage() {
 
   return (
     <Door
+      demoHint={DEMO_DOOR_HINT}
       onRouted={(route, identifier) => {
         const scenario = demoOnboardingScenarioFor(identifier);
         if (route === 'wizard') {
@@ -154,6 +165,15 @@ export function OnboardingFlowPage() {
               },
             ],
             fresh: true,
+            scenario,
+          });
+          return;
+        }
+        if (scenario?.workspace) {
+          setStage({
+            kind: 'gate',
+            workspaces: [scenario.workspace],
+            fresh: false,
             scenario,
           });
           return;

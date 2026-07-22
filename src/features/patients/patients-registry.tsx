@@ -46,6 +46,7 @@ import type {
   AssuranceFilter,
   PatientSummary,
   PatientTriageMap,
+  PatientWorkItemMap,
   PatientsViewState,
 } from './types';
 import styles from './patients-registry.module.css';
@@ -88,10 +89,13 @@ export type PatientsRegistryProps = {
   demoPatientIds?: readonly string[];
   /** Optional target-contract layer; when absent, its column does not render. */
   triage?: PatientTriageMap;
+  /** Optional resumable-work projection; it never mutates PatientSummary. */
+  workItems?: PatientWorkItemMap;
   state?: PatientsViewState;
   /** Starts the governed phone-check and patient-resolution flow. */
   onAddPatient?: () => void;
   onOpenPatient?: (userId: string) => void;
+  onOpenWorkItem?: (userId: string) => void;
   onRetry?: () => void;
 };
 
@@ -104,10 +108,12 @@ export function PatientsRegistry({
   demoPatientIds = NO_DEMO_PATIENT_IDS,
   onAddPatient,
   onOpenPatient,
+  onOpenWorkItem,
   onRetry,
   patients,
   state = 'ready',
   triage,
+  workItems,
 }: PatientsRegistryProps) {
   const t = useT();
   const [assurance, setAssurance] = useState<AssuranceFilter>('all');
@@ -183,9 +189,48 @@ export function PatientsRegistry({
         cell: ({ row }) => <StatusCell patient={row.original} />,
       }),
     ];
-    if (!triage) return base;
+    const withWork = workItems
+      ? [
+          ...base,
+          column.display({
+            id: 'work-item',
+            header: t('Next step'),
+            size: 230,
+            cell: ({ row }) => {
+              const patient = row.original;
+              const item = workItems[patient.userId];
+              if (!item) return <span aria-hidden="true">—</span>;
+              const actionLabel =
+                item.action === 'review_results'
+                  ? t('Review results')
+                  : item.action === 'view_progress'
+                    ? t('View progress')
+                    : t('Continue');
+              return (
+                <span className={styles.workItem}>
+                  <span>{t(item.label)}</span>
+                  {onOpenWorkItem ? (
+                    <Button
+                      aria-label={`${actionLabel} ${t(item.label).toLowerCase()} for ${displayNameOf(patient, t)}`}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onOpenWorkItem(patient.userId);
+                      }}
+                      size="compact"
+                      variant="link"
+                    >
+                      {actionLabel}
+                    </Button>
+                  ) : null}
+                </span>
+              );
+            },
+          }),
+        ]
+      : base;
+    if (!triage) return withWork;
     return [
-      ...base,
+      ...withWork,
       column.display({
         id: 'triage',
         header: t('Why now'),
@@ -193,7 +238,7 @@ export function PatientsRegistry({
         cell: ({ row }) => <TriageCell triage={triage[row.original.userId]} />,
       }),
     ];
-  }, [demoPatients, t, triage]);
+  }, [demoPatients, onOpenWorkItem, t, triage, workItems]);
 
   const table = useReactTable({
     columns,

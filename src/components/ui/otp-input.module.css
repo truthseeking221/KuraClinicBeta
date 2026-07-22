@@ -19,6 +19,12 @@
   gap: var(--space-2);
   width: fit-content;
   max-width: 100%;
+  /* input-otp sizes its own hidden input to `100% + 40px` and clip-paths the
+     tail off to hide the native caret. That extra width still counts as
+     overflow, so a flush-width field would hand its dialog a scrollbar. Clip
+     the inline axis, keeping room for the 3px focus ring. */
+  overflow-x: clip;
+  overflow-clip-margin: var(--space-1);
 }
 
 .group {

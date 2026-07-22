@@ -19,6 +19,8 @@ export const SHELL_KM: KhmerDictionary = {
   // Workspace identity
   Workspace: 'កន្លែងធ្វើការ',
   'Switch workspace': 'ប្តូរកន្លែងធ្វើការ',
+  'Workspace settings': 'ការកំណត់កន្លែងធ្វើការ',
+  'Team access': 'សិទ្ធិចូលរបស់ក្រុម',
   Branch: 'សាខា',
   'Switch branch': 'ប្តូរសាខា',
   Shift: 'វេន',

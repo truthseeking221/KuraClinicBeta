@@ -1,4 +1,9 @@
 import type { LicenceState } from '../licence/logic';
+import type {
+  ClinicMode,
+  ShellDemoAccessProfile,
+} from '../../components/shared/app-shell';
+import type { GateWorkspace } from './logic';
 
 export type DemoScenarioSurface =
   | 'onboarding'
@@ -6,7 +11,17 @@ export type DemoScenarioSurface =
   | 'patients'
   | 'patient-chart'
   | 'results'
-  | 'earnings';
+  | 'earnings'
+  | 'front-desk-queue'
+  | 'front-desk-check-in'
+  | 'front-desk-payments'
+  | 'collection';
+
+export type DemoScenarioActor =
+  | 'doctor'
+  | 'nurse'
+  | 'receptionist'
+  | 'phlebotomist';
 
 type DemoScenarioDefinition = {
   id: string;
@@ -16,6 +31,13 @@ type DemoScenarioDefinition = {
   licence?: LicenceState;
   userName?: string;
   workspaceName?: string;
+  /** Person identity and capabilities stay separate; role names never authorize. */
+  actor?: DemoScenarioActor;
+  accessProfile?: ShellDemoAccessProfile;
+  mode?: ClinicMode;
+  accessSource?: string;
+  /** Optional single operational membership shown by the post-Door gate. */
+  workspace?: GateWorkspace;
   entryPath: string;
   surface: DemoScenarioSurface;
   variant: string;
@@ -31,6 +53,16 @@ function established<const T extends Omit<DemoScenarioDefinition, 'kind' | 'lice
     ...scenario,
     kind: 'established-workspace' as const,
     licence: 'verified' as const,
+  };
+}
+
+function staff<const T extends Omit<DemoScenarioDefinition, 'kind' | 'licence'>>(
+  scenario: T,
+) {
+  return {
+    ...scenario,
+    kind: 'established-workspace' as const,
+    licence: 'none' as const,
   };
 }
 
@@ -286,6 +318,131 @@ const EARNINGS_SCENARIOS = ([
   }),
 ) satisfies readonly DemoScenarioDefinition[];
 
+const FULL_CLINIC_SCENARIOS = [
+  established({
+    id: 'clinic-full-workspace',
+    phone: '+85598117001',
+    label: 'Full clinic — clinical, front desk, and collection',
+    userName: 'Dr. Sok Vanna',
+    actor: 'doctor',
+    accessProfile: 'full-clinic',
+    mode: 'clinical',
+    accessSource: 'Clinic/Shell/App Shell#FullClinic',
+    entryPath: '/home',
+    surface: 'home',
+    variant: 'busy-morning',
+    journeyIds: ['ACC-01', 'ACC-02', 'WQ-01'],
+    source: 'Clinic/Clinical/Home#StartOfDayVerified',
+  }),
+  staff({
+    id: 'clinic-multi-role-nurse',
+    phone: '+85598117002',
+    label: 'Clinic nurse — front desk and collection',
+    userName: 'Srey Neang',
+    actor: 'nurse',
+    accessProfile: 'front-desk-collection',
+    mode: 'front-desk',
+    accessSource: 'Clinic/Shell/App Shell#MultiRoleNurse',
+    workspace: {
+      workspaceId: 'bkk1',
+      name: 'Mekong Clinic',
+      branchesEnabled: false,
+      memberCount: 12,
+      role: 'Nurse',
+    },
+    entryPath: '/front-desk/arrivals',
+    surface: 'front-desk-queue',
+    variant: 'queue-default',
+    journeyIds: ['ACC-01', 'REC-01', 'REC-05'],
+    source: 'Clinic/Front Desk/Desk Queue#Default',
+  }),
+] as const satisfies readonly DemoScenarioDefinition[];
+
+const RECEPTION_WORKSPACE = {
+  workspaceId: 'bkk1',
+  name: 'Mekong Clinic',
+  branchesEnabled: false,
+  memberCount: 12,
+  role: 'Receptionist',
+} as const satisfies GateWorkspace;
+
+const RECEPTION_SCENARIOS = ([
+  ['reception-arrivals', '+85598118001', 'Reception — arrivals in progress', 'front-desk-queue', 'queue-default', '/front-desk/arrivals', 'Desk Queue#Default', ['REC-01', 'REC-05']],
+  ['reception-planned-check-in', '+85598118002', 'Reception — planned visit after identity match', 'front-desk-check-in', 'check-in-planned', '/front-desk/arrivals/check-in', 'Check-In Wizard#PlannedVisit', ['REC-01']],
+  ['reception-walk-in', '+85598118003', 'Reception — new walk-in check-in', 'front-desk-check-in', 'check-in-walk-in', '/front-desk/arrivals/check-in', 'Check-In Wizard#Default', ['REC-02']],
+  ['reception-long-wait', '+85598118004', 'Reception — long-wait queue', 'front-desk-queue', 'queue-long-wait', '/front-desk/queue', 'Desk Queue#LongWait', ['REC-05', 'WQ-09']],
+  ['reception-empty', '+85598118005', 'Reception — no arrivals', 'front-desk-queue', 'queue-empty', '/front-desk/arrivals', 'Desk Queue#Empty', ['WQ-09']],
+  ['reception-loading', '+85598118006', 'Reception — queue loading', 'front-desk-queue', 'queue-loading', '/front-desk/queue', 'Desk Queue#Loading', ['WQ-09']],
+  ['reception-error', '+85598118007', 'Reception — queue load failure', 'front-desk-queue', 'queue-error', '/front-desk/queue', 'Desk Queue#LoadError', ['WQ-09']],
+  ['reception-offline', '+85598118008', 'Reception — last synced queue offline', 'front-desk-queue', 'queue-offline', '/front-desk/queue', 'Desk Queue#Offline', ['WQ-09']],
+  ['reception-stale', '+85598118009', 'Reception — stale queue snapshot', 'front-desk-queue', 'queue-stale', '/front-desk/queue', 'Desk Queue#Stale', ['WQ-09']],
+  ['reception-payment-paid', '+85598118010', 'Reception — paid receipt', 'front-desk-payments', 'payment-paid', '/front-desk/payments', 'Payment Receipt#Paid', ['FIN-01']],
+  ['reception-payment-supplemental', '+85598118011', 'Reception — supplemental receipt chain', 'front-desk-payments', 'payment-supplemental', '/front-desk/payments', 'Payment Receipt#SupplementalChain', ['FIN-11']],
+  ['reception-payment-voided', '+85598118012', 'Reception — voided receipt evidence', 'front-desk-payments', 'payment-voided', '/front-desk/payments', 'Payment Receipt#VoidedEvidence', ['FIN-06']],
+] as const).map(([
+  id,
+  phone,
+  label,
+  surface,
+  variant,
+  entryPath,
+  story,
+  journeyIds,
+]) =>
+  staff({
+    id,
+    phone,
+    label,
+    userName: 'Linh Nguyen',
+    actor: 'receptionist',
+    accessProfile: 'receptionist',
+    mode: 'front-desk',
+    accessSource: 'Clinic/Shell/App Shell#ReceptionistOnly',
+    workspace: RECEPTION_WORKSPACE,
+    entryPath,
+    surface: surface as
+      | 'front-desk-queue'
+      | 'front-desk-check-in'
+      | 'front-desk-payments',
+    variant,
+    journeyIds,
+    source: `Clinic/Front Desk/${story}`,
+  }),
+) satisfies readonly DemoScenarioDefinition[];
+
+const PHLEBOTOMY_WORKSPACE = {
+  workspaceId: 'bkk1',
+  name: 'Mekong Clinic',
+  branchesEnabled: false,
+  memberCount: 12,
+  role: 'Phlebotomist',
+} as const satisfies GateWorkspace;
+
+const COLLECTION_SCENARIOS = ([
+  ['phlebotomy-scan-queue', '+85598119001', 'Phlebotomy — scan or browse queue', 'scan-queue', 'ScanGateBrowseQueue', ['PHL-01']],
+  ['phlebotomy-empty-queue', '+85598119002', 'Phlebotomy — queue clear', 'scan-empty', 'ScanGateEmptyQueue', ['WQ-09']],
+  ['phlebotomy-ready-draw', '+85598119003', 'Phlebotomy — ready for collection', 'worksheet-ready', 'Default', ['PHL-01', 'PHL-03', 'PHL-06', 'PHL-10']],
+  ['phlebotomy-vitals-missing', '+85598119004', 'Phlebotomy — vitals not recorded', 'worksheet-vitals-missing', 'VitalsMissingWarning', ['PHL-01']],
+  ['phlebotomy-partial-draw', '+85598119005', 'Phlebotomy — partial draw with clot clock', 'worksheet-partial', 'ClotClockRunning', ['PHL-07']],
+] as const).map(([id, phone, label, variant, story, journeyIds]) =>
+  staff({
+    id,
+    phone,
+    label,
+    userName: 'Srey Neang',
+    actor: 'phlebotomist',
+    accessProfile: 'phlebotomist',
+    mode: 'collection',
+    accessSource: 'Clinic/Shell/App Shell#PhlebotomistOnly',
+    workspace: PHLEBOTOMY_WORKSPACE,
+    entryPath: '/collection/scan',
+    surface: 'collection',
+    variant,
+    journeyIds,
+    source: `Clinic/Collection/Draw Worksheet#${story}`,
+  }),
+) satisfies readonly DemoScenarioDefinition[];
+
 /**
  * Canonical Storybook-owned registry for onboarding-driven app demos.
  * Only states with both an existing app route and an existing Storybook
@@ -298,6 +455,9 @@ const ALL_DEMO_ONBOARDING_SCENARIOS = [
   ...PATIENT_SCENARIOS,
   ...RESULT_SCENARIOS,
   ...EARNINGS_SCENARIOS,
+  ...FULL_CLINIC_SCENARIOS,
+  ...RECEPTION_SCENARIOS,
+  ...COLLECTION_SCENARIOS,
 ] as const satisfies readonly DemoScenarioDefinition[];
 
 export type DemoOnboardingScenarioId =

@@ -11,6 +11,7 @@
  */
 
 import { JOURNEY_PATIENT } from '../journey/patient';
+import type { PatientAcquisitionJourneySnapshot } from '../care-loop/patient-acquisition-flow';
 import type {
   PatientContextLine,
   PatientContextSection,
@@ -209,6 +210,43 @@ export const DEMO_TRIAGE: PatientTriageMap = {
   'p-lina-prum': { label: 'Identity check at PSC pending', tone: 'warning' },
   'p-sokha-chann': { label: 'Follow-up overdue', tone: 'warning' },
   'p-sokly-pen': { label: 'Screening due', tone: 'info' },
+};
+
+/** Storybook-owned interrupted journey used to prove registry resume behavior. */
+export const DEMO_RESUMABLE_PATIENT_JOURNEY: PatientAcquisitionJourneySnapshot = {
+  version: 1,
+  patient: {
+    id: 'provisional-85512345678',
+    name: 'Sokha Chann',
+    sex: 'F',
+    sexLabel: 'Female',
+    age: 32,
+    dob: '1994-02-12',
+    dobOrAge: '1994-02-12',
+    phone: '+85512345678',
+    status: 'Provisional · PSC verifies',
+  },
+  stage: 'ready-to-order',
+  profileConfirmed: true,
+  intakeRecord: {
+    reasonForVisit: 'Tired for 2 weeks, wants a general checkup',
+    allergies: 'No known allergies',
+    medicines: 'Paracetamol sometimes · no daily medicines',
+    familyHistory: 'Father has diabetes · no surgeries · no chronic illness',
+  },
+  labOrder: {
+    orderId: 'ORD-DEMO-345678',
+    stage: 'prepare-tubes',
+    selectedTestIds: ['hba1c', 'fasting-glucose', 'lipid-panel', 'cbc'],
+    decisions: { collectBy: 'self', payment: 'pay-now' },
+    labelMethod: 'sticker',
+    labelPhotoChecks: { applied: false, readable: false, photographed: false },
+    capturedTubeIds: [],
+    pickupRound: '',
+    labelsChecked: false,
+    countChecked: false,
+    bagSealed: false,
+  },
 };
 
 /** Orders as GET /clinic/reception/patient/:userId/orders returns them. */

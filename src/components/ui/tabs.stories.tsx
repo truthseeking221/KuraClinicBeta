@@ -47,7 +47,10 @@ export const Default: Story = {
   render: () => <BookingTabs />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
+    const list = canvas.getByRole('tablist', { name: 'Booking details' });
     const summary = canvas.getByRole('tab', { name: 'Summary' });
+    await expect(getComputedStyle(list).overflowY).toBe('hidden');
+    await expect(getComputedStyle(list).scrollbarWidth).toBe('none');
     await expect(summary).toHaveAttribute('aria-selected', 'true');
     summary.focus();
     await userEvent.keyboard('{ArrowRight}');

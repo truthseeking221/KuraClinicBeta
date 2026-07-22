@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { formatPhoneNumber } from 'react-phone-number-input';
 
 import { useT } from '../../components/foundations/i18n';
 import {
@@ -50,6 +51,13 @@ export type DoorProps = {
   initialMethod?: DoorMethod;
   /** Route-level throttle simulation; anti-enum still reports "sent" otherwise. */
   onRequestCode?: (identifier: string) => 'sent' | 'throttled';
+  /** Optional Storybook/demo fixture; production callers leave this unset. */
+  demoHint?: {
+    label: string;
+    otpLabel: string;
+    otp: string;
+    entries: readonly { label: string; phone: string }[];
+  };
 };
 
 /**
@@ -60,6 +68,7 @@ export type DoorProps = {
  */
 export function Door({
   accounts = DEMO_ACCOUNTS,
+  demoHint,
   expectedCode = DEMO_OTP,
   initialMethod = 'phone',
   onRequestCode,
@@ -300,6 +309,31 @@ export function Door({
                 </Button>
               </AlertAction>
             </Alert>
+          ) : null}
+
+          {demoHint && step !== 'revoked' ? (
+            <aside
+              aria-label={t(demoHint.label)}
+              className={styles.demoHint}
+            >
+              <div className={styles.demoHintHeader}>
+                <span className={styles.demoHintTitle}>
+                  {t(demoHint.label)}
+                </span>
+                <span className={styles.demoOtp}>
+                  <span>{t(demoHint.otpLabel)}</span>
+                  <code>{demoHint.otp}</code>
+                </span>
+              </div>
+              <dl className={styles.demoEntries}>
+                {demoHint.entries.map((entry) => (
+                  <div className={styles.demoEntry} key={entry.phone}>
+                    <dt>{t(entry.label)}</dt>
+                    <dd>{formatPhoneNumber(entry.phone) || entry.phone}</dd>
+                  </div>
+                ))}
+              </dl>
+            </aside>
           ) : null}
         </CardContent>
       </Card>

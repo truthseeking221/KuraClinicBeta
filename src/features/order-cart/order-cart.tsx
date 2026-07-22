@@ -504,10 +504,7 @@ function DoctorDecisionCard({
           </div>
         )}
 
-        <CollapsibleContent
-          className={styles.decisionMotion}
-          id={panelId}
-        >
+        <CollapsibleContent className={styles.decisionMotion} id={panelId}>
           <div className={styles.decisionEditor}>
             <fieldset className={styles.question}>
               <legend className={styles.questionLabel}>
@@ -688,10 +685,7 @@ function ReceptionDecisionCard({
           </div>
         )}
 
-        <CollapsibleContent
-          className={styles.decisionMotion}
-          id={panelId}
-        >
+        <CollapsibleContent className={styles.decisionMotion} id={panelId}>
           <div className={styles.decisionEditor}>
             <fieldset className={styles.question}>
               <legend className={styles.questionLabel}>
@@ -969,6 +963,7 @@ export function OrderCart({
             )
       }
       className={joinClasses(styles.cart, className)}
+      data-empty={isEmpty || undefined}
       data-lifecycle={cart.lifecycle}
       data-role={workflow.role}
     >

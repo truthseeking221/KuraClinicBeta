@@ -1,4 +1,12 @@
-import type { Cart, FrontDeskPatient, IntakeFields } from './types';
+import type {
+  Cart,
+  CartItem,
+  CartPayment,
+  DeskQueueState,
+  DeskVisit,
+  FrontDeskPatient,
+  IntakeFields,
+} from './types';
 
 const EMPTY_INTAKE: IntakeFields = {
   chiefComplaint: '',
@@ -86,8 +94,13 @@ export const DEMO_RECEIPT_ID = 'R-58213';
 
 // ── Step-1 identity registry (reception view of patient-ms) ─
 
-import { collectionCodeStatusMeta } from './logic';
-import type { BookingSummary, CollectionCodeStatus, DeskVisit, PatientRecordSummary, Prescriber } from './types';
+import { collectionCodeStatusMeta, resolvedRecordPatch } from './logic';
+import type {
+  BookingSummary,
+  CollectionCodeStatus,
+  PatientRecordSummary,
+  Prescriber,
+} from './types';
 
 /** The desk's own branch; codes issued elsewhere cannot be redeemed here. */
 export const DEMO_BRANCH_ID = 'bkk1';
@@ -361,3 +374,140 @@ export const DESK_VISITS: DeskVisit[] = [
 export const DESK_VISITS_LONG_WAIT: DeskVisit[] = DESK_VISITS.map((visit, index) =>
   index < 3 ? { ...visit, waitMinutes: visit.waitMinutes + 58 } : visit,
 );
+
+export type FrontDeskQueueDemoVariant =
+  | 'queue-default'
+  | 'queue-long-wait'
+  | 'queue-empty'
+  | 'queue-loading'
+  | 'queue-error'
+  | 'queue-offline'
+  | 'queue-stale';
+
+type FrontDeskQueueDemoScenario = {
+  visits: DeskVisit[];
+  state?: DeskQueueState;
+  asOf?: string;
+};
+
+/** Canonical Desk Queue story states shared with the prototype app. */
+export const FRONT_DESK_QUEUE_DEMO_SCENARIOS: Record<
+  FrontDeskQueueDemoVariant,
+  FrontDeskQueueDemoScenario
+> = {
+  'queue-default': { visits: DESK_VISITS },
+  'queue-long-wait': { visits: DESK_VISITS_LONG_WAIT },
+  'queue-empty': { visits: [] },
+  'queue-loading': { visits: [], state: 'loading' },
+  'queue-error': { visits: [], state: 'error' },
+  'queue-offline': { visits: DESK_VISITS, state: 'offline', asOf: '09:12' },
+  'queue-stale': { visits: DESK_VISITS, state: 'stale', asOf: '09:12' },
+};
+
+export type FrontDeskCheckInDemoVariant =
+  | 'check-in-walk-in'
+  | 'check-in-planned';
+
+function plannedVisitPatient(): FrontDeskPatient {
+  const record = IDENTITY_REGISTRY[0];
+  if (!record) return blankWalkIn('planned-visit', 27);
+
+  return {
+    ...blankWalkIn('planned-visit', 27),
+    ...resolvedRecordPatch(record),
+    arrivedLabel: '09:30',
+    boundBookingCode: record.bookings?.[0]?.code ?? null,
+  };
+}
+
+/** Canonical check-in entry states shared with the prototype app. */
+export const FRONT_DESK_CHECK_IN_DEMO_SCENARIOS = {
+  'check-in-walk-in': { patient: blankWalkIn('walk-in-demo', 27) },
+  'check-in-planned': { patient: plannedVisitPatient() },
+} satisfies Record<
+  FrontDeskCheckInDemoVariant,
+  { patient: FrontDeskPatient }
+>;
+
+const DEMO_RECEIPT_ITEMS: CartItem[] = [
+  {
+    id: 'hba1c',
+    kind: 'lab',
+    name: 'HbA1c',
+    priceMinor: '900',
+    currencyCode: 'USD',
+    qty: 1,
+  },
+  {
+    id: 'lipid',
+    kind: 'lab',
+    name: 'Lipid panel',
+    priceMinor: '1200',
+    currencyCode: 'USD',
+    qty: 1,
+  },
+];
+
+const DEMO_RECEIPT_PAYMENT: CartPayment = {
+  status: 'confirmed',
+  method: 'cash',
+  tendered: '25',
+  changeMinor: '400',
+  receiptId: 'R-58213',
+  confirmedAt: '09:42',
+  amountMinor: '2100',
+  cashier: DEMO_CASHIER,
+};
+
+export type FrontDeskPaymentDemoVariant =
+  | 'payment-paid'
+  | 'payment-supplemental'
+  | 'payment-voided';
+
+type FrontDeskPaymentDemoScenario = {
+  patientName: string;
+  items: CartItem[];
+  payment: CartPayment;
+  branchLabel: string;
+  voided?: boolean;
+};
+
+/** Canonical receipt evidence states shared with the prototype app. */
+export const FRONT_DESK_PAYMENT_DEMO_SCENARIOS = {
+  'payment-paid': {
+    patientName: 'Dara Phan',
+    items: DEMO_RECEIPT_ITEMS,
+    payment: DEMO_RECEIPT_PAYMENT,
+    branchLabel: 'Branch BKK1',
+  },
+  'payment-supplemental': {
+    patientName: 'Dara Phan',
+    items: [
+      ...DEMO_RECEIPT_ITEMS,
+      {
+        id: 'cbc',
+        kind: 'lab',
+        name: 'CBC',
+        priceMinor: '600',
+        currencyCode: 'USD',
+        qty: 1,
+      },
+    ],
+    payment: {
+      ...DEMO_RECEIPT_PAYMENT,
+      receiptId: 'R-58214',
+      supplementalDue: true,
+      previousReceiptId: 'R-58213',
+      previousPaidAmountMinor: '2100',
+      amountMinor: '600',
+    },
+    branchLabel: 'Branch BKK1',
+  },
+  'payment-voided': {
+    patientName: 'Dara Phan',
+    items: DEMO_RECEIPT_ITEMS,
+    payment: DEMO_RECEIPT_PAYMENT,
+    branchLabel: 'Branch BKK1',
+    voided: true,
+  },
+} satisfies Record<FrontDeskPaymentDemoVariant, FrontDeskPaymentDemoScenario>;

@@ -2,19 +2,23 @@ import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 
 import { Door } from './door';
-import { DEMO_ONBOARDING_SCENARIOS, DEMO_OTP } from './demo-data';
+import {
+  DEMO_DOOR_HINT,
+  DEMO_ONBOARDING_SCENARIOS,
+  DEMO_OTP,
+} from './demo-data';
 import { READINESS } from '../../components/foundations/readiness-data';
 
 const DEMO_PHONE_CATALOG = [
   '### Onboarding-driven app scenarios',
   '',
-  'Every registered phone uses OTP `123456`, enters through this Door, and opens only an existing app route backed by the named Storybook state.',
+  `Every registered phone uses OTP \`${DEMO_OTP}\`, enters through this Door, and opens only an existing app route backed by the named Storybook state.`,
   '',
-  '| Phone | Scenario | Entry | Journey evidence | Storybook source |',
-  '| --- | --- | --- | --- | --- |',
+  '| Phone | Actor | Access | Scenario | Entry | Journey evidence | Storybook source |',
+  '| --- | --- | --- | --- | --- | --- | --- |',
   ...DEMO_ONBOARDING_SCENARIOS.map(
     (scenario) =>
-      `| \`${scenario.phone}\` | ${scenario.label} | \`${scenario.entryPath}\` | ${scenario.journeyIds.join(', ')} | ${scenario.source} |`,
+      `| \`${scenario.phone}\` | ${scenario.actor ?? 'doctor'} | ${scenario.accessProfile ?? 'full-clinic'} | ${scenario.label} | \`${scenario.entryPath}\` | ${scenario.journeyIds.join(', ')} | ${scenario.source} |`,
   ),
 ].join('\n');
 
@@ -48,7 +52,7 @@ const meta = {
       },
     },
   },
-  args: { onRouted: fn() },
+  args: { demoHint: DEMO_DOOR_HINT, onRouted: fn() },
 } satisfies Meta<typeof Door>;
 
 export default meta;
@@ -65,6 +69,15 @@ export const Default: Story = {
       canvas.getByText('New here? Verify your code to create an account.'),
     ).toBeVisible();
     await expect(canvas.getByLabelText(/Phone number/)).toBeVisible();
+    const demoAccess = canvas.getByRole('complementary', {
+      name: 'Demo access',
+    });
+    const demoHint = within(demoAccess);
+    await expect(demoHint.getByText('111111')).toBeVisible();
+    await expect(demoHint.getByText('098 111 222')).toBeVisible();
+    await expect(demoHint.getByText('098 117 001')).toBeVisible();
+    await expect(demoHint.getByText('098 118 001')).toBeVisible();
+    await expect(demoHint.getByText('098 119 001')).toBeVisible();
     const emailAlternate = canvas.getByRole('button', {
       name: 'Use email instead',
     });

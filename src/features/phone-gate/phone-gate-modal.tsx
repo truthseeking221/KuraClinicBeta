@@ -359,6 +359,7 @@ export function PhoneGateModal({
               autoFocus
               disabled={state === 'verifyingOtp'}
               error={codeError}
+              fullWidth
               accessibleLabel={t('SMS code')}
               onValueChange={(next) => {
                 setCode(next);

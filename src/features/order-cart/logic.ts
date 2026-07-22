@@ -310,7 +310,9 @@ export function getOrderCartPrimaryAction(
   if (blockerReason) {
     const label =
       workflow.role === "doctor"
-        ? "Send booking code"
+        ? workflow.decisions.collectBy === "self"
+          ? "Prepare Tubes"
+          : "Send booking code"
         : "Confirm payment & check in";
     return { label, disabled: true, disabledReason: blockerReason };
   }

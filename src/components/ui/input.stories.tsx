@@ -93,6 +93,9 @@ export const Default: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const input = canvas.getByLabelText('Patient name');
+    const control = input.closest('[data-slot="input-control"]');
+    await expect(control).toHaveAttribute('data-variant', 'filled');
+    expect(control ? getComputedStyle(control).backgroundColor : '').not.toBe('rgb(255, 255, 255)');
     await userEvent.type(input, 'Sokha Chan');
     await expect(input).toHaveValue('Sokha Chan');
   },

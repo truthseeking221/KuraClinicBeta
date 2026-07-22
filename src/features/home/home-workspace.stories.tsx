@@ -154,24 +154,28 @@ export const EmptyClinic: Story = {
   },
 };
 
-/** The first shell view after a new doctor creates their branchless cabinet. */
+/** First home after a new doctor has set up their cabinet. */
 export const NewDoctorFirstHome: Story = {
   args: { data: demo.newDoctorFirstHome },
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
     await expect(
-      canvas.getByRole("heading", { name: "Welcome to Kura, Dr. Bopha Kim" }),
+      canvas.getByRole("heading", {
+        name: "You’re in. Your cabinet is ready.",
+      }),
     ).toBeVisible();
     await expect(
-      canvas.getByText("Let’s create your first patient booking."),
+      canvas.getByText("Start with a booking for your first patient."),
     ).toBeVisible();
     await expect(
-      canvas.getByText("You can book before your licence is verified."),
+      canvas.getByText(
+        "You can start booking patients before your licence is verified.",
+      ),
     ).toBeVisible();
     await expect(canvas.getByText("Not started")).toBeVisible();
     await expect(
       canvas.getByText(
-        "Once verified, you can collect cash, issue legal documents, submit claims and appear in the doctor directory.",
+        "You’ll need a verified licence to collect payments, issue legal documents, submit claims and appear in the doctor directory.",
       ),
     ).toBeVisible();
     await expect(canvas.queryByText("No patients")).not.toBeInTheDocument();
@@ -193,8 +197,17 @@ export const NewDoctorFirstHome: Story = {
     const firstUseCenter = firstUseBounds.left + firstUseBounds.width / 2;
     expect(Math.abs(workspaceCenter - firstUseCenter)).toBeLessThanOrEqual(1);
 
+    const setupTray = firstUse!.querySelector<HTMLElement>(
+      '[data-slot="card"]:not([data-variant])',
+    );
+    expect(setupTray).not.toBeNull();
+    await expect(setupTray!).toBeVisible();
+    expect(
+      setupTray!.querySelectorAll('[data-slot="card"][data-variant="tile"]'),
+    ).toHaveLength(2);
+
     await userEvent.click(
-      canvas.getByRole("button", { name: "Create first booking" }),
+      canvas.getByRole("button", { name: "Create booking" }),
     );
     await expect(args.onStartBooking).toHaveBeenCalled();
     await expect(
@@ -206,18 +219,16 @@ export const NewDoctorFirstHome: Story = {
     );
     await expect(args.onOpenLicence).toHaveBeenCalled();
 
-    // The third door: a new doctor can see the product work before committing
-    // to a real booking or a licence submission.
     await expect(
-      canvas.getByRole("heading", { name: "Explore a demo patient" }),
+      canvas.getByRole("heading", { name: "Take a quick tour" }),
     ).toBeVisible();
     await expect(
       canvas.getByText(
-        "Follow Sokha Chann from booking to results. This demo will not affect your records.",
+        "Follow a sample patient from booking to results. Your records will not change.",
       ),
     ).toBeVisible();
     await userEvent.click(
-      canvas.getByRole("button", { name: "Open demo patient" }),
+      canvas.getByRole("button", { name: "Open sample patient" }),
     );
     await expect(args.onOpenDemoPatient).toHaveBeenCalled();
   },
@@ -232,14 +243,21 @@ export const FirstHomeWithoutDemoPatient: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(
-      canvas.getByRole("heading", { name: /Welcome to Kura/ }),
+      canvas.getByRole("heading", {
+        name: "You’re in. Your cabinet is ready.",
+      }),
     ).toBeVisible();
     await expect(
-      canvas.queryByRole("heading", { name: "Explore a demo patient" }),
+      canvas.queryByRole("heading", { name: "Take a quick tour" }),
     ).not.toBeInTheDocument();
     await expect(
-      canvas.getByRole("button", { name: "Create first booking" }),
+      canvas.getByRole("button", { name: "Create booking" }),
     ).toBeVisible();
+    expect(
+      canvasElement.querySelectorAll(
+        '[data-slot="first-use-home"] [data-slot="card"][data-variant="tile"]',
+      ),
+    ).toHaveLength(1);
   },
 };
 

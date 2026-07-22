@@ -5,6 +5,13 @@
   padding: 0;
 }
 
+/* Give the icon, label, and count enough separation to scan as three parts of
+ * one control. The shared Button gap is intentionally tighter for text-only
+ * actions, so this patient-scoped trigger owns the wider icon-label rhythm. */
+.trigger {
+  gap: var(--space-1);
+}
+
 .patientScope {
   display: flex;
   flex-direction: column;

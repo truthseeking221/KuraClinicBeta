@@ -7,7 +7,6 @@ import type {
   BookingTimelineEvent,
   Cart,
   DeskVisit,
-  VisitStage,
   CartItem,
   CartPayment,
   CollectionCodeStatus,
@@ -724,6 +723,18 @@ export function waitTone(waitMinutes: number): 'normal' | 'warn' | 'escalate' {
 }
 
 /**
+ * Reception wait is only live while reception still owns the next step.
+ * Arrival age remains useful audit context after handoff, but must never keep
+ * raising a desk escalation once phlebotomy owns the visit.
+ */
+export function deskWaitIsActive(visit: DeskVisit): boolean {
+  return (
+    visit.stage === 'arrived' ||
+    (visit.stage === 'identity-resolved' && !visit.queuedForDraw)
+  );
+}
+
+/**
  * The one next action a desk visit offers. Derived from independent axes,
  * never from a master status: an unfinished check-in resumes at its step; a
  * resolved identity queues for phlebotomy exactly once; later stages are
@@ -803,16 +814,21 @@ export function nextQueueNumber(taken: number[]): number {
   return taken.length === 0 ? 1 : Math.max(...taken) + 1;
 }
 
-/** Longest-waiting first inside each stage; unfinished check-ins stay on top. */
+/**
+ * Reception-owned work stays above observed downstream work. Within each
+ * ownership band, the longest active wait stays first.
+ */
 export function orderDeskVisits(visits: DeskVisit[]): DeskVisit[] {
-  const stageRank: Record<VisitStage, number> = {
-    arrived: 0,
-    'identity-resolved': 1,
-    'draw-complete': 2,
-    completed: 3,
-  };
+  function workRank(visit: DeskVisit) {
+    if (visit.stage === 'arrived') return 0;
+    if (visit.stage === 'identity-resolved' && !visit.queuedForDraw) return 1;
+    if (visit.stage === 'identity-resolved') return 2;
+    if (visit.stage === 'draw-complete') return 3;
+    return 4;
+  }
+
   return [...visits].sort(
-    (a, b) => stageRank[a.stage] - stageRank[b.stage] || b.waitMinutes - a.waitMinutes,
+    (a, b) => workRank(a) - workRank(b) || b.waitMinutes - a.waitMinutes,
   );
 }
 

@@ -1,6 +1,9 @@
-import { FIGMA_TESTS, cartWith } from "../order-cart/demo-data";
+import { LAB_CATALOG_TESTS } from "../lab-catalog/demo-data";
+import { cartWith } from "../order-cart/demo-data";
+import type { DemoLineEconomics } from "../order-cart/demo-data";
 import type { OrderCartItem } from "../order-cart/types";
 import type { CollectionPatient } from "../collection/types";
+import type { LabOrderJourneySnapshot } from "./lab-order-collection-flow";
 import { JOURNEY_PATIENT } from "../journey/patient";
 
 /** Journey-shaped view of the canonical manifest. Identity itself lives in
@@ -42,35 +45,37 @@ export const CARE_LOOP_DEMO_INTAKE_RECORD = {
   familyHistory: "Father has diabetes · no surgeries · no chronic illness",
 } as const;
 
-const CATALOG_ID_BY_FIGMA_ITEM_ID: Record<string, string> = {
-  "iron-panel": "iron-panel",
-  ferritin: "ferritin",
-  "cystatin-c": "cystatin-c",
-  "serum-calcium": "serum-calcium",
-  electrolytes: "electrolytes-panel",
-  "urea-bun": "urea-bun",
-  cbc: "cbc",
-  haptoglobin: "haptoglobin",
-  "free-t3": "free-t3",
-  "hs-crp": "hs-crp",
-};
-
 /**
- * One deterministic order manifest for the executable journey. The source
- * board's urine tests are intentionally excluded until Collection owns a
- * canonical urine-container contract; every selected test here maps to one of
- * the four blood tubes below.
+ * Every selectable catalog test has one priced order line. Keeping this map
+ * catalog-shaped prevents the picker and cart from drifting into separate
+ * fixture contracts.
  */
-export const CARE_LOOP_CART_ITEMS: OrderCartItem[] = FIGMA_TESTS.flatMap(
-  (item) => {
-    const catalogId = CATALOG_ID_BY_FIGMA_ITEM_ID[item.id];
-    return catalogId ? [{ ...item, id: catalogId }] : [];
+export const CARE_LOOP_CART_ITEMS: OrderCartItem[] = LAB_CATALOG_TESTS.flatMap(
+  (test) => {
+    if (test.availability === "unavailable" || !test.preview) return [];
+
+    return [
+      {
+        id: test.testCatalogId,
+        kind: "lab",
+        name: test.displayName,
+        code: test.code,
+        priceMinor: test.preview.priceMinor,
+        currencyCode: "USD",
+        quantity: 1,
+      },
+    ];
   },
 );
 
-export const CARE_LOOP_SELECTED_TEST_IDS = CARE_LOOP_CART_ITEMS.map(
-  (item) => item.id,
-);
+/** Server-shaped demo economics for this journey's fixed 15% doctor rate. */
+export const CARE_LOOP_LINE_ECONOMICS: DemoLineEconomics[] =
+  CARE_LOOP_CART_ITEMS.map((item) => ({
+    itemName: item.name,
+    netBaseMinor: item.priceMinor,
+    commissionBp: 1500,
+    earnMinor: ((BigInt(item.priceMinor) * 1500n) / 10_000n).toString(),
+  }));
 
 export function careLoopCart(
   items: OrderCartItem[] = CARE_LOOP_CART_ITEMS,
@@ -110,17 +115,25 @@ export function careLoopCollectionPatient(
     samples: [
       {
         id: "884201001",
-        tube: "red",
-        tests: ["Iron panel", "Ferritin"],
-        volumeMl: 5,
-        container: "Plain serum tube",
+        tube: "light-blue",
+        tests: ["PT / INR"],
+        volumeMl: 2.7,
+        container: "Sodium citrate tube",
         stat: false,
         status: "awaiting_collection",
       },
       {
         id: "884201002",
         tube: "gold-sst",
-        tests: ["Cystatin C", "Serum calcium", "Free T3", "hs-CRP"],
+        tests: [
+          "Lipid panel",
+          "Ferritin",
+          "Iron panel",
+          "Cystatin C",
+          "Creatinine + eGFR",
+          "ALT",
+          "AST",
+        ],
         volumeMl: 5,
         container: "Serum separator tube",
         stat: false,
@@ -128,19 +141,19 @@ export function careLoopCollectionPatient(
       },
       {
         id: "884201003",
-        tube: "green",
-        tests: ["Electrolytes panel", "Urea (BUN)"],
+        tube: "lavender",
+        tests: ["Complete blood count", "HbA1c"],
         volumeMl: 4,
-        container: "Lithium heparin tube",
+        container: "EDTA tube",
         stat: false,
         status: "awaiting_collection",
       },
       {
         id: "884201004",
-        tube: "lavender",
-        tests: ["Complete blood count", "Haptoglobin"],
+        tube: "dark-gray",
+        tests: ["Fasting glucose"],
         volumeMl: 4,
-        container: "EDTA tube",
+        container: "Fluoride tube",
         stat: false,
         status: "awaiting_collection",
       },
@@ -168,10 +181,10 @@ export const CARE_LOOP_OPERATOR = "Nurse Srey Neang";
 
 /** The four tubes this order draws, in CLSI order-of-draw sequence. */
 export const CARE_LOOP_TUBE_KEYS = [
+  "light-blue",
   "red",
-  "gold-sst",
-  "green",
   "lavender",
+  "dark-gray",
 ] as const;
 
 /**
@@ -187,3 +200,63 @@ export function careLoopTubeLabelLine(
 }
 
 export const CARE_LOOP_TUBE_LABEL_LINE = careLoopTubeLabelLine();
+
+/** Deterministic saved state for interruption and re-entry stories. */
+export function careLoopLabOrderJourney(
+  overrides: Partial<LabOrderJourneySnapshot> = {},
+): LabOrderJourneySnapshot {
+  return {
+    orderId: CARE_LOOP_PATIENT.orderId,
+    stage: "ordering",
+    selectedTestIds: ["hba1c"],
+    decisions: { collectBy: "self", payment: "pay-now" },
+    labelMethod: "sticker",
+    labelPhotoChecks: {
+      applied: false,
+      readable: false,
+      photographed: false,
+    },
+    capturedTubeIds: [],
+    pickupRound: "14:30",
+    labelsChecked: false,
+    countChecked: false,
+    bagSealed: false,
+    ...overrides,
+  };
+}
+
+const DEMO_LOGISTICS_STAGES = [
+  "ready-for-pickup",
+  "courier-assigned",
+  "in-transit",
+  "received-at-lab",
+  "processing",
+  "partial-results",
+] as const;
+
+/** Prototype event adapter. Storybook owns each state; the app only replays it. */
+export function demoLabJourneyAfterElapsed(
+  journey: LabOrderJourneySnapshot,
+  elapsedMs: number,
+): LabOrderJourneySnapshot {
+  if (!DEMO_LOGISTICS_STAGES.includes(journey.stage as (typeof DEMO_LOGISTICS_STAGES)[number])) {
+    return journey;
+  }
+  const index = Math.min(
+    DEMO_LOGISTICS_STAGES.length - 1,
+    Math.max(0, Math.floor(elapsedMs / 6_000)),
+  );
+  const stage = DEMO_LOGISTICS_STAGES[index];
+  if (stage === "partial-results") {
+    const total = journey.total ?? journey.selectedTestIds.length;
+    const resulted = journey.resulted ?? Math.max(1, Math.min(3, total - 1));
+    return {
+      ...journey,
+      stage,
+      resulted,
+      total,
+      flagged: journey.flagged ?? 1,
+    };
+  }
+  return stage === journey.stage ? journey : { ...journey, stage };
+}

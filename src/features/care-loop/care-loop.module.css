@@ -252,6 +252,9 @@
 
 .labOrderWorkspaceHeader {
   display: grid;
+  width: 100%;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-3);
   padding-bottom: var(--space-4);
   border-bottom: 1px solid var(--color-border);
@@ -271,6 +274,14 @@
   font-size: var(--type-xl);
   font-weight: var(--weight-semibold);
   line-height: var(--leading-tight);
+}
+
+.labOrderWorkspaceMeta {
+  margin: var(--space-1) 0 0;
+  color: var(--color-text-tertiary);
+  font-size: var(--type-sm);
+  line-height: var(--leading-normal);
+  overflow-wrap: anywhere;
 }
 
 .labOrderWorkspaceContent {
@@ -315,6 +326,7 @@
 
 .intakeHandoffCard {
   width: min(100%, 37.25rem);
+  transition: width var(--motion-layout);
 }
 
 .intakeHandoffCard[data-state="unknown"],
@@ -329,6 +341,19 @@
 .intakeHandoffCard :global([data-slot="card-title"]) {
   font-size: var(--type-xl);
   line-height: var(--leading-tight);
+}
+
+/* Sending, waiting and received are different messages, not edits of one
+   message, so the replacement is stated rather than swapped mid-sentence. */
+.intakeHandoffCard[data-live] .intakeCardHeading {
+  animation: intake-heading-in var(--duration-base) var(--ease-out);
+}
+
+@keyframes intake-heading-in {
+  from {
+    opacity: 0;
+    transform: translateY(var(--space-1));
+  }
 }
 
 .intakeHandoffCard :global([data-slot="card-description"]) {
@@ -361,6 +386,20 @@
   min-width: 0;
 }
 
+/* The next action follows the evidence it depends on: the answers land first,
+   then ordering tests becomes the one thing left to do. */
+.intakeHandoffCard[data-live][data-state="complete"] .intakeCardActions {
+  animation: intake-actions-in var(--duration-base) var(--ease-out)
+    calc(3 * var(--motion-stagger-step)) both;
+}
+
+@keyframes intake-actions-in {
+  from {
+    opacity: 0;
+    transform: translateY(var(--space-1));
+  }
+}
+
 .intakeStatusList {
   display: grid;
   gap: var(--space-4);
@@ -375,6 +414,24 @@
   grid-template-columns: var(--space-6) minmax(0, 1fr) auto;
   gap: var(--space-2-5);
   align-items: center;
+  --intake-row-delay: 0ms;
+}
+
+/* Four answers arriving in the same frame read as a page swap. One step of
+   delay per row reads as the patient's replies landing in order. */
+.intakeHandoffCard[data-live][data-state="complete"]
+  .intakeStatusRow:nth-child(2) {
+  --intake-row-delay: var(--motion-stagger-step);
+}
+
+.intakeHandoffCard[data-live][data-state="complete"]
+  .intakeStatusRow:nth-child(3) {
+  --intake-row-delay: calc(2 * var(--motion-stagger-step));
+}
+
+.intakeHandoffCard[data-live][data-state="complete"]
+  .intakeStatusRow:nth-child(4) {
+  --intake-row-delay: calc(3 * var(--motion-stagger-step));
 }
 
 .intakeStatusMarker {
@@ -389,6 +446,9 @@
   font-size: var(--type-sm);
   font-weight: var(--weight-medium);
   line-height: 1;
+  transition:
+    background-color var(--motion-color) var(--intake-row-delay),
+    color var(--motion-color) var(--intake-row-delay);
 }
 
 .intakeStatusRow[data-answered="true"] .intakeStatusMarker {
@@ -396,10 +456,43 @@
   color: var(--color-status-success-fg);
 }
 
+.intakeHandoffCard[data-live][data-state="complete"] .intakeStatusCheck {
+  animation: intake-check-in var(--duration-base) var(--ease-emphasized)
+    var(--intake-row-delay) both;
+}
+
+@keyframes intake-check-in {
+  from {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+}
+
 .intakeStatusCopy {
   display: grid;
   min-width: 0;
-  gap: var(--space-0-5);
+}
+
+/* The answer opens the row it belongs to instead of the card jumping to a new
+   height, so the list stays the same object throughout. */
+.intakeStatusAnswer {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition:
+    grid-template-rows var(--motion-layout) var(--intake-row-delay),
+    opacity var(--motion-color) var(--intake-row-delay);
+}
+
+.intakeStatusAnswer > strong {
+  min-height: 0;
+  padding-top: var(--space-0-5);
+  overflow: hidden;
+}
+
+.intakeStatusRow[data-answered="true"] .intakeStatusAnswer {
+  grid-template-rows: 1fr;
+  opacity: 1;
 }
 
 .intakeStatusLabel {
@@ -574,6 +667,190 @@
   align-items: start;
 }
 
+.workflowRail {
+  display: grid;
+  width: min(100%, 38rem);
+  margin: 0 auto;
+  gap: var(--space-4);
+}
+
+.workflowRail > :global([data-slot="card"]),
+.workflowRail > :global([data-slot="alert"]) {
+  width: 100%;
+  max-width: none;
+}
+
+.verificationContent,
+.pickupContent {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.qrStep {
+  display: grid;
+  grid-template-columns: var(--space-6) minmax(0, 1fr) auto;
+  gap: var(--space-3);
+  align-items: start;
+}
+
+.qrStep h3,
+.qrStep p,
+.photoChecklist h3,
+.photoChecklist p,
+.courierChecklist h3 {
+  margin: 0;
+}
+
+.qrStep h3,
+.photoChecklist h3,
+.courierChecklist h3 {
+  color: var(--color-text-primary);
+  font-size: var(--type-sm);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-normal);
+}
+
+.qrStep p,
+.photoChecklist p {
+  margin-top: var(--space-1);
+  color: var(--color-text-secondary);
+  font-size: var(--type-sm);
+  line-height: var(--leading-normal);
+}
+
+.qrStep .prototypeNote {
+  color: var(--color-text-tertiary);
+  font-size: var(--type-xs);
+}
+
+.qrStep :global([data-slot="button"]) {
+  margin-top: var(--space-3);
+}
+
+.stepNumber,
+.sampleIndex {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+  background: var(--color-action-primary-subtle);
+  color: var(--primary-accent);
+  font-size: var(--type-xs);
+  font-weight: var(--weight-semibold);
+}
+
+.stepNumber {
+  width: var(--space-5);
+  height: var(--space-5);
+}
+
+.qrCode {
+  display: inline-flex;
+  padding: var(--space-2);
+  border-radius: var(--radius-control);
+  background: var(--color-surface-2);
+  color: var(--color-text-primary);
+}
+
+.photoChecklist {
+  display: grid;
+  gap: var(--space-3);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border);
+}
+
+.photoChecklistHeader {
+  display: grid;
+  grid-template-columns: var(--space-6) minmax(0, 1fr) auto;
+  gap: var(--space-3);
+  align-items: start;
+}
+
+.photoRows {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.photoRows li {
+  display: grid;
+  grid-template-columns: var(--space-6) var(--space-2) minmax(0, 1fr) auto;
+  gap: var(--space-2);
+  align-items: center;
+  padding-block: var(--space-2);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.photoRows li:last-child {
+  border-bottom: 0;
+}
+
+.sampleIndex {
+  width: var(--space-5);
+  height: var(--space-5);
+  background: var(--color-surface-2);
+  color: var(--color-text-secondary);
+}
+
+.sampleStopper {
+  width: var(--space-2);
+  height: var(--space-4);
+  border-radius: var(--radius-indicator);
+}
+
+.sampleCopy {
+  display: grid;
+  min-width: 0;
+  gap: var(--space-0-5);
+}
+
+.sampleCopy strong,
+.sampleCopy span {
+  overflow-wrap: anywhere;
+}
+
+.sampleCopy strong {
+  font-size: var(--type-sm);
+  font-weight: var(--weight-medium);
+}
+
+.sampleCopy span {
+  color: var(--color-text-secondary);
+  font-size: var(--type-xs);
+}
+
+.courierChecklist {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.courierChecklist ul {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.courierChecklist li {
+  padding-block: var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text-primary);
+  font-size: var(--type-sm);
+  line-height: var(--leading-normal);
+}
+
+.courierChecklist li:last-child {
+  border-bottom: 0;
+}
+
+.courierNote {
+  margin: 0;
+  color: var(--color-text-tertiary);
+  font-size: var(--type-xs);
+  text-align: center;
+}
+
 .stageIntro {
   display: grid;
   max-width: calc(var(--space-32) * 3);
@@ -733,5 +1010,25 @@
 
   .orderGrid > :last-child {
     order: -1;
+  }
+
+  .qrStep,
+  .photoChecklistHeader {
+    grid-template-columns: var(--space-6) minmax(0, 1fr);
+  }
+
+  .qrCode,
+  .photoChecklistHeader :global([data-slot="badge"]) {
+    grid-column: 2;
+    justify-self: start;
+  }
+
+  .photoRows li {
+    grid-template-columns: var(--space-6) var(--space-2) minmax(0, 1fr);
+  }
+
+  .photoRows li :global([data-slot="button"]) {
+    grid-column: 3;
+    justify-self: stretch;
   }
 }

@@ -93,22 +93,28 @@
   line-height: var(--leading-normal);
 }
 
-/* The two setup offers share one shape: a divider, the explanation, and the
-   action that acts on it. No card — they are sections in one reading flow. */
+.setupTray {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+}
+
+/* The setup tray groups optional follow-up work. Its white tiles are the
+   intentional second surface level: each has its own context and action. */
 .demoPatient,
 .licenceSetup {
   display: grid;
-  grid-template-columns: 5rem minmax(0, 1fr) auto;
+  grid-template-columns: 4rem minmax(0, 1fr) auto;
   align-items: center;
   gap: var(--space-4);
-  padding-top: var(--space-5);
-  border-top: 1px solid var(--color-border);
+  padding: var(--space-4);
 }
 
 .firstUseIllustration {
   display: block;
-  width: 5rem;
-  height: 5rem;
+  width: 4rem;
+  height: 4rem;
   object-fit: contain;
 }
 
@@ -442,6 +448,49 @@ a.dayRow:hover .dayChevron {
     align-items: stretch;
     flex-direction: column;
     gap: var(--space-2);
+  }
+
+  /* Keep the title paired with its illustration, then give the explanation
+     and action the full measure. A narrow content column would otherwise
+     make the setup tiles harder to scan and clip their actions. */
+  .demoPatient,
+  .licenceSetup {
+    grid-template-areas:
+      "illustration title"
+      "description description"
+      "action action";
+    grid-template-columns: 3rem minmax(0, 1fr);
+    align-items: start;
+    gap: var(--space-3);
+  }
+
+  .demoCopy,
+  .licenceCopy {
+    display: contents;
+  }
+
+  .firstUseIllustration {
+    grid-area: illustration;
+    width: 3rem;
+    height: 3rem;
+  }
+
+  .demoTitle,
+  .licenceHeading {
+    grid-area: title;
+    align-self: center;
+  }
+
+  .demoDescription,
+  .licenceDescription {
+    grid-area: description;
+  }
+
+  .demoPatient > :global([data-slot="button"]),
+  .licenceSetup > :global([data-slot="button"]) {
+    grid-column: 1 / -1;
+    grid-row: 3;
+    width: 100%;
   }
 
   .greeting {

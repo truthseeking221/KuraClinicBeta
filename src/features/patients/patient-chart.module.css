@@ -128,6 +128,13 @@
   padding: var(--space-1);
 }
 
+/* Keep the record-view tabs on the same 4px visual inset as result-owned
+   surfaces. The content below keeps its normal 20px reading inset. */
+.work:not([data-content-owns-inset]) > [data-slot='tabs'] > [data-slot='tabs-list'] {
+  margin-block-start: calc(var(--space-1) - var(--space-5));
+  margin-inline: calc(var(--space-1) - var(--space-5));
+}
+
 .actionRail {
   width: 100%;
   height: 100%;

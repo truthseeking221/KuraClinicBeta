@@ -36,7 +36,7 @@ const meta = {
           "https://www.figma.com/design/yWz269PzVjFQquJa1U1M0s/Kura-Design?node-id=1485-18526",
         node: "1485:18526",
         intakeContextNode: "1485:19716",
-        orderJourneyNode: "1485:93177",
+        orderJourneyNode: "1547:110756",
         intakeContextStates: {
           unknown: "1303:2146",
           sent: "1303:7965",
@@ -166,8 +166,9 @@ export const ClinicJourneyToIntakeHandoff: Story = {
       canvas.getByRole("button", { name: "Order baseline tests" }),
     );
     await expect(
-      canvas.getByRole("heading", { name: "Choose baseline tests" }),
+      canvas.getByRole("heading", { name: "Lab order" }),
     ).toBeVisible();
+    await expect(canvas.getByText("Nothing here yet")).toBeVisible();
     await expect(
       canvas.getByLabelText("Patient context for Sok Nimol"),
     ).toBeVisible();
@@ -190,6 +191,38 @@ export const IntakeUnknown: Story = {
     await expect(
       canvas.getByRole("button", { name: "Send intake link" }),
     ).toBeEnabled();
+  },
+};
+
+export const IntakeArrival: Story = {
+  args: {
+    demoIntakeRecord: CARE_LOOP_DEMO_INTAKE_RECORD,
+    initialStage: "intake-unknown",
+    intakeSendDelayMs: 300,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Sending replaces the button that was just pressed. The answers confirm in order, the next action follows them, and focus lands on it instead of falling back to the page.",
+      },
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(
+      canvas.getByRole("button", { name: "Send intake link" }),
+    );
+    const order = await canvas.findByRole("button", {
+      name: "Order baseline tests",
+    });
+    await expect(
+      canvas.getByText("Intake received for Sok Nimol"),
+    ).toBeVisible();
+    await expect(
+      canvas.getAllByText(CARE_LOOP_DEMO_INTAKE_RECORD.allergies)[0],
+    ).toBeVisible();
+    await expect(order).toHaveFocus();
   },
 };
 
@@ -350,9 +383,17 @@ export const IntakeComplete: Story = {
       canvas.getByRole("button", { name: "Order baseline tests" }),
     );
     await expect(
-      canvas.getByRole("heading", { name: "Choose baseline tests" }),
+      canvas.getByRole("heading", { name: "Lab order" }),
     ).toBeVisible();
-    await expect(canvas.getByText("10 selected")).toBeVisible();
+    await expect(canvas.getByText("Nothing here yet")).toBeVisible();
+    await userEvent.click(canvas.getByRole("checkbox", { name: "HbA1c" }));
+    const orderCart = within(
+      canvas.getByRole("complementary", { name: "Doctor order cart" }),
+    );
+    await expect(
+      orderCart.getByRole("heading", { name: "Selected tests" }),
+    ).toBeVisible();
+    await expect(orderCart.getByText("HbA1c")).toBeVisible();
   },
 };
 

@@ -256,7 +256,7 @@ function CategoryFilterMenu({
             className={styles.categoryTrigger}
             disabled={disabled}
             leadingIcon={<FilterIcon aria-hidden="true" />}
-            size="sm"
+            size="md"
             variant="outline"
           >
             <span className={styles.categoryTriggerLabel}>{triggerLabel}</span>
@@ -450,7 +450,7 @@ export function LabTestPicker({
           onChange={(event) => setQuery(event.currentTarget.value)}
           placeholder={t("Search tests, panels, or keywords…")}
           prefix={<SearchIcon size={16} />}
-          size="sm"
+          size="md"
           type="search"
           value={query}
         />

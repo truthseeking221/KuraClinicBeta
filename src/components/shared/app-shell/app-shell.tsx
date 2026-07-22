@@ -35,6 +35,7 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
+  UserMultipleIcon,
 } from '../../ui';
 import { LOCALES, LOCALE_LABELS, useLocale, useT } from '../../foundations/i18n';
 import type { Locale } from '../../foundations/i18n';
@@ -69,7 +70,7 @@ function renderNavIcon(icon: ReactNode, active: boolean) {
 
 export type AppShellProps = {
   workspace: ClinicWorkspace;
-  /** All workspaces the user belongs to. One workspace hides the switcher chevron. */
+  /** All workspaces the user belongs to. One workspace removes the switch section. */
   workspaces?: ClinicWorkspace[];
   onWorkspaceChange?: (workspaceId: string) => void;
   onBranchChange?: (branchId: string) => void;
@@ -89,6 +90,10 @@ export type AppShellProps = {
   user: ShellUser;
   onSignOut?: () => void;
   onOpenSettings?: () => void;
+  /** Workspace-scoped settings. Omit when the actor may not manage the workspace. */
+  onOpenWorkspaceSettings?: () => void;
+  /** Who may act inside this workspace. Omit when the actor may not manage members. */
+  onOpenTeamAccess?: () => void;
 
   /** Navigation for the active mode. Defaults to the mode registry. */
   nav?: NavGroup[];
@@ -131,6 +136,8 @@ export function AppShell({
   onOpenNotifications,
   onOpenSearch,
   onOpenSettings,
+  onOpenTeamAccess,
+  onOpenWorkspaceSettings,
   onShiftChange,
   onSignOut,
   onWorkspaceChange,
@@ -238,6 +245,8 @@ export function AppShell({
           <WorkspaceSwitcher
             collapsed={collapsed}
             onBranchChange={onBranchChange}
+            onOpenTeamAccess={onOpenTeamAccess}
+            onOpenWorkspaceSettings={onOpenWorkspaceSettings}
             onWorkspaceChange={onWorkspaceChange}
             scopeLabel={scopeLabel}
             workspace={workspace}
@@ -388,22 +397,37 @@ export function AppShell({
 type WorkspaceSwitcherProps = {
   collapsed: boolean;
   onBranchChange?: (branchId: string) => void;
+  onOpenTeamAccess?: () => void;
+  onOpenWorkspaceSettings?: () => void;
   onWorkspaceChange?: (workspaceId: string) => void;
   scopeLabel?: string;
   workspace: ClinicWorkspace;
   workspaces?: ClinicWorkspace[];
 };
 
+/**
+ * The workspace row is identity first and a menu second. It opens when the
+ * actor can change workspace, change branch, or reach a workspace-scoped
+ * destination; with none of those it stays a plain label rather than a control
+ * that opens nothing. Workspace-scoped destinations are separate props, so a
+ * caller who may not manage the workspace simply omits them — the shell never
+ * decides authorization.
+ */
 function WorkspaceSwitcher({
   collapsed,
   onBranchChange,
+  onOpenTeamAccess,
+  onOpenWorkspaceSettings,
   onWorkspaceChange,
   scopeLabel,
   workspace,
   workspaces,
 }: WorkspaceSwitcherProps) {
   const t = useT();
-  const switchable = !scopeLabel && ((workspaces?.length ?? 0) > 1 || (workspace.branches?.length ?? 0) > 1);
+  const switchableWorkspaces = !scopeLabel && (workspaces?.length ?? 0) > 1;
+  const switchableBranches = !scopeLabel && (workspace.branches?.length ?? 0) > 1;
+  const destinations = !scopeLabel && Boolean(onOpenWorkspaceSettings || onOpenTeamAccess);
+  const interactive = switchableWorkspaces || switchableBranches || destinations;
   const activeBranch = scopeLabel
     ? undefined
     : workspace.branches?.find((branch) => branch.id === workspace.activeBranchId);
@@ -421,48 +445,44 @@ function WorkspaceSwitcher({
           <span className={styles.workspaceBranch}>{activeBranch.name}</span>
         ) : null}
       </span>
-      {switchable ? (
+      {interactive ? (
         <ChevronDownIcon aria-hidden="true" className={styles.workspaceChevron} size={14} />
       ) : null}
     </>
   );
 
-  if (scopeLabel) {
+  if (!interactive) {
     return (
       <div
-        aria-label={`Scope: ${scopeLabel}`}
+        aria-label={scopeLabel ? `Scope: ${scopeLabel}` : `${t('Workspace')}: ${displayName}`}
         className={styles.workspaceTrigger}
         data-collapsed={collapsed ? 'true' : undefined}
-        data-scope="person"
+        data-scope={scopeLabel ? 'person' : undefined}
         data-slot="workspace-switcher"
-        title={collapsed ? scopeLabel : undefined}
+        data-static="true"
+        title={collapsed ? displayName : undefined}
       >
         {triggerContent}
       </div>
     );
   }
 
-  const trigger = (
-    <button
-      className={styles.workspaceTrigger}
-      data-collapsed={collapsed ? 'true' : undefined}
-      data-slot="workspace-switcher"
-      title={collapsed ? displayName : undefined}
-      type="button"
-    >
-      {triggerContent}
-    </button>
-  );
-
-  if (!switchable) {
-    return trigger;
-  }
-
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>{trigger}</DropdownMenuTrigger>
+      <DropdownMenuTrigger asChild>
+        <button
+          aria-label={`${t('Workspace')}: ${displayName}`}
+          className={styles.workspaceTrigger}
+          data-collapsed={collapsed ? 'true' : undefined}
+          data-slot="workspace-switcher"
+          title={collapsed ? displayName : undefined}
+          type="button"
+        >
+          {triggerContent}
+        </button>
+      </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className={styles.menuContent}>
-        {(workspaces?.length ?? 0) > 1 ? (
+        {switchableWorkspaces ? (
           <>
             <DropdownMenuLabel>{t('Workspace')}</DropdownMenuLabel>
             <DropdownMenuRadioGroup
@@ -477,9 +497,9 @@ function WorkspaceSwitcher({
             </DropdownMenuRadioGroup>
           </>
         ) : null}
-        {(workspace.branches?.length ?? 0) > 1 ? (
+        {switchableBranches ? (
           <>
-            {(workspaces?.length ?? 0) > 1 ? <DropdownMenuSeparator /> : null}
+            {switchableWorkspaces ? <DropdownMenuSeparator /> : null}
             <DropdownMenuLabel>{t('Branch')}</DropdownMenuLabel>
             <DropdownMenuRadioGroup
               onValueChange={(value) => onBranchChange?.(value)}
@@ -491,6 +511,29 @@ function WorkspaceSwitcher({
                 </DropdownMenuRadioItem>
               ))}
             </DropdownMenuRadioGroup>
+          </>
+        ) : null}
+        {destinations ? (
+          <>
+            {switchableWorkspaces || switchableBranches ? <DropdownMenuSeparator /> : null}
+            <DropdownMenuGroup>
+              {onOpenWorkspaceSettings ? (
+                <DropdownMenuItem onSelect={() => onOpenWorkspaceSettings()}>
+                  <span aria-hidden="true" className={styles.menuItemIcon}>
+                    <SettingsIcon size={16} />
+                  </span>
+                  {t('Workspace settings')}
+                </DropdownMenuItem>
+              ) : null}
+              {onOpenTeamAccess ? (
+                <DropdownMenuItem onSelect={() => onOpenTeamAccess()}>
+                  <span aria-hidden="true" className={styles.menuItemIcon}>
+                    <UserMultipleIcon size={16} />
+                  </span>
+                  {t('Team access')}
+                </DropdownMenuItem>
+              ) : null}
+            </DropdownMenuGroup>
           </>
         ) : null}
       </DropdownMenuContent>

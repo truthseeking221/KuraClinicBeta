@@ -5,16 +5,21 @@ import { useState } from 'react';
 import { AppShell } from '../../components/shared/app-shell';
 
 import { DrawWorksheet } from './draw-worksheet';
-import { DEMO_NOW, DEMO_OPERATOR, DEMO_QUEUE } from './demo-data';
+import {
+  COLLECTION_DEMO_SCENARIOS,
+  DEMO_NOW,
+  DEMO_OPERATOR,
+  DEMO_QUEUE,
+} from './demo-data';
 import { queueForRole, submitGate } from './logic';
 import { ScanGate } from './scan-gate';
 import type { CollectionPatient, Sample } from './types';
 import { VitalsForm } from './vitals-form';
 import { READINESS } from '../../components/foundations/readiness-data';
 
-const phleboQueue = queueForRole(DEMO_QUEUE, 'phlebotomy');
+const phleboQueue = COLLECTION_DEMO_SCENARIOS['scan-queue'].queue;
 const vitalsQueue = queueForRole(DEMO_QUEUE, 'vitals');
-const readyPatient = DEMO_QUEUE[0];
+const readyPatient = COLLECTION_DEMO_SCENARIOS['worksheet-ready'].patient;
 
 const meta = {
   title: 'Clinic/Collection/Draw Worksheet',
@@ -144,7 +149,11 @@ export const ChecklistGatesCollection: Story = {
 /** Vitals skipped upstream — warning banner with the two legacy paths. */
 export const VitalsMissingWarning: Story = {
   args: Default.args,
-  render: () => <WorksheetPlayground patient={DEMO_QUEUE[1]} />,
+  render: () => (
+    <WorksheetPlayground
+      patient={COLLECTION_DEMO_SCENARIOS['worksheet-vitals-missing'].patient}
+    />
+  ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getByText('Vital signs not yet recorded')).toBeVisible();
@@ -163,7 +172,10 @@ export const VitalsMissingWarning: Story = {
 export const ClotClockRunning: Story = {
   args: Default.args,
   render: () => (
-    <WorksheetPlayground initialNow={DEMO_NOW + 4 * 60 * 1000} patient={DEMO_QUEUE[2]} />
+    <WorksheetPlayground
+      initialNow={COLLECTION_DEMO_SCENARIOS['worksheet-partial'].now}
+      patient={COLLECTION_DEMO_SCENARIOS['worksheet-partial'].patient}
+    />
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
@@ -247,6 +259,23 @@ export const ScanGateBrowseQueue: Story = {
     await userEvent.click(canvas.getByRole('button', { name: /Browse queue/ }));
     await expect(canvas.getByText('Vibol Keo')).toBeVisible();
     await expect(canvas.getByText('78 min')).toBeVisible();
+  },
+};
+
+/** A clear queue is a valid station state, not a loading or permission failure. */
+export const ScanGateEmptyQueue: Story = {
+  args: Default.args,
+  render: () => (
+    <ScanGate
+      onMatch={() => {}}
+      queue={COLLECTION_DEMO_SCENARIOS['scan-empty'].queue}
+      role="phlebotomy"
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(canvas.getByRole('button', { name: /Browse queue/ }));
+    await expect(canvas.getByText('Queue is clear.')).toBeVisible();
   },
 };
 

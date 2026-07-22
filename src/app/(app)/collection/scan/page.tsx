@@ -11,22 +11,32 @@ import { useState } from 'react';
 import { toast } from '../../../../components/ui';
 import { DrawWorksheet, ScanGate } from '../../../../features/collection';
 import type { CollectionPatient, Sample } from '../../../../features/collection';
+import { demoOnboardingScenarioById } from '../../../../features/auth/demo-data';
 import {
+  COLLECTION_DEMO_SCENARIOS,
   DEMO_NOW,
   DEMO_OPERATOR,
-  DEMO_QUEUE,
 } from '../../../../features/collection/demo-data';
-import { queueForRole } from '../../../../features/collection/logic';
+import type { CollectionDemoVariant } from '../../../../features/collection/demo-data';
 import { useDemoSession } from '../../../_demo/demo-session';
 
 export default function CollectionScanPage() {
   const { session } = useDemoSession();
-  const [patient, setPatient] = useState<CollectionPatient | null>(null);
-  const [samples, setSamples] = useState<Sample[]>([]);
-  const queue =
+  const scenario = demoOnboardingScenarioById(session.demoScenarioId);
+  const configured =
     session.demoProfile === 'new-doctor'
-      ? []
-      : queueForRole([...DEMO_QUEUE], 'phlebotomy');
+      ? COLLECTION_DEMO_SCENARIOS['scan-empty']
+      : scenario.surface === 'collection'
+        ? COLLECTION_DEMO_SCENARIOS[scenario.variant as CollectionDemoVariant]
+        : COLLECTION_DEMO_SCENARIOS['scan-queue'];
+  const initialPatient =
+    configured.view === 'worksheet' ? configured.patient : null;
+  const [patient, setPatient] = useState<CollectionPatient | null>(initialPatient);
+  const [samples, setSamples] = useState<Sample[]>(
+    initialPatient?.samples ?? [],
+  );
+  const queue = configured.queue;
+  const now = configured.view === 'worksheet' ? configured.now : DEMO_NOW;
 
   if (!patient) {
     return (
@@ -43,7 +53,7 @@ export default function CollectionScanPage() {
 
   return (
     <DrawWorksheet
-      now={DEMO_NOW}
+      now={now}
       onMarkVitalsDone={() => toast.success('Vitals recorded')}
       onNotify={(tone, text) => {
         if (tone === 'success') toast.success(text);

@@ -9,7 +9,7 @@ import {
   phonesMatch,
   wizardGate,
 } from './logic';
-import { acceptReprice, attributionBlocker, deskNextAction, eligiblePrescribers, orderBlockerMessage, orderBlockers, orderDeskVisits, waitTone } from './logic';
+import { acceptReprice, attributionBlocker, deskNextAction, deskWaitIsActive, eligiblePrescribers, orderBlockerMessage, orderBlockers, orderDeskVisits, waitTone } from './logic';
 import {
   collisionOverridePinValid,
   identityEditClearsAcks,
@@ -279,6 +279,16 @@ describe('desk queue', () => {
     expect(waitTone(61)).toBe('escalate');
   });
 
+  it('stops reception wait pressure after the visit is handed off', () => {
+    expect(deskWaitIsActive(visit({ stage: 'arrived' }))).toBe(true);
+    expect(deskWaitIsActive(visit({ stage: 'identity-resolved' }))).toBe(true);
+    expect(
+      deskWaitIsActive(visit({ stage: 'identity-resolved', queuedForDraw: true })),
+    ).toBe(false);
+    expect(deskWaitIsActive(visit({ stage: 'draw-complete' }))).toBe(false);
+    expect(deskWaitIsActive(visit({ stage: 'completed' }))).toBe(false);
+  });
+
   it('derives exactly one next action from independent axes', () => {
     expect(deskNextAction(visit({ resumeStep: 4 }))).toEqual({
       kind: 'resume',
@@ -302,6 +312,14 @@ describe('desk queue', () => {
       visit({ id: 'ready', stage: 'identity-resolved', waitMinutes: 70 }),
     ]);
     expect(ordered.map((v) => v.id)).toEqual(['long', 'short', 'ready', 'done']);
+  });
+
+  it('keeps reception actions above handed-off visits', () => {
+    const ordered = orderDeskVisits([
+      visit({ id: 'handed-off', stage: 'identity-resolved', queuedForDraw: true, waitMinutes: 80 }),
+      visit({ id: 'ready', stage: 'identity-resolved', waitMinutes: 20 }),
+    ]);
+    expect(ordered.map((v) => v.id)).toEqual(['ready', 'handed-off']);
   });
 });
 

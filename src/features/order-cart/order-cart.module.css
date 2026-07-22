@@ -11,6 +11,10 @@
   overflow: hidden;
 }
 
+.cart[data-empty="true"] {
+  min-height: calc(var(--space-32) * 2);
+}
+
 .srOnly {
   position: absolute;
   width: 1px;

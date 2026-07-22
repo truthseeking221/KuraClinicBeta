@@ -1,15 +1,21 @@
-import type { Meta, StoryObj } from '@storybook/nextjs-vite';
-import { useState } from 'react';
-import { expect, userEvent, within } from 'storybook/test';
+import type { Meta, StoryObj } from "@storybook/nextjs-vite";
+import { useState } from "react";
+import { expect, within } from "storybook/test";
 
-import { READINESS } from '../../components/foundations/readiness-data';
+import { READINESS } from "../../components/foundations/readiness-data";
 
-import { TubeLabeling } from './tube-labeling';
-import type { TubeLabelMethod, TubeLabelPhotoCheck } from './types';
+import { TubeLabeling } from "./tube-labeling";
+import type { TubeLabelMethod, TubeLabelPhotoCheck } from "./types";
 
-const TUBE_KEYS = ['red', 'gold-sst', 'green', 'lavender'];
+const TUBE_KEYS = ["red", "gold-sst", "green", "lavender"];
 
-function Harness({ initialMethod = 'sticker' }: { initialMethod?: TubeLabelMethod }) {
+function Harness({
+  initialMethod = "sticker",
+  stage = "label",
+}: {
+  initialMethod?: TubeLabelMethod;
+  stage?: "collect" | "label";
+}) {
   const [method, setMethod] = useState<TubeLabelMethod>(initialMethod);
   const [photoChecks, setPhotoChecks] = useState<TubeLabelPhotoCheck>({
     applied: false,
@@ -24,50 +30,51 @@ function Harness({ initialMethod = 'sticker' }: { initialMethod?: TubeLabelMetho
       onPhotoChecksChange={setPhotoChecks}
       patientLabelLine="SOK · M · 1994"
       photoChecks={photoChecks}
+      stage={stage}
       tubeKeys={TUBE_KEYS}
     />
   );
 }
 
 const meta = {
-  title: 'Clinic/Collection/Tube Labeling',
+  title: "Clinic/Collection/Tube Labeling",
   component: TubeLabeling,
-  tags: ['autodocs', 'source-figma', 'adapted-kura'],
+  tags: ["autodocs", "source-figma", "adapted-kura"],
   args: {
-    method: 'sticker',
+    method: "sticker",
     onConfirm: () => {},
     onMethodChange: () => {},
     onPhotoChecksChange: () => {},
-    patientLabelLine: 'SOK · M · 1994',
+    patientLabelLine: "SOK · M · 1994",
     photoChecks: { applied: false, readable: false, photographed: false },
     tubeKeys: TUBE_KEYS,
   },
   parameters: {
-    layout: 'padded',
+    layout: "padded",
     kura: {
       readiness: READINESS.collection,
       source: {
         figma:
-          'https://www.figma.com/design/yWz269PzVjFQquJa1U1M0s/Kura-Design?node-id=1485-93177',
-        node: '1485:93177',
+          "https://www.figma.com/design/yWz269PzVjFQquJa1U1M0s/Kura-Design?node-id=1547-110756",
+        node: "1547:110756",
       },
       intake: {
-        decision: 'CREATE',
-        owner: 'src/features/collection',
+        decision: "CREATE",
+        owner: "src/features/collection",
         evidence:
-          'No Kura surface covers labelling after a self-draw. The legacy phlebotomy kiosk had a "Print barcode labels" button with no handler at all.',
+          "The Figma doctor route uses the same tube plan for collection confirmation and label-method selection, then moves label verification into the next phone step.",
         exclusions: [
-          'Tube stoppers reuse the CLSI catalog colours already owned by Collection; no new specimen vocabulary.',
-          'The sticker route asks for photo confirmation rather than uploading a file: the platform has no attachment contract for specimen evidence.',
-          'The self-draw lane maps to the backend `tube_pickup` booking type, which shipped guards currently reject — this is design intent, not live capability.',
+          "Tube stoppers reuse the CLSI catalog colours already owned by Collection; no new specimen vocabulary.",
+          "Photo capture is deliberately excluded from this component because the source makes it the next label-verification stage.",
+          "The self-draw lane maps to the backend `tube_pickup` booking type, which shipped guards currently reject — this is design intent, not live capability.",
         ],
       },
-      composes: ['Card', 'RadioGroup', 'Radio', 'Checkbox', 'Badge', 'Button'],
+      composes: ["Card", "RadioGroup", "Radio", "Badge", "Button"],
     },
     docs: {
       description: {
         component:
-          'After a doctor draws blood in the room, the label is the only thing tying the tubes to the order — no wristband was scanned and no desk checked the patient in. A printed Kura sticker keeps that link machine-readable; handwriting stays available for a clinic without stickers and carries a photo check instead, because nothing downstream can verify a pen stroke.',
+          "Shows the planned tubes during doctor collection and labeling. A printed Kura sticker remains recommended; handwriting stays available, while photo verification is owned by the next journey stage.",
       },
     },
   },
@@ -80,24 +87,25 @@ export const StickerRoute: Story = {
   render: () => <Harness />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByText('4 samples collected')).toBeVisible();
-    await expect(canvas.getByText('Recommended')).toBeVisible();
-    await expect(canvas.getByRole('button', { name: 'I have labelled all 4 tubes' })).toBeDisabled();
+    await expect(canvas.getByText("4 samples collected")).toBeVisible();
+    await expect(canvas.getByText("Recommended")).toBeVisible();
+    await expect(
+      canvas.getByRole("button", { name: "Next: Scan QR to verify labels" }),
+    ).toBeEnabled();
   },
 };
 
-export const StickerRouteConfirmed: Story = {
-  render: () => <Harness />,
+export const CollectionConfirmation: Story = {
+  render: () => <Harness stage="collect" />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    for (const label of [
-      'A Kura sticker is on every tube',
-      'The name and date read clearly in the photo',
-      'Photo of the labelled tubes attached to the order',
-    ]) {
-      await userEvent.click(canvas.getByRole('checkbox', { name: label }));
-    }
-    await expect(canvas.getByRole('button', { name: 'I have labelled all 4 tubes' })).toBeEnabled();
+    await expect(
+      canvas.getByRole("heading", { name: "Required tubes" }),
+    ).toBeVisible();
+    await expect(canvas.getByText("4 tubes for this order")).toBeVisible();
+    await expect(
+      canvas.getByRole("button", { name: "I have collected all 4 tubes" }),
+    ).toBeEnabled();
   },
 };
 
@@ -107,20 +115,22 @@ export const HandwrittenRoute: Story = {
     docs: {
       description: {
         story:
-          'The template is what the operator copies onto each tube: surname, sex, birth year — enough to match a tube to one person without printing the record on it.',
+          "The template is what the operator copies onto each tube: surname, sex, birth year — enough to match a tube to one person without printing the record on it.",
       },
     },
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByText('SOK · M · 1994')).toBeVisible();
-    await expect(canvas.getByRole('button', { name: 'I have labelled all 4 tubes' })).toBeEnabled();
+    await expect(canvas.getByText("SOK · M · 1994")).toBeVisible();
+    await expect(
+      canvas.getByRole("button", { name: "Next: Scan QR to verify labels" }),
+    ).toBeEnabled();
   },
 };
 
 export const SingleTube: Story = {
   render: function SingleTubeHarness() {
-    const [method, setMethod] = useState<TubeLabelMethod>('pen');
+    const [method, setMethod] = useState<TubeLabelMethod>("pen");
     return (
       <TubeLabeling
         method={method}
@@ -129,18 +139,20 @@ export const SingleTube: Story = {
         onPhotoChecksChange={() => {}}
         patientLabelLine="SOK · M · 1994"
         photoChecks={{ applied: false, readable: false, photographed: false }}
-        tubeKeys={['lavender']}
+        tubeKeys={["lavender"]}
       />
     );
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByText('1 sample collected')).toBeVisible();
-    await expect(canvas.getByRole('button', { name: 'I have labelled the tube' })).toBeEnabled();
+    await expect(canvas.getByText("1 sample collected")).toBeVisible();
+    await expect(
+      canvas.getByRole("button", { name: "Next: Scan QR to verify labels" }),
+    ).toBeEnabled();
   },
 };
 
 export const Mobile320: Story = {
   render: () => <Harness />,
-  parameters: { viewport: { defaultViewport: 'kura320' } },
+  parameters: { viewport: { defaultViewport: "kura320" } },
 };

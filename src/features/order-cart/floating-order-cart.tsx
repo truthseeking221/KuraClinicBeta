@@ -49,6 +49,7 @@ export function FloatingOrderCart({
         render={
           <Button
             aria-label={`${t('Order cart for')} ${cart.patient.name}, ${countLabel}`}
+            className={styles.trigger}
             size="sm"
             variant="outline"
           >

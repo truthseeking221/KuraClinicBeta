@@ -4,7 +4,7 @@ import { expect, userEvent, within } from 'storybook/test';
 import { READINESS } from '../../components/foundations/readiness-data';
 import { CARE_LOOP_DEMO_INTAKE_RECORD } from '../care-loop/demo-data';
 
-import { DEMO_PATIENTS } from './demo-data';
+import { DEMO_PATIENTS, DEMO_RESUMABLE_PATIENT_JOURNEY } from './demo-data';
 import { PatientsWorkspace } from './patients-workspace';
 
 const meta = {
@@ -30,7 +30,7 @@ const meta = {
         exclusions: [
           'No direct patient creation from the registry.',
           'No claim that phone possession verifies patient identity.',
-          'No new persistence or backend behavior.',
+          'Persistence is a prototype adapter until the BFF exposes resumable work.',
         ],
       },
       journeys: ['PAT-18'],
@@ -88,6 +88,30 @@ export const CancelReturnsToRegistry: Story = {
 
     await expect(await canvas.findByText('No patients yet')).toBeVisible();
     await expect(canvas.getByRole('button', { name: 'Add patient' })).toBeEnabled();
+  },
+};
+
+export const InterruptedPatientCanResume: Story = {
+  args: {
+    journey: DEMO_RESUMABLE_PATIENT_JOURNEY,
+    onOpenPatient: undefined,
+  },
+  tags: ['play-fn'],
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText('Prepare collection tubes')).toBeVisible();
+    await expect(
+      canvas.getByRole('button', {
+        name: /Continue prepare collection tubes for Sokha Chann/,
+      }),
+    ).toBeVisible();
+    await userEvent.click(canvas.getByRole('row', { name: /Open Sokha Chann/ }));
+    await expect(
+      canvas.getByRole('heading', { name: 'Prepare collection tubes' }),
+    ).toBeVisible();
+    await expect(
+      canvas.getByRole('button', { name: 'I have collected all 3 tubes' }),
+    ).toBeVisible();
   },
 };
 

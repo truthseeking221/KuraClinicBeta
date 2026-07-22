@@ -683,6 +683,7 @@ export type {
   StepperContentProps,
   StepperDescriptionProps,
   StepperItemProps,
+  StepperMode,
   StepperNavProps,
   StepperOrientation,
   StepperPanelProps,

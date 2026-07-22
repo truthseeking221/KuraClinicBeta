@@ -53,7 +53,12 @@ export function PatientSwitcher({ patient, patients, onSwitchPatient }: PatientS
     <Popover onOpenChange={setOpen} open={open}>
       <PopoverTrigger
         render={
-          <IconButton aria-label={t("Switch patient")} size="micro" variant="tertiary">
+          <IconButton
+            aria-label={t("Switch patient")}
+            className={styles.trigger}
+            size="micro"
+            variant="tertiary"
+          >
             <ChevronDownIcon aria-hidden="true" size={16} />
           </IconButton>
         }

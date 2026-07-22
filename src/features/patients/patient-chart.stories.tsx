@@ -6,10 +6,7 @@ import { expect, fn, userEvent, waitFor, within } from "storybook/test";
 import { PatientContextRail } from "../patient-context/patient-context-rail";
 import { PATIENT_CONTEXT_FIXTURES } from "../patient-context/demo-data";
 import { FloatingOrderCart } from "../order-cart";
-import {
-  doctorWorkflow,
-  returningPatientCart,
-} from "../order-cart/demo-data";
+import { doctorWorkflow, returningPatientCart } from "../order-cart/demo-data";
 import { LabOrderRail } from "../lab-catalog";
 import {
   LAB_CATALOG_CATEGORIES,
@@ -21,12 +18,6 @@ import {
   LEGACY_LAB_HISTORY_SECTIONS,
   LEGACY_LAB_LATEST_DRAW,
 } from "../results/legacy-lab-history-demo-data";
-import {
-  LabOrderSampleCollectionFlow,
-  type LabOrderPlaced,
-} from "../care-loop/lab-order-collection-flow";
-import { CARE_LOOP_PATIENT } from "../care-loop/demo-data";
-
 import { PatientChart } from "./patient-chart";
 import { NextActionsRail, ResultsProgressRail } from "./action-rails";
 import { PrescribeFlow } from "./prescribe-flow";
@@ -139,6 +130,20 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {};
 
+export const RecordTabInsetParity: Story = {
+  args: { defaultTab: "overview" },
+  tags: ["play-fn"],
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const list = canvas.getByRole("tablist", {
+      name: "Patient chart sections",
+    });
+
+    await expect(getComputedStyle(list).marginInlineStart).toBe("-16px");
+    await expect(getComputedStyle(list).marginBlockStart).toBe("-16px");
+  },
+};
+
 /**
  * The record a new doctor lands on from the first-use home offer. It carries
  * real clinical context — problems, medicines, safety, and returned orders —
@@ -191,10 +196,7 @@ export const ReturningPatientWithDraftCart: Story = {
   args: {
     ...DemoTourPatient.args,
     headerActions: (
-      <FloatingOrderCart
-        cart={SOKHA_CHANN_CART}
-        workflow={doctorWorkflow()}
-      />
+      <FloatingOrderCart cart={SOKHA_CHANN_CART} workflow={doctorWorkflow()} />
     ),
   },
   play: async ({ canvasElement }) => {
@@ -614,9 +616,27 @@ export const OrdersPermissionRestricted: Story = {
   args: { defaultTab: "orders", ordersState: "permission-restricted" },
 };
 
-/** The patient chart consumes the same Storybook-owned journey as intake. */
+/** A returning-patient order stays in the resizable rail until review. */
 export const OrderPlacementAndRecord: Story = {
-  args: { defaultTab: "results" },
+  args: {
+    defaultTab: "orders",
+    patient: SOKHA_CHANN,
+    rail: (
+      <PatientContextRail
+        patient={{
+          demographics: `${SOKHA_CHANN.age} y · ${SOKHA_CHANN.sexAtBirth} · MRN ${SOKHA_CHANN.mrnMasked}`,
+          initials: "SC",
+          name: SOKHA_CHANN.displayName,
+        }}
+        reasonForVisit={DEMO_TOUR_CHART.reasonForVisit}
+        safety={DEMO_TOUR_CHART.safety}
+        sections={DEMO_TOUR_CHART.sections}
+        showIdentity={false}
+        todaySummary={DEMO_TOUR_CHART.todaySummary}
+      />
+    ),
+    results: SOKHA_CHANN_RESULTS,
+  },
   render: (args) => {
     function Harness() {
       const [orders, setOrders] =
@@ -624,43 +644,21 @@ export const OrderPlacementAndRecord: Story = {
       const [orderOpen, setOrderOpen] = useState(false);
       const [selectedTab, setSelectedTab] = useState<
         "overview" | "orders" | "results"
-      >("results");
+      >("orders");
       const [focusedOrderId, setFocusedOrderId] = useState<string>();
 
       return (
         <PatientChart
           {...args}
           actionRail={
-            orderOpen ? undefined : (
-              <NextActionsRail
-                onOrder={() => setOrderOpen(true)}
-                patientName="Nimol"
-              />
-            )
-          }
-          actionRailMode="launcher"
-          focusedOrderId={focusedOrderId}
-          onTabChange={(tab) => {
-            setFocusedOrderId(undefined);
-            setSelectedTab(tab);
-          }}
-          orders={orders}
-          selectedTab={selectedTab}
-          workflow={
             orderOpen ? (
-              <LabOrderSampleCollectionFlow
-                onClose={() => {
-                  setFocusedOrderId("ord-new");
-                  setOrderOpen(false);
-                  setSelectedTab("orders");
-                }}
-                onOrderPlaced={({
-                  orderId,
-                  selectedTestIds,
-                }: LabOrderPlaced) => {
-                  const order: PatientOrder = {
+              <LabOrderRail
+                categories={LAB_CATALOG_CATEGORIES}
+                onClose={() => setOrderOpen(false)}
+                onReview={(selectedTestIds) => {
+                  const nextOrder: PatientOrder = {
                     ordId: "ord-new",
-                    code: orderId,
+                    code: "AB12801",
                     placedAtLabel: "Placed just now",
                     status: "placed",
                     lineItems: LAB_CATALOG_TESTS.filter((test) =>
@@ -670,13 +668,28 @@ export const OrderPlacementAndRecord: Story = {
                       displayName: test.displayName,
                     })),
                   };
-                  setOrders((current) => [order, ...current]);
+                  setOrders((current) => [nextOrder, ...current]);
+                  setFocusedOrderId(nextOrder.ordId);
+                  setOrderOpen(false);
+                  setSelectedTab("orders");
                 }}
-                patient={CARE_LOOP_PATIENT}
-                presentation="workspace"
+                tests={LAB_CATALOG_TESTS}
               />
-            ) : undefined
+            ) : (
+              <NextActionsRail
+                onOrder={() => setOrderOpen(true)}
+                patientName="Sokha Chann"
+              />
+            )
           }
+          actionRailMode={orderOpen ? "workspace" : "launcher"}
+          focusedOrderId={focusedOrderId}
+          onTabChange={(tab) => {
+            setFocusedOrderId(undefined);
+            setSelectedTab(tab);
+          }}
+          orders={orders}
+          selectedTab={selectedTab}
         />
       );
     }
@@ -686,61 +699,39 @@ export const OrderPlacementAndRecord: Story = {
   tags: ["play-fn"],
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    const resultsTab = canvas.getByRole("tab", { name: "Results" });
-    await expect(resultsTab).toHaveAttribute("aria-selected", "true");
+    const ordersTab = canvas.getByRole("tab", { name: "Orders, 1 active" });
+    const before = ordersTab.getBoundingClientRect();
+    await expect(ordersTab).toHaveAttribute("aria-selected", "true");
 
     await userEvent.click(canvas.getByRole("button", { name: /^Order tests/ }));
     await expect(
-      canvas.queryByRole("tab", { name: "Results" }),
-    ).not.toBeInTheDocument();
-    await expect(
-      canvas.getByRole("heading", { name: "Choose baseline tests" }),
+      canvas.getByRole("heading", { name: "Order lab tests" }),
     ).toBeVisible();
-    await userEvent.click(
-      canvas.getByRole("button", { name: "Send booking code" }),
-    );
+    await expect(ordersTab).toHaveAttribute("aria-selected", "true");
+    expect(
+      Math.abs(ordersTab.getBoundingClientRect().top - before.top),
+    ).toBeLessThanOrEqual(1);
     await expect(
-      canvas.getByRole("heading", { name: "Collect payment and check in" }),
+      canvas.getByRole("separator", {
+        name: "Resize patient chart and action workspace",
+      }),
     ).toBeVisible();
+    await userEvent.click(canvas.getByRole("checkbox", { name: "HbA1c" }));
     await userEvent.click(
-      canvas.getByRole("button", { name: "Close lab order journey" }),
+      canvas.getByRole("checkbox", { name: /^Creatinine \+ eGFR/ }),
     );
+    await userEvent.click(canvas.getByRole("button", { name: "Review order" }));
     await expect(
       canvas.getByRole("tab", { name: "Orders, 2 active" }),
     ).toHaveAttribute("aria-selected", "true");
     await expect(
-      canvas.getByText(CARE_LOOP_PATIENT.orderId).closest('[role="listitem"]'),
+      canvas.getByText("AB12801").closest('[role="listitem"]'),
     ).toHaveAttribute("data-focused", "true");
-  },
-};
-
-export const FullLabOrderJourneyWorkspace: Story = {
-  args: {
-    actionRail: undefined,
-    workflow: (
-      <LabOrderSampleCollectionFlow
-        onClose={fn()}
-        onOrderPlaced={fn()}
-        patient={CARE_LOOP_PATIENT}
-        presentation="workspace"
-      />
-    ),
-  },
-  parameters: {
-    docs: {
-      description: {
-        story:
-          "The patient chart keeps its identity bar and context rail while the shared lab-order journey owns the center workspace. No second catalog or review renderer is introduced.",
-      },
-    },
-  },
-};
-
-export const FullLabOrderJourneyWorkspaceMobile320: Story = {
-  ...FullLabOrderJourneyWorkspace,
-  parameters: {
-    ...FullLabOrderJourneyWorkspace.parameters,
-    viewport: { defaultViewport: "kura320" },
+    await expect(
+      canvas.getByRole("heading", {
+        name: "What should we do with Sokha Chann today?",
+      }),
+    ).toBeVisible();
   },
 };
 

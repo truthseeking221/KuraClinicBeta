@@ -37,6 +37,37 @@
   column-gap: var(--space-3);
 }
 
+/* The verified number is established context, not a field to fill: it carries
+   a different functional role from the inputs below it, so it sits on its own
+   quiet tray inside the white dialog. Flat and borderless — contrast is the
+   boundary. The inline OTP destination stays bare; it supports the title
+   rather than forming a region of its own. */
+.phoneLine:not([data-inline='true']) {
+  padding: var(--space-2-5) var(--space-3);
+  border-radius: var(--radius-card-tile);
+  background: var(--color-surface-2);
+  align-items: center;
+  row-gap: var(--space-0-5);
+}
+
+/* Inside the tray the value and its one action share a row, so Change is
+   optically centred on the number it changes rather than sitting on the
+   control-height baseline the standalone line uses. Button block padding only
+   pads wrapped text, so a single-line link gives it up and the row collapses
+   to the height of the value it sits beside. */
+.phoneLine:not([data-inline='true']) > :global([data-slot='button']) {
+  min-height: 0;
+  padding-block: 0;
+}
+
+/* A finger still needs the full target: give the height back on touch, where
+   the row can afford it, rather than shipping a 23px tap area. */
+@media (pointer: coarse) {
+  .phoneLine:not([data-inline='true']) > :global([data-slot='button']) {
+    min-height: var(--touch-target-min);
+  }
+}
+
 .phoneLineLabel {
   grid-column: 1;
   color: var(--color-text-secondary);

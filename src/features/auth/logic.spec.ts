@@ -4,9 +4,11 @@ import {
   initialBranchId,
   isValidEmail,
   isValidLocalPhone,
+  joinPersonName,
   nextAfterWorkspace,
   nextLandingIndex,
   resolveGateEntry,
+  splitPersonName,
   toE164,
   validateMl,
   verifyDoorCode,
@@ -37,6 +39,45 @@ describe('identifiers', () => {
   it('validates email shape', () => {
     expect(isValidEmail('dara@mekong.clinic')).toBe(true);
     expect(isValidEmail('not-an-email')).toBe(false);
+  });
+});
+
+describe('person name split', () => {
+  it('sends the last token to the last name and the rest to the first', () => {
+    expect(splitPersonName('Bopha Kim')).toEqual({
+      firstName: 'Bopha',
+      lastName: 'Kim',
+    });
+    expect(splitPersonName('Dr. Bopha Kim')).toEqual({
+      firstName: 'Dr. Bopha',
+      lastName: 'Kim',
+    });
+  });
+
+  it('never invents a family name from a single token', () => {
+    expect(splitPersonName('Bopha')).toEqual({
+      firstName: 'Bopha',
+      lastName: '',
+    });
+    expect(splitPersonName('   ')).toEqual({ firstName: '', lastName: '' });
+  });
+
+  it('collapses stray whitespace before splitting', () => {
+    expect(splitPersonName('  Dr.   Chanthou   Sok-Sereyvorlak ')).toEqual({
+      firstName: 'Dr. Chanthou',
+      lastName: 'Sok-Sereyvorlak',
+    });
+  });
+
+  it('rejoins into one display name, dropping a missing half', () => {
+    expect(joinPersonName('Bopha', 'Kim')).toBe('Bopha Kim');
+    expect(joinPersonName(' Bopha ', '')).toBe('Bopha');
+    expect(joinPersonName('', '')).toBe('');
+  });
+
+  it('round-trips a two-part name', () => {
+    const parts = splitPersonName('Linh Nguyen');
+    expect(joinPersonName(parts.firstName, parts.lastName)).toBe('Linh Nguyen');
   });
 });
 

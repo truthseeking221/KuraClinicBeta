@@ -190,7 +190,7 @@ export const DCM_SEMANTIC_TOKENS = [
   semantic('--color-surface', 'Background', resolve('--color-background-primary-default'), 'bg-surface', 'White content surface: overlays, tiles, controls.', ['--surface'], 'background-primary-default'),
   semantic('--color-surface-2', 'Background', resolve('--color-background-secondary-default'), 'bg-surface-2', 'Gray tray surface: cards on the white page.', ['--card', '--muted', '--surface-2'], 'background-secondary-default'),
   semantic('--color-surface-sunken', 'Background', resolve('--color-background-tertiary-default'), 'bg-surface-sunken', 'Sunken or inset surface.', ['--surface-sunken'], 'background-tertiary-default'),
-  semantic('--color-field-bg', 'Background', '#f9f9f9', 'bg-[var(--color-field-bg)]', 'Filled field rest state — slightly lighter than surface-2.', [], 'surface-2 × surface'),
+  semantic('--color-field-bg', 'Background', '#f7f7f7', 'bg-[var(--color-field-bg)]', 'Filled field rest state — neutral surface-2 for clear separation on white.', [], 'surface-2'),
   semantic('--color-background-canvas-subtle', 'Background', resolve('--color-neutral-50'), 'bg-[var(--color-background-canvas-subtle)]', 'Subtle canvas used by floating navigation.', [], 'neutral-50'),
   semantic('--color-overlay-scrim', 'Background', 'color-mix(in srgb, var(--color-text-primary) 48%, transparent)', 'bg-overlay-scrim', 'Modal and sheet scrim.', [], 'text-primary / 48%'),
 
@@ -223,7 +223,7 @@ export const DCM_SEMANTIC_TOKENS = [
   semantic('--color-button-primary-border-hover', 'Brand and action', resolve('--color-brand-600'), 'border-button-primary-hover', 'Primary Button hover border while the fill remains Brand 500.', [], 'brand-600'),
   semantic('--color-button-primary-border-active', 'Brand and action', resolve('--color-brand-700'), 'border-button-primary-active', 'Primary Button active border while the fill remains Brand 500.', [], 'brand-700'),
   semantic('--color-button-primary-bg-disabled', 'Brand and action', resolve('--color-neutral-300'), 'bg-button-primary-disabled', 'Primary Button disabled fill.', [], 'neutral-300'),
-  semantic('--color-button-primary-fg-disabled', 'Brand and action', resolve('--color-text-disabled'), 'text-button-primary-disabled', 'Primary Button disabled label and icon.', [], 'text-disabled'),
+  semantic('--color-button-primary-fg-disabled', 'Brand and action', resolve('--color-neutral-600'), 'text-button-primary-disabled', 'Primary Button disabled label and icon remains readable against the disabled fill.', [], 'neutral-600'),
   semantic('--color-action-secondary-bg', 'Brand and action', resolve('--color-neutral-200'), 'bg-[var(--color-action-secondary-bg)]', 'Secondary action background.', ['--secondary'], 'neutral-200'),
   semantic('--color-action-secondary-bg-hover', 'Brand and action', resolve('--color-neutral-300'), 'bg-[var(--color-action-secondary-bg-hover)]', 'Secondary action hover background.', [], 'neutral-300'),
   semantic('--color-action-secondary-fg', 'Brand and action', resolve('--color-neutral-700'), 'text-[var(--color-action-secondary-fg)]', 'Secondary action foreground.', ['--secondary-foreground'], 'neutral-700'),

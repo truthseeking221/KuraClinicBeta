@@ -34,7 +34,9 @@ import { AuthShell } from "./auth-shell";
 import {
   DOOR_COUNTRIES,
   isValidLocalPhone,
+  joinPersonName,
   nextLandingIndex,
+  splitPersonName,
   validateMl,
   verifyWizardPhone,
   WIZARD_COPY,
@@ -115,11 +117,14 @@ export function OnboardingWizard({
   });
   const [skippedSteps, setSkippedSteps] = useState<WizardStepKey[]>([]);
 
-  // Name
-  const [name, setName] = useState(
+  // Name — two fields, one stored display name.
+  const prefilledName = splitPersonName(
     entry.existingName ?? entry.initialName ?? "",
   );
-  const [nameError, setNameError] = useState<string | null>(null);
+  const [firstName, setFirstName] = useState(prefilledName.firstName);
+  const [lastName, setLastName] = useState(prefilledName.lastName);
+  const [firstNameError, setFirstNameError] = useState<string | null>(null);
+  const [lastNameError, setLastNameError] = useState<string | null>(null);
 
   // Phone
   const [phoneSub, setPhoneSub] = useState<PhoneSubStep>("entry");
@@ -208,7 +213,7 @@ export function OnboardingWizard({
   function finish() {
     if (completedRef.current) return;
     const verifiedPhone = entry.phoneVerified ? entry.verifiedPhone : phone;
-    const trimmedName = name.trim();
+    const trimmedName = joinPersonName(firstName, lastName);
     if (!verifiedPhone || !trimmedName) return;
 
     completedRef.current = true;
@@ -236,14 +241,18 @@ export function OnboardingWizard({
   }
 
   function submitName() {
-    const trimmed = name.trim();
-    if (!trimmed) {
-      setNameError(t(WIZARD_COPY.nameRequired));
-      return;
-    }
-    setNameError(null);
-    setName(trimmed);
-    if (!clinicName) setClinicName(`${trimmed}'s cabinet`);
+    const trimmedFirst = firstName.trim();
+    const trimmedLast = lastName.trim();
+    // Report both gaps at once: fixing one field only to be stopped by the
+    // other is the slower path through the same two errors.
+    setFirstNameError(trimmedFirst ? null : t(WIZARD_COPY.firstNameRequired));
+    setLastNameError(trimmedLast ? null : t(WIZARD_COPY.lastNameRequired));
+    if (!trimmedFirst || !trimmedLast) return;
+
+    setFirstName(trimmedFirst);
+    setLastName(trimmedLast);
+    const fullName = joinPersonName(trimmedFirst, trimmedLast);
+    if (!clinicName) setClinicName(`${fullName}'s cabinet`);
     landOn(currentIndex + 1);
   }
 
@@ -295,7 +304,10 @@ export function OnboardingWizard({
 
   function skipClinic() {
     setClinicError(null);
-    setClinicName((current) => current.trim() || `${name.trim()}'s cabinet`);
+    setClinicName(
+      (current) =>
+        current.trim() || `${joinPersonName(firstName, lastName)}'s cabinet`,
+    );
     markSkipped("clinic");
     landOn(currentIndex + 1);
   }
@@ -360,17 +372,32 @@ export function OnboardingWizard({
                   {t("Shown to your team and on order documents.")}
                 </p>
               </header>
-              <Input
-                error={nameError}
-                label={t("Full name")}
-                onChange={(event) => {
-                  setName(event.target.value);
-                  setNameError(null);
-                }}
-                placeholder="Dr. Bopha Kim"
-                required
-                value={name}
-              />
+              <div className={styles.nameRow}>
+                <Input
+                  autoComplete="given-name"
+                  error={firstNameError}
+                  label={t("First name")}
+                  onChange={(event) => {
+                    setFirstName(event.target.value);
+                    setFirstNameError(null);
+                  }}
+                  placeholder="Bopha"
+                  required
+                  value={firstName}
+                />
+                <Input
+                  autoComplete="family-name"
+                  error={lastNameError}
+                  label={t("Last name")}
+                  onChange={(event) => {
+                    setLastName(event.target.value);
+                    setLastNameError(null);
+                  }}
+                  placeholder="Kim"
+                  required
+                  value={lastName}
+                />
+              </div>
               <Button
                 className={styles.inlineEnd}
                 onClick={submitName}

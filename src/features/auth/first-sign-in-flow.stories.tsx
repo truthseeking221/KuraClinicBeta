@@ -31,8 +31,7 @@ const meta = {
     },
     docs: {
       description: {
-        component:
-          'End-to-end first contact: one door for sign-in and sign-up, the onboarding wizard for new accounts, workspace entry, then the clinic shell. A new doctor auto-enters their own cabinet — the gate never flashes for a single branch-less workspace. Catalog and branch prices remain available before licence approval; new clinic-order placement uses the separate attributed-prescriber gate. Demo scaffolding: code 123456; +855 12 777 088 is a returning member.',
+        component: `End-to-end first contact: one door for sign-in and sign-up, the onboarding wizard for new accounts, workspace entry, then the clinic shell. A new doctor auto-enters their own cabinet — the gate never flashes for a single branch-less workspace. Catalog and branch prices remain available before licence approval; new clinic-order placement uses the separate attributed-prescriber gate. Demo scaffolding: code ${DEMO_OTP}; +855 12 777 088 is a returning member.`,
       },
     },
   },
@@ -63,10 +62,8 @@ export const NewDoctorJourney: Story = {
     );
 
     // Wizard: name → clinic (phone already verified by the door) → licence.
-    await userEvent.type(
-      await canvas.findByLabelText(/Full name/),
-      'Bopha Kim',
-    );
+    await userEvent.type(await canvas.findByLabelText(/First name/), 'Bopha');
+    await userEvent.type(canvas.getByLabelText(/Last name/), 'Kim');
     await userEvent.click(canvas.getByRole('button', { name: 'Continue' }));
     await expect(await canvas.findByLabelText(/Clinic name/)).toHaveValue(
       "Bopha Kim's cabinet",
@@ -115,10 +112,8 @@ export const NewNonLicensedJourney: Story = {
       canvas.getByRole('button', { name: 'Verify and continue' }),
     );
 
-    await userEvent.type(
-      await canvas.findByLabelText(/Full name/),
-      'Linh Nguyen',
-    );
+    await userEvent.type(await canvas.findByLabelText(/First name/), 'Linh');
+    await userEvent.type(canvas.getByLabelText(/Last name/), 'Nguyen');
     await userEvent.click(canvas.getByRole('button', { name: 'Continue' }));
     await userEvent.click(
       await canvas.findByRole('button', { name: 'Create clinic' }),
@@ -145,7 +140,8 @@ export const NewInviteeJourney: Story = {
   render: () => <InviteeOnboardingFlow />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await userEvent.type(canvas.getByLabelText(/Full name/), 'Linh Nguyen');
+    await userEvent.type(canvas.getByLabelText(/First name/), 'Linh');
+    await userEvent.type(canvas.getByLabelText(/Last name/), 'Nguyen');
     await userEvent.click(canvas.getByRole('button', { name: 'Continue' }));
     await userEvent.type(canvas.getByLabelText(/Phone number/), '98111333');
     await userEvent.click(canvas.getByRole('button', { name: 'Send code' }));
@@ -238,7 +234,7 @@ export const WrongCodeRecovery: Story = {
     await userEvent.click(
       canvas.getByRole('button', { name: 'Verify and continue' }),
     );
-    await expect(await canvas.findByLabelText(/Full name/)).toBeVisible();
+    await expect(await canvas.findByLabelText(/First name/)).toBeVisible();
   },
 };
 

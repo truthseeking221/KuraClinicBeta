@@ -9,6 +9,7 @@ import {
   AlertTitle,
   Badge,
   Button,
+  Card,
   CheckIcon,
   ChevronRightIcon,
   MoneyText,
@@ -67,7 +68,7 @@ function firstUseLicenceContent(
       return {
         actionLabel: "Start verification",
         description:
-          "Once verified, you can collect cash, issue legal documents, submit claims and appear in the doctor directory.",
+          "You’ll need a verified licence to collect payments, issue legal documents, submit claims and appear in the doctor directory.",
         status: "Not started",
         tone: "warning",
       };
@@ -121,12 +122,6 @@ function firstUseLicenceContent(
   }
 }
 
-function welcomeName(value: string): string | null {
-  const name = value.trim();
-  if (!name || /^[+\d\s().-]+$/.test(name)) return null;
-  return /^dr\.?\s/i.test(name) ? name : `Dr. ${name}`;
-}
-
 function FirstUseHome({
   data,
   onNavigate,
@@ -142,7 +137,6 @@ function FirstUseHome({
   | "onStartBooking"
 >) {
   const t = useT();
-  const doctorName = welcomeName(data.doctorName);
   const licence = firstUseLicenceContent(data.licence.state);
 
   return (
@@ -150,11 +144,10 @@ function FirstUseHome({
       <header className={styles.welcomeHeader}>
         <div className={styles.welcomeCopy}>
           <h1 className={styles.welcomeTitle}>
-            {t("Welcome to Kura")}
-            {doctorName ? `, ${doctorName}` : ""}
+            {t("You’re in. Your cabinet is ready.")}
           </h1>
           <p className={styles.bookingDescription}>
-            {t("Let’s create your first patient booking.")}
+            {t("Start with a booking for your first patient.")}
           </p>
         </div>
         <div className={styles.bookingActions}>
@@ -164,77 +157,82 @@ function FirstUseHome({
             }
             variant="primary"
           >
-            {t("Create first booking")}
+            {t("Create booking")}
           </Button>
         </div>
         {data.licence.state === "verified" ? null : (
           <p className={styles.bookingNote}>
-            {t("You can book before your licence is verified.")}
+            {t("You can start booking patients before your licence is verified.")}
           </p>
         )}
       </header>
 
-      {data.demoPatient ? (
-        <section
-          aria-labelledby="first-use-demo-title"
-          className={styles.demoPatient}
+      <Card as="section" className={styles.setupTray}>
+        {data.demoPatient ? (
+          <Card
+            as="section"
+            aria-labelledby="first-use-demo-title"
+            className={styles.demoPatient}
+            variant="tile"
+          >
+            <Image
+              alt=""
+              aria-hidden="true"
+              className={styles.firstUseIllustration}
+              height={96}
+              sizes="64px"
+              src="/generated/kura-demo-patient-card-v1.png"
+              width={96}
+            />
+            <div className={styles.demoCopy}>
+              <h2 className={styles.demoTitle} id="first-use-demo-title">
+                {t("Take a quick tour")}
+              </h2>
+              <p className={styles.demoDescription}>
+                {t(
+                  "Follow a sample patient from booking to results. Your records will not change.",
+                )}
+              </p>
+            </div>
+            <Button onClick={() => onOpenDemoPatient?.()} variant="outline">
+              {t("Open sample patient")}
+            </Button>
+          </Card>
+        ) : null}
+
+        <Card
+          as="section"
+          aria-labelledby="first-use-licence-title"
+          className={styles.licenceSetup}
+          variant="tile"
         >
           <Image
             alt=""
             aria-hidden="true"
             className={styles.firstUseIllustration}
             height={96}
-            sizes="80px"
-            src="/generated/kura-demo-patient-card-v1.png"
+            sizes="64px"
+            src="/generated/kura-medical-licence-clean-v1.png"
             width={96}
           />
-          <div className={styles.demoCopy}>
-            <h2 className={styles.demoTitle} id="first-use-demo-title">
-              {t("Explore a demo patient")}
-            </h2>
-            <p className={styles.demoDescription}>
-              {t("Follow")} {data.demoPatient.name}{" "}
-              {t(
-                "from booking to results. This demo will not affect your records.",
-              )}
-            </p>
+          <div className={styles.licenceCopy}>
+            <div className={styles.licenceHeading}>
+              <h2 className={styles.licenceTitle} id="first-use-licence-title">
+                {t("Medical licence")}
+              </h2>
+              <Badge size="sm" variant={licence.tone}>
+                {t(licence.status)}
+              </Badge>
+            </div>
+            <p className={styles.licenceDescription}>{t(licence.description)}</p>
           </div>
-          <Button onClick={() => onOpenDemoPatient?.()} variant="outline">
-            {t("Open demo patient")}
-          </Button>
-        </section>
-      ) : null}
-
-      <section
-        aria-labelledby="first-use-licence-title"
-        className={styles.licenceSetup}
-      >
-        <Image
-          alt=""
-          aria-hidden="true"
-          className={styles.firstUseIllustration}
-          height={96}
-          sizes="80px"
-          src="/generated/kura-medical-licence-clean-v1.png"
-          width={96}
-        />
-        <div className={styles.licenceCopy}>
-          <div className={styles.licenceHeading}>
-            <h2 className={styles.licenceTitle} id="first-use-licence-title">
-              {t("Medical licence")}
-            </h2>
-            <Badge size="sm" variant={licence.tone}>
-              {t(licence.status)}
-            </Badge>
-          </div>
-          <p className={styles.licenceDescription}>{t(licence.description)}</p>
-        </div>
-        {licence.actionLabel ? (
-          <Button onClick={() => onOpenLicence?.()} variant="outline">
-            {t(licence.actionLabel)}
-          </Button>
-        ) : null}
-      </section>
+          {licence.actionLabel ? (
+            <Button onClick={() => onOpenLicence?.()} variant="outline">
+              {t(licence.actionLabel)}
+            </Button>
+          ) : null}
+        </Card>
+      </Card>
     </div>
   );
 }

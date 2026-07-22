@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 
 import {
@@ -35,7 +35,10 @@ import type {
 } from "../patient-context/patient-context-rail";
 
 import { CareLoopFrame } from "./care-loop-frame";
-import { LabOrderSampleCollectionFlow } from "./lab-order-collection-flow";
+import {
+  LabOrderSampleCollectionFlow,
+  type LabOrderJourneySnapshot,
+} from "./lab-order-collection-flow";
 import { CARE_LOOP_PATIENT, type CareLoopPatientManifest } from "./demo-data";
 import styles from "./care-loop.module.css";
 
@@ -53,7 +56,7 @@ export type PatientAcquisitionStage =
 /** Where the phone gate appears before a patient has been resolved. */
 export type PatientAcquisitionEntryPresentation = "standalone" | "overlay";
 
-type FlowPatient = {
+export type PatientAcquisitionPatient = {
   id?: string;
   name: string;
   pid?: string;
@@ -73,7 +76,16 @@ export type PatientIntakeRecord = {
   familyHistory: string;
 };
 
-const INITIAL_PATIENT: FlowPatient = {
+export type PatientAcquisitionJourneySnapshot = {
+  version: 1;
+  patient: PatientAcquisitionPatient;
+  stage: PatientAcquisitionStage;
+  profileConfirmed: boolean;
+  intakeRecord: PatientIntakeRecord;
+  labOrder?: LabOrderJourneySnapshot;
+};
+
+const INITIAL_PATIENT: PatientAcquisitionPatient = {
   id: CARE_LOOP_PATIENT.id,
   name: CARE_LOOP_PATIENT.name,
   pid: CARE_LOOP_PATIENT.pid,
@@ -120,7 +132,13 @@ function ageFrom(value: string) {
   return Number.isFinite(age) ? age : 0;
 }
 
-function labOrderPatient(patient: FlowPatient): CareLoopPatientManifest {
+function provisionalPatientId(phone: string, name: string) {
+  const phoneSuffix = phone.replace(/\D/g, "").slice(-8);
+  const fallback = initialsFor(name).toLowerCase() || "patient";
+  return `provisional-${phoneSuffix || fallback}`;
+}
+
+function labOrderPatient(patient: PatientAcquisitionPatient): CareLoopPatientManifest {
   const isJourneyPatient =
     patient.id === CARE_LOOP_PATIENT.id ||
     patient.pid === CARE_LOOP_PATIENT.pid;
@@ -168,7 +186,7 @@ function intakeItemsFrom(input: {
 }
 
 function patientContextSections(
-  patient: FlowPatient,
+  patient: PatientAcquisitionPatient,
   items: readonly IntakeDisplayItem[],
   t: Translate,
 ): PatientContextSection[] {
@@ -257,11 +275,19 @@ function IntakeItemList({
             key={item.label}
           >
             <span className={styles.intakeStatusMarker} aria-hidden="true">
-              {complete ? <CheckIcon size={14} /> : index + 1}
+              {complete ? (
+                <CheckIcon className={styles.intakeStatusCheck} size={14} />
+              ) : (
+                index + 1
+              )}
             </span>
             <span className={styles.intakeStatusCopy}>
               <span className={styles.intakeStatusLabel}>{t(item.label)}</span>
-              {answered ? <strong>{item.answer}</strong> : null}
+              {/* The answer slot is always present so the row grows into it
+                  instead of the card jumping when the answer lands. */}
+              <span className={styles.intakeStatusAnswer}>
+                <strong>{answered ? item.answer : null}</strong>
+              </span>
             </span>
             {waiting ? (
               <span className={styles.intakeWaiting}>
@@ -301,6 +327,7 @@ function UnavailableSkipAction() {
 function IntakeStatusCard({
   answeredCount,
   items,
+  live,
   openedLabel,
   patientName,
   stage,
@@ -309,6 +336,11 @@ function IntakeStatusCard({
 }: {
   answeredCount: number;
   items: readonly IntakeDisplayItem[];
+  /**
+   * The stage changed while the clinician was watching, so the card
+   * choreographs the change. A direct mount renders the settled state.
+   */
+  live: boolean;
   openedLabel?: string;
   patientName: string;
   stage: Exclude<
@@ -364,16 +396,34 @@ function IntakeStatusCard({
           ? "waiting"
           : "unknown";
 
+  // Sending replaces the button that had focus, so focus would otherwise fall
+  // back to the document body and the next action would have to be hunted for.
+  // Focus moves only when nothing else has claimed it in the meantime.
+  const adoptFocusOnArrival = useCallback(
+    (node: HTMLButtonElement | null) => {
+      if (!node || !live || stage !== "intake-complete") return;
+      const owner = node.ownerDocument;
+      if (owner.activeElement && owner.activeElement !== owner.body) return;
+      node.focus();
+    },
+    [live, stage],
+  );
+
   return (
     <Card
       className={styles.intakeHandoffCard}
+      data-live={live || undefined}
       data-state={cardState}
       variant="outline"
     >
       <CardHeader>
-        <div>
-          <CardTitle>{title}</CardTitle>
-          <CardDescription>{description}</CardDescription>
+        {/* Sending, waiting and received are announced from one region, so a
+            screen reader hears the outcome without moving focus. */}
+        <div aria-atomic="true" aria-live="polite">
+          <div className={styles.intakeCardHeading} key={cardState}>
+            <CardTitle>{title}</CardTitle>
+            <CardDescription>{description}</CardDescription>
+          </div>
         </div>
       </CardHeader>
       <CardContent>
@@ -382,7 +432,12 @@ function IntakeStatusCard({
       {filling ? null : (
         <CardFooter className={styles.intakeCardActions}>
           {stage === "intake-complete" ? (
-            <Button fullWidth onClick={onOrder} variant="primary">
+            <Button
+              fullWidth
+              onClick={onOrder}
+              ref={adoptFocusOnArrival}
+              variant="primary"
+            >
               {t("Order baseline tests")}
             </Button>
           ) : (
@@ -423,7 +478,7 @@ function IntakeContextWorkspace({
   expandedSections: readonly PatientContextSectionId[];
   items: readonly IntakeDisplayItem[];
   onExpandedSectionsChange: (sections: PatientContextSectionId[]) => void;
-  patient: FlowPatient;
+  patient: PatientAcquisitionPatient;
   workspace?: boolean;
 }) {
   const t = useT();
@@ -489,6 +544,8 @@ function IntakeContextWorkspace({
 
 export type PatientAcquisitionFlowProps = {
   initialStage?: PatientAcquisitionStage;
+  /** Restores the patient and exact workflow stage after navigation. */
+  initialJourney?: PatientAcquisitionJourneySnapshot;
   /**
    * `overlay` keeps the launcher visible under the canonical phone gate.
    * The acquisition flow takes over only after the number resolves to a patient.
@@ -522,6 +579,8 @@ export type PatientAcquisitionFlowProps = {
   };
   /** Returns to the surface that launched the phone gate when it is dismissed. */
   onExit?: () => void;
+  onJourneyChange?: (journey: PatientAcquisitionJourneySnapshot) => void;
+  onReviewResults?: (patientId: string) => void;
   /** Lets a launcher transition only after matching or temporary-patient creation resolves. */
   onPhoneGateResolved?: () => void;
   phoneGateDelayMs?: number;
@@ -530,6 +589,7 @@ export type PatientAcquisitionFlowProps = {
 export function PatientAcquisitionFlow({
   demoIntakeRecord,
   entryPresentation = "standalone",
+  initialJourney,
   initialStage = "patients-empty",
   initialIntakeRecord,
   intakeProgress,
@@ -537,41 +597,92 @@ export function PatientAcquisitionFlow({
   intakeSendResult = "success",
   lookup = () => ({ kind: "no_match" }),
   onExit,
+  onJourneyChange,
   onPhoneGateResolved,
+  onReviewResults,
   phoneGateDelayMs = 250,
 }: PatientAcquisitionFlowProps) {
   const t = useT();
-  const [stage, setStage] = useState(initialStage);
-  const [patient, setPatient] = useState<FlowPatient | null>(
-    initialStage === "patients-empty" || initialStage === "phone-gate"
-      ? null
-      : INITIAL_PATIENT,
+  const restoredStage = initialJourney?.stage ?? initialStage;
+  const [stage, setStage] = useState(restoredStage);
+  const [patient, setPatient] = useState<PatientAcquisitionPatient | null>(
+    initialJourney?.patient ??
+      (restoredStage === "patients-empty" || restoredStage === "phone-gate"
+        ? null
+        : INITIAL_PATIENT),
   );
   const [profileConfirmed, setProfileConfirmed] = useState(
-    Boolean(initialIntakeRecord),
+    initialJourney?.profileConfirmed ?? Boolean(initialIntakeRecord),
   );
   const [allergies, setAllergies] = useState(
-    initialIntakeRecord?.allergies ?? "",
+    initialJourney?.intakeRecord.allergies ??
+      initialIntakeRecord?.allergies ??
+      "",
   );
   const [medicines, setMedicines] = useState(
-    initialIntakeRecord?.medicines ?? "",
+    initialJourney?.intakeRecord.medicines ??
+      initialIntakeRecord?.medicines ??
+      "",
   );
   const [symptoms, setSymptoms] = useState(
-    initialIntakeRecord?.reasonForVisit ?? "",
+    initialJourney?.intakeRecord.reasonForVisit ??
+      initialIntakeRecord?.reasonForVisit ??
+      "",
   );
   const [familyHistory, setFamilyHistory] = useState(
-    initialIntakeRecord?.familyHistory ?? "",
+    initialJourney?.intakeRecord.familyHistory ??
+      initialIntakeRecord?.familyHistory ??
+      "",
   );
+  const [labOrderJourney, setLabOrderJourney] = useState<
+    LabOrderJourneySnapshot | undefined
+  >(initialJourney?.labOrder);
+  // A restored or directly opened stage is already settled; only a send the
+  // clinician just triggered earns the transition choreography.
+  const [liveSend, setLiveSend] = useState(false);
+  const emittedJourneyRef = useRef("");
   const [expandedContextSections, setExpandedContextSections] = useState<
     PatientContextSectionId[]
   >(() =>
-    initialStage === "intake-complete" || initialStage === "ready-to-order"
+    restoredStage === "intake-complete" || restoredStage === "ready-to-order"
       ? [...INTAKE_CONTEXT_SECTION_IDS]
       : [],
   );
   const sendTimer = useRef<number | undefined>(undefined);
 
   useEffect(() => () => window.clearTimeout(sendTimer.current), []);
+
+  useEffect(() => {
+    if (!patient || !onJourneyChange) return;
+    if (stage === "patients-empty" || stage === "phone-gate") return;
+    const next: PatientAcquisitionJourneySnapshot = {
+      version: 1,
+      patient,
+      stage,
+      profileConfirmed,
+      intakeRecord: {
+        allergies,
+        familyHistory,
+        medicines,
+        reasonForVisit: symptoms,
+      },
+      labOrder: labOrderJourney,
+    };
+    const serialized = JSON.stringify(next);
+    if (serialized === emittedJourneyRef.current) return;
+    emittedJourneyRef.current = serialized;
+    onJourneyChange(next);
+  }, [
+    allergies,
+    familyHistory,
+    labOrderJourney,
+    medicines,
+    onJourneyChange,
+    patient,
+    profileConfirmed,
+    stage,
+    symptoms,
+  ]);
 
   function restart() {
     window.clearTimeout(sendTimer.current);
@@ -583,6 +694,8 @@ export function PatientAcquisitionFlow({
     setSymptoms("");
     setFamilyHistory("");
     setExpandedContextSections([]);
+    setLabOrderJourney(undefined);
+    setLiveSend(false);
   }
 
   function acceptPatient(outcome: PhoneGateOutcome) {
@@ -597,6 +710,7 @@ export function PatientAcquisitionFlow({
         ? outcome.draft.dobOrAge.trim()
         : undefined;
       setPatient({
+        id: provisionalPatientId(outcome.phone, outcome.draft.name),
         name: outcome.draft.name.trim(),
         sex,
         sexLabel: outcome.draft.sex ?? "Not recorded",
@@ -629,6 +743,7 @@ export function PatientAcquisitionFlow({
 
   function sendIntake() {
     window.clearTimeout(sendTimer.current);
+    setLiveSend(true);
     setStage("intake-sending");
     sendTimer.current = window.setTimeout(() => {
       if (intakeSendResult === "error") {
@@ -810,8 +925,16 @@ export function PatientAcquisitionFlow({
       >
         {stage === "ready-to-order" ? (
           <LabOrderSampleCollectionFlow
+            initialJourney={labOrderJourney}
             key={patient.id ?? patient.pid ?? patient.name}
-            onClose={() => setStage("intake-complete")}
+            onClose={() => {
+              if (onExit) onExit();
+              else setStage("intake-complete");
+            }}
+            onJourneyChange={setLabOrderJourney}
+            onReviewResults={
+              patient.id && onReviewResults ? () => onReviewResults(patient.id!) : undefined
+            }
             patient={labOrderPatient(patient)}
             presentation="workspace"
           />
@@ -819,6 +942,7 @@ export function PatientAcquisitionFlow({
           <IntakeStatusCard
             answeredCount={answeredCount}
             items={intakeItems}
+            live={liveSend}
             openedLabel={intakeProgress?.openedLabel}
             onOrder={() => setStage("ready-to-order")}
             onSend={sendIntake}

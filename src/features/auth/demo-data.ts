@@ -1,5 +1,8 @@
 import type { AccountRecord, GateBranch, GateWorkspace, PhoneRegistry } from './logic';
-import { DEMO_ONBOARDING_SCENARIOS } from './demo-scenario-registry';
+import {
+  DEMO_ONBOARDING_SCENARIOS,
+  demoOnboardingScenarioById,
+} from './demo-scenario-registry';
 
 export {
   DEMO_ONBOARDING_SCENARIOS,
@@ -9,11 +12,37 @@ export {
 export type {
   DemoOnboardingScenario,
   DemoOnboardingScenarioId,
+  DemoScenarioActor,
   DemoScenarioSurface,
 } from './demo-scenario-registry';
 
 /** Demo OTP accepted by every story flow. */
-export const DEMO_OTP = '123456';
+export const DEMO_OTP = '111111';
+
+/** Compact, Storybook-owned shortcuts shown only by demo Door compositions. */
+export const DEMO_DOOR_HINT = {
+  label: 'Demo access',
+  otpLabel: 'OTP',
+  otp: DEMO_OTP,
+  entries: [
+    {
+      label: 'New doctor',
+      phone: demoOnboardingScenarioById('new-sign-up').phone,
+    },
+    {
+      label: 'Full clinic',
+      phone: demoOnboardingScenarioById('clinic-full-workspace').phone,
+    },
+    {
+      label: 'Reception',
+      phone: demoOnboardingScenarioById('reception-arrivals').phone,
+    },
+    {
+      label: 'Phlebotomy',
+      phone: demoOnboardingScenarioById('phlebotomy-scan-queue').phone,
+    },
+  ],
+} as const;
 
 export const DEMO_RESEND_COOLDOWN_SECS = 30;
 

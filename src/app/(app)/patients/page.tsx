@@ -15,10 +15,12 @@ import type { PatientsRegistryDemoScenario } from '../../../features/patients/de
 import { CARE_LOOP_DEMO_INTAKE_RECORD } from '../../../features/care-loop/demo-data';
 import { demoOnboardingScenarioById } from '../../../features/auth/demo-data';
 import { useDemoSession } from '../../_demo/demo-session';
+import { useDemoJourneyProgress } from '../../_demo/use-demo-journey-progress';
 
 export default function PatientsPage() {
   const router = useRouter();
-  const { session } = useDemoSession();
+  const { session, update } = useDemoSession();
+  useDemoJourneyProgress();
   const [recovered, setRecovered] = useState(false);
   const newDoctor = session.demoProfile === 'new-doctor';
   const selected = demoOnboardingScenarioById(session.demoScenarioId);
@@ -40,6 +42,16 @@ export default function PatientsPage() {
       }}
       demoPatientIds={newDoctor ? DEMO_TOUR_PATIENT_IDS : undefined}
       onOpenPatient={(userId) => router.push(`/patients/${userId}`)}
+      journey={session.patientJourney}
+      onJourneyChange={(patientJourney) =>
+        update({
+          patientJourney,
+          patientJourneyLogisticsStartedAtMs:
+            patientJourney.labOrder?.stage === 'ready-for-pickup'
+              ? session.patientJourneyLogisticsStartedAtMs
+              : undefined,
+        })
+      }
       onRetry={() => setRecovered(true)}
       patients={patients}
       state={active?.state}

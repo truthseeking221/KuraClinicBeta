@@ -12,6 +12,7 @@ import {
   DEMO_PRESCRIBERS,
   DEMO_PRESCRIBERS_NONE_ELIGIBLE,
   EXISTING_PATIENTS,
+  FRONT_DESK_CHECK_IN_DEMO_SCENARIOS,
   STALE_PRICING,
 } from './demo-data';
 import { findCollisionCandidates, nextQueueNumber, phonesMatch } from './logic';
@@ -103,17 +104,38 @@ function WizardPlayground({
 /** New walk-in at step 1 — the gate keeps later steps locked. */
 export const Default: Story = {
   args: {
-    patient: blankWalkIn('walk-in-1', 27),
+    patient: FRONT_DESK_CHECK_IN_DEMO_SCENARIOS['check-in-walk-in'].patient,
     onPatientChange: () => {},
     existingPatients: EXISTING_PATIENTS,
     onCheckIn: () => {},
   },
-  render: () => <WizardPlayground />,
+  render: () => (
+    <WizardPlayground
+      initial={FRONT_DESK_CHECK_IN_DEMO_SCENARIOS['check-in-walk-in'].patient}
+    />
+  ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getByRole('tab', { name: /2 Review/ })).toBeDisabled();
     await expect(canvas.getByRole('tab', { name: /6 Payment/ })).toBeDisabled();
     await expect(canvas.getByRole('button', { name: 'Review details' })).toBeDisabled();
+  },
+};
+
+/** Planned visit resumes after the booking and patient identity were resolved. */
+export const PlannedVisit: Story = {
+  args: Default.args,
+  render: () => (
+    <WizardPlayground
+      initial={FRONT_DESK_CHECK_IN_DEMO_SCENARIOS['check-in-planned'].patient}
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText('Booking GW87430')).toBeVisible();
+    await expect(
+      canvas.getByRole('heading', { name: 'Review & confirm' }),
+    ).toBeVisible();
   },
 };
 

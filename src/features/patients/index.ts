@@ -27,6 +27,11 @@ export type { DiagnosisStartRailProps } from "./diagnosis-start-rail";
 export * from "./types";
 export * from "./logic";
 export {
+  journeyHasTrackableLabProgress,
+  patientSummaryFromJourney,
+  workItemFromJourney,
+} from "./journey-work-item";
+export {
   DEMO_DIAGNOSES,
   DEMO_LEGACY_ICD10_DIAGNOSIS_SUGGESTIONS,
   DEMO_LEGACY_ICD10_FLAGGED_LABS,
@@ -35,6 +40,7 @@ export {
   DEMO_ORDERS,
   DEMO_PATIENTS,
   DEMO_RESULTS_PROGRESS,
+  DEMO_RESUMABLE_PATIENT_JOURNEY,
   DEMO_SEARCH_POOL,
   DEMO_SETTLED,
   DEMO_SUGGESTIONS,

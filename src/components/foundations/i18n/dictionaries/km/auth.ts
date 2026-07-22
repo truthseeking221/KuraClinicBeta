@@ -49,7 +49,10 @@ export const AUTH_KM: KhmerDictionary = {
   'Your name': 'ឈ្មោះរបស់អ្នក',
   'Shown to your team and on order documents.':
     'បង្ហាញដល់ក្រុមរបស់អ្នក និងនៅលើឯកសារបញ្ជា។',
-  'Enter your name to continue.': 'បញ្ចូលឈ្មោះរបស់អ្នកដើម្បីបន្ត។',
+  'First name': 'នាមខ្លួន',
+  'Last name': 'នាមត្រកូល',
+  'Enter your first name to continue.': 'បញ្ចូលនាមខ្លួនរបស់អ្នកដើម្បីបន្ត។',
+  'Enter your last name to continue.': 'បញ្ចូលនាមត្រកូលរបស់អ្នកដើម្បីបន្ត។',
   'Verified phone': 'ទូរស័ព្ទដែលបានផ្ទៀងផ្ទាត់',
   'Add a phone number': 'បន្ថែមលេខទូរស័ព្ទ',
   'Couriers use this number, and it appears on order documents.':

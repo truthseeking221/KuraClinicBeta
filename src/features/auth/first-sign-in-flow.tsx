@@ -18,6 +18,7 @@ import type { WizardResult } from './onboarding-wizard';
 import { WorkspaceGate } from './workspace-gate';
 import {
   DEMO_BRANCHES,
+  DEMO_DOOR_HINT,
   DEMO_LAST_ACTIVE_BRANCH,
   DEMO_LAST_ACTIVE_WORKSPACE,
   DEMO_WORKSPACES,
@@ -66,6 +67,7 @@ export function FirstSignInFlow() {
   if (stage.kind === 'door') {
     return (
       <Door
+        demoHint={DEMO_DOOR_HINT}
         onRouted={(route, identifier) =>
           setStage(
             route === 'wizard'

@@ -14,14 +14,17 @@ import { AppShell, deriveAvailableModes } from '../../components/shared';
 import { isLiveLicence } from '../../features/licence/logic';
 import { SettingsDialog } from '../../features/settings';
 import type { SettingsSectionId } from '../../features/settings';
+import { demoOnboardingScenarioById } from '../../features/auth/demo-data';
+import { FRONT_DESK_CHECK_IN_DEMO_SCENARIOS } from '../../features/front-desk/demo-data';
+import type { FrontDeskCheckInDemoVariant } from '../../features/front-desk/demo-data';
 import { DemoControls } from '../_demo/demo-controls';
 import { useDemoSession } from '../_demo/demo-session';
 import { FrontDeskStoreProvider } from '../_demo/front-desk-store';
 import { SettingsDialogContext } from '../_demo/settings-dialog-context';
 import {
   SHELL_MODULES,
-  SHELL_PERMISSIONS,
   SHELL_WORKSPACES,
+  shellPermissionsFor,
   stationForMode,
 } from '../_demo/fixtures';
 import { entryPathForMode, navStateForPath, pathForNavKey } from '../_demo/route-map';
@@ -32,6 +35,8 @@ export default function ClinicShellLayout({ children }: { children: ReactNode })
   const { session, hydrated, update, signOut } = useDemoSession();
 
   const licenceVerified = isLiveLicence(session.licence);
+  const scenario = demoOnboardingScenarioById(session.demoScenarioId);
+  const permissions = shellPermissionsFor(session.accessProfile);
   const { mode, key } = navStateForPath(pathname);
   const personGlobalScope = pathname === '/earnings' || pathname.startsWith('/earnings/');
 
@@ -50,7 +55,7 @@ export default function ClinicShellLayout({ children }: { children: ReactNode })
   };
 
   const availableModes = deriveAvailableModes({
-    permissions: [...SHELL_PERMISSIONS],
+    permissions,
     enabledModules: SHELL_MODULES,
     licenceVerified,
   });
@@ -61,7 +66,16 @@ export default function ClinicShellLayout({ children }: { children: ReactNode })
   }
 
   const availableWorkspaces =
-    session.demoProfile === 'new-doctor' ? [workspace] : [...SHELL_WORKSPACES];
+    session.demoProfile === 'new-doctor' || scenario.workspace
+      ? [workspace]
+      : [...SHELL_WORKSPACES];
+
+  const frontDeskInitialPatient =
+    scenario.surface === 'front-desk-check-in'
+      ? FRONT_DESK_CHECK_IN_DEMO_SCENARIOS[
+          scenario.variant as FrontDeskCheckInDemoVariant
+        ]?.patient
+      : undefined;
 
   if (hydrated && !session.signedIn) return null;
 
@@ -79,6 +93,18 @@ export default function ClinicShellLayout({ children }: { children: ReactNode })
       }}
       onNavigate={(next) => router.push(pathForNavKey(mode, next))}
       onOpenSettings={() => openSettings()}
+      // Workspace shortcuts follow the selected Storybook capability pack;
+      // the menu is a shortcut, never a wider grant.
+      onOpenTeamAccess={
+        permissions.includes('member.manage')
+          ? () => openSettings('members')
+          : undefined
+      }
+      onOpenWorkspaceSettings={
+        permissions.includes('workspace.settings.manage')
+          ? () => openSettings('cabinet')
+          : undefined
+      }
       onShiftChange={(shift) => update({ shift })}
       onSignOut={() => {
         signOut();
@@ -89,7 +115,7 @@ export default function ClinicShellLayout({ children }: { children: ReactNode })
       // A work-area change never replaces the global Clinic App shell.
       // Station posture is reserved for dedicated booth entry points.
       posture="sidebar"
-      permissions={SHELL_PERMISSIONS}
+      permissions={permissions}
       scopeLabel={personGlobalScope ? 'All Kura workspaces' : undefined}
       station={stationForMode(mode, session.shift)}
       user={{
@@ -102,7 +128,12 @@ export default function ClinicShellLayout({ children }: { children: ReactNode })
       }
       workspaces={availableWorkspaces}
     >
-      <FrontDeskStoreProvider>{children}</FrontDeskStoreProvider>
+      <FrontDeskStoreProvider
+        initialPatient={frontDeskInitialPatient}
+        key={session.demoScenarioId}
+      >
+        {children}
+      </FrontDeskStoreProvider>
     </AppShell>
     <SettingsDialog
       firstUse={session.demoProfile === 'new-doctor'}

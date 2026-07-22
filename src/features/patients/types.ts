@@ -65,6 +65,19 @@ export type PatientTriage = {
 /** Map keyed by userId. Absent map = the layer is off and its column hides. */
 export type PatientTriageMap = Readonly<Record<string, PatientTriage>>;
 
+export type PatientWorkItemAction = 'continue' | 'view_progress' | 'review_results';
+
+/**
+ * TARGET CONTRACT — resumable work is deliberately separate from the patient
+ * wire record. The real BFF does not expose this projection yet.
+ */
+export type PatientWorkItem = {
+  label: string;
+  action: PatientWorkItemAction;
+};
+
+export type PatientWorkItemMap = Readonly<Record<string, PatientWorkItem>>;
+
 export type PatientsViewState = 'ready' | 'loading' | 'error';
 
 /* ── Chart ─────────────────────────────────────────────────── */

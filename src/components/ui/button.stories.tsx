@@ -230,6 +230,15 @@ export const DisabledAndInvalid: Story = {
       </Button>
     </div>
   ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const disabled = canvas.getByRole('button', {
+      name: 'Unavailable until identity is verified',
+    });
+    const styles = window.getComputedStyle(disabled);
+    await expect(disabled).toBeDisabled();
+    expect(styles.color).not.toBe(styles.backgroundColor);
+  },
 };
 
 export const AsLink: Story = {

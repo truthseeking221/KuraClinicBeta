@@ -4,6 +4,7 @@ import { expect, userEvent, waitFor, within } from "storybook/test";
 import { READINESS } from "../../components/foundations/readiness-data";
 
 import { LabOrderSampleCollectionFlow } from "./lab-order-collection-flow";
+import { careLoopLabOrderJourney } from "./demo-data";
 
 const meta = {
   title: "Clinic/Flows/Lab Order and Sample Collection",
@@ -15,18 +16,19 @@ const meta = {
       readiness: READINESS.flows,
       source: {
         figma:
-          "https://www.figma.com/design/yWz269PzVjFQquJa1U1M0s/Kura-Design?node-id=1485-93177",
-        node: "1485:93177",
+          "https://www.figma.com/design/yWz269PzVjFQquJa1U1M0s/Kura-Design?node-id=1547-110756",
+        node: "1547:110756",
       },
       intake: {
         decision: "COMPOSE + FEATURE-OWN",
         owner: "src/features/care-loop",
         evidence:
-          "Composes the canonical LabTestPicker, OrderCart, ScanGate, and DrawWorksheet. The flow owns only the cross-role orchestration and specimen handoff/awaiting-results states missing from Storybook.",
+          "Composes the canonical LabTestPicker, OrderCart, ScanGate, DrawWorksheet, TubeLabeling, and Stepper. The doctor self-collection route follows the source sequence: collect, label, verify labels, and sample pickup.",
         exclusions: [
-          "The changing patient, order, and tube counts in the source board are replaced by one patient, one order, ten blood tests, and four traceable tubes.",
+          "The changing patient and order counts in the source board are replaced by one patient and one order; the tests selected by the doctor determine the traceable tubes.",
           "Urine tests shown in the source cart are excluded until Collection owns a canonical urine-container contract.",
-          "Courier routing, lab accession, and result values are not simulated as completed backend work.",
+          "Courier and result states are deterministic target-contract fixtures; readiness remains Partial until event producers exist.",
+          "The verification QR is a clearly identified prototype affordance because no live phone-session contract exists yet.",
         ],
       },
       journeys: [
@@ -40,7 +42,7 @@ const meta = {
     docs: {
       description: {
         component:
-          "Executable cross-role journey for the same patient: doctor selects tests, reception records cash, the nurse completes positive-ID blood collection, specimens are prepared for pickup, and the order enters awaiting-results state.",
+          "Executable lab-order journey for one patient. Doctor self-collection follows the Figma source from tube preparation through label verification and courier pickup; staffed Kura collection retains its positive-ID handoff route.",
       },
     },
   },
@@ -50,12 +52,83 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
+const FIGMA_COLLECTION_TESTS = [
+  /^PT \/ INR$/,
+  /^Lipid panel/,
+  /^Ferritin$/,
+  /^Complete blood count/,
+  /^Fasting glucose$/,
+] as const;
+
+async function selectCollectionTests(canvas: ReturnType<typeof within>) {
+  for (const name of FIGMA_COLLECTION_TESTS) {
+    await userEvent.click(canvas.getByRole("checkbox", { name }));
+  }
+}
+
+export const EmptyBeforeSelection: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    await expect(
+      canvas.getByRole("heading", { name: "Order Cart" }),
+    ).toBeVisible();
+    await expect(canvas.getByText("Nothing here yet")).toBeVisible();
+    await expect(
+      canvas.queryByRole("heading", { name: "Selected tests" }),
+    ).not.toBeInTheDocument();
+    await expect(
+      canvas.queryByRole("button", { name: "Send booking code" }),
+    ).not.toBeInTheDocument();
+  },
+};
+
+export const CatalogSelectionPopulatesCart: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    for (const testName of [
+      "HbA1c",
+      "Fasting glucose",
+      "OGTT (gestational)",
+      "Insulin",
+      "Fructosamine",
+      "2h postprandial",
+      "Apolipoprotein B",
+    ]) {
+      await userEvent.click(canvas.getByRole("checkbox", { name: testName }));
+    }
+
+    await expect(
+      canvas.getByRole("heading", { name: "Selected tests" }),
+    ).toBeVisible();
+    await expect(canvas.getByLabelText("7 tests selected")).toBeVisible();
+    await expect(canvas.getByText("HbA1c", { selector: "li *" })).toBeVisible();
+    await expect(
+      canvas.getByText("Apolipoprotein B", { selector: "li *" }),
+    ).toBeVisible();
+    await expect(
+      canvas.getByRole("button", { name: "Prepare Tubes" }),
+    ).toBeVisible();
+  },
+};
+
 export const FullJourney: Story = {
+  args: {
+    initialDecisions: {
+      collectBy: "kura",
+      drawSite: "kura-psc",
+      payment: "pay-later-kura",
+    },
+  },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const screen = within(canvasElement.ownerDocument.body);
 
-    await expect(canvas.getByText("10 selected")).toBeVisible();
+    await selectCollectionTests(canvas);
+    await expect(
+      canvas.getByRole("heading", { name: "Selected tests" }),
+    ).toBeVisible();
     await userEvent.click(
       canvas.getByRole("button", { name: "Send booking code" }),
     );
@@ -95,13 +168,6 @@ export const FullJourney: Story = {
       canvas.getByRole("button", { name: "Submit collection & next patient" }),
     );
 
-    for (const label of [
-      "A Kura sticker is on every tube",
-      "The name and date read clearly in the photo",
-      "Photo of the labelled tubes attached to the order",
-    ]) {
-      await userEvent.click(canvas.getByRole("checkbox", { name: label }));
-    }
     await userEvent.click(
       canvas.getByRole("button", { name: "I have labelled all 4 tubes" }),
     );
@@ -135,31 +201,29 @@ export const FullJourney: Story = {
     await userEvent.click(
       canvas.getByRole("button", { name: "Mark samples ready" }),
     );
-    await userEvent.click(
-      canvas.getByRole("button", { name: "Record courier pickup" }),
-    );
-
+    await expect(canvas.getByText("Samples ready")).toBeVisible();
     await expect(
-      canvas.getByText("Courier picked up the samples"),
+      canvas.getByText("Waiting for a courier assignment."),
     ).toBeVisible();
-    await expect(canvas.getByText("Lab received")).toBeVisible();
   },
 };
 
 export const DoctorSelfDrawJourney: Story = {
   args: {
     initialDecisions: { collectBy: "self", payment: "pay-now" },
+    presentation: "workspace",
   },
   parameters: {
     docs: {
       description: {
         story:
-          "The ordering clinician collects payment, confirms identity in the draw worksheet, records the draw, and only then labels the resulting tubes.",
+          "The ordering clinician prepares the required tubes, labels every collected sample, verifies one photo per tube, and chooses a courier pickup round.",
       },
     },
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
+    await selectCollectionTests(canvas);
     const prepare = canvas.getByRole("button", { name: "Prepare Tubes" });
     await expect(prepare).toBeDisabled();
     await userEvent.click(
@@ -169,30 +233,62 @@ export const DoctorSelfDrawJourney: Story = {
       await expect(prepare).toBeEnabled();
     });
     await userEvent.click(prepare);
-    await expect(canvas.getByText("Patient ID confirmed")).toBeVisible();
-
-    for (const label of [
-      "Patient ID confirmed",
-      "Fasting status checked",
-      "Allergies reviewed",
-      "Patient consented",
-      "Site confirmed (L/R arm)",
-    ]) {
-      await userEvent.click(canvas.getByRole("checkbox", { name: label }));
-    }
+    await expect(
+      canvas.getByRole("heading", { name: "Prepare collection tubes" }),
+    ).toBeVisible();
     await userEvent.click(
-      canvas.getByRole("button", { name: "Mark all collected" }),
-    );
-    for (const button of canvas.getAllByRole("button", { name: /Invert ×/ })) {
-      await userEvent.click(button);
-    }
-    await userEvent.click(
-      canvas.getByRole("button", { name: "Submit collection & next patient" }),
+      canvas.getByRole("button", { name: "I have collected all 4 tubes" }),
     );
     await expect(
-      canvas.getByRole("heading", { name: "Label the tubes you drew" }),
+      canvas.getByRole("heading", { name: "Label collected samples" }),
     ).toBeVisible();
-    await expect(canvas.getByText("Step 3 of 5")).toBeVisible();
+    await userEvent.click(
+      canvas.getByRole("button", { name: "Next: Scan QR to verify labels" }),
+    );
+    await expect(
+      canvas.getByRole("heading", {
+        name: "Capture photos for label verification",
+      }),
+    ).toBeVisible();
+    await userEvent.click(
+      canvas.getByRole("button", { name: "Open photo checklist" }),
+    );
+    for (const button of canvas.getAllByRole("button", {
+      name: "Capture photo",
+    })) {
+      await userEvent.click(button);
+    }
+    await expect(canvas.getByText("4/4 photos captured")).toBeVisible();
+    await userEvent.click(
+      canvas.getByRole("button", { name: "Ready for sample pickup" }),
+    );
+    await expect(
+      canvas.getByRole("heading", { name: "Prepare samples for pickup" }),
+    ).toBeVisible();
+    await userEvent.click(canvas.getByRole("radio", { name: /2:30 PM/ }));
+    await userEvent.click(
+      canvas.getByRole("button", { name: "Mark samples ready" }),
+    );
+    await expect(canvas.getByText("Samples ready")).toBeVisible();
+    await expect(
+      canvas.getByText("Waiting for a courier assignment."),
+    ).toBeVisible();
+  },
+};
+
+export const PrepareCollectionTubes: Story = {
+  args: {
+    initialStage: "prepare-tubes",
+    initialDecisions: { collectBy: "self", payment: "pay-now" },
+    presentation: "workspace",
+  },
+};
+
+export const VerifyLabelPhotos: Story = {
+  args: {
+    initialStage: "verify-labels",
+    initialDecisions: { collectBy: "self", payment: "pay-now" },
+    presentation: "workspace",
   },
 };
 
@@ -206,6 +302,7 @@ export const HomeCollectionJourney: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
+    await selectCollectionTests(canvas);
     await userEvent.click(
       canvas.getByRole("button", { name: "Send booking code" }),
     );
@@ -233,7 +330,7 @@ export const DoctorDrawsAndLabelsWithStickers: Story = {
     docs: {
       description: {
         story:
-          "The self-draw route. Nobody scanned a wristband and no desk checked the patient in, so the label is the only thing tying these tubes to the order — which is why the sticker route asks for photo evidence before the tubes leave the room.",
+          "The doctor labels the collected samples first. Photo evidence is a separate, explicit verification step on the phone rather than hidden inside the labeling control.",
       },
     },
   },
@@ -241,23 +338,15 @@ export const DoctorDrawsAndLabelsWithStickers: Story = {
     const canvas = within(canvasElement);
     await expect(canvas.getByText("4 samples collected")).toBeVisible();
     const confirm = canvas.getByRole("button", {
-      name: "I have labelled all 4 tubes",
+      name: "Next: Scan QR to verify labels",
     });
-    await expect(confirm).toBeDisabled();
-    await expect(
-      canvas.getByText(
-        "Confirm the photo evidence before the tubes leave the room.",
-      ),
-    ).toBeVisible();
-
-    for (const label of [
-      "A Kura sticker is on every tube",
-      "The name and date read clearly in the photo",
-      "Photo of the labelled tubes attached to the order",
-    ]) {
-      await userEvent.click(canvas.getByRole("checkbox", { name: label }));
-    }
     await expect(confirm).toBeEnabled();
+    await userEvent.click(confirm);
+    await expect(
+      canvas.getByRole("heading", {
+        name: "Capture photos for label verification",
+      }),
+    ).toBeVisible();
   },
 };
 
@@ -270,7 +359,7 @@ export const DoctorDrawsAndWritesByHand: Story = {
     docs: {
       description: {
         story:
-          "Handwriting stays available because a clinic without stickers still has to send blood. It names what the courier checks and what happens to an unreadable tube, and needs no photo because there is nothing machine-readable to photograph.",
+          "Handwriting stays available when the clinic has no sticker pad. The patient identity template remains explicit, and the same downstream photo-verification gate still applies.",
       },
     },
   },
@@ -281,7 +370,7 @@ export const DoctorDrawsAndWritesByHand: Story = {
     );
     await expect(canvas.getByText("SOK · M · 1994")).toBeVisible();
     await expect(
-      canvas.getByRole("button", { name: "I have labelled all 4 tubes" }),
+      canvas.getByRole("button", { name: "Next: Scan QR to verify labels" }),
     ).toBeEnabled();
   },
 };
@@ -328,7 +417,14 @@ export const HandoffGate: Story = {
 };
 
 export const LabelMismatchRecovery: Story = {
-  args: { initialStage: "handoff" },
+  args: {
+    initialStage: "handoff",
+    initialDecisions: {
+      collectBy: "kura",
+      drawSite: "kura-psc",
+      payment: "pay-later-kura",
+    },
+  },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await userEvent.click(
@@ -344,9 +440,19 @@ export const LabelMismatchRecovery: Story = {
   },
 };
 
-export const IdentityRequiredBeforeCollection: Story = {
+export const DoctorSelfCollectionDoesNotOwnIdentityVerification: Story = {
   args: {
-    initialStage: "identity-required",
+    initialJourney: careLoopLabOrderJourney({
+      decisions: {
+        collectBy: "kura",
+        drawSite: "kura-psc",
+        payment: "pay-later-kura",
+      },
+      // Migration fixture for sessions saved before identity ownership moved
+      // entirely into Front Desk.
+      selectedTestIds: ["hba1c", "fasting-glucose", "lipid-panel", "cbc"],
+      stage: "identity-required" as never,
+    }),
     patient: {
       age: 32,
       id: "patient-provisional",
@@ -355,37 +461,90 @@ export const IdentityRequiredBeforeCollection: Story = {
       orderId: "ORD-DEMO-SP",
       sexLabel: "Not recorded",
     },
+    presentation: "workspace",
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(
-      canvas.getByText("Verify identity before collection"),
+      canvas.getByRole("heading", { name: "Prepare collection tubes" }),
     ).toBeVisible();
     await expect(
-      canvas.queryByRole("heading", { name: "Scan patient barcode" }),
+      canvas.getByRole("button", { name: "I have collected all 3 tubes" }),
+    ).toBeVisible();
+    await expect(
+      canvas.queryByText("Verify identity before collection"),
     ).not.toBeInTheDocument();
   },
 };
 
 export const PickupDelayRecovery: Story = {
-  args: { initialStage: "pickup-delayed" },
+  args: {
+    initialStage: "pickup-delayed",
+    initialDecisions: {
+      collectBy: "kura",
+      drawSite: "kura-psc",
+      payment: "pay-later-kura",
+    },
+  },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getByText("Courier pickup is delayed")).toBeVisible();
-    await userEvent.click(
-      canvas.getByRole("button", { name: "Choose another pickup round" }),
-    );
     await expect(
-      canvas.getByRole("combobox", { name: "Pickup round" }),
+      canvas.getByText("Samples remain with the clinic until the courier records pickup."),
     ).toBeVisible();
-    await expect(
-      canvas.getByRole("button", { name: "Mark samples ready" }),
-    ).toBeDisabled();
   },
 };
 
 export const AwaitingResults: Story = {
   args: { initialStage: "awaiting-results" },
+};
+
+export const SupportedHbA1cTubePlanAfterReentry: Story = {
+  args: {
+    initialJourney: careLoopLabOrderJourney({ stage: "prepare-tubes" }),
+  },
+  tags: ["play-fn"],
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText("1 tube for this order")).toBeVisible();
+    await expect(
+      canvas.getByRole("button", { name: "I have collected the tube" }),
+    ).toBeEnabled();
+  },
+};
+
+export const MissingTubePlanStaysInOrder: Story = {
+  args: {
+    initialJourney: careLoopLabOrderJourney({
+      selectedTestIds: ["ogtt"],
+      stage: "ordering",
+    }),
+  },
+  tags: ["play-fn"],
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      canvas.getByText("Tube requirements are not available for OGTT (gestational)"),
+    ).toBeVisible();
+    await expect(canvas.getByRole("button", { name: "Prepare Tubes" })).toBeDisabled();
+  },
+};
+
+export const CourierInTransitAfterReentry: Story = {
+  args: {
+    initialJourney: careLoopLabOrderJourney({ stage: "in-transit" }),
+  },
+};
+
+export const PartialResultsAfterReentry: Story = {
+  args: {
+    initialJourney: careLoopLabOrderJourney({
+      flagged: 1,
+      resulted: 3,
+      stage: "partial-results",
+      total: 10,
+    }),
+  },
 };
 
 export const MobileWidth320: Story = {

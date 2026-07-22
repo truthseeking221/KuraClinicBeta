@@ -51,7 +51,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'Multi-step process control with tablist semantics, arrow-key navigation, and per-step completed/disabled/loading states. Drives the front-desk check-in wizard.',
+          'Multi-step process control with an interactive tab mode and a semantic read-only status mode for asynchronous progress.',
       },
     },
   },
@@ -195,6 +195,50 @@ export const LoadingStep: Story = {
       </StepperNav>
     </Stepper>
   ),
+};
+
+export const ReadOnlyStatus: Story = {
+  args: { children: null },
+  render: () => (
+    <Stepper
+      indicators={{ loading: <LoadingIcon aria-hidden="true" size={14} /> }}
+      mode="status"
+      value={2}
+    >
+      <StepperNav aria-label="Sample journey">
+        <StepperItem step={1}>
+          <StepperTrigger>
+            <StepperIndicator>1</StepperIndicator>
+            <StepperTitle>Samples ready</StepperTitle>
+          </StepperTrigger>
+          <StepperSeparator />
+        </StepperItem>
+        <StepperItem loading step={2}>
+          <StepperTrigger>
+            <StepperIndicator>2</StepperIndicator>
+            <div>
+              <StepperTitle>Courier on the way</StepperTitle>
+              <StepperDescription>Expected in 15–25 minutes</StepperDescription>
+            </div>
+          </StepperTrigger>
+          <StepperSeparator />
+        </StepperItem>
+        <StepperItem step={3}>
+          <StepperTrigger>
+            <StepperIndicator>3</StepperIndicator>
+            <StepperTitle>Received by lab</StepperTitle>
+          </StepperTrigger>
+        </StepperItem>
+      </StepperNav>
+    </Stepper>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByRole('list', { name: 'Sample journey' })).toBeVisible();
+    await expect(canvas.queryByRole('tablist')).not.toBeInTheDocument();
+    await expect(canvas.queryByRole('tab')).not.toBeInTheDocument();
+    await expect(canvas.getByText('Courier on the way').closest('[aria-current="step"]')).toBeTruthy();
+  },
 };
 
 export const DisabledStep: Story = {

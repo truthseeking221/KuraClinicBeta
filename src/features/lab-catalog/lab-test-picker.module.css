@@ -31,15 +31,19 @@
   display: none;
 }
 
+/* Search and the category filter belong on one line: they are two halves of
+   one narrowing action. The toolbar lays them out directly and lets them wrap
+   only when the search box would stop being usable — no width breakpoint,
+   because this component lives in rails, drawers, and full pages alike. */
 .toolbar {
   display: flex;
   min-width: 0;
-  flex-direction: column;
-  gap: var(--space-stack-control);
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-control-gap);
   padding: var(--space-inset-control);
 }
 
-.toolbarHeader,
 .titleGroup,
 .testLabel {
   display: flex;
@@ -47,14 +51,14 @@
   align-items: center;
 }
 
+/* Grouping for markup only; the toolbar owns the layout of its grandchildren. */
 .toolbarHeader {
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-inline-group);
+  display: contents;
 }
 
 .titleGroup {
-  flex: 1 1 auto;
+  order: 1;
+  flex: 1 1 100%;
   gap: var(--space-control-gap);
 }
 
@@ -65,14 +69,24 @@
   line-height: var(--leading-snug);
 }
 
+/* The search takes every pixel the row can spare; 16rem is the width below
+   which a test name stops being readable while typing, so that is where it
+   wraps to its own line instead of shrinking further. */
 .search {
-  width: 100%;
+  order: 2;
+  min-width: 0;
+  flex: 1 1 16rem;
 }
 
+/* Sits on the search field's baseline box: Button md carries a border that
+   Input md does not, so the two controls must be pinned to one row height. */
 .categoryTrigger {
-  flex: 0 1 auto;
+  order: 3;
+  flex: 0 0 auto;
   min-width: 0;
   max-width: 100%;
+  height: var(--control-h);
+  min-height: var(--control-h);
 }
 
 .categoryTriggerLabel {
@@ -349,30 +363,9 @@
   }
 }
 
-@container (max-width: 47.999rem) {
-  /* Promote the header's children so search can slot between the title and
-     the category trigger: search is the primary path on narrow screens. */
-  .toolbarHeader {
-    display: contents;
-  }
-
-  .titleGroup {
-    order: 1;
-  }
-
-  .search {
-    order: 2;
-  }
-
-  .categoryTrigger {
-    order: 3;
-    width: 100%;
-  }
-
-  .search :global([data-slot="input"]) {
-    min-height: var(--touch-target-min);
-  }
-}
+/* Wrapping is the toolbar's own job now. Touch heights come from the control
+   scale, which already lifts to the touch minimum under a coarse pointer —
+   this component must not re-implement that on a width axis. */
 
 @media (prefers-reduced-motion: reduce) {
   .testRow {

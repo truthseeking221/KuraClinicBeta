@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { expect, fn, userEvent, waitFor, within } from "storybook/test";
 
 import { OnboardingWizard } from "./onboarding-wizard";
+import { splitPersonName } from "./logic";
 import { DEMO_OTP } from "./demo-data";
 import { READINESS } from "../../components/foundations/readiness-data";
 
@@ -30,8 +31,7 @@ const meta = {
     },
     docs: {
       description: {
-        component:
-          "Spec-complete post-door onboarding. Every completed account has a verified phone. Self-serve doctors complete Name → Phone-if-needed → Clinic → Licence; Clinic and Licence can be skipped. Invitees supply only missing name/phone facts. Cross-account phone reuse is blocked with support copy and never self-merged. Demo SMS code: 123456; +855 99 000 001/002 are in use; +855 99 000 009 belongs to an unavailable account.",
+        component: `Spec-complete post-door onboarding. Every completed account has a verified phone. Self-serve doctors complete Name → Phone-if-needed → Clinic → Licence; Clinic and Licence can be skipped. Invitees supply only missing name/phone facts. Cross-account phone reuse is blocked with support copy and never self-merged. Demo SMS code: ${DEMO_OTP}; +855 99 000 001/002 are in use; +855 99 000 009 belongs to an unavailable account.`,
       },
     },
   },
@@ -56,8 +56,11 @@ async function pickProfession(canvasElement: HTMLElement, optionLabel: string) {
 
 async function submitName(canvasElement: HTMLElement, value = "Bopha Kim") {
   const canvas = within(canvasElement);
-  const input = canvas.getByLabelText(/Full name/);
-  if (!input.getAttribute("value")) await userEvent.type(input, value);
+  const { firstName, lastName } = splitPersonName(value);
+  const first = canvas.getByLabelText(/First name/);
+  const last = canvas.getByLabelText(/Last name/);
+  if (!first.getAttribute("value")) await userEvent.type(first, firstName);
+  if (!last.getAttribute("value")) await userEvent.type(last, lastName);
   await userEvent.click(canvas.getByRole("button", { name: "Continue" }));
 }
 
@@ -67,7 +70,7 @@ async function openPhoneVerification(
   name = "Bopha Kim",
 ) {
   const canvas = within(canvasElement);
-  if (canvas.queryByLabelText(/Full name/))
+  if (canvas.queryByLabelText(/First name/))
     await submitName(canvasElement, name);
   await userEvent.type(canvas.getByLabelText(/Phone number/), phone);
   await userEvent.click(canvas.getByRole("button", { name: "Send code" }));
@@ -161,7 +164,11 @@ export const EmailPhoneGate: Story = {
   },
 };
 
-/** A provider name is prefilled but remains editable before the cabinet default is formed. */
+/**
+ * A one-string provider prefill splits across the two fields — last token to
+ * Last name, the rest to First name — and both stay editable before the
+ * cabinet default is formed.
+ */
 export const NamePrefill: Story = {
   args: {
     entry: {
@@ -173,10 +180,12 @@ export const NamePrefill: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    const name = canvas.getByLabelText(/Full name/);
-    await expect(name).toHaveValue("Bopha Kim");
-    await userEvent.clear(name);
-    await userEvent.type(name, "Dr. Bopha Kim");
+    const first = canvas.getByLabelText(/First name/);
+    const last = canvas.getByLabelText(/Last name/);
+    await expect(first).toHaveValue("Bopha");
+    await expect(last).toHaveValue("Kim");
+    await userEvent.clear(first);
+    await userEvent.type(first, "Dr. Bopha");
     await userEvent.click(canvas.getByRole("button", { name: "Continue" }));
     await expect(await canvas.findByLabelText(/Clinic name/)).toHaveValue(
       "Dr. Bopha Kim's cabinet",
@@ -184,15 +193,36 @@ export const NamePrefill: Story = {
   },
 };
 
-/** Required name validation is announced without advancing the stepper. */
+/** Both name fields are required, and both gaps are reported in one pass. */
 export const NameValidation: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await userEvent.click(canvas.getByRole("button", { name: "Continue" }));
-    await expect(await canvas.findByRole("alert")).toHaveTextContent(
-      "Enter your name",
+    const alerts = await canvas.findAllByRole("alert");
+    await expect(alerts).toHaveLength(2);
+    await expect(alerts[0]).toHaveTextContent("Enter your first name");
+    await expect(alerts[1]).toHaveTextContent("Enter your last name");
+    await expect(canvas.getByLabelText(/First name/)).toHaveAttribute(
+      "aria-invalid",
+      "true",
     );
-    await expect(canvas.getByLabelText(/Full name/)).toHaveAttribute(
+    await expect(canvas.getByLabelText(/Last name/)).toHaveAttribute(
+      "aria-invalid",
+      "true",
+    );
+  },
+};
+
+/** One field filled is still incomplete: the missing half is named on its own. */
+export const NamePartialValidation: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.type(canvas.getByLabelText(/First name/), "Bopha");
+    await userEvent.click(canvas.getByRole("button", { name: "Continue" }));
+    await expect(await canvas.findByRole("alert")).toHaveTextContent(
+      "Enter your last name",
+    );
+    await expect(canvas.getByLabelText(/First name/)).not.toHaveAttribute(
       "aria-invalid",
       "true",
     );
@@ -358,7 +388,7 @@ export const ExistingInviteeNeedsPhone: Story = {
   },
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.queryByLabelText(/Full name/)).not.toBeInTheDocument();
+    await expect(canvas.queryByLabelText(/First name/)).not.toBeInTheDocument();
     await openPhoneVerification(canvasElement, "98111444");
     await enterOtp(canvasElement);
     await waitFor(() =>

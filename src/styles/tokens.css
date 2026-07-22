@@ -57,13 +57,8 @@
   --color-surface-2: var(--color-neutral-100);
   --color-surface-sunken: var(--color-neutral-200);
   --color-surface-bg: var(--color-white);
-  /* Filled field rest state: slightly lighter than surface-2, so the fill
-   * stays quiet on white and lifts gently from a gray tray. */
-  --color-field-bg: color-mix(
-    in srgb,
-    var(--color-surface-2) 75%,
-    var(--color-surface)
-  );
+  /* Filled field rest state: the neutral tray tone, kept distinct on white. */
+  --color-field-bg: var(--color-surface-2);
   --color-background-canvas-subtle: var(--color-neutral-50);
   --color-overlay-scrim: color-mix(in srgb, var(--color-neutral-950) 48%, transparent);
   --color-border: var(--color-neutral-200);
@@ -93,7 +88,8 @@
   --color-button-primary-border-hover: var(--color-brand-600);
   --color-button-primary-border-active: var(--color-brand-700);
   --color-button-primary-bg-disabled: var(--color-neutral-300);
-  --color-button-primary-fg-disabled: var(--color-text-disabled);
+  /* Disabled primary buttons still need a readable label against the neutral-300 fill. */
+  --color-button-primary-fg-disabled: var(--color-neutral-600);
   --color-action-secondary-bg: var(--color-neutral-200);
   --color-action-secondary-bg-hover: var(--color-neutral-300);
   --color-action-secondary-fg: var(--color-neutral-700);
@@ -653,6 +649,9 @@
   --motion-overlay-out: var(--duration-fast) var(--ease-in);
   --motion-indicator: var(--duration-base) var(--ease-emphasized);
   --motion-layout: var(--duration-slow) var(--ease-standard);
+  /* One step of delay per item when a list confirms in sequence, so a result */
+  /* set reads as arriving rather than appearing all at once. */
+  --motion-stagger-step: 60ms;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -660,6 +659,7 @@
     --duration-fast: 0ms;
     --duration-base: 0ms;
     --duration-slow: 0ms;
+    --motion-stagger-step: 0ms;
   }
 }
 

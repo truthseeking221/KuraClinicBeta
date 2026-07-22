@@ -43,6 +43,25 @@ export const TriageLayer: Story = {
   args: { triage: DEMO_TRIAGE },
 };
 
+export const ResumablePatientWork: Story = {
+  args: {
+    onOpenWorkItem: fn(),
+    workItems: {
+      'p-lina-prum': { action: 'continue', label: 'Lab order in progress' },
+      'p-sokha-chann': { action: 'view_progress', label: 'Courier on the way' },
+      'p-sok-nimol': { action: 'review_results', label: 'Partial results available' },
+    },
+  },
+  tags: ['play-fn'],
+  play: async ({ args, canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(
+      canvas.getByRole('button', { name: /Continue lab order in progress for Lina Prum/ }),
+    );
+    await expect(args.onOpenWorkItem).toHaveBeenCalledWith('p-lina-prum');
+  },
+};
+
 export const OpensPatientOnRowClick: Story = {
   tags: ['play-fn'],
   play: async ({ args, canvasElement }) => {
