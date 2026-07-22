@@ -117,7 +117,8 @@ export const TatPreselectAndEarlyOverride: Story = {
     );
 
     // Booking a pre-TAT day is a confirmed decision, never silent.
-    await userEvent.click(canvas.getByRole('button', { name: /Today/ }));
+    const dayStrip = within(canvas.getByRole('group', { name: 'Consult day' }));
+    await userEvent.click(dayStrip.getByRole('button', { name: /Today/ }));
     await expect(canvas.getByText('Results may not be ready on this day.')).toBeVisible();
     await userEvent.click(canvas.getByRole('button', { name: '09:30' }));
     await expect(
@@ -159,31 +160,32 @@ export const IntakeLinkNeedsVerifiedChannel: Story = {
     const canvas = within(canvasElement);
     await userEvent.click(canvas.getByRole('tab', { name: /5 Pre-consult/ }));
     await expect(
-      await canvas.findByRole('button', { name: 'Send intake link' }),
+      await canvas.findByRole('button', { name: 'Send link' }),
     ).toBeDisabled();
-    await expect(canvas.getByText('Needs a verified channel (Step 2).')).toBeVisible();
+    await expect(canvas.getByText('Verify a phone or Telegram in Step 2.')).toBeVisible();
   },
 };
 
 export const FillOnBehalfProvenance: Story = {
-  name: 'Intake · fill on behalf stamps desk provenance',
+  name: 'Intake · answering on behalf stamps desk provenance',
   args: baseArgs,
   render: () => <PreConsultPlayground initial={preConsultReady('pre-fill')} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await userEvent.click(canvas.getByRole('tab', { name: /5 Pre-consult/ }));
-    await userEvent.click(await canvas.findByRole('button', { name: 'Send intake link' }));
+    await userEvent.click(await canvas.findByRole('button', { name: 'Send link' }));
     await expect(await canvas.findByText(/Intake link sent · just now/)).toBeVisible();
 
-    const fillButtons = canvas.getAllByRole('button', { name: 'Fill on behalf' });
-    await userEvent.click(fillButtons[0]);
+    // Each unanswered section is one row-wide control; opening it edits in place.
+    const pendingRows = canvas.getAllByRole('button', { name: /Not answered/ });
+    await userEvent.click(pendingRows[0]);
     await userEvent.type(
-      canvas.getByLabelText('Intake answer'),
+      canvas.getByLabelText(/what the patient tells the desk/),
       'Follow-up on diabetes control',
     );
-    await userEvent.click(canvas.getByRole('button', { name: 'Save · recorded by desk' }));
-    // Provenance chip: this answer came from the desk, not the patient.
-    await expect(await canvas.findByText('Desk')).toBeVisible();
+    await userEvent.click(canvas.getByRole('button', { name: 'Save' }));
+    // Provenance: this answer came from the desk, not the patient.
+    await expect(await canvas.findByText(/recorded by desk/)).toBeVisible();
   },
 };
 
@@ -203,4 +205,81 @@ export const DarkTheme: Story = {
   args: baseArgs,
   globals: { theme: 'dark' },
   render: () => <PreConsultPlayground initial={preConsultReady('pre-dark')} />,
+};
+
+export const IntakeStatusMachine: Story = {
+  name: 'Intake · answered count and link state track together',
+  args: baseArgs,
+  render: () => <PreConsultPlayground initial={preConsultReady('pre-status')} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(canvas.getByRole('tab', { name: /5 Pre-consult/ }));
+    // One counter carries the progress; no badge repeats it. The consent section
+    // starts satisfied because this cart holds no sensitive tests.
+    await expect(await canvas.findByText(/1 of 8 answered/)).toBeVisible();
+
+    await userEvent.click(canvas.getByRole('button', { name: 'Send link' }));
+    await expect(await canvas.findByText(/Intake link sent · just now/)).toBeVisible();
+
+    // Answer "Pre-test prep" on behalf — the answer lands in the right field.
+    const pendingRows = canvas.getAllByRole('button', { name: /Not answered/ });
+    await userEvent.click(pendingRows[1]);
+    await userEvent.type(
+      canvas.getByLabelText(/what the patient tells the desk/),
+      'Fasted since 22:00',
+    );
+    await userEvent.click(canvas.getByRole('button', { name: 'Save' }));
+    await expect(await canvas.findByText(/2 of 8 answered/)).toBeVisible();
+    await expect(await canvas.findByText(/Fasted since 22:00/)).toBeVisible();
+  },
+};
+
+export const SkipIntakeWithReason: Story = {
+  name: 'Intake · skip records a reason, never a gate',
+  args: baseArgs,
+  render: () => (
+    <PreConsultPlayground initial={preConsultReady('pre-skip-intake', { tele: false })} />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(canvas.getByRole('tab', { name: /Pre-consult/ }));
+    await userEvent.click(await canvas.findByRole('button', { name: 'Skip' }));
+    // Default reason is preselected; recording is one deliberate action.
+    await userEvent.click(canvas.getByRole('button', { name: 'Record skip' }));
+    await expect(
+      await canvas.findByText(/Intake skipped · Patient declined/),
+    ).toBeVisible();
+    // Never a gate: the step still continues.
+    await expect(canvas.getByRole('button', { name: 'Continue' })).toBeEnabled();
+    // The skip is reversible while the patient is still at the desk.
+    await userEvent.click(canvas.getByRole('button', { name: 'Resume intake' }));
+    await expect(await canvas.findByText(/1 of 8 answered/)).toBeVisible();
+  },
+};
+
+export const RescheduleTeleconsult: Story = {
+  name: 'Teleconsult · change time keeps the booking until replaced',
+  args: baseArgs,
+  render: () => <PreConsultPlayground initial={preConsultReady('pre-reschedule')} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(canvas.getByRole('tab', { name: /5 Pre-consult/ }));
+    // Book the preselected post-TAT day.
+    await userEvent.click(await canvas.findByRole('button', { name: '09:30' }));
+    await expect(await canvas.findByText(/Booked · Tomorrow · 09:30/)).toBeVisible();
+
+    // Change time reopens the picker without dropping the booking.
+    await userEvent.click(canvas.getByRole('button', { name: 'Change time' }));
+    await expect(
+      await canvas.findByText(/Rebooking — currently Tomorrow · 09:30/),
+    ).toBeVisible();
+    // Backing out keeps the original slot.
+    await userEvent.click(canvas.getByRole('button', { name: 'Keep current time' }));
+    await expect(await canvas.findByText(/Booked · Tomorrow · 09:30/)).toBeVisible();
+
+    // Rebooking replaces the slot in one pick.
+    await userEvent.click(canvas.getByRole('button', { name: 'Change time' }));
+    await userEvent.click(canvas.getByRole('button', { name: '11:00' }));
+    await expect(await canvas.findByText(/Booked · Tomorrow · 11:00/)).toBeVisible();
+  },
 };

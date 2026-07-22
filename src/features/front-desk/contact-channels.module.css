@@ -1,7 +1,30 @@
+/* The canonical outline Card carries the surface; this class only owns the
+   channel's internal layout. */
 .channel {
+  gap: var(--space-3);
+  padding: var(--space-inset-card);
+}
+
+.channelHeader {
   display: flex;
-  flex-direction: column;
+  align-items: baseline;
   gap: var(--space-2);
+}
+
+.requiredTag {
+  font-size: var(--type-xs);
+  color: var(--color-text-tertiary);
+}
+
+/* Shown once verified, where over-trusting the green badge is the real risk. */
+.assuranceNote {
+  margin: 0;
+  font-size: var(--type-xs);
+  color: var(--color-text-secondary);
+}
+
+.languageField {
+  max-width: 220px;
 }
 
 .subTitle {
@@ -17,22 +40,33 @@
   color: var(--color-text-secondary);
 }
 
-.choiceRow {
+/*
+ * Ways out of the default channel, directly under the action they replace.
+ * Negative inline margin pulls the ghost labels back onto the field's left
+ * edge so the column reads as one stack.
+ */
+.escapeRow {
   display: flex;
-  align-items: center;
   flex-wrap: wrap;
-  gap: var(--space-2);
+  gap: var(--space-1);
+  margin-inline-start: calc(var(--space-3) * -1);
 }
 
-.choiceLabel {
-  font-size: var(--type-sm);
-  color: var(--color-text-primary);
+@media (max-width: 480px) {
+  .escapeRow {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
 }
 
+/* A phone number and a six-digit code are short values; a field stretched to
+   the card width reads as a much longer input than it is. */
 .phoneRow {
   display: flex;
   align-items: flex-end;
   gap: var(--space-2);
+  max-width: 26rem;
 }
 
 .phoneRow > :first-child {
@@ -54,15 +88,16 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* Customer-display handoff: one bordered surface, its own waiting state. */
+/* Customer-display handoff, waiting on the patient. The parent channel card
+   already carries the boundary, so this is a grey well inside it — a second
+   border here would be a box inside a box. */
 .telegramCard {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
   padding: var(--space-3);
-  border: 1px solid var(--color-border);
   border-radius: var(--radius-control);
-  background: var(--color-surface);
+  background: var(--color-surface-2);
 }
 
 .telegramText {
@@ -121,10 +156,6 @@
   display: flex;
   align-items: center;
   gap: var(--space-2);
-}
-
-.unverifiedLink {
-  align-self: flex-start;
 }
 
 @media (max-width: 480px) {

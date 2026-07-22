@@ -20,7 +20,7 @@ function PanelContent({ children, muted = false, title }: { children: string; mu
 }
 
 const meta = {
-  title: 'Design System/Primitives/Resizable',
+  title: 'Design System/Components/Resizable',
   component: ResizablePanelGroup,
   tags: ['autodocs', 'source-reui', 'adapted-kura'],
   parameters: {

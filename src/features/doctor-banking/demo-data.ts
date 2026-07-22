@@ -2,6 +2,7 @@ import type {
   AdminDoctorBankingFixture,
   DoctorBankingFixture,
   DoctorBankingOverview,
+  DoctorBankingViewState,
   DoctorFinancialNotification,
   DoctorLedgerDetail,
   DoctorLedgerSummary,
@@ -438,3 +439,108 @@ export const adminFixture: AdminDoctorBankingFixture = {
   floorChanges,
   notifications: [failedPullNotification, ...doctorNotifications],
 };
+
+export type EarningsDemoScenario = {
+  data: DoctorBankingFixture;
+  state: DoctorBankingViewState;
+  intent?: KhqrIntent | null;
+  linkSession?: MandateLinkSession | null;
+  downloadState?: 'idle' | 'loading' | 'success' | 'error';
+};
+
+function withMandate(mandate: MandateSummary): DoctorBankingFixture {
+  return {
+    ...doctorFixture,
+    overview: { ...doctorFixture.overview, mandate },
+  };
+}
+
+/** Storybook-owned earnings states consumed by the routed prototype adapter. */
+export const EARNINGS_DEMO_SCENARIOS = {
+  'overview-green': { data: doctorFixture, state: 'ready' },
+  'overview-red': { data: redDoctorFixture, state: 'ready' },
+  'overview-zero': {
+    data: { ...doctorFixture, overview: zeroOverview },
+    state: 'ready',
+  },
+  'overview-unavailable': {
+    data: { ...doctorFixture, overview: unavailableOverview },
+    state: 'ready',
+  },
+  'overview-empty': {
+    data: { ...doctorFixture, entries: [] },
+    state: 'ready',
+  },
+  'overview-loading': { data: doctorFixture, state: 'loading' },
+  'overview-error': { data: doctorFixture, state: 'error' },
+  'overview-permission': { data: doctorFixture, state: 'permission-denied' },
+  'activity-failed-pull': { data: redDoctorFixture, state: 'ready' },
+  'activity-empty': {
+    data: { ...doctorFixture, entries: [], notifications: [] },
+    state: 'ready',
+  },
+  'activity-download-error': {
+    data: doctorFixture,
+    state: 'ready',
+    downloadState: 'error',
+  },
+  'activity-download-success': {
+    data: doctorFixture,
+    state: 'ready',
+    downloadState: 'success',
+  },
+  'auto-pay-linked': { data: withMandate(mandateByState.linked), state: 'ready' },
+  'auto-pay-unlinked': { data: withMandate(mandateByState.unlinked), state: 'ready' },
+  'auto-pay-pending': {
+    data: withMandate(mandateByState.link_pending),
+    state: 'ready',
+    linkSession: pendingLinkSession,
+  },
+  'auto-pay-link-expired': {
+    data: withMandate(mandateByState.link_pending),
+    state: 'ready',
+    linkSession: expiredLinkSession,
+  },
+  'auto-pay-confirmed': {
+    data: withMandate(mandateByState.link_pending),
+    state: 'ready',
+    linkSession: confirmedLinkSession,
+  },
+  'auto-pay-renewal': {
+    data: withMandate(mandateByState.renewal_required),
+    state: 'ready',
+  },
+  'auto-pay-expired': {
+    data: withMandate(mandateByState.expired),
+    state: 'ready',
+  },
+  'auto-pay-frozen': {
+    data: withMandate(mandateByState.frozen),
+    state: 'ready',
+  },
+  'auto-pay-deleted': {
+    data: withMandate(mandateByState.deleted),
+    state: 'ready',
+  },
+  'settle-pending': {
+    data: redDoctorFixture,
+    state: 'ready',
+    intent: pendingKhqr,
+  },
+  'settle-expired': {
+    data: redDoctorFixture,
+    state: 'ready',
+    intent: expiredKhqr,
+  },
+  'settle-confirmed': {
+    data: redDoctorFixture,
+    state: 'ready',
+    intent: confirmedKhqr,
+  },
+  'settle-nothing-due': {
+    data: { ...doctorFixture, overview: zeroOverview },
+    state: 'ready',
+  },
+} as const satisfies Record<string, EarningsDemoScenario>;
+
+export type EarningsDemoScenarioId = keyof typeof EARNINGS_DEMO_SCENARIOS;

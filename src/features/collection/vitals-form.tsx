@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 
+import { useT } from '../../components/foundations/i18n';
 import { Alert, AlertDescription, Badge, Button, Checkbox, Input, SegmentedToggle } from '../../components/ui';
 
 import { FASTING_OPTIONS, PAIN_FACES, VITAL_RANGES } from './catalog';
@@ -12,11 +13,16 @@ import {
   fieldOutOfRange,
   vitalsGate,
 } from './logic';
-import type { CollectionPatient, VitalsValues } from './types';
+import type { VitalsValues } from './types';
 import styles from './vitals-form.module.css';
 
 export type VitalsFormProps = {
-  patient: CollectionPatient;
+  /**
+   * Identity of the person these readings belong to. Only the id is needed —
+   * a change resets the form — so the same measurement surface serves the
+   * nurse at the draw station and the doctor during the exam.
+   */
+  patientId: string;
   initial?: VitalsValues;
   onSubmit: (values: VitalsValues) => void;
   onClear?: () => void;
@@ -35,14 +41,15 @@ function rangeHint(field: keyof typeof VITAL_RANGES, unit: string, tempUnit: 'C'
  * Vitals capture. Required: height, weight, HR, BP. Out-of-range values warn
  * and require an explicit abnormal confirmation — they never block silently.
  */
-export function VitalsForm({ initial, onClear, onSubmit, patient }: VitalsFormProps) {
+export function VitalsForm({ initial, onClear, onSubmit, patientId }: VitalsFormProps) {
+  const t = useT();
   const [values, setValues] = useState<VitalsValues>({ ...EMPTY_VITALS, ...initial });
   const [confirmAbnormal, setConfirmAbnormal] = useState(false);
-  const [formPatientId, setFormPatientId] = useState(patient.id);
+  const [formPatientId, setFormPatientId] = useState(patientId);
 
   // Adjust-during-render reset: a new patient starts a fresh form.
-  if (formPatientId !== patient.id) {
-    setFormPatientId(patient.id);
+  if (formPatientId !== patientId) {
+    setFormPatientId(patientId);
     setValues({ ...EMPTY_VITALS, ...initial });
     setConfirmAbnormal(false);
   }
@@ -65,10 +72,14 @@ export function VitalsForm({ initial, onClear, onSubmit, patient }: VitalsFormPr
     const oor = fieldOutOfRange(key, raw, values.tempUnit);
     return (
       <Input
-        error={oor ? `Outside typical range (${rangeHint(key, unit, values.tempUnit)}).` : undefined}
+        error={
+          oor
+            ? `${t('Outside typical range')} (${rangeHint(key, unit, values.tempUnit)}).`
+            : undefined
+        }
         helpText={oor ? undefined : rangeHint(key, unit, values.tempUnit)}
         inputMode="decimal"
-        label={label}
+        label={t(label)}
         onChange={(event) => set(key, event.target.value)}
         required={required}
         suffix={key === 'tempC' ? undefined : unit}
@@ -89,8 +100,8 @@ export function VitalsForm({ initial, onClear, onSubmit, patient }: VitalsFormPr
         if (gate.canSubmit) onSubmit(values);
       }}
     >
-      <section aria-label="Biometrics" className={styles.section}>
-        <h3 className={styles.sectionTitle}>Biometrics</h3>
+      <section aria-label={t('Biometrics')} className={styles.section}>
+        <h3 className={styles.sectionTitle}>{t('Biometrics')}</h3>
         <div className={styles.grid3}>
           {numberField('heightCm', 'Height', 'cm', true)}
           {numberField('weightKg', 'Weight', 'kg', true)}
@@ -99,7 +110,7 @@ export function VitalsForm({ initial, onClear, onSubmit, patient }: VitalsFormPr
             {bmi != null && bmiInfo ? (
               <span className={styles.bmiValue}>
                 {bmi}
-                <Badge variant={bmiInfo.tone}>{bmiInfo.label}</Badge>
+                <Badge variant={bmiInfo.tone}>{t(bmiInfo.label)}</Badge>
               </span>
             ) : (
               <span className={styles.bmiEmpty}>—</span>
@@ -108,8 +119,8 @@ export function VitalsForm({ initial, onClear, onSubmit, patient }: VitalsFormPr
         </div>
       </section>
 
-      <section aria-label="Vitals" className={styles.section}>
-        <h3 className={styles.sectionTitle}>Vitals</h3>
+      <section aria-label={t('Vitals')} className={styles.section}>
+        <h3 className={styles.sectionTitle}>{t('Vitals')}</h3>
         <div className={styles.grid3}>
           {numberField('hr', 'Heart rate', 'bpm', true)}
           <div className={styles.bp}>
@@ -119,7 +130,7 @@ export function VitalsForm({ initial, onClear, onSubmit, patient }: VitalsFormPr
           <div className={styles.temp}>
             {numberField('tempC', 'Temperature', values.tempUnit === 'C' ? '°C' : '°F', false)}
             <SegmentedToggle
-              label="Temperature unit"
+              label={t('Temperature unit')}
               onValueChange={(value) => set('tempUnit', value as 'C' | 'F')}
               options={[
                 { value: 'C', label: '°C' },
@@ -133,11 +144,11 @@ export function VitalsForm({ initial, onClear, onSubmit, patient }: VitalsFormPr
         </div>
       </section>
 
-      <section aria-label="Pain" className={styles.section}>
-        <h3 className={styles.sectionTitle}>Pain (VAS 0–10)</h3>
+      <section aria-label={t('Pain')} className={styles.section}>
+        <h3 className={styles.sectionTitle}>{t('Pain (VAS 0–10)')}</h3>
         <div className={styles.pain}>
           <SegmentedToggle
-            label="Pain score"
+            label={t('Pain score')}
             onValueChange={(value) => set('painVas', Number(value))}
             options={Array.from({ length: 11 }, (_, index) => ({
               value: String(index),
@@ -146,17 +157,17 @@ export function VitalsForm({ initial, onClear, onSubmit, patient }: VitalsFormPr
             value={String(values.painVas)}
           />
           <span aria-live="polite" className={styles.painFace}>
-            <span aria-hidden="true">{pain.face}</span> {pain.label}
+            <span aria-hidden="true">{pain.face}</span> {t(pain.label)}
           </span>
         </div>
       </section>
 
-      <section aria-label="Fasting status" className={styles.section}>
-        <h3 className={styles.sectionTitle}>Fasting status</h3>
+      <section aria-label={t('Fasting status')} className={styles.section}>
+        <h3 className={styles.sectionTitle}>{t('Fasting status')}</h3>
         <SegmentedToggle
-          label="Fasting status"
+          label={t('Fasting status')}
           onValueChange={(value) => set('fasting', value)}
-          options={FASTING_OPTIONS.map((option) => ({ value: option.id, label: option.label }))}
+          options={FASTING_OPTIONS.map((option) => ({ value: option.id, label: t(option.label) }))}
           value={values.fasting ?? undefined}
         />
       </section>
@@ -165,8 +176,9 @@ export function VitalsForm({ initial, onClear, onSubmit, patient }: VitalsFormPr
         <Alert tone="warning">
           <AlertDescription>
             <Checkbox checked={confirmAbnormal} onCheckedChange={setConfirmAbnormal}>
-              Confirm abnormal values — {gate.oorFields.length} field
-              {gate.oorFields.length > 1 ? 's' : ''} outside typical range.
+              {t('Confirm abnormal values')} — {gate.oorFields.length}{' '}
+              {t(gate.oorFields.length > 1 ? 'fields' : 'field')}{' '}
+              {t('outside typical range')}.
             </Checkbox>
           </AlertDescription>
         </Alert>
@@ -175,11 +187,11 @@ export function VitalsForm({ initial, onClear, onSubmit, patient }: VitalsFormPr
       <footer className={styles.footer}>
         {onClear ? (
           <Button onClick={onClear} type="button" variant="ghost">
-            Clear form
+            {t('Clear form')}
           </Button>
         ) : null}
         <Button disabled={!gate.canSubmit} type="submit" variant="primary">
-          Submit &amp; next patient
+          {t('Submit & next patient')}
         </Button>
       </footer>
     </form>

@@ -55,6 +55,9 @@ export const WorkspaceList: Story = {
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getByText("Last active")).toBeVisible();
+    await expect(
+      canvas.queryByRole("button", { name: /create.*workspace/i }),
+    ).not.toBeInTheDocument();
 
     await userEvent.click(
       canvas.getByRole("button", { name: /Downtown Health/ }),
@@ -102,7 +105,7 @@ export const CreateFirstWorkspace: Story = {
       canvas.getByRole("button", { name: "Create workspace" }),
     );
     await expect(
-      await canvas.findByText("Name the workspace to continue."),
+      await canvas.findByText("Workspace name is required."),
     ).toBeVisible();
 
     await userEvent.type(
@@ -118,30 +121,13 @@ export const CreateFirstWorkspace: Story = {
   },
 };
 
-/** Create reached from the list keeps a way back. */
-export const CreateFromList: Story = {
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    await userEvent.click(
-      canvas.getByRole("button", { name: "Create a new workspace" }),
-    );
-    await expect(
-      canvas.getByRole("heading", { name: "Create your workspace" }),
-    ).toBeVisible();
-    await userEvent.click(canvas.getByRole("button", { name: "Back" }));
-    await expect(
-      await canvas.findByRole("heading", { name: "Choose a workspace" }),
-    ).toBeVisible();
-  },
-};
-
 /** Loading context. */
 export const Loading: Story = {
   args: { status: "loading" },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getByRole("status")).toHaveTextContent(
-      /Loading your workspaces/,
+      /Loading workspaces/,
     );
   },
 };

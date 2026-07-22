@@ -7,8 +7,8 @@ import {
   type ToasterProps as SonnerToasterProps,
 } from 'sonner';
 
+import { useT } from '../foundations/i18n';
 import {
-  CloseIcon,
   ErrorIcon,
   InformationIcon,
   LoadingIcon,
@@ -21,7 +21,7 @@ function joinClasses(...classes: Array<string | undefined | false>) {
   return classes.filter(Boolean).join(' ');
 }
 
-export type ToasterProps = SonnerToasterProps;
+export type ToasterProps = Omit<SonnerToasterProps, 'closeButton'>;
 export type ToastOptions = ExternalToast;
 
 /**
@@ -30,8 +30,7 @@ export type ToastOptions = ExternalToast;
  */
 export function Toaster({
   className,
-  closeButton = true,
-  containerAriaLabel = 'Notifications',
+  containerAriaLabel,
   icons,
   mobileOffset = 'var(--space-3)',
   offset = 'var(--space-4)',
@@ -39,21 +38,21 @@ export function Toaster({
   toastOptions,
   ...props
 }: ToasterProps) {
+  const t = useT();
   const classNames = toastOptions?.classNames ?? {};
 
   return (
     <SonnerToaster
       {...props}
       className={joinClasses(styles.toaster, className)}
-      closeButton={closeButton}
-      containerAriaLabel={containerAriaLabel}
+      closeButton={false}
+      containerAriaLabel={containerAriaLabel ?? t('Notifications')}
       icons={{
         success: <SuccessIcon aria-hidden="true" />,
         info: <InformationIcon aria-hidden="true" />,
         warning: <WarningIcon aria-hidden="true" />,
         error: <ErrorIcon aria-hidden="true" />,
         loading: <LoadingIcon aria-hidden="true" className={styles.loadingIcon} />,
-        close: <CloseIcon aria-hidden="true" />,
         ...icons,
       }}
       mobileOffset={mobileOffset}
@@ -72,7 +71,6 @@ export function Toaster({
           icon: joinClasses(styles.icon, classNames.icon),
           actionButton: joinClasses(styles.actionButton, classNames.actionButton),
           cancelButton: joinClasses(styles.cancelButton, classNames.cancelButton),
-          closeButton: joinClasses(styles.closeButton, classNames.closeButton),
           success: joinClasses(styles.success, classNames.success),
           info: joinClasses(styles.info, classNames.info),
           warning: joinClasses(styles.warning, classNames.warning),
@@ -80,6 +78,7 @@ export function Toaster({
           loading: joinClasses(styles.loading, classNames.loading),
           default: joinClasses(styles.default, classNames.default),
         },
+        closeButton: false,
       }}
     />
   );

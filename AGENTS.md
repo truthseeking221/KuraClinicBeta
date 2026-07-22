@@ -16,6 +16,7 @@
 
 - Before designing, implementing, refining, reviewing, or visually verifying any app or Storybook UI, read and follow [`.codex/skills/design-kura-ui/SKILL.md`](.codex/skills/design-kura-ui/SKILL.md) completely.
 - Treat `design-kura-ui` as the repository's UI craft, implementation-fidelity, responsive-design, state-coverage, accessibility, and visual-verification standard.
+- Before placing any container, choosing any background, or reaching for a shadow, read and follow [the Kura surface direction](.codex/skills/design-kura-ui/references/kura-surface-direction.md) completely — the visual law for every surface: white page; grouping by proximity, alignment, spacing, and typography first; flat gray trays only for groups that need a distinct functional region; white tiles with one feather shadow; colour only on data, status, and the single primary action.
 - Before creating, adapting, registering, reviewing, or approving reusable components, Storybook stories or flows, ReUI/shadcn intake, or BoardUI-style visual finishing, also read and follow [the ReUI × BoardUI × Kura component build guide](.codex/skills/design-kura-ui/references/reui-boardui-kura-component-build-guide.md) completely.
 - Pair it with `design-kura` when clinical workflow, safety, authority, permissions, roles, domain state, or product behavior affects the decision.
 - Also follow any more specific repository skill or architecture document that applies. If guidance conflicts, use the source-of-truth precedence defined by `design-kura-ui`.

@@ -1,8 +1,11 @@
+'use client';
+
 import * as React from 'react';
 import useEmblaCarousel, {
   type UseEmblaCarouselType,
 } from 'embla-carousel-react';
 
+import { useT } from '../foundations/i18n';
 import {
   ChevronDownIcon,
   ChevronLeftIcon,
@@ -232,6 +235,7 @@ export type CarouselPreviousProps = ButtonProps;
 
 export const CarouselPrevious = React.forwardRef<HTMLButtonElement, CarouselPreviousProps>(
   ({ className, variant = 'outline', size = 'icon-lg', onClick, disabled, 'aria-label': ariaLabel, ...props }, ref) => {
+    const t = useT();
     const { orientation, scrollPrev, canScrollPrev } = useCarousel();
 
     return (
@@ -247,7 +251,7 @@ export const CarouselPrevious = React.forwardRef<HTMLButtonElement, CarouselPrev
           className,
         )}
         disabled={!canScrollPrev || disabled}
-        aria-label={ariaLabel ?? 'Previous slide'}
+        aria-label={ariaLabel ?? t('Previous slide')}
         onClick={(event) => {
           onClick?.(event);
           if (!event.defaultPrevented) scrollPrev();
@@ -267,6 +271,7 @@ CarouselPrevious.displayName = 'CarouselPrevious';
 
 export const CarouselNext = React.forwardRef<HTMLButtonElement, CarouselPreviousProps>(
   ({ className, variant = 'outline', size = 'icon-lg', onClick, disabled, 'aria-label': ariaLabel, ...props }, ref) => {
+    const t = useT();
     const { orientation, scrollNext, canScrollNext } = useCarousel();
 
     return (
@@ -282,7 +287,7 @@ export const CarouselNext = React.forwardRef<HTMLButtonElement, CarouselPrevious
           className,
         )}
         disabled={!canScrollNext || disabled}
-        aria-label={ariaLabel ?? 'Next slide'}
+        aria-label={ariaLabel ?? t('Next slide')}
         onClick={(event) => {
           onClick?.(event);
           if (!event.defaultPrevented) scrollNext();
@@ -305,8 +310,10 @@ export interface CarouselDotsProps extends React.HTMLAttributes<HTMLDivElement> 
 }
 
 export const CarouselDots = React.forwardRef<HTMLDivElement, CarouselDotsProps>(
-  ({ className, getLabel = (index) => `Go to slide ${index + 1}`, ...props }, ref) => {
+  ({ className, getLabel, ...props }, ref) => {
+    const t = useT();
     const { api, selectedIndex, scrollSnapCount } = useCarousel();
+    const resolvedGetLabel = getLabel ?? ((index: number) => `${t('Go to slide')} ${index + 1}`);
     if (!scrollSnapCount) return null;
 
     return (
@@ -314,7 +321,7 @@ export const CarouselDots = React.forwardRef<HTMLDivElement, CarouselDotsProps>(
         ref={ref}
         {...props}
         role="group"
-        aria-label="Slide navigation"
+        aria-label={t('Slide navigation')}
         data-slot="carousel-dots"
         className={joinClasses(styles.dots, className)}
       >
@@ -322,7 +329,7 @@ export const CarouselDots = React.forwardRef<HTMLDivElement, CarouselDotsProps>(
           <button
             key={index}
             type="button"
-            aria-label={getLabel(index)}
+            aria-label={resolvedGetLabel(index)}
             aria-current={index === selectedIndex ? 'true' : undefined}
             data-selected={index === selectedIndex ? 'true' : 'false'}
             className={styles.dotButton}

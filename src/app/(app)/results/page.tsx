@@ -1,56 +1,59 @@
 'use client';
 
 /**
- * Results review. ?episode= switches the episode fixture so the demo can
- * show first-visit, critical, partial, redraw, and cancellation edges —
- * the same section sets the Storybook stories prove.
+ * Results review. The onboarding phone selects the Storybook-owned episode
+ * or system state; the route itself does not invent or override fixtures.
  */
 
-import { Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
-
-import { ResultsReviewFlow } from '../../../features/results';
+import { ResultsReviewFlow, ResultsWorkspace } from '../../../features/results';
+import { useState } from 'react';
 import {
-  ADD_ON_EPISODE_SECTIONS,
-  ALL_CANCELLED_SECTIONS,
-  CRITICAL_COMPLETE_SECTIONS,
   DEMO_RESULTS_PATIENT,
-  FIRST_VISIT_SECTIONS,
-  PARTIAL_EPISODE_SECTIONS,
-  REDRAW_EPISODE_SECTIONS,
-  RELEASED_WITH_CANCELLED_SECTIONS,
+  RESULTS_DEMO_SCENARIOS,
 } from '../../../features/results/demo-data';
-
-const EPISODES: Record<string, { label: string; sections: typeof FIRST_VISIT_SECTIONS }> = {
-  critical: { label: 'Episode · Jun 10, 2026', sections: CRITICAL_COMPLETE_SECTIONS },
-  first: { label: 'First visit · Jun 10, 2026', sections: FIRST_VISIT_SECTIONS },
-  partial: { label: 'Episode · results arriving', sections: PARTIAL_EPISODE_SECTIONS },
-  redraw: { label: 'Episode · redraw in progress', sections: REDRAW_EPISODE_SECTIONS },
-  'add-on': { label: 'Episode · add-on placed', sections: ADD_ON_EPISODE_SECTIONS },
-  'with-cancelled': {
-    label: 'Episode · released with cancellations',
-    sections: RELEASED_WITH_CANCELLED_SECTIONS,
-  },
-  cancelled: { label: 'Episode · cancelled', sections: ALL_CANCELLED_SECTIONS },
-};
+import type { ResultsDemoScenario } from '../../../features/results/demo-data';
+import { demoOnboardingScenarioById } from '../../../features/auth/demo-data';
+import { useDemoSession } from '../../_demo/demo-session';
 
 function ResultsPage() {
-  const searchParams = useSearchParams();
-  const episode = EPISODES[searchParams.get('episode') ?? 'critical'] ?? EPISODES.critical;
+  const { session } = useDemoSession();
+  const [recovered, setRecovered] = useState(false);
+  const registered = demoOnboardingScenarioById(session.demoScenarioId);
+  const requested = registered.surface === 'results' ? registered.variant : 'critical';
+  const selectedEpisode: ResultsDemoScenario =
+    RESULTS_DEMO_SCENARIOS[requested as keyof typeof RESULTS_DEMO_SCENARIOS] ??
+    RESULTS_DEMO_SCENARIOS.critical;
+  const episode: ResultsDemoScenario = recovered
+    ? RESULTS_DEMO_SCENARIOS.longitudinal
+    : selectedEpisode;
+
+  if (session.demoProfile === 'new-doctor') {
+    return <ResultsWorkspace episodeLabel="" sections={[]} state="empty" />;
+  }
+
+  if (episode.mode === 'review') {
+    return (
+      <ResultsReviewFlow
+        episodeLabel={episode.episodeLabel}
+        patient={DEMO_RESULTS_PATIENT}
+        sections={episode.sections}
+      />
+    );
+  }
 
   return (
-    <ResultsReviewFlow
-      episodeLabel={episode.label}
+    <ResultsWorkspace
+      episodeLabel={episode.episodeLabel}
+      onRetry={() => setRecovered(true)}
       patient={DEMO_RESULTS_PATIENT}
+      readOnly={episode.readOnly}
       sections={episode.sections}
+      staleAt={episode.staleAt}
+      state={episode.state}
     />
   );
 }
 
 export default function Page() {
-  return (
-    <Suspense fallback={null}>
-      <ResultsPage />
-    </Suspense>
-  );
+  return <ResultsPage />;
 }

@@ -145,6 +145,8 @@ export type {
   AlertTitleProps,
   AlertTone,
 } from "./alert";
+export { Announcement } from './announcement';
+export type { AnnouncementProps } from './announcement';
 export {
   AlertDialog,
   AlertDialogAction,
@@ -178,6 +180,8 @@ export type {
   BadgeSize,
   BadgeVariant,
 } from "./badge";
+export { Chip } from './chip';
+export type { ChipColor, ChipProps, ChipVariant } from './chip';
 export {
   Popover,
   PopoverContent,
@@ -212,6 +216,18 @@ export type {
 } from "./breadcrumb";
 export { Button } from "./button";
 export type { ButtonProps, ButtonSize, ButtonVariant } from "./button";
+export { CloseButton } from './close-button';
+export type { CloseButtonProps, CloseButtonSize } from './close-button';
+export { LinkButton } from './link-button';
+export type {
+  LinkButtonAnchorProps,
+  LinkButtonButtonProps,
+  LinkButtonProps,
+  LinkButtonSize,
+  LinkButtonVariant,
+} from './link-button';
+export { Divider } from './divider';
+export type { DividerAlign, DividerProps, DividerVariant } from './divider';
 export { ButtonGroup } from "./button-group";
 export type { ButtonGroupOrientation, ButtonGroupProps } from "./button-group";
 export {
@@ -270,6 +286,12 @@ export type {
   DateSelectorProps,
   DateSelectorValue,
 } from "./date-selector";
+export { DateInput, formatDateInputValue } from "./date-input";
+export type { DateInputProps } from "./date-input";
+export { DateRangePicker } from './date-range-picker';
+export type { DateRangePickerProps } from './date-range-picker';
+export { SettingsModal } from './settings-modal';
+export type { SettingsModalProps, SettingsModalSection } from './settings-modal';
 export {
   Card,
   CardAction,
@@ -397,7 +419,7 @@ export type {
   IconButtonVariant,
 } from "./icon-button";
 export { Input } from "./input";
-export type { InputProps, InputSize } from "./input";
+export type { InputProps, InputSize, InputVariant } from "./input";
 export {
   Item,
   ItemActions,
@@ -661,6 +683,7 @@ export type {
   StepperContentProps,
   StepperDescriptionProps,
   StepperItemProps,
+  StepperMode,
   StepperNavProps,
   StepperOrientation,
   StepperPanelProps,
@@ -671,7 +694,7 @@ export type {
   StepState,
 } from "./stepper";
 export { Switch } from "./switch";
-export type { SwitchProps, SwitchSize } from "./switch";
+export type { SwitchProps, SwitchShape, SwitchSize } from "./switch";
 export { Tabs, TabsContent, TabsList, TabsTrigger } from "./tabs";
 export type {
   TabsAppearance,

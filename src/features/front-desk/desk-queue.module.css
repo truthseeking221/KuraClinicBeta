@@ -1,8 +1,8 @@
 .queue {
   display: flex;
+  width: 100%;
   flex-direction: column;
   gap: var(--space-4);
-  max-width: 960px;
 }
 
 .header {
@@ -20,124 +20,191 @@
 
 .title {
   margin: 0;
+  color: var(--color-text-primary);
   font-size: var(--type-lg);
   font-weight: var(--weight-semibold);
-  color: var(--color-text-primary);
 }
 
 .subtitle {
   margin: 0;
-  font-size: var(--type-sm);
   color: var(--color-text-tertiary);
+  font-size: var(--type-sm);
 }
 
 .staleRow {
   display: flex;
   align-items: center;
   gap: var(--space-2);
+  color: var(--color-text-tertiary);
   font-size: var(--type-xs);
-  color: var(--color-text-tertiary);
 }
 
-/* ── Rows: dense repeated work items — dividers, no card mosaic ── */
-
-.list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-}
-
-.list > li + li {
-  border-top: 1px solid var(--color-border);
-}
-
-.rowStatic,
-.rowObserved {
-  display: flex;
-  align-items: center;
-  gap: var(--space-4);
-  min-height: var(--row-h);
-  padding-block: var(--space-2);
-}
-
-.rowObserved .name,
-.rowObserved .wait {
-  color: var(--color-text-tertiary);
-}
-
-.queueNumber {
-  flex-shrink: 0;
-  min-width: var(--space-10);
-  font-size: var(--type-sm);
-  font-variant-numeric: tabular-nums;
-  color: var(--color-text-tertiary);
-}
-
-.rowBody {
-  flex: 1;
+/* The desktop queue is one flat operational region. The canonical DataGrid
+   owns its boundary and row dividers; no additional Card shell is added. */
+.desktopWorklist {
+  display: block;
   min-width: 0;
+}
+
+.mobileWorklist {
+  display: none;
+}
+
+.patientIdentity {
   display: flex;
-  flex-direction: column;
-  gap: var(--space-0-5);
+  min-width: 0;
+  align-items: baseline;
+  gap: var(--space-3);
+}
+
+.queueNumber,
+.mobileQueueNumber {
+  flex: 0 0 auto;
+  color: var(--color-text-tertiary);
+  font-size: var(--type-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+.patientNames {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-2);
 }
 
 .nameLine {
   display: flex;
-  align-items: baseline;
-  gap: var(--space-2);
   min-width: 0;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-2);
 }
 
 .name {
+  min-width: 0;
+  color: var(--color-text-primary);
   font-size: var(--type-sm);
   font-weight: var(--weight-medium);
-  color: var(--color-text-primary);
   overflow-wrap: anywhere;
 }
 
 .nameKhmer {
-  font-size: var(--type-xs);
+  min-width: 0;
   color: var(--color-text-tertiary);
-}
-
-.factLine {
-  display: flex;
-  gap: var(--space-2);
-}
-
-.wait {
   font-size: var(--type-xs);
+  overflow-wrap: anywhere;
+}
+
+.timing {
+  display: inline-flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--space-0-5);
   font-variant-numeric: tabular-nums;
-  color: var(--color-text-tertiary);
 }
 
-/* Wait pressure is never color-only: the copy carries the escalation word. */
-.wait[data-tone='warn'] {
-  color: var(--color-warn-500);
+.timingPrimary {
+  color: var(--color-text-secondary);
+  font-size: var(--type-sm);
+  line-height: var(--leading-snug);
+}
+
+.timingSecondary {
+  color: var(--color-text-tertiary);
+  font-size: var(--type-xs);
+  line-height: var(--leading-normal);
+}
+
+/* Wait pressure is never color-only: the escalation word remains in copy. */
+.timingPrimary[data-tone='warn'] {
+  color: var(--color-status-warning-fg);
   font-weight: var(--weight-medium);
 }
 
-.wait[data-tone='escalate'] {
+.timingPrimary[data-tone='escalate'] {
   color: var(--destructive);
   font-weight: var(--weight-medium);
 }
 
-.facts {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-1);
-  justify-content: flex-end;
+.fact,
+.noAction {
+  color: var(--color-text-secondary);
+  font-size: var(--type-sm);
+  line-height: var(--leading-snug);
 }
 
-.observedNote {
-  flex-shrink: 0;
-  font-size: var(--type-xs);
+.fact[data-tone='success'] {
+  color: var(--color-status-success-fg);
+}
+
+.fact[data-tone='warning'] {
+  color: var(--color-status-warning-fg);
+  font-weight: var(--weight-medium);
+}
+
+.noAction {
   color: var(--color-text-tertiary);
 }
 
-/* ── Loading skeleton keeps row geometry ─────────────────── */
+.actionHeader,
+.actionCell {
+  text-align: end;
+}
+
+.actionCell > * {
+  margin-inline-start: auto;
+}
+
+.completedSection {
+  border-block-start: 1px solid var(--color-border-button-default);
+  padding-block-start: var(--space-1);
+}
+
+.completedContent {
+  padding-block-end: 0;
+}
+
+.noActiveVisits {
+  margin: 0;
+  padding-block: var(--space-4);
+  color: var(--color-text-tertiary);
+  font-size: var(--type-sm);
+}
+
+.mobileSurface {
+  overflow: hidden;
+  padding: 0;
+}
+
+.mobileSurface :global([data-slot='item']) {
+  align-items: start;
+}
+
+.mobileSurface :global([data-slot='item-media']) {
+  align-self: start;
+  padding-block-start: var(--space-0-5);
+}
+
+.mobileFacts {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-3);
+  padding-block-start: var(--space-2);
+}
+
+.mobileActions {
+  grid-column: 2 / -1;
+  width: 100%;
+  justify-content: flex-start;
+  padding-block-start: var(--space-2);
+}
+
+.rowAction {
+  width: 100%;
+}
 
 .skeletonQueue {
   width: var(--space-8);
@@ -154,41 +221,47 @@
   height: var(--space-3);
 }
 
-/* ── Mobile: stack facts under the name, keep the action reachable ── */
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
 
-@media (max-width: 640px) {
-  .rowStatic,
-  .rowObserved {
-    flex-wrap: wrap;
-    align-items: flex-start;
-    row-gap: var(--space-2);
+@media (max-width: 760px) {
+  .desktopWorklist {
+    display: none;
   }
 
-  .queueNumber {
-    min-width: var(--space-8);
+  .mobileWorklist {
+    display: block;
   }
 
-  /* Row 1: number + identity. Row 2: axis facts. Row 3: the one action,
-     full width in thumb reach. The name never gets crushed by the button. */
-  .rowBody {
-    flex: 1 1 0;
-    min-width: 60%;
+  .header {
+    align-items: center;
   }
 
-  .facts {
-    order: 4;
+  .header > :global([data-slot='button']) {
+    flex: 0 0 auto;
+  }
+}
+
+@media (max-width: 420px) {
+  .header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .header > :global([data-slot='button']) {
     width: 100%;
-    justify-content: flex-start;
-    padding-inline-start: calc(var(--space-8) + var(--space-4));
   }
 
-  .rowAction {
-    order: 5;
-    width: 100%;
-  }
-
-  .observedNote {
-    order: 5;
-    padding-inline-start: calc(var(--space-8) + var(--space-4));
+  .mobileQueueNumber {
+    min-width: var(--space-7);
   }
 }

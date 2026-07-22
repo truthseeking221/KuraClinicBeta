@@ -1,0 +1,103 @@
+.popover {
+  width: min(54rem, calc(100vw - (var(--space-4) * 2)));
+  max-height: min(46rem, calc(100dvh - (var(--space-4) * 2)));
+  overflow: auto;
+  border: 0;
+  border-radius: var(--radius-2xl);
+  padding: 0;
+  background: var(--color-background-secondary-default);
+  box-shadow: var(--shadow-dropdown);
+}
+
+.layout {
+  display: flex;
+  min-width: 0;
+  gap: var(--space-3);
+}
+
+.presets {
+  display: flex;
+  width: 8.875rem;
+  flex: 0 0 auto;
+  flex-direction: column;
+  gap: var(--space-1-5);
+  padding: var(--space-4) 0 var(--space-4) var(--space-4);
+}
+
+.preset {
+  width: 100%;
+  border: 0;
+  border-radius: var(--radius-control);
+  padding: var(--space-1-5) var(--space-2);
+  background: transparent;
+  color: var(--color-text-primary);
+  font: inherit;
+  font-size: var(--type-base);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-normal);
+  text-align: start;
+  cursor: pointer;
+}
+
+.preset:hover { background: var(--color-background-secondary-hover); }
+.preset[data-selected='true'] { background: var(--color-background-tertiary-default); }
+.preset:focus-visible { outline: none; box-shadow: var(--shadow-focus); }
+
+.calendarPanel {
+  min-width: 0;
+  flex: 1;
+  padding: var(--space-2) var(--space-2) var(--space-3) 0;
+}
+
+.calendar {
+  width: 100%;
+  border-radius: var(--radius-popover);
+  padding: var(--space-4);
+  background: var(--color-background-primary-default);
+  box-shadow: var(--shadow-xs);
+}
+
+.footer {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4) 0 0;
+}
+
+.summary,
+.actions {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: var(--space-2-5);
+}
+
+.summary {
+  color: var(--color-text-secondary);
+  font-size: var(--type-base);
+  font-weight: var(--weight-medium);
+}
+
+.dayCount {
+  flex: 0 0 auto;
+  border-radius: var(--radius-lg);
+  padding: var(--space-2);
+  background: var(--color-background-tertiary-default);
+}
+
+@media (max-width: 48rem) {
+  .popover { max-height: calc(100dvh - var(--space-4)); }
+  .layout { flex-direction: column; }
+  .presets {
+    width: auto;
+    flex-direction: row;
+    overflow-x: auto;
+    padding: var(--space-3) var(--space-3) 0;
+  }
+  .preset { width: auto; flex: 0 0 auto; }
+  .calendarPanel { padding: 0 var(--space-3) var(--space-3); }
+  .footer { align-items: stretch; flex-direction: column; padding-inline-end: 0; }
+  .actions { justify-content: flex-end; }
+}

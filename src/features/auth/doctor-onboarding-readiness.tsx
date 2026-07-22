@@ -2,6 +2,7 @@
 
 import { useId } from 'react';
 
+import { useT } from '../../components/foundations/i18n';
 import {
   Alert,
   AlertDescription,
@@ -68,12 +69,16 @@ function readinessCopy(
   if (readiness.invariantIssues.length > 0) {
     return {
       title: 'We couldn\u2019t verify this setup',
-      description: 'Some clinic and professional details do not match. Refresh before continuing.',
+      description:
+        'Some clinic and professional details do not match. Refresh before continuing.',
     };
   }
 
   if (snapshot.session !== 'active') {
-    return { title: 'Sign in to continue', description: 'Your clinic session has ended.' };
+    return {
+      title: 'Sign in to continue',
+      description: 'Your clinic session has ended.',
+    };
   }
   if (snapshot.phone === 'missing_required') {
     return {
@@ -96,7 +101,8 @@ function readinessCopy(
   if (snapshot.membership === 'pending') {
     return {
       title: 'Your clinic access is pending',
-      description: 'You can continue when your clinic membership becomes active.',
+      description:
+        'You can continue when your clinic membership becomes active.',
     };
   }
   if (snapshot.membership === 'revoked') {
@@ -117,7 +123,10 @@ function readinessCopy(
       description: 'The selected branch is not included in your clinic access.',
     };
   }
-  if (snapshot.declaration === 'medical' && snapshot.licence === 'pending_review') {
+  if (
+    snapshot.declaration === 'medical' &&
+    snapshot.licence === 'pending_review'
+  ) {
     return snapshot.attributedPrescriber === 'other_live_member'
       ? {
           title: 'Ready to work with another prescriber',
@@ -133,19 +142,22 @@ function readinessCopy(
   if (snapshot.banking === 'self_action_required') {
     return {
       title: 'Complete one payment step',
-      description: 'Finish the requested payment step before placing this order.',
+      description:
+        'Finish the requested payment step before placing this order.',
     };
   }
   if (snapshot.banking === 'delegated_action_required') {
     return {
       title: 'The prescriber needs to take action',
-      description: 'The selected prescriber must complete a private payment step before this order continues.',
+      description:
+        'The selected prescriber must complete a private payment step before this order continues.',
     };
   }
   if (snapshot.orderCapability !== 'granted') {
     return {
       title: 'Ask for order access',
-      description: 'Your clinic access is active, but you do not yet have permission to place orders.',
+      description:
+        'Your clinic access is active, but you do not yet have permission to place orders.',
     };
   }
   if (snapshot.attributedPrescriber === 'none') {
@@ -157,82 +169,135 @@ function readinessCopy(
   if (snapshot.declaration === 'unanswered') {
     return {
       title: 'Tell us about your professional status',
-      description: 'Your answer determines whether medical licence verification applies to you.',
+      description:
+        'Your answer determines whether medical licence verification applies to you.',
     };
   }
   if (snapshot.declaration === 'medical' && snapshot.licence === 'none') {
     return {
       title: 'Complete your medical licence',
-      description: 'You can browse the catalog and view prices now. Verify your licence before placing orders.',
+      description:
+        'You can browse the catalog and view prices now. Verify your licence before placing orders.',
     };
   }
   if (snapshot.declaration === 'medical' && snapshot.licence === 'rejected') {
     return {
       title: 'Your licence needs attention',
-      description: 'Review the reason, correct the document, and submit it again.',
+      description:
+        'Review the reason, correct the document, and submit it again.',
     };
   }
   if (snapshot.declaration === 'medical' && snapshot.licence === 'lapsed') {
     return {
       title: 'Renew your medical licence',
-      description: 'A current licence is required before you can place new orders.',
+      description:
+        'A current licence is required before you can place new orders.',
     };
   }
   if (snapshot.licence === 'expiring' || snapshot.licence === 'in_grace') {
     return {
       title: 'Renew your licence soon',
-      description: 'You can still place orders, but renew your licence before it lapses.',
+      description:
+        'You can still place orders, but renew your licence before it lapses.',
     };
   }
   if (snapshot.attributedPrescriber === 'other_live_member') {
     return {
       title: 'Ready for clinic orders',
-      description: 'You can place orders with the selected approved prescriber.',
+      description:
+        'You can place orders with the selected approved prescriber.',
     };
   }
 
   return {
     title: 'You\u2019re ready to work',
-    description: 'You can browse the catalog, view prices, and place clinic orders.',
+    description:
+      'You can browse the catalog, view prices, and place clinic orders.',
   };
 }
 
-function primaryActionCopy(
-  action: OnboardingActionKind,
-): { label: string; detail: string } {
+function primaryActionCopy(action: OnboardingActionKind): {
+  label: string;
+  detail: string;
+} {
   switch (action) {
     case 'sign_in':
       return { label: 'Sign in again', detail: 'Restore your clinic session.' };
     case 'verify_phone':
-      return { label: 'Verify phone', detail: 'Finish the required phone check.' };
+      return {
+        label: 'Verify phone',
+        detail: 'Finish the required phone check.',
+      };
     case 'create_workspace':
-      return { label: 'Choose a clinic', detail: 'Continue with a clinic you can access.' };
+      return {
+        label: 'Choose a clinic',
+        detail: 'Continue with a clinic you can access.',
+      };
     case 'restore_membership':
-      return { label: 'View access status', detail: 'Check your clinic membership or contact an administrator.' };
+      return {
+        label: 'View access status',
+        detail: 'Check your clinic membership or contact an administrator.',
+      };
     case 'choose_branch':
-      return { label: 'Choose an assigned branch', detail: 'Continue with a branch assigned to you.' };
+      return {
+        label: 'Choose an assigned branch',
+        detail: 'Continue with a branch assigned to you.',
+      };
     case 'request_capability':
-      return { label: 'Request order access', detail: 'Ask a clinic administrator for permission to place orders.' };
+      return {
+        label: 'Request order access',
+        detail: 'Ask a clinic administrator for permission to place orders.',
+      };
     case 'answer_declaration':
-      return { label: 'Answer licence question', detail: 'Tell us whether medical licence verification applies to you.' };
+      return {
+        label: 'Answer licence question',
+        detail: 'Tell us whether medical licence verification applies to you.',
+      };
     case 'submit_licence':
-      return { label: 'Verify medical licence', detail: 'Submit one supported licence document now or later.' };
+      return {
+        label: 'Verify medical licence',
+        detail: 'Submit one supported licence document.',
+      };
     case 'view_submission':
-      return { label: 'View licence status', detail: 'Check the review status of your licence.' };
+      return {
+        label: 'View licence status',
+        detail: 'Check the review status of your licence.',
+      };
     case 'replace_licence':
-      return { label: 'Review and resubmit', detail: 'Read the review reason and submit a corrected document.' };
+      return {
+        label: 'Review and resubmit',
+        detail: 'Read the review reason and submit a corrected document.',
+      };
     case 'renew_licence':
-      return { label: 'Renew licence', detail: 'Submit a current licence to keep placing orders.' };
+      return {
+        label: 'Renew licence',
+        detail: 'Submit a current licence to keep placing orders.',
+      };
     case 'select_prescriber':
-      return { label: 'Choose prescriber', detail: 'Select an approved prescriber for this order.' };
+      return {
+        label: 'Choose prescriber',
+        detail: 'Select an approved prescriber for this order.',
+      };
     case 'resolve_banking':
-      return { label: 'Complete payment step', detail: 'Open the private payment instructions for this order.' };
+      return {
+        label: 'Complete payment step',
+        detail: 'Open the private payment instructions for this order.',
+      };
     case 'request_prescriber_action':
-      return { label: 'Notify prescriber', detail: 'Ask the prescriber to complete their private payment step.' };
+      return {
+        label: 'Notify prescriber',
+        detail: 'Ask the prescriber to complete their private payment step.',
+      };
     case 'refresh_status':
-      return { label: 'Refresh setup', detail: 'Reload the latest clinic and professional details.' };
+      return {
+        label: 'Refresh setup',
+        detail: 'Reload the latest clinic and professional details.',
+      };
     case 'open_home':
-      return { label: 'Open clinic home', detail: 'Continue to your clinic workspace.' };
+      return {
+        label: 'Open clinic home',
+        detail: 'Continue to your clinic workspace.',
+      };
   }
 }
 
@@ -240,7 +305,8 @@ function gateHelp(
   snapshot: DoctorOnboardingSnapshot,
   gate: OnboardingGateDecision,
 ): string | undefined {
-  if (gate.status === 'ready' || gate.status === 'not_applicable') return undefined;
+  if (gate.status === 'ready' || gate.status === 'not_applicable')
+    return undefined;
 
   switch (gate.id) {
     case 'session':
@@ -285,7 +351,8 @@ function capabilityHelp(
   snapshot: DoctorOnboardingSnapshot,
   capability: OnboardingCapabilityDecision,
 ): string | undefined {
-  if (capability.state === 'available' || capability.state === 'optional') return undefined;
+  if (capability.state === 'available' || capability.state === 'optional')
+    return undefined;
   if (capability.id === 'catalog' || capability.id === 'prices') {
     return 'Available after clinic access is restored.';
   }
@@ -309,7 +376,9 @@ function capabilityHelp(
   return 'A current medical licence is required.';
 }
 
-function capabilityStatusLabel(capability: OnboardingCapabilityDecision): string {
+function capabilityStatusLabel(
+  capability: OnboardingCapabilityDecision,
+): string {
   if (capability.state === 'action_required') return 'Action needed';
   return capability.stateLabel;
 }
@@ -321,17 +390,18 @@ function GateRow({
   gate: OnboardingGateDecision;
   snapshot: DoctorOnboardingSnapshot;
 }) {
+  const t = useT();
   const detail = gateHelp(snapshot, gate);
 
   return (
     <Item className={styles.decisionRow} size="sm" variant="default">
       <ItemContent>
-        <ItemTitle>{gate.label}</ItemTitle>
-        {detail ? <ItemDescription>{detail}</ItemDescription> : null}
+        <ItemTitle>{t(gate.label)}</ItemTitle>
+        {detail ? <ItemDescription>{t(detail)}</ItemDescription> : null}
       </ItemContent>
       <ItemActions>
         <Badge size="sm" variant={GATE_BADGE_VARIANTS[gate.status]}>
-          {gate.statusLabel}
+          {t(gate.statusLabel)}
         </Badge>
       </ItemActions>
     </Item>
@@ -345,17 +415,18 @@ function CapabilityRow({
   capability: OnboardingCapabilityDecision;
   snapshot: DoctorOnboardingSnapshot;
 }) {
+  const t = useT();
   const detail = capabilityHelp(snapshot, capability);
 
   return (
     <Item className={styles.decisionRow} size="sm" variant="default">
       <ItemContent>
-        <ItemTitle>{capability.label}</ItemTitle>
-        {detail ? <ItemDescription>{detail}</ItemDescription> : null}
+        <ItemTitle>{t(capability.label)}</ItemTitle>
+        {detail ? <ItemDescription>{t(detail)}</ItemDescription> : null}
       </ItemContent>
       <ItemActions>
         <Badge size="sm" variant={CAPABILITY_BADGE_VARIANTS[capability.state]}>
-          {capabilityStatusLabel(capability)}
+          {t(capabilityStatusLabel(capability))}
         </Badge>
       </ItemActions>
     </Item>
@@ -375,6 +446,7 @@ export function DoctorOnboardingReadiness({
   snapshot,
   workspaceName,
 }: DoctorOnboardingReadinessProps) {
+  const t = useT();
   const readiness = deriveDoctorOnboardingReadiness(snapshot);
   const headingId = useId();
   const accessHeadingId = useId();
@@ -390,7 +462,8 @@ export function DoctorOnboardingReadiness({
           : 'warning';
   const visibleCapabilities = readiness.capabilities.filter(
     (capability) =>
-      capability.id !== 'doctor_banking' || capability.state === 'action_required',
+      capability.id !== 'doctor_banking' ||
+      capability.state === 'action_required',
   );
   const issueLabels = readiness.invariantIssues.map((issue) =>
     issue.includes('medical declaration')
@@ -405,10 +478,10 @@ export function DoctorOnboardingReadiness({
       data-slot="doctor-onboarding-readiness"
     >
       <header className={styles.hero}>
-        <p className={styles.sectionLabel}>Clinic setup</p>
+        <p className={styles.sectionLabel}>{t('Clinic setup')}</p>
         <div className={styles.contextLine}>
           <Badge size="md" variant={statusVariant}>
-            {readiness.statusLabel}
+            {t(readiness.statusLabel)}
           </Badge>
           <p>
             {actorName} · {workspaceName}
@@ -417,9 +490,9 @@ export function DoctorOnboardingReadiness({
         </div>
         <div className={styles.stateCopy}>
           <h1 className={styles.pageTitle} id={headingId}>
-            {copy.title}
+            {t(copy.title)}
           </h1>
-          <p className={styles.consequence}>{copy.description}</p>
+          <p className={styles.consequence}>{t(copy.description)}</p>
         </div>
         <div className={styles.primaryAction}>
           <Button
@@ -427,19 +500,19 @@ export function DoctorOnboardingReadiness({
             fullWidth
             onClick={() => onPrimaryAction?.(readiness.primaryAction.kind)}
           >
-            {action.label}
+            {t(action.label)}
           </Button>
-          <p>{action.detail}</p>
+          <p>{t(action.detail)}</p>
         </div>
       </header>
 
       {issueLabels.length > 0 ? (
         <Alert tone="danger">
-          <AlertTitle>Setup details need to be refreshed</AlertTitle>
+          <AlertTitle>{t('Setup details need to be refreshed')}</AlertTitle>
           <AlertDescription>
             <ul className={styles.alertList}>
               {issueLabels.map((issue) => (
-                <li key={issue}>{issue}</li>
+                <li key={issue}>{t(issue)}</li>
               ))}
             </ul>
           </AlertDescription>
@@ -448,10 +521,14 @@ export function DoctorOnboardingReadiness({
 
       <section aria-labelledby={accessHeadingId} className={styles.section}>
         <div className={styles.sectionHeading}>
-          <h2 id={accessHeadingId}>Current access</h2>
-          <p>What you can do right now.</p>
+          <h2 id={accessHeadingId}>{t('Current access')}</h2>
+          <p>{t('What you can do right now.')}</p>
         </div>
-        <ItemGroup aria-label="Current access" className={styles.decisionList} role="list">
+        <ItemGroup
+          aria-label={t('Current access')}
+          className={styles.decisionList}
+          role="list"
+        >
           {visibleCapabilities.map((capability, index) => (
             <div key={capability.id} role="listitem">
               {index > 0 ? <ItemSeparator /> : null}
@@ -459,13 +536,17 @@ export function DoctorOnboardingReadiness({
             </div>
           ))}
         </ItemGroup>
-        <p className={styles.boundaryNote}>Kura checks access again when you place an order.</p>
+        <p className={styles.boundaryNote}>
+          {t('Kura checks access again when you place an order.')}
+        </p>
       </section>
 
       <Collapsible className={styles.details}>
-        <CollapsibleTrigger>Setup details ({readiness.gates.length} checks)</CollapsibleTrigger>
+        <CollapsibleTrigger>
+          {t('Setup details')} ({readiness.gates.length} {t('checks')})
+        </CollapsibleTrigger>
         <CollapsibleContent className={styles.detailsContent}>
-          <ItemGroup aria-label="Clinic setup details" role="list">
+          <ItemGroup aria-label={t('Clinic setup details')} role="list">
             {readiness.gates.map((gate, index) => (
               <div key={gate.id} role="listitem">
                 {index > 0 ? <ItemSeparator /> : null}

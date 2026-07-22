@@ -23,7 +23,7 @@
   border: 0;
   border-radius: var(--radius-control);
   padding: var(--space-1);
-  background: var(--card);
+  background: var(--color-surface);
   color: var(--card-foreground);
   box-shadow: var(--elevation-popover);
   outline: none;

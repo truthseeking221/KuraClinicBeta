@@ -16,12 +16,35 @@ import {
   EmptyStateTitle,
 } from '../../../../components/shared';
 import { PaymentReceipt } from '../../../../features/front-desk/payment-receipt';
+import { demoOnboardingScenarioById } from '../../../../features/auth/demo-data';
+import { FRONT_DESK_PAYMENT_DEMO_SCENARIOS } from '../../../../features/front-desk/demo-data';
+import type { FrontDeskPaymentDemoVariant } from '../../../../features/front-desk/demo-data';
 import { useFrontDeskStore } from '../../../_demo/front-desk-store';
+import { useDemoSession } from '../../../_demo/demo-session';
 import styles from '../../../_demo/app-pages.module.css';
 
 export default function PaymentsPage() {
   const router = useRouter();
   const { receipts } = useFrontDeskStore();
+  const { session } = useDemoSession();
+  const scenario = demoOnboardingScenarioById(session.demoScenarioId);
+  const configured =
+    scenario.surface === 'front-desk-payments'
+      ? FRONT_DESK_PAYMENT_DEMO_SCENARIOS[
+          scenario.variant as FrontDeskPaymentDemoVariant
+        ]
+      : undefined;
+
+  if (configured) {
+    return (
+      <div className={styles.stack}>
+        <PaymentReceipt
+          {...configured}
+          onPrint={() => window.print()}
+        />
+      </div>
+    );
+  }
 
   const confirmed = receipts.filter(
     (patient) => patient.cart.payment.status === 'confirmed',
@@ -56,7 +79,7 @@ export default function PaymentsPage() {
     <div className={styles.stack}>
       {confirmed.map((patient) => (
         <PaymentReceipt
-          branchLabel="Branch BKK1"
+          branchLabel={session.customWorkspaceName ?? 'My cabinet'}
           items={patient.cart.items}
           key={patient.id}
           onPrint={() => window.print()}

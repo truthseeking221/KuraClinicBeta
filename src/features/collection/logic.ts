@@ -195,10 +195,21 @@ export function waitTone(waitingMinutes: number): TimerTone | null {
   return null;
 }
 
+/**
+ * Separators are presentation, not identity: a wristband prints `P-8842`, a
+ * scanner may emit `P8842`, and an operator typing under time pressure may do
+ * either. Comparing on alphanumerics only keeps all three the same patient
+ * while staying an exact match — no prefix or substring guessing, which would
+ * risk pulling up the wrong record.
+ */
 export function findPatientByPid(queue: CollectionPatient[], raw: string): CollectionPatient | undefined {
-  const pid = raw.trim().toUpperCase();
+  const pid = normalizePid(raw);
   if (!pid) return undefined;
-  return queue.find((patient) => patient.pid.toUpperCase() === pid);
+  return queue.find((patient) => normalizePid(patient.pid) === pid);
+}
+
+function normalizePid(value: string): string {
+  return value.replace(/[^a-z0-9]/gi, '').toUpperCase();
 }
 
 // ── Vitals ─────────────────────────────────────────────────

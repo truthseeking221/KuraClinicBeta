@@ -1,0 +1,130 @@
+/*
+ * Identity strip. White surface with one hairline below — it is the boundary
+ * between page chrome and the work, not a card.
+ */
+.header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding-block: var(--space-3);
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.header[data-sticky] {
+  position: sticky;
+  top: var(--subject-header-offset, 0px);
+  z-index: 5;
+}
+
+.avatar {
+  flex: none;
+}
+
+.identity {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-0-5);
+  min-width: 0;
+  /* Takes the slack so status and actions sit at the far edge. */
+  margin-inline-end: auto;
+}
+
+.title {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  margin: 0;
+  font-size: var(--type-md);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-snug);
+  color: var(--color-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nameKhmer {
+  font-size: var(--type-sm);
+  font-weight: var(--weight-regular);
+  color: var(--color-text-secondary);
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  margin: 0;
+  font-size: var(--type-sm);
+  line-height: var(--leading-normal);
+  color: var(--color-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Dot separators instead of chips: metadata is text, not a set of objects. */
+.metaItem + .metaItem::before {
+  content: '·';
+  margin-inline: var(--space-2);
+  color: var(--color-text-tertiary);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex: none;
+}
+
+.status {
+  flex: none;
+}
+
+/*
+ * Mobile: name and status share the first row; the meta line scrolls sideways
+ * beneath them. Nothing is hidden — arrival time and sex are facts the
+ * operator reads back to the patient.
+ */
+@media (max-width: 599px) {
+  .header {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-rows: auto auto;
+    column-gap: var(--space-3);
+    row-gap: var(--space-1);
+    align-items: center;
+  }
+
+  .avatar {
+    grid-row: 1 / 3;
+  }
+
+  .identity {
+    display: contents;
+  }
+
+  .title {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .meta {
+    grid-column: 2 / 4;
+    grid-row: 2;
+    overflow-x: auto;
+    white-space: nowrap;
+    scrollbar-width: none;
+  }
+
+  .meta::-webkit-scrollbar {
+    display: none;
+  }
+
+  .status {
+    grid-column: 3;
+    grid-row: 1;
+  }
+
+  .actions {
+    grid-column: 2 / 4;
+    grid-row: 3;
+  }
+}

@@ -19,8 +19,8 @@
   width: 100%;
   overflow: auto;
   border: 1px solid var(--border);
-  border-radius: var(--radius-card-surface);
-  background: var(--card);
+  border-radius: var(--radius-popover);
+  background: var(--color-background-primary-default);
   outline: none;
 }
 
@@ -61,7 +61,7 @@
   position: sticky;
   inset-block-start: 0;
   z-index: 3;
-  background: var(--card);
+  background: var(--color-surface);
 }
 
 .head,
@@ -69,7 +69,7 @@
 .footerCell {
   box-sizing: border-box;
   min-width: 0;
-  padding: var(--space-2) var(--space-3);
+  padding: var(--space-2-5) var(--space-3);
   vertical-align: middle;
   overflow-wrap: anywhere;
 }
@@ -77,16 +77,16 @@
 .head {
   position: relative;
   height: var(--field-h);
-  color: var(--muted-foreground);
-  background: var(--card);
-  font-size: var(--type-xs);
-  font-weight: var(--weight-semibold);
+  color: var(--color-text-tertiary);
+  background: var(--color-background-secondary-default);
+  font-size: var(--type-base);
+  font-weight: var(--weight-medium);
   line-height: var(--leading-normal);
   text-align: start;
 }
 
 .row {
-  background: var(--card);
+  background: var(--color-background-primary-default);
 }
 
 .row[data-interactive='true'] {
@@ -95,7 +95,7 @@
 }
 
 .row[data-interactive='true']:hover {
-  background: var(--muted);
+  background: var(--color-background-primary-hover);
 }
 
 .row[data-interactive='true']:focus-visible {
@@ -113,7 +113,7 @@
 
 .root[data-borders='rows'] .head,
 .root[data-borders='rows'] .cell {
-  border-block-end: 1px solid var(--border);
+  border-block-end: 1px solid var(--color-border-button-default);
 }
 
 .root[data-borders='cells'] .head,
@@ -140,7 +140,7 @@
 
 .head[data-pinned],
 .cell[data-pinned] {
-  background: var(--card);
+  background: var(--color-surface);
 }
 
 /* Footer rows keep the aggregate band color under pinned columns. */

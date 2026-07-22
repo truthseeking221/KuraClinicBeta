@@ -1,6 +1,6 @@
 import { READINESS } from '../../components/foundations/readiness-data';
 
-export const patientContextRailMetadata = {
+export const PATIENT_CONTEXT_STORYBOOK_KURA = {
   readiness: READINESS.patientContext,
   intake: {
     decision: 'FEATURE-OWN + COMPOSE',

@@ -24,9 +24,15 @@ const FrontDeskStoreContext = createContext<FrontDeskStoreValue | null>(null);
 
 let walkInCounter = 12;
 
-export function FrontDeskStoreProvider({ children }: { children: ReactNode }) {
+export function FrontDeskStoreProvider({
+  children,
+  initialPatient,
+}: {
+  children: ReactNode;
+  initialPatient?: FrontDeskPatient;
+}) {
   const [patient, setPatient] = useState<FrontDeskPatient>(() =>
-    blankWalkIn('walk-in-current', walkInCounter),
+    initialPatient ?? blankWalkIn('walk-in-current', walkInCounter),
   );
   const [receipts, setReceipts] = useState<FrontDeskPatient[]>([]);
 

@@ -1,3 +1,4 @@
+import type { Translate } from '../../components/foundations/i18n';
 import type {
   EpisodeProgress,
   LabAnalyteResult,
@@ -15,6 +16,20 @@ import type {
   TestStatus,
   TierSeverity,
 } from './types';
+
+/**
+ * Keeps every label builder callable outside a locale context — tests, server
+ * code, and the English language of record all get the untranslated source.
+ * Counts are substituted after translation so the key stays a static literal.
+ */
+const untranslated: Translate = (source) => source;
+
+function fill(template: string, values: Record<string, string | number>): string {
+  return Object.entries(values).reduce(
+    (text, [token, value]) => text.replace(`{${token}}`, String(value)),
+    template,
+  );
+}
 
 function sortedTiers(range: ReferenceRange): ReferenceTier[] {
   return [...range.tiers].sort((a, b) => a.displayOrder - b.displayOrder);
@@ -225,12 +240,43 @@ export function episodeProgress(results: LabAnalyteResult[]): EpisodeProgress {
   return { total, released, terminal, unavailable, pending, status };
 }
 
-export function episodeProgressLabel(progress: EpisodeProgress): string {
-  if (progress.total === 0) return 'No tests in this episode';
-  if (progress.status === 'cancelled') return 'No results — episode cancelled';
-  if (progress.released === progress.total) return `All ${progress.total} results ready`;
-  const unavailable = progress.unavailable > 0 ? ` · ${progress.unavailable} unavailable` : '';
-  return `${progress.released} of ${progress.total} ready${unavailable}`;
+export function episodeProgressLabel(
+  progress: EpisodeProgress,
+  t: Translate = untranslated,
+): string {
+  if (progress.total === 0) return t('No tests in this episode');
+  if (progress.status === 'cancelled') return t('No results — episode cancelled');
+  if (progress.released === progress.total) {
+    return fill(t('All {total} results ready'), { total: progress.total });
+  }
+  const ready = fill(t('{released} of {total} ready'), {
+    released: progress.released,
+    total: progress.total,
+  });
+  const unavailable =
+    progress.unavailable > 0
+      ? ` · ${fill(t('{count} unavailable'), { count: progress.unavailable })}`
+      : '';
+  return `${ready}${unavailable}`;
+}
+
+/**
+ * A section header states what is still outstanding; the episode badge states
+ * overall progress. Two scopes, two sentences — never the same count twice.
+ * Terminal-but-unavailable lines are not pending, so the parts never overlap.
+ */
+export function sectionOutstandingLabel(
+  progress: EpisodeProgress,
+  t: Translate = untranslated,
+): string | undefined {
+  const parts: string[] = [];
+  if (progress.pending > 0) {
+    parts.push(fill(t('{count} pending'), { count: progress.pending }));
+  }
+  if (progress.unavailable > 0) {
+    parts.push(fill(t('{count} unavailable'), { count: progress.unavailable }));
+  }
+  return parts.length > 0 ? parts.join(' · ') : undefined;
 }
 
 function normalIntervals(range: ReferenceRange): Array<{ low: number; high: number }> {
@@ -307,7 +353,18 @@ export function resultSeries(result: LabAnalyteResult): LabResultPoint[] {
           } satisfies LabResultPoint,
         ]
       : [];
-  return [...(result.history ?? []), ...current];
+  // Chronological, oldest first. Fixture and wire order are not trustworthy,
+  // and every consumer that draws a line or picks "latest" depends on time
+  // order — an unsorted series renders as a trend that doubles back on
+  // itself. Stable sort keeps undated points in their given order, last.
+  return [...(result.history ?? []), ...current].sort((a, b) => {
+    const timeA = parseLabTimestamp(a.date);
+    const timeB = parseLabTimestamp(b.date);
+    if (timeA == null && timeB == null) return 0;
+    if (timeA == null) return 1;
+    if (timeB == null) return -1;
+    return timeA - timeB;
+  });
 }
 
 /** Safe ISO/date parser. Invalid or absent timestamps stay unavailable. */
@@ -321,9 +378,10 @@ export function parseLabTimestamp(iso: string | null | undefined): number | null
 export function formatDate(
   iso: string | null | undefined,
   locale = 'en-US',
+  t: Translate = untranslated,
 ): string {
   const timestamp = parseLabTimestamp(iso);
-  if (timestamp == null) return 'Date unavailable';
+  if (timestamp == null) return t('Date unavailable');
   return new Intl.DateTimeFormat(locale, {
     month: 'short',
     day: 'numeric',
@@ -334,8 +392,9 @@ export function formatDate(
 export function formatMonthShort(
   iso: string | null | undefined,
   locale = 'en-US',
+  t: Translate = untranslated,
 ): string {
   const timestamp = parseLabTimestamp(iso);
-  if (timestamp == null) return 'Unknown date';
+  if (timestamp == null) return t('Unknown date');
   return new Intl.DateTimeFormat(locale, { month: 'short', day: 'numeric' }).format(timestamp);
 }

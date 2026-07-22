@@ -7,6 +7,9 @@ import type {
   ReceptionistOrderCartWorkflow,
 } from '../order-cart';
 
+import { useT } from '../../components/foundations/i18n';
+import type { Translate } from '../../components/foundations/i18n';
+
 import { ORDER_CATALOG } from './catalog';
 import { cartTotals, consentBlockers, lineResponsibilityMinor, paymentDueAmountMinor } from './logic';
 import type { FxRateQuote } from './money';
@@ -30,53 +33,54 @@ export type CartRailProps = {
   status?: CartRailStatus;
 };
 
-function paymentSummary(payment: CartPayment): ReceptionPaymentSummary {
+function paymentSummary(payment: CartPayment, t: Translate): ReceptionPaymentSummary {
   if (payment.status === 'confirmed') {
     return {
       status: 'paid',
-      label: payment.method === 'cash' ? 'Paid by cash' : 'Payment confirmed',
-      detail: payment.receiptId ? `Receipt ${payment.receiptId}` : undefined,
+      label: payment.method === 'cash' ? t('Paid by cash') : t('Payment confirmed'),
+      detail: payment.receiptId ? `${t('Receipt')} ${payment.receiptId}` : undefined,
       receiptId: payment.receiptId ?? undefined,
     };
   }
   if (payment.status === 'waiting') {
     return {
       status: 'waiting-khqr',
-      label: 'Waiting for provider confirmation',
+      label: t('Waiting for provider confirmation'),
     };
   }
   if (payment.status === 'deferred') {
-    return { status: 'deferred', label: 'Payment deferred' };
+    return { status: 'deferred', label: t('Payment deferred') };
   }
   if (payment.status === 'pending-claim') {
     return {
       status: 'deferred',
-      label: 'Insurance claim pending',
-      detail: 'Copay collected separately',
+      label: t('Insurance claim pending'),
+      detail: t('Copay collected separately'),
     };
   }
   if (payment.status === 'no-charge') {
-    return { status: 'no-charge', label: 'No charge' };
+    return { status: 'no-charge', label: t('No charge') };
   }
   if (payment.status === 'split-cash') {
     return {
       status: 'due',
-      label: 'Split payment in progress',
-      detail: 'Cash portion recorded',
+      label: t('Split payment in progress'),
+      detail: t('Cash portion recorded'),
     };
   }
-  return { status: 'not-started', label: 'Not started' };
+  return { status: 'not-started', label: t('Not started') };
 }
 
-function placementBlockers(patient: FrontDeskPatient): OrderCartBlocker[] {
+function placementBlockers(patient: FrontDeskPatient, t: Translate): OrderCartBlocker[] {
   if (patient.cart.placeFailure === 'code-issuance-failed') {
     return [
       {
         id: 'code-issuance-failed',
-        label: 'Order recorded, but the booking code failed',
-        recovery:
+        label: t('Order recorded, but the booking code failed'),
+        recovery: t(
           'The order remains in the bookings list as needs attention until a usable code is issued.',
-        actionLabel: 'Retry issuing code',
+        ),
+        actionLabel: t('Retry issuing code'),
         tone: 'warning',
       },
     ];
@@ -85,24 +89,25 @@ function placementBlockers(patient: FrontDeskPatient): OrderCartBlocker[] {
     return [
       {
         id: 'idempotency-conflict',
-        label: 'An identical order request already succeeded',
-        recovery: 'Check the bookings list before retrying to avoid a duplicate order.',
+        label: t('An identical order request already succeeded'),
+        recovery: t('Check the bookings list before retrying to avoid a duplicate order.'),
         tone: 'warning',
       },
     ];
   }
   return consentBlockers(patient.cart, ORDER_CATALOG).map((item) => ({
     id: `consent-${item.id}`,
-    label: `${item.name} still needs consent`,
-    recovery: 'Resolve the consent chain on the Orders step before collecting payment.',
+    label: `${item.name} ${t('still needs consent')}`,
+    recovery: t('Resolve the consent chain on the Orders step before collecting payment.'),
     tone: 'warning' as const,
   }));
 }
 
 /**
- * Backward-compatible front-desk adapter. The shared OrderCart owns all cart
- * rendering; this adapter maps the existing receptionist state and callbacks
- * into the cross-role Clinic contract.
+ * Backward-compatible front-desk summary adapter. The shared OrderCart owns
+ * all cart rendering; this adapter keeps the cart in `order-review` while the
+ * Check-In Wizard's Payment step owns tender selection, payment capture, and
+ * check-in confirmation.
  */
 export function CartRail({
   fxRate,
@@ -115,6 +120,7 @@ export function CartRail({
   readOnly = false,
   status = 'draft',
 }: CartRailProps) {
+  const t = useT();
   const totals = cartTotals(patient.cart);
   const patientDueMinor = paymentDueAmountMinor(patient.cart, totals);
   const eligibleCoverage = patient.insurance.find(
@@ -126,6 +132,9 @@ export function CartRail({
   )?.provider;
   const summary = {
     subtotalMinor: totals.subtotalMinor,
+    // Promo discounts ride the shared credit row. PROTOTYPE: desk-side only.
+    creditMinor: totals.discountMinor !== '0' ? totals.discountMinor : undefined,
+    creditLabel: totals.discountMinor !== '0' ? t('Promo discount') : undefined,
     patientDueMinor,
     patientDueKhrMinor: fxRate
       ? convertUsdMinorToKhr(patientDueMinor, fxRate)
@@ -145,8 +154,9 @@ export function CartRail({
   } else if (pricingStatus === 'error') {
     pricing = {
       state: 'error',
-      message:
+      message: t(
         'The order total could not be refreshed. Do not collect payment until the server price is available.',
+      ),
     };
   } else if (patient.cart.pricing?.state === 'stale') {
     pricing = {
@@ -162,10 +172,10 @@ export function CartRail({
     id: patient.cart.pricing?.pricingVersion ?? `front-desk-${patient.id}`,
     patient: {
       id: patient.id,
-      name: patient.name || 'Patient name pending',
+      name: patient.name || t('Patient name pending'),
       identifier: patient.id,
       demographicLabel: [patient.dob, patient.sexAtBirth].filter(Boolean).join(' · '),
-      encounterLabel: `Queue ${patient.queueNumber}`,
+      encounterLabel: `${t('Queue')} ${patient.queueNumber}`,
     },
     lifecycle: status,
     items: patient.cart.items.map((item) => ({
@@ -178,21 +188,21 @@ export function CartRail({
       quantity: item.qty,
       meta:
         [
-          item.fasting ? 'Fasting preparation' : null,
+          item.fasting ? t('Fasting preparation') : null,
           // Per-line payer preview — display only; upstream capture is cash-only.
           coverage && item.priceMinor !== '0' && (item.kind === 'lab' || item.kind === 'imaging' || item.kind === 'ecg')
-            ? `${coverageProvider} ${coverage.coveragePct}% · patient owes ${(
+            ? `${coverageProvider} ${coverage.coveragePct}% · ${t('patient owes')} ${(
                 Number(lineResponsibilityMinor(item.priceMinor, coverage.coveragePct).patientMinor) / 100
               ).toFixed(2)} USD`
             : null,
           item.consent
             ? item.consent.state === 'needed'
-              ? 'Consent needed'
+              ? t('Consent needed')
               : item.consent.state === 'sent'
-                ? 'Consent sent · awaiting signature'
+                ? t('Consent sent · awaiting signature')
                 : item.consent.state === 'signed'
-                  ? 'Consent signed'
-                  : `Verbal consent · ${item.consent.byLabel}`
+                  ? t('Consent signed')
+                  : `${t('Verbal consent')} · ${item.consent.byLabel}`
             : null,
         ]
           .filter(Boolean)
@@ -214,7 +224,7 @@ export function CartRail({
 
   const workflow: ReceptionistOrderCartWorkflow = {
     role: 'receptionist',
-    actorName: 'Clinic receptionist',
+    actorName: t('Clinic receptionist'),
     access: readOnly && status === 'draft' ? 'read-only' : 'allowed',
     stage: 'order-review',
     origin: 'on-behalf',
@@ -223,18 +233,18 @@ export function CartRail({
     attested: patient.cart.payment.status === 'confirmed',
     prescriber: patient.cart.attributedPrescriberId
       ? {
-          name: `Attributed clinician · ${patient.cart.attributedPrescriberId}`,
+          name: `${t('Attributed clinician')} · ${patient.cart.attributedPrescriberId}`,
           status: 'verified',
         }
       : undefined,
-    payerLabel: patient.insurance.length > 0 ? 'Insurance review' : 'Direct pay',
-    payment: paymentSummary(patient.cart.payment),
+    payerLabel: patient.insurance.length > 0 ? t('Insurance review') : t('Direct pay'),
+    payment: paymentSummary(patient.cart.payment, t),
     permissions: {
       editClinicalItems: !readOnly,
       collectPayment: true,
       checkIn: true,
     },
-    blockers: placementBlockers(patient),
+    blockers: placementBlockers(patient, t),
   };
 
   return (

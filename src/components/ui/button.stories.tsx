@@ -6,7 +6,7 @@ import { Button, ChevronRightIcon, PlusIcon } from './index';
 const meta = {
   title: 'Design System/Primitives/Button',
   component: Button,
-  tags: ['autodocs', 'source-reui', 'adapted-kura'],
+  tags: ['autodocs', 'source-kura', 'adapted-kura'],
   parameters: {
     layout: 'centered',
     kura: {
@@ -14,13 +14,12 @@ const meta = {
         decision: 'REUSE',
         owner: 'src/components/ui',
         evidence:
-          'Fresh source and Storybook search found the canonical Kura Button already owning this action primitive. ReUI c-button-1 is a thin default-button composition; the existing Kura Button is reused and remains the single owner while related compositions keep separate owners.',
+          'The canonical Kura Button remains the action owner and uses one solid Brand 500 fill for primary actions, with Kura geometry, borders, shadows, and states.',
       },
       source: {
-        vendor: 'ReUI',
-        registryItem: '@reui/c-button-1',
-        registryDependency: '@reui/button',
-        sourceUrl: 'https://reui.io/components/button',
+        vendor: 'Kura',
+        registryItem: 'button',
+        visualReference: 'Kura button',
       },
       binding: {
         colors: 'kura-semantic',
@@ -93,6 +92,7 @@ export const Default: Story = {
     const canvas = within(canvasElement);
     const button = canvas.getByRole('button', { name: 'Save visit draft' });
     await expect(button).toBeEnabled();
+    await expect(window.getComputedStyle(button).backgroundImage).toBe('none');
     await userEvent.tab();
     await expect(button).toHaveFocus();
   },
@@ -230,6 +230,15 @@ export const DisabledAndInvalid: Story = {
       </Button>
     </div>
   ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const disabled = canvas.getByRole('button', {
+      name: 'Unavailable until identity is verified',
+    });
+    const styles = window.getComputedStyle(disabled);
+    await expect(disabled).toBeDisabled();
+    expect(styles.color).not.toBe(styles.backgroundColor);
+  },
 };
 
 export const AsLink: Story = {

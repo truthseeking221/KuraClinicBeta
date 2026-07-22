@@ -12,7 +12,7 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-popover);
   padding: var(--space-inset-card);
-  background: var(--card);
+  background: var(--color-surface);
   color: var(--card-foreground);
   box-shadow: var(--elevation-popover);
   font-family: var(--font-family-sans);

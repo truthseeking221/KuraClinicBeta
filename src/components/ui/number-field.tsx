@@ -4,6 +4,7 @@ import { NumberField as NumberFieldPrimitive } from '@base-ui/react/number-field
 import { useId } from 'react';
 import type { ComponentPropsWithoutRef, ReactNode, Ref } from 'react';
 
+import { useT } from '../foundations/i18n';
 import { AddIcon, MinusIcon } from './icons';
 import styles from './number-field.module.css';
 
@@ -35,18 +36,21 @@ const sizeClassNames: Record<NumberFieldSize, string> = {
 
 export function NumberField({
   className,
-  decrementLabel = 'Decrease value',
+  decrementLabel,
   description,
   disabled,
   error,
   id,
-  incrementLabel = 'Increase value',
+  incrementLabel,
   inputRef,
   label,
   required,
   size = 'md',
   ...props
 }: NumberFieldProps) {
+  const t = useT();
+  const resolvedDecrementLabel = decrementLabel ?? t('Decrease value');
+  const resolvedIncrementLabel = incrementLabel ?? t('Increase value');
   const generatedId = useId();
   const inputId = id ?? `number-field-${generatedId}`;
   const descriptionId = description ? `${inputId}-description` : undefined;
@@ -69,7 +73,7 @@ export function NumberField({
         data-invalid={error ? 'true' : undefined}
         data-size={size}
       >
-        <NumberFieldPrimitive.Decrement aria-label={decrementLabel} className={styles.stepButton}>
+        <NumberFieldPrimitive.Decrement aria-label={resolvedDecrementLabel} className={styles.stepButton}>
           <MinusIcon aria-hidden size={16} />
         </NumberFieldPrimitive.Decrement>
         <NumberFieldPrimitive.Input
@@ -79,7 +83,7 @@ export function NumberField({
           className={styles.input}
           id={inputId}
         />
-        <NumberFieldPrimitive.Increment aria-label={incrementLabel} className={styles.stepButton}>
+        <NumberFieldPrimitive.Increment aria-label={resolvedIncrementLabel} className={styles.stepButton}>
           <AddIcon aria-hidden size={16} />
         </NumberFieldPrimitive.Increment>
       </NumberFieldPrimitive.Group>

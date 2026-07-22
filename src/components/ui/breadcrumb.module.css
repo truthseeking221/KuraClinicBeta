@@ -1,19 +1,28 @@
 .nav {
+  display: flex;
+  width: 100%;
   min-width: 0;
   max-width: 100%;
+  align-items: center;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.nav::-webkit-scrollbar {
+  display: none;
 }
 
 .list {
   display: flex;
   min-width: 0;
   max-width: 100%;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
-  gap: var(--space-1) var(--space-2);
+  gap: var(--space-2-5);
   margin: 0;
-  padding: 0;
+  padding: 0 var(--space-1);
   color: var(--muted-foreground);
-  font-size: var(--type-sm);
+  font-size: var(--type-xs);
   line-height: var(--leading-normal);
   list-style: none;
 }
@@ -24,6 +33,7 @@
   max-width: 100%;
   align-items: center;
   gap: var(--space-1-5);
+  white-space: nowrap;
 }
 
 .link,
@@ -31,22 +41,22 @@
   display: inline-flex;
   min-width: 0;
   max-width: 100%;
-  min-height: var(--control-h);
+  min-height: 0;
   align-items: center;
   border-radius: var(--radius-control-compact);
-  padding: var(--space-2) var(--space-1);
+  padding: var(--space-0-5) var(--space-1);
   overflow-wrap: anywhere;
 }
 
 .link {
-  color: var(--text-link);
+  color: var(--color-text-tertiary);
   text-decoration: none;
   transition: background-color var(--duration-fast) var(--ease-standard), color var(--duration-fast) var(--ease-standard), box-shadow var(--duration-fast) var(--ease-standard);
 }
 
 .link:hover {
-  background: var(--muted);
-  color: var(--foreground);
+  background: var(--color-background-primary-hover);
+  color: var(--color-text-secondary);
 }
 
 .link:focus-visible,
@@ -56,7 +66,7 @@
 }
 
 .page {
-  color: var(--foreground);
+  color: var(--color-text-primary);
   font-weight: var(--weight-medium);
 }
 
@@ -69,15 +79,15 @@
 }
 
 .separator > svg {
-  width: var(--space-4);
-  height: var(--space-4);
+  width: var(--space-3);
+  height: var(--space-3);
   flex-shrink: 0;
 }
 
 .ellipsis {
   display: inline-flex;
-  width: var(--control-h);
-  min-height: var(--control-h);
+  width: var(--space-6);
+  min-height: var(--space-6);
   align-items: center;
   justify-content: center;
   border: 0;

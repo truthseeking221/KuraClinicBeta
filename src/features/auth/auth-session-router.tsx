@@ -1,6 +1,7 @@
 'use client';
 
 import type { BetterAuthSession } from '../../lib/auth-client';
+import { useT } from '../../components/foundations/i18n';
 import { Alert, AlertAction, AlertDescription, AlertTitle, Button, Card, CardContent } from '../../components/ui';
 
 import { authClient } from '../../lib/auth-client';
@@ -33,15 +34,16 @@ export function AuthSessionRouter({
   session,
   workspaceGate,
 }: AuthSessionRouterProps) {
+  const t = useT();
+
   if (isPending) {
     return (
       <AuthShell>
-        <Card as="section" aria-label="Session status">
+        <Card as="section" aria-label={t('Session status')}>
           <CardContent className={styles.statusBody}>
             <p aria-live="polite" className={styles.pending} role="status">
-              Checking your secure session…
+              {t('Checking your session…')}
             </p>
-            <p className={styles.supporting}>Your workspace will open when verification finishes.</p>
           </CardContent>
         </Card>
       </AuthShell>
@@ -51,17 +53,19 @@ export function AuthSessionRouter({
   if (error) {
     return (
       <AuthShell>
-        <Card as="section" aria-label="Session status">
+        <Card as="section" aria-label={t('Session status')}>
           <CardContent className={styles.statusBody}>
             <Alert tone="danger">
-              <AlertTitle>We couldn&apos;t verify your session</AlertTitle>
+              <AlertTitle>{t("Couldn't verify your session")}</AlertTitle>
               <AlertDescription>
-                No workspace data was opened. Check your connection and try again.
+                {t(
+                  'Workspace data was not opened. Check your connection and try again.',
+                )}
               </AlertDescription>
               {onRetrySession ? (
                 <AlertAction>
                   <Button onClick={onRetrySession} size="sm" variant="outline">
-                    Try again
+                    {t('Try again')}
                   </Button>
                 </AlertAction>
               ) : null}

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 
+import { useT } from "../../components/foundations/i18n";
 import {
   Alert,
   AlertAction,
@@ -33,7 +34,9 @@ import { AuthShell } from "./auth-shell";
 import {
   DOOR_COUNTRIES,
   isValidLocalPhone,
+  joinPersonName,
   nextLandingIndex,
+  splitPersonName,
   validateMl,
   verifyWizardPhone,
   WIZARD_COPY,
@@ -42,7 +45,6 @@ import {
   wizardStepViews,
 } from "./logic";
 import type {
-  LicenceUploadChoice,
   MlAnswer,
   PhoneRegistry,
   PhoneSubStep,
@@ -65,13 +67,11 @@ export type WizardMlDeclaration =
   | {
       answer: "yes";
       profession: Profession;
-      uploadChoice: LicenceUploadChoice;
       licenceFiles: readonly FileUploadItem[];
     }
   | {
       answer: "no";
       profession: null;
-      uploadChoice: null;
       licenceFiles: readonly [];
     }
   | null;
@@ -107,6 +107,7 @@ export function OnboardingWizard({
   phoneRegistry = DEMO_PHONE_REGISTRY,
   resendCooldownSecs = DEMO_RESEND_COOLDOWN_SECS,
 }: OnboardingWizardProps) {
+  const t = useT();
   const steps = useMemo(() => wizardStepsFor(entry), [entry]);
   const completedRef = useRef(false);
 
@@ -116,11 +117,14 @@ export function OnboardingWizard({
   });
   const [skippedSteps, setSkippedSteps] = useState<WizardStepKey[]>([]);
 
-  // Name
-  const [name, setName] = useState(
+  // Name — two fields, one stored display name.
+  const prefilledName = splitPersonName(
     entry.existingName ?? entry.initialName ?? "",
   );
-  const [nameError, setNameError] = useState<string | null>(null);
+  const [firstName, setFirstName] = useState(prefilledName.firstName);
+  const [lastName, setLastName] = useState(prefilledName.lastName);
+  const [firstNameError, setFirstNameError] = useState<string | null>(null);
+  const [lastNameError, setLastNameError] = useState<string | null>(null);
 
   // Phone
   const [phoneSub, setPhoneSub] = useState<PhoneSubStep>("entry");
@@ -140,9 +144,6 @@ export function OnboardingWizard({
   // Licence declaration
   const [mlAnswer, setMlAnswer] = useState<MlAnswer | null>(null);
   const [profession, setProfession] = useState<Profession | null>(null);
-  const [uploadChoice, setUploadChoice] = useState<LicenceUploadChoice | null>(
-    null,
-  );
   const [licenceFiles, setLicenceFiles] = useState<FileUploadItem[]>([]);
   const [mlError, setMlError] = useState<string | null>(null);
 
@@ -182,22 +183,21 @@ export function OnboardingWizard({
   const localPhone = phone?.startsWith(dialCode)
     ? phone.slice(dialCode.length)
     : (phone ?? "");
+  // `mlError` holds the English source so the branch comparisons below stay
+  // stable; the language switch happens here, at the render site.
   const mlAnswerError =
-    mlError === WIZARD_COPY.mlAnswerRequired ? mlError : null;
+    mlError === WIZARD_COPY.mlAnswerRequired ? t(mlError) : null;
   const professionError =
-    mlError === WIZARD_COPY.mlProfessionRequired ? mlError : null;
-  const uploadChoiceError =
-    mlError === WIZARD_COPY.mlUploadChoiceRequired ? mlError : null;
+    mlError === WIZARD_COPY.mlProfessionRequired ? t(mlError) : null;
   const licenceFileError =
-    mlError === WIZARD_COPY.mlFileRequired ? mlError : null;
+    mlError === WIZARD_COPY.mlFileRequired ? t(mlError) : null;
 
   function mlDeclaration(): WizardMlDeclaration {
-    if (mlAnswer === "yes" && profession && uploadChoice) {
+    if (mlAnswer === "yes" && profession) {
       return {
         answer: "yes",
-        licenceFiles: uploadChoice === "now" ? licenceFiles : [],
+        licenceFiles,
         profession,
-        uploadChoice,
       };
     }
     if (mlAnswer === "no") {
@@ -205,7 +205,6 @@ export function OnboardingWizard({
         answer: "no",
         licenceFiles: [],
         profession: null,
-        uploadChoice: null,
       };
     }
     return null;
@@ -214,7 +213,7 @@ export function OnboardingWizard({
   function finish() {
     if (completedRef.current) return;
     const verifiedPhone = entry.phoneVerified ? entry.verifiedPhone : phone;
-    const trimmedName = name.trim();
+    const trimmedName = joinPersonName(firstName, lastName);
     if (!verifiedPhone || !trimmedName) return;
 
     completedRef.current = true;
@@ -242,20 +241,24 @@ export function OnboardingWizard({
   }
 
   function submitName() {
-    const trimmed = name.trim();
-    if (!trimmed) {
-      setNameError(WIZARD_COPY.nameRequired);
-      return;
-    }
-    setNameError(null);
-    setName(trimmed);
-    if (!clinicName) setClinicName(`${trimmed}'s cabinet`);
+    const trimmedFirst = firstName.trim();
+    const trimmedLast = lastName.trim();
+    // Report both gaps at once: fixing one field only to be stopped by the
+    // other is the slower path through the same two errors.
+    setFirstNameError(trimmedFirst ? null : t(WIZARD_COPY.firstNameRequired));
+    setLastNameError(trimmedLast ? null : t(WIZARD_COPY.lastNameRequired));
+    if (!trimmedFirst || !trimmedLast) return;
+
+    setFirstName(trimmedFirst);
+    setLastName(trimmedLast);
+    const fullName = joinPersonName(trimmedFirst, trimmedLast);
+    if (!clinicName) setClinicName(`${fullName}'s cabinet`);
     landOn(currentIndex + 1);
   }
 
   function requestPhoneCode() {
     if (!isValidLocalPhone(localPhone)) {
-      setPhoneError(WIZARD_COPY.invalidPhone);
+      setPhoneError(t(WIZARD_COPY.invalidPhone));
       return;
     }
     setPhoneError(null);
@@ -273,7 +276,7 @@ export function OnboardingWizard({
       phoneRegistry,
     );
     if (outcome === "INVALID_CODE") {
-      setCodeError(WIZARD_COPY.invalidCode);
+      setCodeError(t(WIZARD_COPY.invalidCode));
       return;
     }
     if (outcome === "ATTACHED") {
@@ -292,7 +295,7 @@ export function OnboardingWizard({
 
   function submitClinic() {
     if (!clinicName.trim()) {
-      setClinicError(WIZARD_COPY.clinicNameRequired);
+      setClinicError(t(WIZARD_COPY.clinicNameRequired));
       return;
     }
     setClinicError(null);
@@ -301,18 +304,16 @@ export function OnboardingWizard({
 
   function skipClinic() {
     setClinicError(null);
-    setClinicName((current) => current.trim() || `${name.trim()}'s cabinet`);
+    setClinicName(
+      (current) =>
+        current.trim() || `${joinPersonName(firstName, lastName)}'s cabinet`,
+    );
     markSkipped("clinic");
     landOn(currentIndex + 1);
   }
 
   function finishMl() {
-    const error = validateMl(
-      mlAnswer,
-      profession,
-      uploadChoice,
-      licenceFiles.length,
-    );
+    const error = validateMl(mlAnswer, profession, licenceFiles.length);
     if (error) {
       setMlError(error);
       return;
@@ -329,7 +330,7 @@ export function OnboardingWizard({
 
   return (
     <AuthShell width={entry.isInvitee ? "sm" : "md"}>
-      <Card as="section" aria-label="Set up your account">
+      <Card as="section" aria-label={t("Set up your account")}>
         <CardContent className={styles.body}>
           {views.length > 0 ? (
             <Stepper
@@ -350,7 +351,7 @@ export function OnboardingWizard({
                   >
                     <StepperTrigger>
                       <StepperIndicator>{index + 1}</StepperIndicator>
-                      <StepperTitle>{view.label}</StepperTitle>
+                      <StepperTitle>{t(view.label)}</StepperTitle>
                     </StepperTrigger>
                     {index < views.length - 1 ? <StepperSeparator /> : null}
                   </StepperItem>
@@ -359,55 +360,71 @@ export function OnboardingWizard({
             </Stepper>
           ) : (
             <p aria-live="polite" className={styles.pending} role="status">
-              Your account is ready. Opening the workspace…
+              {t("Your account is ready. Opening your workspace…")}
             </p>
           )}
 
           {currentStep === "name" ? (
-            <section aria-label="Your name" className={styles.step}>
+            <section aria-label={t("Your name")} className={styles.step}>
               <header className={styles.header}>
-                <h1 className={styles.title}>What should we call you?</h1>
+                <h1 className={styles.title}>{t("Your name")}</h1>
                 <p className={styles.subtitle}>
-                  Shown to your team and on order documents.
+                  {t("Shown to your team and on order documents.")}
                 </p>
               </header>
-              <Input
-                error={nameError}
-                label="Full name"
-                onChange={(event) => {
-                  setName(event.target.value);
-                  setNameError(null);
-                }}
-                placeholder="Dr. Bopha Kim"
-                required
-                value={name}
-              />
+              <div className={styles.nameRow}>
+                <Input
+                  autoComplete="given-name"
+                  error={firstNameError}
+                  label={t("First name")}
+                  onChange={(event) => {
+                    setFirstName(event.target.value);
+                    setFirstNameError(null);
+                  }}
+                  placeholder="Bopha"
+                  required
+                  value={firstName}
+                />
+                <Input
+                  autoComplete="family-name"
+                  error={lastNameError}
+                  label={t("Last name")}
+                  onChange={(event) => {
+                    setLastName(event.target.value);
+                    setLastNameError(null);
+                  }}
+                  placeholder="Kim"
+                  required
+                  value={lastName}
+                />
+              </div>
               <Button
                 className={styles.inlineEnd}
                 onClick={submitName}
                 variant="primary"
               >
-                Continue
+                {t("Continue")}
               </Button>
             </section>
           ) : null}
 
           {currentStep === "phone" ? (
-            <section aria-label="Verified phone" className={styles.step}>
+            <section aria-label={t("Verified phone")} className={styles.step}>
               {phoneSub === "entry" ? (
                 <>
                   <header className={styles.header}>
-                    <h1 className={styles.title}>Add a verified phone</h1>
+                    <h1 className={styles.title}>{t("Add a phone number")}</h1>
                     <p className={styles.subtitle}>
-                      The number couriers call and order documents show. Every
-                      account needs one.
+                      {t(
+                        "Couriers use this number, and it appears on order documents.",
+                      )}
                     </p>
                   </header>
                   <PhoneInput
                     countries={WIZARD_PHONE_COUNTRIES}
                     defaultCountry="KH"
                     error={phoneError}
-                    label="Phone number"
+                    label={t("Phone number")}
                     onChange={(nextPhone) => {
                       setPhone(nextPhone);
                       setPhoneError(null);
@@ -417,6 +434,7 @@ export function OnboardingWizard({
                     }}
                     placeholder="12 345 678"
                     required
+                    size="lg"
                     value={phone}
                   />
                   <Button
@@ -424,7 +442,7 @@ export function OnboardingWizard({
                     onClick={requestPhoneCode}
                     variant="primary"
                   >
-                    Send code
+                    {t("Send code")}
                   </Button>
                 </>
               ) : null}
@@ -432,66 +450,77 @@ export function OnboardingWizard({
               {phoneSub === "verify" ? (
                 <>
                   <header className={styles.header}>
-                    <h1 className={styles.title}>Enter the code</h1>
+                    <h1 className={styles.title}>{t("Enter your code")}</h1>
                     <p className={styles.subtitle}>
-                      Sent to{" "}
-                      <strong className={styles.identifier}>{phone}</strong>.
+                      {t("Sent to")}{" "}
+                      <strong className={styles.identifier}>{phone}</strong>
                     </p>
-                  </header>
-                  <OtpInput
-                    autoFocus
-                    error={codeError}
-                    label="SMS code"
-                    onValueChange={(next) => {
-                      setCode(next);
-                      setCodeError(null);
-                    }}
-                    value={code}
-                  />
-                  <div className={styles.actionRow}>
-                    <div className={styles.actionCluster}>
+                    <div className={styles.verificationMeta}>
                       <Button
-                        disabled={resendLeft > 0}
+                        className={styles.changePhone}
+                        onClick={changePhone}
+                        size="sm"
+                        variant="link"
+                      >
+                        {t("Change number")}
+                      </Button>
+                      <span className={styles.expiry}>
+                        {t("Expires in 10 minutes")}
+                      </span>
+                    </div>
+                  </header>
+                  <div className={styles.otpSection}>
+                    <OtpInput
+                      accessibleLabel={t("SMS code")}
+                      autoFocus
+                      error={codeError}
+                      fullWidth
+                      onValueChange={(next) => {
+                        setCode(next);
+                        setCodeError(null);
+                      }}
+                      value={code}
+                    />
+                    {resendLeft > 0 ? (
+                      <p className={styles.resendStatus} role="status">
+                        {t("Resend in")} {resendLeft}s
+                      </p>
+                    ) : (
+                      <Button
                         onClick={() => {
                           setCode("");
                           setResendLeft(resendCooldownSecs);
                         }}
+                        className={styles.resendAction}
                         size="compact"
-                        variant="ghost"
+                        variant="link"
                       >
-                        {resendLeft > 0
-                          ? `Resend in ${resendLeft}s`
-                          : "Resend code"}
+                        {t("Resend code")}
                       </Button>
-                      <Button
-                        onClick={changePhone}
-                        size="compact"
-                        variant="ghost"
-                      >
-                        Change number
-                      </Button>
-                    </div>
-                    <Button
-                      disabled={code.length !== 6}
-                      onClick={verifyPhone}
-                      variant="primary"
-                    >
-                      Verify
-                    </Button>
+                    )}
                   </div>
+                  <Button
+                    className={styles.inlineEnd}
+                    disabled={code.length !== 6}
+                    onClick={verifyPhone}
+                    variant="primary"
+                  >
+                    {t("Verify")}
+                  </Button>
                 </>
               ) : null}
 
               {phoneSub === "blocked" ? (
                 <Alert tone="danger">
-                  <AlertTitle>This phone cannot be used</AlertTitle>
+                  <AlertTitle>{t("This phone is unavailable")}</AlertTitle>
                   <AlertDescription>
-                    Use a different phone or contact support@kura.med. For
-                    privacy, we cannot disclose details about another account.
+                    {t(
+                      "Use a different phone or contact support@kura.med. We cannot share details about another account.",
+                    )}
                   </AlertDescription>
                   <AlertAction>
                     <Button onClick={changePhone} size="sm" variant="outline">
-                      Use a different phone
+                      {t("Use a different phone")}
                     </Button>
                   </AlertAction>
                 </Alert>
@@ -500,17 +529,18 @@ export function OnboardingWizard({
           ) : null}
 
           {currentStep === "clinic" ? (
-            <section aria-label="Your clinic" className={styles.step}>
+            <section aria-label={t("Your clinic")} className={styles.step}>
               <header className={styles.header}>
-                <h1 className={styles.title}>Name your clinic</h1>
+                <h1 className={styles.title}>{t("Name your clinic")}</h1>
                 <p className={styles.subtitle}>
-                  Your workspace — patients, orders, and team live here. You can
-                  rename it any time.
+                  {t(
+                    "Your patients, orders, and team access are kept here. You can rename it later.",
+                  )}
                 </p>
               </header>
               <Input
                 error={clinicError}
-                label="Clinic name"
+                label={t("Clinic name")}
                 onChange={(event) => {
                   setClinicName(event.target.value);
                   setClinicError(null);
@@ -520,29 +550,31 @@ export function OnboardingWizard({
               />
               <div className={styles.actionRow}>
                 <Button onClick={skipClinic} variant="ghost">
-                  Skip for now
+                  {t("Skip for now")}
                 </Button>
                 <Button onClick={submitClinic} variant="primary">
-                  Create clinic
+                  {t("Create clinic")}
                 </Button>
               </div>
             </section>
           ) : null}
 
           {currentStep === "ml" ? (
-            <section aria-label="Medical licence" className={styles.step}>
+            <section aria-label={t("Medical licence")} className={styles.step}>
               <header className={styles.header}>
-                <h1 className={styles.title}>Do you have a medical licence?</h1>
+                <h1 className={styles.title}>
+                  {t("Do you hold a medical licence?")}
+                </h1>
                 <p className={styles.subtitle}>
-                  Doctor, dentist, nurse, midwife, or another licensed
-                  profession.
+                  {t(
+                    "This affects licence verification. It does not set your role or access.",
+                  )}
                 </p>
               </header>
 
               <RadioGroup
                 error={mlAnswerError}
-                layout="grid"
-                legend="Medical licence status"
+                legend={t("Medical licence status")}
                 name="medical-licence-status"
                 onValueChange={(value) => {
                   if (value === "yes") {
@@ -550,7 +582,6 @@ export function OnboardingWizard({
                   } else if (value === "no") {
                     setMlAnswer("no");
                     setProfession(null);
-                    setUploadChoice(null);
                     setLicenceFiles([]);
                   }
                   setMlError(null);
@@ -559,17 +590,23 @@ export function OnboardingWizard({
               >
                 <Radio
                   appearance="card"
-                  helpText="Choose your profession, then upload now or later."
+                  density="comfortable"
+                  helpText={t(
+                    "Choose your profession, then upload your licence.",
+                  )}
                   value="yes"
                 >
-                  Yes — I have a medical licence
+                  {t("Yes, I hold a medical licence")}
                 </Radio>
                 <Radio
                   appearance="card"
-                  helpText="No credential is created or requested. You can change this later."
+                  density="comfortable"
+                  helpText={t(
+                    "No credential is created or requested. You can change this later.",
+                  )}
                   value="no"
                 >
-                  No — not at this time
+                  {t("No, I do not hold one")}
                 </Radio>
               </RadioGroup>
 
@@ -577,83 +614,49 @@ export function OnboardingWizard({
                 <>
                   <Select
                     error={professionError}
-                    label="Profession"
+                    label={t("Profession")}
                     onChange={(event) => {
                       setProfession(event.target.value as Profession);
                       setMlError(null);
                     }}
                     options={WIZARD_PROFESSIONS.map((entryOption) => ({
                       value: entryOption.value,
-                      label: entryOption.label,
+                      label: t(entryOption.label),
                     }))}
-                    placeholder="Select profession…"
+                    placeholder={t("Select profession…")}
                     required
                     value={profession ?? ""}
                   />
 
-                  <RadioGroup
-                    error={uploadChoiceError}
-                    layout="grid"
-                    legend="Licence upload timing"
-                    name="medical-licence-upload-timing"
-                    onValueChange={(value) => {
-                      if (value === "now") {
-                        setUploadChoice("now");
-                      } else if (value === "later") {
-                        setUploadChoice("later");
-                        setLicenceFiles([]);
-                      }
-                      setMlError(null);
-                    }}
-                    value={uploadChoice ?? ""}
-                  >
-                    <Radio
-                      appearance="card"
-                      helpText="Attach a PDF or clear image before finishing setup."
-                      value="now"
-                    >
-                      Upload now
-                    </Radio>
-                    <Radio
-                      appearance="card"
-                      helpText="A verify-licence card stays visible until a valid licence is added."
-                      value="later"
-                    >
-                      Upload later
-                    </Radio>
-                  </RadioGroup>
-
-                  {uploadChoice === "now" ? (
-                    <div className={styles.fieldGroup}>
-                      <FileUpload
-                        accept="application/pdf,image/*"
-                        description="PDF or clear image, up to 10 MB each."
-                        label="Medical licence document"
-                        maxFiles={3}
-                        maxSize={10 * 1024 * 1024}
-                        multiple
-                        onValueChange={(files) => {
-                          setLicenceFiles(files);
-                          setMlError(null);
-                        }}
-                        value={licenceFiles}
-                      />
-                      {licenceFileError ? (
-                        <p className={styles.fieldError} role="alert">
-                          {licenceFileError}
-                        </p>
-                      ) : null}
-                    </div>
-                  ) : null}
+                  <div className={styles.fieldGroup}>
+                    <FileUpload
+                      accept="application/pdf,image/*"
+                      description={t("PDF or clear image, up to 10 MB each.")}
+                      label={t("Medical licence document")}
+                      maxFiles={3}
+                      maxSize={10 * 1024 * 1024}
+                      multiple
+                      onValueChange={(files) => {
+                        setLicenceFiles(files);
+                        setMlError(null);
+                      }}
+                      value={licenceFiles}
+                    />
+                    {licenceFileError ? (
+                      <p className={styles.fieldError} role="alert">
+                        {licenceFileError}
+                      </p>
+                    ) : null}
+                  </div>
                 </>
               ) : null}
 
-              <div className={styles.actionRow}>
+              <div className={`${styles.actionRow} ${styles.licenceActionRow}`}>
                 <Button onClick={skipMl} variant="ghost">
-                  Skip for now
+                  {t("Skip for now")}
                 </Button>
                 <Button onClick={finishMl} variant="primary">
-                  Finish setup
+                  {t("Finish setup")}
                 </Button>
               </div>
             </section>

@@ -6,21 +6,46 @@
 }
 
 .compact {
-  max-width: calc(var(--space-32) * 3);
+  max-width: 24rem;
 }
 
 .status {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  gap: var(--space-1) var(--space-2);
+  gap: var(--space-1) var(--space-3);
 }
 
 .value {
   color: var(--color-text-primary);
   font-size: var(--type-xl);
-  font-weight: var(--weight-bold);
+  font-weight: var(--weight-semibold);
   font-variant-numeric: tabular-nums;
+}
+
+.value[data-tone='caution'] {
+  color: var(--color-status-warning-fg);
+}
+
+.value[data-tone='out'] {
+  color: var(--color-status-danger-fg);
+}
+
+.flagLabel {
+  font-size: var(--type-xs);
+  font-weight: var(--weight-semibold);
+}
+
+.flagLabel[data-tone='optimal'] {
+  color: var(--color-text-primary);
+}
+
+.flagLabel[data-tone='caution'] {
+  color: var(--color-status-warning-fg);
+}
+
+.flagLabel[data-tone='out'] {
+  color: var(--color-status-danger-fg);
 }
 
 .unit,
@@ -48,19 +73,10 @@
   margin-top: var(--space-2);
 }
 
+/* No box: the entries already separate by hairline, and a bordered card inside
+   a popover or sheet is a container nested in a container. */
 .history {
   margin-top: var(--space-2);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-card-surface);
-}
-
-.history :global([data-slot='collapsible-trigger']) {
-  color: var(--color-text-link);
-}
-
-.history :global([data-slot='collapsible-trigger']):hover,
-.history :global([data-slot='collapsible-trigger'])[data-state='open'] {
-  color: var(--color-text-link);
 }
 
 :global([data-density='compact']) .history :global([data-slot='collapsible-trigger']) {
@@ -75,13 +91,12 @@
   list-style: none;
 }
 
+/* A released observation is read, not pressed: no touch-target floor. */
 .historyItem {
   display: flex;
-  min-height: var(--touch-target-min);
   flex-direction: column;
-  justify-content: center;
   gap: var(--space-0-5);
-  padding: var(--space-2) var(--space-3);
+  padding: var(--space-2) 0;
   border-top: 1px solid var(--color-border);
 }
 

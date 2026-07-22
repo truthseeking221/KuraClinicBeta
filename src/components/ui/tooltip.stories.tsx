@@ -5,13 +5,13 @@ import { Button, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from
 import styles from './intake-components.stories.module.css';
 
 const meta = {
-  title: 'Design System/Primitives/Tooltip',
+  title: 'Design System/Components/Tooltip',
   component: Tooltip,
-  tags: ['autodocs', 'source-reui', 'adapted-kura'],
+  tags: ['autodocs', 'source-kura', 'adapted-kura'],
   parameters: {
     layout: 'padded',
     kura: {
-      source: { vendor: 'ReUI', registryItem: '@reui/c-tooltip-1' },
+      source: { vendor: 'Kura', registryItem: 'tooltip', visualReference: 'Kura tooltip' },
       intake: {
         decision: 'EXTEND',
         owner: 'src/components/ui',

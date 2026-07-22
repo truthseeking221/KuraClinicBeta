@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { useId, useMemo, useState } from 'react';
+import { useId, useMemo, useState } from "react";
 
 import {
   AddIcon,
@@ -11,7 +11,6 @@ import {
   Badge,
   Button,
   Checkbox,
-  ChevronDownIcon,
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
@@ -24,7 +23,7 @@ import {
   SearchIcon,
   TestTubeIcon,
   WarningIcon,
-} from '../../components/ui';
+} from "../../components/ui";
 import {
   EmptyState,
   EmptyStateContent,
@@ -32,21 +31,19 @@ import {
   EmptyStateHeader,
   EmptyStateMedia,
   EmptyStateTitle,
-} from '../../components/shared/empty-state';
+} from "../../components/shared/empty-state";
+import { useT } from "../../components/foundations/i18n";
 
-import {
-  filterCatalogTests,
-  groupCatalogTests,
-  toggleSetValue,
-} from './logic';
-import styles from './lab-test-picker.module.css';
+import { filterCatalogTests, groupCatalogTests, toggleSetValue } from "./logic";
+import { LabTestDetailPreview } from "./lab-test-detail-preview";
+import styles from "./lab-test-picker.module.css";
 import type {
   LabCatalogCategory,
   LabCatalogFilterStrategy,
   LabCatalogPickerState,
   LabCatalogSelectionChange,
   LabCatalogTest,
-} from './types';
+} from "./types";
 
 export type LabTestPickerProps = {
   tests: readonly LabCatalogTest[];
@@ -74,11 +71,15 @@ export type LabTestPickerProps = {
   onRetry?: () => void;
   onSuggestMissingTest?: (query: string) => void;
   autoFocusSearch?: boolean;
+  /** Lets an owning workspace provide the visible title without repeating it. */
+  showResultSummary?: boolean;
+  /** Keeps the toolbar fixed while the catalog body scrolls inside a bounded region. */
+  scrollMode?: "page" | "contained";
   className?: string;
 };
 
 function joinClasses(...classes: Array<string | undefined | false>) {
-  return classes.filter(Boolean).join(' ');
+  return classes.filter(Boolean).join(" ");
 }
 
 function useControllableString(
@@ -114,7 +115,11 @@ function useControllableSet(
 
 function CatalogSkeleton() {
   return (
-    <div className={styles.skeleton} aria-hidden="true" data-testid="catalog-skeleton">
+    <div
+      className={styles.skeleton}
+      aria-hidden="true"
+      data-testid="catalog-skeleton"
+    >
       {[0, 1, 2].map((section) => (
         <div className={styles.skeletonSection} key={section}>
           <div className={styles.skeletonHeading} />
@@ -133,56 +138,79 @@ type CatalogTestRowProps = {
   test: LabCatalogTest;
   checked: boolean;
   disabled: boolean;
+  disabledReason?: string;
+  previewOpen: boolean;
+  onPreviewOpenChange: (open: boolean) => void;
   onCheckedChange: (checked: boolean) => void;
 };
 
 function CatalogTestRow({
   checked,
   disabled,
+  disabledReason,
   onCheckedChange,
+  onPreviewOpenChange,
+  previewOpen,
   test,
 }: CatalogTestRowProps) {
+  const t = useT();
   const reasonId = useId();
-  const unavailable = test.availability === 'unavailable';
+  const unavailable = test.availability === "unavailable";
   const rowDisabled = disabled || unavailable;
 
+  const changeSelection = (nextChecked: boolean) => {
+    onCheckedChange(nextChecked);
+    onPreviewOpenChange(false);
+  };
+
   return (
-    <div
-      className={styles.testRow}
-      data-checked={checked ? 'true' : undefined}
-      data-disabled={rowDisabled ? 'true' : undefined}
-      data-testid={`catalog-test-${test.testCatalogId}`}
+    <LabTestDetailPreview
+      actionDisabled={disabled}
+      actionDisabledReason={disabledReason}
+      onOpenChange={onPreviewOpenChange}
+      onToggle={() => changeSelection(!checked)}
+      open={previewOpen}
+      selected={checked}
+      test={test}
     >
-      <Checkbox
-        aria-describedby={unavailable ? reasonId : undefined}
-        checked={checked}
-        className={styles.testCheckbox}
-        disabled={rowDisabled}
-        onCheckedChange={onCheckedChange}
+      <div
+        className={styles.testRow}
+        data-checked={checked ? "true" : undefined}
+        data-disabled={rowDisabled ? "true" : undefined}
+        data-testid={`catalog-test-${test.testCatalogId}`}
       >
-        <span className={styles.testLabel}>
-          <span>{test.displayName}</span>
-          {test.componentCount ? (
-            <Badge
-              aria-label={`${test.componentCount} included tests`}
-              appearance="solid"
-              size="sm"
-              variant="primary"
-            >
-              {test.componentCount}
-            </Badge>
-          ) : null}
-          {unavailable ? (
-            <WarningIcon aria-hidden="true" className={styles.warningIcon} size={16} />
-          ) : null}
-        </span>
-      </Checkbox>
-      {unavailable ? (
-        <span className={styles.unavailableReason} id={reasonId}>
-          {test.unavailableReason ?? 'Temporarily unavailable'}
-        </span>
-      ) : null}
-    </div>
+        <Checkbox
+          aria-describedby={unavailable ? reasonId : undefined}
+          checked={checked}
+          className={styles.testCheckbox}
+          disabled={rowDisabled}
+          onCheckedChange={changeSelection}
+        >
+          <span className={styles.testLabel}>
+            <span>{test.displayName}</span>
+            {test.componentCount ? (
+              <span className={styles.componentCount}>
+                {t(
+                  test.componentCount === 1 ? "{count} test" : "{count} tests",
+                ).replace("{count}", String(test.componentCount))}
+              </span>
+            ) : null}
+            {unavailable ? (
+              <WarningIcon
+                aria-hidden="true"
+                className={styles.warningIcon}
+                size={16}
+              />
+            ) : null}
+          </span>
+        </Checkbox>
+        {unavailable ? (
+          <span className={styles.unavailableReason} id={reasonId}>
+            {t(test.unavailableReason ?? "Temporarily unavailable")}
+          </span>
+        ) : null}
+      </div>
+    </LabTestDetailPreview>
   );
 }
 
@@ -199,15 +227,18 @@ function CategoryFilterMenu({
   onChange,
   selected,
 }: CategoryFilterMenuProps) {
+  const t = useT();
   const selectedNames = categories
     .filter((category) => selected.has(category.categoryId))
     .map((category) => category.displayName);
   const triggerLabel =
     selectedNames.length === 0
-      ? 'Category'
+      ? t("Category")
       : selectedNames.length === 1
-        ? `Category · ${selectedNames[0]}`
-        : `Category · ${selectedNames[0]} +${selectedNames.length - 1}`;
+        ? t("Category · {name}").replace("{name}", selectedNames[0])
+        : t("Category · {name} +{count}")
+            .replace("{name}", selectedNames[0])
+            .replace("{count}", String(selectedNames.length - 1));
 
   return (
     <Popover>
@@ -216,33 +247,50 @@ function CategoryFilterMenu({
           <Button
             aria-label={
               selectedNames.length > 0
-                ? `Filter by category, ${selectedNames.length} selected`
-                : 'Filter by category'
+                ? t("Filter by category, {count} selected").replace(
+                    "{count}",
+                    String(selectedNames.length),
+                  )
+                : t("Filter by category")
             }
             className={styles.categoryTrigger}
             disabled={disabled}
             leadingIcon={<FilterIcon aria-hidden="true" />}
-            size="sm"
+            size="md"
             variant="outline"
           >
             <span className={styles.categoryTriggerLabel}>{triggerLabel}</span>
           </Button>
         }
       />
-      <PopoverContent aria-label="Filter by category" className={styles.categoryMenu}>
+      <PopoverContent
+        aria-label={t("Filter by category")}
+        className={styles.categoryMenu}
+      >
         <div className={styles.categoryOptions}>
           {categories.map((category) => (
             <Checkbox
               checked={selected.has(category.categoryId)}
               key={category.categoryId}
               onCheckedChange={(checked) =>
-                onChange(toggleSetValue(selected, category.categoryId, checked === true))
+                onChange(
+                  toggleSetValue(
+                    selected,
+                    category.categoryId,
+                    checked === true,
+                  ),
+                )
               }
             >
               <span className={styles.categoryOptionLabel}>
-                <span className={styles.categoryOptionName}>{category.displayName}</span>
+                <span className={styles.categoryOptionName}>
+                  {category.displayName}
+                </span>
                 <span
-                  aria-label={`${category.count} tests`}
+                  aria-label={t("{count} tests").replace(
+                    "{count}",
+                    String(category.count),
+                  )}
                   className={styles.categoryOptionCount}
                 >
                   {category.count}
@@ -258,7 +306,7 @@ function CategoryFilterMenu({
             size="sm"
             variant="ghost"
           >
-            Clear categories
+            {t("Clear categories")}
           </Button>
         </div>
       </PopoverContent>
@@ -270,12 +318,12 @@ export function LabTestPicker({
   autoFocusSearch = false,
   categories,
   className,
-  defaultQuery = '',
+  defaultQuery = "",
   defaultSelectedCategoryIds = [],
   defaultSelectedTestIds = [],
   disabled = false,
   errorMessage,
-  filterStrategy = 'client',
+  filterStrategy = "client",
   onQueryChange,
   onRetry,
   onSelectedCategoryIdsChange,
@@ -284,13 +332,16 @@ export function LabTestPicker({
   query: controlledQuery,
   readOnly = false,
   resultTotal,
+  scrollMode = "page",
   selectedCategoryIds: controlledCategoryIds,
   selectedTestIds: controlledTestIds,
+  showResultSummary = true,
   staleAt,
-  state = 'ready',
+  state = "ready",
   tests,
   totalCount,
 }: LabTestPickerProps) {
+  const t = useT();
   const headingId = useId();
   const [query, setQuery] = useControllableString(
     controlledQuery,
@@ -306,10 +357,11 @@ export function LabTestPicker({
     controlledTestIds,
     defaultSelectedTestIds,
   );
+  const [previewTestId, setPreviewTestId] = useState<string | null>(null);
 
   const visibleTests = useMemo(
     () =>
-      filterStrategy === 'client'
+      filterStrategy === "client"
         ? filterCatalogTests(tests, query, selectedCategories)
         : [...tests],
     [filterStrategy, query, selectedCategories, tests],
@@ -322,16 +374,25 @@ export function LabTestPicker({
   const activeFilterCount = selectedCategories.size;
   const catalogTotal = totalCount ?? tests.length;
   const visibleTotal = resultTotal ?? visibleTests.length;
-  const isLoading = state === 'loading';
-  const isError = state === 'error' || state === 'offline';
-  const isPermissionRestricted = state === 'permission';
+  const isLoading = state === "loading";
+  const isError = state === "error" || state === "offline";
+  const isPermissionRestricted = state === "permission";
   const selectionDisabled =
     disabled || readOnly || isPermissionRestricted || isLoading || isError;
-  const resultLabel = trimmedQuery
-    ? 'Search results'
-    : activeFilterCount > 0
-      ? 'Filtered tests'
-      : 'All tests';
+  const selectionDisabledReason = disabled
+    ? t("Catalog selection is disabled.")
+    : readOnly
+      ? t("This selection is read-only.")
+      : isPermissionRestricted
+        ? t("Your workspace permission allows catalog review only.")
+        : undefined;
+  const resultLabel = t(
+    trimmedQuery
+      ? "Search results"
+      : activeFilterCount > 0
+        ? "Filtered tests"
+        : "All tests",
+  );
 
   const handleTestChange = (test: LabCatalogTest, checked: boolean) => {
     const next = toggleSetValue(selectedTests, test.testCatalogId, checked);
@@ -342,20 +403,36 @@ export function LabTestPicker({
   return (
     <section
       aria-busy={isLoading || undefined}
-      aria-labelledby={headingId}
+      aria-label={showResultSummary ? undefined : t("Lab test catalog")}
+      aria-labelledby={showResultSummary ? headingId : undefined}
       className={joinClasses(styles.root, className)}
+      data-scroll-mode={scrollMode}
       data-slot="lab-test-picker"
     >
       <div className={styles.toolbar}>
         <div className={styles.toolbarHeader}>
-          <div className={styles.titleGroup}>
-            <h2 className={styles.title} id={headingId}>
-              {resultLabel}
-            </h2>
-            <Badge aria-label={`${trimmedQuery || activeFilterCount ? visibleTotal : catalogTotal} tests`} size="sm">
-              {trimmedQuery || activeFilterCount ? visibleTotal : catalogTotal}
-            </Badge>
-          </div>
+          {showResultSummary ? (
+            <div className={styles.titleGroup}>
+              <h2 className={styles.title} id={headingId}>
+                {resultLabel}
+              </h2>
+              <Badge
+                aria-label={t("{count} tests").replace(
+                  "{count}",
+                  String(
+                    trimmedQuery || activeFilterCount
+                      ? visibleTotal
+                      : catalogTotal,
+                  ),
+                )}
+                size="sm"
+              >
+                {trimmedQuery || activeFilterCount
+                  ? visibleTotal
+                  : catalogTotal}
+              </Badge>
+            </div>
+          ) : null}
 
           <CategoryFilterMenu
             categories={categories}
@@ -365,50 +442,64 @@ export function LabTestPicker({
           />
         </div>
         <Input
-          aria-label="Search tests, panels, or keywords"
+          aria-label={t("Search tests, panels, or keywords")}
           autoFocus={autoFocusSearch}
           className={styles.search}
           disabled={disabled}
           maxLength={100}
           onChange={(event) => setQuery(event.currentTarget.value)}
-          placeholder="Search tests, panels, or keywords…"
+          placeholder={t("Search tests, panels, or keywords…")}
           prefix={<SearchIcon size={16} />}
-          size="sm"
+          size="md"
           type="search"
           value={query}
         />
       </div>
 
-      <div className={styles.body}>
-        <p aria-atomic="true" aria-live="polite" className={styles.srOnly} role="status">
+      <div className={styles.body} data-slot="lab-test-picker-scroll">
+        <p
+          aria-atomic="true"
+          aria-live="polite"
+          className={styles.srOnly}
+          role="status"
+        >
           {isLoading
-            ? 'Loading lab tests'
-            : `${visibleTotal} test${visibleTotal === 1 ? '' : 's'} available in this view`}
+            ? t("Loading lab tests")
+            : t(
+                visibleTotal === 1
+                  ? "{count} test available in this view"
+                  : "{count} tests available in this view",
+              ).replace("{count}", String(visibleTotal))}
         </p>
 
         {isPermissionRestricted ? (
           <Alert icon={<WarningIcon />} tone="warning">
-            <AlertTitle>Browse-only catalog</AlertTitle>
+            <AlertTitle>{t("Browse-only catalog")}</AlertTitle>
             <AlertDescription>
-              Your current workspace permission allows catalog review but not test selection.
+              {t(
+                "Your current workspace permission allows catalog review but not test selection.",
+              )}
             </AlertDescription>
           </Alert>
         ) : null}
 
         {readOnly && !isPermissionRestricted ? (
           <Alert tone="info">
-            <AlertTitle>Read-only selection</AlertTitle>
+            <AlertTitle>{t("Read-only selection")}</AlertTitle>
             <AlertDescription>
-              Tests already attached to this order are shown for review and cannot be changed here.
+              {t(
+                "Tests already attached to this order are shown for review and cannot be changed here.",
+              )}
             </AlertDescription>
           </Alert>
         ) : null}
 
         {staleAt ? (
           <Alert icon={<WarningIcon />} tone="warning">
-            <AlertTitle>Catalog snapshot may be out of date</AlertTitle>
+            <AlertTitle>{t("Catalog snapshot may be out of date")}</AlertTitle>
             <AlertDescription>
-              Last refreshed {staleAt}. Refresh before relying on availability.
+              {t("Last refreshed {date}.").replace("{date}", staleAt)}{" "}
+              {t("Refresh before relying on availability.")}
             </AlertDescription>
             {onRetry ? (
               <AlertAction>
@@ -418,7 +509,7 @@ export function LabTestPicker({
                   size="sm"
                   variant="outline"
                 >
-                  Refresh catalog
+                  {t("Refresh catalog")}
                 </Button>
               </AlertAction>
             ) : null}
@@ -434,13 +525,19 @@ export function LabTestPicker({
             </EmptyStateMedia>
             <EmptyStateHeader>
               <EmptyStateTitle>
-                {state === 'offline' ? 'Catalog unavailable offline' : 'Could not load tests'}
+                {t(
+                  state === "offline"
+                    ? "Catalog unavailable offline"
+                    : "Could not load tests",
+                )}
               </EmptyStateTitle>
               <EmptyStateDescription>
-                {errorMessage ??
-                  (state === 'offline'
-                    ? 'Reconnect to load current test availability and continue selecting.'
-                    : 'The catalog service did not respond. Try again.')}
+                {t(
+                  errorMessage ??
+                    (state === "offline"
+                      ? "Reconnect to load current test availability and continue selecting."
+                      : "The catalog service did not respond. Try again."),
+                )}
               </EmptyStateDescription>
             </EmptyStateHeader>
             {onRetry ? (
@@ -449,7 +546,7 @@ export function LabTestPicker({
                   leadingIcon={<RefreshIcon aria-hidden="true" />}
                   onClick={onRetry}
                 >
-                  Retry
+                  {t("Retry")}
                 </Button>
               </EmptyStateContent>
             ) : null}
@@ -464,11 +561,14 @@ export function LabTestPicker({
             <EmptyStateHeader>
               <EmptyStateTitle>
                 {trimmedQuery
-                  ? `No tests match “${trimmedQuery}”`
-                  : 'No tests match these filters'}
+                  ? t("No tests match “{query}”").replace(
+                      "{query}",
+                      trimmedQuery,
+                    )
+                  : t("No tests match these filters")}
               </EmptyStateTitle>
               <EmptyStateDescription>
-                Try a broader search or submit a missing-test request.
+                {t("Try a broader search or submit a missing-test request.")}
               </EmptyStateDescription>
             </EmptyStateHeader>
             {onSuggestMissingTest ? (
@@ -478,7 +578,7 @@ export function LabTestPicker({
                   onClick={() => onSuggestMissingTest(trimmedQuery)}
                   variant="outline"
                 >
-                  Suggest a missing test
+                  {t("Suggest a missing test")}
                 </Button>
               </EmptyStateContent>
             ) : null}
@@ -486,15 +586,18 @@ export function LabTestPicker({
         ) : null}
 
         {!isLoading && !isError && groups.length > 0 ? (
-          <div aria-label="Lab tests by category" className={styles.groups} role="group">
+          <div
+            aria-label={t("Lab tests by category")}
+            className={styles.groups}
+            role="group"
+          >
             {groups.map(({ category, tests: categoryTests }) => (
-              <Collapsible defaultOpen key={category.categoryId}>
+              <Collapsible defaultOpen inset="none" key={category.categoryId}>
                 <CollapsibleTrigger
+                  chevronPosition="leading"
                   className={styles.sectionTrigger}
-                  leadingIcon={<ChevronDownIcon className={styles.sectionChevron} />}
-                  showChevron={false}
                 >
-                  <span className={styles.sectionTitle}>{category.displayName}</span>
+                  {category.displayName}
                 </CollapsibleTrigger>
                 <CollapsibleContent className={styles.sectionContent}>
                   <div className={styles.testGrid}>
@@ -502,9 +605,22 @@ export function LabTestPicker({
                       <CatalogTestRow
                         checked={selectedTests.has(catalogTest.testCatalogId)}
                         disabled={selectionDisabled}
+                        disabledReason={selectionDisabledReason}
                         key={catalogTest.testCatalogId}
                         onCheckedChange={(checked) =>
                           handleTestChange(catalogTest, checked)
+                        }
+                        onPreviewOpenChange={(open) =>
+                          setPreviewTestId((current) =>
+                            open
+                              ? catalogTest.testCatalogId
+                              : current === catalogTest.testCatalogId
+                                ? null
+                                : current,
+                          )
+                        }
+                        previewOpen={
+                          previewTestId === catalogTest.testCatalogId
                         }
                         test={catalogTest}
                       />

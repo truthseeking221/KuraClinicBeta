@@ -40,6 +40,17 @@ export const HOME_STORYBOOK_KURA = {
   },
   hierarchy: {
     level: 'Page',
-    children: ['AppShell', 'Alert', 'EmptyState', 'HomeSignalItem', 'Item', 'MoneyText'],
+    children: [
+      'AppShell',
+      'Alert',
+      'Card',
+      'EmptyState',
+      'HomeResultReviewPreview',
+      'HomeSignalRow',
+      'HomeWorkQueuePreview',
+      'ItemGroup',
+      'MoneyText',
+      'ResultReviewQueueItem',
+    ],
   },
 } as const;

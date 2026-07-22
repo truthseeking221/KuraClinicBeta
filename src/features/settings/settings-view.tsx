@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { ComponentType } from "react";
 
+import { useT } from "../../components/foundations/i18n";
 import {
   Tabs,
   TabsContent,
@@ -103,6 +104,7 @@ export function SettingsView({
   onVerify,
   frame = "page",
 }: SettingsViewProps) {
+  const t = useT();
   const [active, setActive] = useState<SettingsSectionId>(
     section ?? "overview",
   );
@@ -138,9 +140,9 @@ export function SettingsView({
     >
       {frame === "page" ? (
         <header className={styles.pageHeader}>
-          <h1 className={styles.pageTitle}>Settings</h1>
+          <h1 className={styles.pageTitle}>{t("Settings")}</h1>
           <p className={styles.pageDescription}>
-            Manage your profile, workspace, operations, and security.
+            {t("Manage your profile, workspace, operations, and security.")}
           </p>
         </header>
       ) : null}
@@ -152,10 +154,10 @@ export function SettingsView({
         value={active}
       >
         <div className={styles.rail}>
-          <TabsList aria-label="Settings sections" className={styles.railList}>
+          <TabsList aria-label={t("Settings sections")} className={styles.railList}>
             {RAIL_GROUPS.flatMap(({ group, items }) => [
               <div className={styles.railGroup} key={`group-${group}`} role="presentation">
-                {group}
+                {t(group)}
               </div>,
               ...items.map((entry) => {
                 const Icon = SECTION_ICONS[entry.id];
@@ -168,7 +170,7 @@ export function SettingsView({
                     <span aria-hidden="true" className={styles.railIcon}>
                       <Icon />
                     </span>
-                    <span className={styles.railLabel}>{entry.label}</span>
+                    <span className={styles.railLabel}>{t(entry.label)}</span>
                   </TabsTrigger>
                 );
               }),

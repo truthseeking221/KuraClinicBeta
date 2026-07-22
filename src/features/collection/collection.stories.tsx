@@ -5,16 +5,21 @@ import { useState } from 'react';
 import { AppShell } from '../../components/shared/app-shell';
 
 import { DrawWorksheet } from './draw-worksheet';
-import { DEMO_NOW, DEMO_OPERATOR, DEMO_QUEUE } from './demo-data';
+import {
+  COLLECTION_DEMO_SCENARIOS,
+  DEMO_NOW,
+  DEMO_OPERATOR,
+  DEMO_QUEUE,
+} from './demo-data';
 import { queueForRole, submitGate } from './logic';
 import { ScanGate } from './scan-gate';
 import type { CollectionPatient, Sample } from './types';
 import { VitalsForm } from './vitals-form';
 import { READINESS } from '../../components/foundations/readiness-data';
 
-const phleboQueue = queueForRole(DEMO_QUEUE, 'phlebotomy');
+const phleboQueue = COLLECTION_DEMO_SCENARIOS['scan-queue'].queue;
 const vitalsQueue = queueForRole(DEMO_QUEUE, 'vitals');
-const readyPatient = DEMO_QUEUE[0];
+const readyPatient = COLLECTION_DEMO_SCENARIOS['worksheet-ready'].patient;
 
 const meta = {
   title: 'Clinic/Collection/Draw Worksheet',
@@ -144,7 +149,11 @@ export const ChecklistGatesCollection: Story = {
 /** Vitals skipped upstream — warning banner with the two legacy paths. */
 export const VitalsMissingWarning: Story = {
   args: Default.args,
-  render: () => <WorksheetPlayground patient={DEMO_QUEUE[1]} />,
+  render: () => (
+    <WorksheetPlayground
+      patient={COLLECTION_DEMO_SCENARIOS['worksheet-vitals-missing'].patient}
+    />
+  ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getByText('Vital signs not yet recorded')).toBeVisible();
@@ -155,13 +164,22 @@ export const VitalsMissingWarning: Story = {
   },
 };
 
-/** Clot clock: SST collected 18 minutes ago on a 30-minute limit shows a warn countdown. */
+/**
+ * Clot clock. The SST was drawn 18 minutes into a 30-minute limit, so the
+ * station is viewed 4 minutes later to sit inside the 10-minute warning band —
+ * the point at which the tone changes is the thing worth proving.
+ */
 export const ClotClockRunning: Story = {
   args: Default.args,
-  render: () => <WorksheetPlayground patient={DEMO_QUEUE[2]} />,
+  render: () => (
+    <WorksheetPlayground
+      initialNow={COLLECTION_DEMO_SCENARIOS['worksheet-partial'].now}
+      patient={COLLECTION_DEMO_SCENARIOS['worksheet-partial'].patient}
+    />
+  ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByText('11:59')).toBeVisible();
+    await expect(canvas.getByText('08:00')).toBeVisible();
   },
 };
 
@@ -244,6 +262,23 @@ export const ScanGateBrowseQueue: Story = {
   },
 };
 
+/** A clear queue is a valid station state, not a loading or permission failure. */
+export const ScanGateEmptyQueue: Story = {
+  args: Default.args,
+  render: () => (
+    <ScanGate
+      onMatch={() => {}}
+      queue={COLLECTION_DEMO_SCENARIOS['scan-empty'].queue}
+      role="phlebotomy"
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(canvas.getByRole('button', { name: /Browse queue/ }));
+    await expect(canvas.getByText('Queue is clear.')).toBeVisible();
+  },
+};
+
 // ── Vitals ─────────────────────────────────────────────────
 
 /** Vitals station: required fields, BMI auto, abnormal-confirm gate. */
@@ -259,7 +294,7 @@ export const VitalsCapture: Story = {
         </div>
       );
     }
-    return <VitalsForm onSubmit={() => setDone(true)} patient={patient} />;
+    return <VitalsForm onSubmit={() => setDone(true)} patientId={patient.id} />;
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
@@ -283,9 +318,9 @@ export const VitalsCapture: Story = {
   },
 };
 
-// ── Full station flow inside the shell ─────────────────────
+// ── Full collection flow inside the shared shell ───────────
 
-/** The collection mode end-to-end: station shell → scan → worksheet. */
+/** The collection mode end-to-end: persistent shell → scan → worksheet. */
 export const CollectionModeInShell: Story = {
   args: Default.args,
   parameters: { layout: 'fullscreen' },
@@ -300,7 +335,7 @@ export const CollectionModeInShell: Story = {
         availableModes={['front-desk', 'collection']}
         mode="collection"
         onNavigate={() => {}}
-        posture="station"
+        posture="sidebar"
         station={{ id: 'PSC-01', role: 'phlebotomy', shift: 'morning' }}
         user={{ name: DEMO_OPERATOR, email: 'neang@mekong.clinic', licenceVerified: false }}
         workspace={{ id: 'ws-mekong', name: 'Mekong Clinic' }}
@@ -337,7 +372,11 @@ export const CollectionModeInShell: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByText('Station PSC-01')).toBeVisible();
+    await expect(canvas.getByRole('navigation', { name: 'Primary' })).toBeVisible();
+    await expect(canvas.getByRole('button', { name: 'Scan' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    );
 
     const input = canvas.getByLabelText('Patient ID');
     await userEvent.type(input, 'P104481{Enter}');

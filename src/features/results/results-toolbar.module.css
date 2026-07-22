@@ -1,16 +1,14 @@
+/* One control row, one shared centre line. No control carries a visible field
+   label, so nothing floats above the row and no baseline drifts. */
 .toolbar {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(calc(var(--space-24) * 2), auto) auto auto;
-  align-items: end;
+  grid-template-columns: minmax(0, 1fr) minmax(12rem, auto) auto auto;
+  align-items: center;
   gap: var(--space-control-gap);
 }
 
 .search {
   min-width: 0;
-}
-
-.reset {
-  align-self: end;
 }
 
 .history :global([data-slot='button'][aria-checked='false']) {
@@ -19,7 +17,7 @@
 
 @media (max-width: 56rem) {
   .toolbar {
-    grid-template-columns: minmax(0, 1fr) minmax(calc(var(--space-24) * 2), auto);
+    grid-template-columns: minmax(0, 1fr) minmax(12rem, auto);
   }
 
   .history,
@@ -30,13 +28,20 @@
 
 @media (max-width: 40rem) {
   .toolbar {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) auto;
   }
 
-  .filter,
-  .history,
+  .search,
+  .filter {
+    grid-column: 1 / -1;
+  }
+
+  .history {
+    grid-column: 1;
+  }
+
   .reset {
-    width: 100%;
+    grid-column: 2;
   }
 
   .history :global([data-slot='button-group']),

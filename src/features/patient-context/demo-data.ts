@@ -1,14 +1,26 @@
 import type { PatientContextRailProps } from './patient-context-rail';
 
+/**
+ * The established patient is a second, deliberately different persona: years
+ * of chronic disease behind her. She must not share a name with the journey
+ * patient, or the rail's whole job — making identity unmistakable — fails on
+ * its own fixtures.
+ */
 const PATIENT = {
   initials: 'SS',
+  name: 'Sreymom Sok',
+  demographics: '57 y · F · MRN P-7133',
+};
+
+const DETAIL_PATIENT = {
+  initials: 'SN',
   name: 'Sok Nimol',
   demographics: '57 y · F · MRN P-7133',
 };
 
 const SAFETY = [
-  { label: 'Penicillin allergy', detail: 'Rash' },
-  { label: 'Dose adjust meds', detail: 'eGFR 11' },
+  { label: 'Penicillin allergy', detail: 'Rash', tone: 'danger' },
+  { label: 'Dose adjust meds', detail: 'eGFR 11', tone: 'warning' },
 ] as const;
 
 const ESTABLISHED_SECTIONS = [
@@ -34,9 +46,13 @@ export const PATIENT_CONTEXT_FIXTURES = {
       demographics: '32 y · M · MRN P-8842',
       status: 'Provisional · PSC verifies',
     },
+    safety: [{ label: 'No known allergies.', tone: 'neutral' }],
+    todaySummary: undefined,
+    reasonForVisit: undefined,
+    sections: ESTABLISHED_SECTIONS,
   },
   activeProblems: {
-    patient: PATIENT,
+    patient: DETAIL_PATIENT,
     safety: SAFETY,
     todaySummary: '3 symptoms · 2 open items',
     reasonForVisit: ['At risk', 'Repeat due', 'Active'],
@@ -54,7 +70,7 @@ export const PATIENT_CONTEXT_FIXTURES = {
     ],
   },
   currentMedications: {
-    patient: PATIENT,
+    patient: DETAIL_PATIENT,
     safety: SAFETY,
     todaySummary: '3 symptoms · 2 open items',
     reasonForVisit: ['At risk', 'Repeat due', 'Active'],
@@ -72,8 +88,38 @@ export const PATIENT_CONTEXT_FIXTURES = {
       ...ESTABLISHED_SECTIONS.slice(2),
     ],
   },
+  /** Two recorded groups: the only fixture that can prove independent disclosure. */
+  multipleRecorded: {
+    patient: DETAIL_PATIENT,
+    safety: SAFETY,
+    todaySummary: '3 symptoms · 2 open items',
+    reasonForVisit: ['At risk', 'Repeat due', 'Active'],
+    sections: [
+      ESTABLISHED_SECTIONS[0],
+      {
+        id: 'medications',
+        label: 'Current medications',
+        items: [
+          { label: 'Lisinopril 10 mg', detail: 'Once daily' },
+          { label: 'Amlodipine 5 mg', detail: 'Once daily' },
+          { label: 'Atorvastatin 20 mg', detail: 'Nightly' },
+        ],
+      },
+      ESTABLISHED_SECTIONS[2],
+      {
+        id: 'history',
+        label: 'Past history',
+        items: [
+          { label: 'Cholecystectomy', detail: '2019' },
+          { label: 'Gestational diabetes', detail: '2005' },
+          { label: 'Appendectomy', detail: '1998' },
+        ],
+      },
+      ESTABLISHED_SECTIONS[4],
+    ],
+  },
   pendingVerification: {
-    patient: PATIENT,
+    patient: DETAIL_PATIENT,
     safety: SAFETY,
     todaySummary: '3 symptoms · 2 open items',
     reasonForVisit: ['At risk', 'Repeat due', 'Active'],
@@ -92,7 +138,7 @@ export const PATIENT_CONTEXT_FIXTURES = {
     ],
   },
   pastHistory: {
-    patient: PATIENT,
+    patient: DETAIL_PATIENT,
     safety: SAFETY,
     todaySummary: '3 symptoms · 2 open items',
     reasonForVisit: ['At risk', 'Repeat due', 'Active'],
@@ -113,7 +159,7 @@ export const PATIENT_CONTEXT_FIXTURES = {
     ],
   },
   adminDetails: {
-    patient: PATIENT,
+    patient: DETAIL_PATIENT,
     safety: SAFETY,
     todaySummary: '3 symptoms · 2 open items',
     reasonForVisit: ['At risk', 'Repeat due', 'Active'],
@@ -130,7 +176,7 @@ export const PATIENT_CONTEXT_FIXTURES = {
     ],
   },
   activeProblemsEmpty: {
-    patient: PATIENT,
+    patient: DETAIL_PATIENT,
     safety: SAFETY,
     todaySummary: '3 symptoms · 2 open items',
     reasonForVisit: ['At risk', 'Repeat due', 'Active'],
@@ -140,7 +186,7 @@ export const PATIENT_CONTEXT_FIXTURES = {
     ],
   },
   currentMedicationsEmpty: {
-    patient: PATIENT,
+    patient: DETAIL_PATIENT,
     safety: SAFETY,
     todaySummary: '3 symptoms · 2 open items',
     reasonForVisit: ['At risk', 'Repeat due', 'Active'],

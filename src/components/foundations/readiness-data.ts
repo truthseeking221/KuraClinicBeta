@@ -73,8 +73,8 @@ export const READINESS = {
   },
   labCatalog: {
     area: 'Clinic/Clinical/Lab Catalog',
-    level: 'ready',
-    note: 'Catalog browsing and pricing consume the real catalog contract with int64 minor-unit money strings.',
+    level: 'partial',
+    note: 'Catalog browsing and pricing follow the real contract with int64 minor-unit money strings. The restored test-detail preview uses Legacy DCM operational fixtures until those fields are exposed by the clinic BFF.',
     owner: 'src/features/lab-catalog',
   },
   frontDesk: {
@@ -89,6 +89,24 @@ export const READINESS = {
     note: 'Sample lifecycle states match the canonical gRPC enums, but the clinic REST layer does not expose sample operations yet.',
     owner: 'src/features/collection',
   },
+  journey: {
+    area: 'Clinic/Flows/First Patient Journey',
+    level: 'partial',
+    note: 'Identity, ordering and cash capture stand on real backend contracts. Assessment, result values and the care plan have no backend at all, so the second half of the journey is a product proposal.',
+    owner: 'src/features/journey',
+  },
+  carePlan: {
+    area: 'Clinic/Clinical/Care Plan',
+    level: 'gap',
+    note: 'The platform excludes care plans from v1 by name, ships the tab disabled, and carries a test asserting the concept is absent. The whole surface is a product proposal.',
+    owner: 'src/features/care-plan',
+  },
+  assessment: {
+    area: 'Clinic/Clinical/Assessment',
+    level: 'gap',
+    note: 'The platform has no encounter, note, or diagnosis schema of any kind, and no reserved seam for one. The whole surface is a product proposal.',
+    owner: 'src/features/assessment',
+  },
   results: {
     area: 'Clinic/Clinical/Results',
     level: 'gap',
@@ -100,6 +118,18 @@ export const READINESS = {
     level: 'partial',
     note: 'The signal strip composes other domains; it has no dedicated backend endpoint and inherits each source domain’s readiness.',
     owner: 'src/features/home',
+  },
+  patients: {
+    area: 'Clinic/Clinical/Patients',
+    level: 'partial',
+    note: 'The registry consumes the ListWorkspacePatients contract verbatim: eight masked fields, recency order, offset pagination, no name search (names are encrypted with no searchable index). The "why now" triage column and assurance filtering are target-contract scaffolding with no backend model or filter parameter yet.',
+    owner: 'src/features/patients',
+  },
+  prescribing: {
+    area: 'Clinic/Clinical/Patients/Prescribing',
+    level: 'gap',
+    note: 'The platform exposes no prescription, medication reconciliation, formulary, interaction, signer, or medication-audit contract. The medication draft and every AI suggestion are target-contract scaffolding kept only in the prototype session.',
+    owner: 'src/features/patients',
   },
   patientContext: {
     area: 'Clinic/Clinical/Patient Context Rail',

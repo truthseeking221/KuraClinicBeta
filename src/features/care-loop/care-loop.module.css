@@ -203,8 +203,38 @@
 }
 
 .patientBar span::before {
-  content: '·';
+  content: "·";
   margin-right: var(--space-2);
+}
+
+.journeyProgress {
+  display: grid;
+  gap: var(--space-2);
+  max-width: 42rem;
+}
+
+.journeyProgressHeading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  color: var(--color-text-primary);
+  font-size: var(--type-sm);
+}
+
+.journeyProgressHeading strong {
+  font-weight: var(--weight-semibold);
+}
+
+.journeyProgressHeading span,
+.journeyProgress p {
+  color: var(--color-text-tertiary);
+  font-size: var(--type-xs);
+}
+
+.journeyProgress p {
+  margin: 0;
+  line-height: var(--leading-normal);
 }
 
 .content {
@@ -213,12 +243,349 @@
   padding: var(--space-8) var(--space-page-gutter);
 }
 
+.labOrderWorkspace {
+  display: grid;
+  width: 100%;
+  min-width: 0;
+  gap: var(--space-6);
+}
+
+.labOrderWorkspaceHeader {
+  display: grid;
+  width: 100%;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3);
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.labOrderWorkspaceHeading {
+  display: flex;
+  min-width: 0;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.labOrderWorkspaceHeading h2 {
+  margin: 0;
+  color: var(--color-text-primary);
+  font-size: var(--type-xl);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-tight);
+}
+
+.labOrderWorkspaceMeta {
+  margin: var(--space-1) 0 0;
+  color: var(--color-text-tertiary);
+  font-size: var(--type-sm);
+  line-height: var(--leading-normal);
+  overflow-wrap: anywhere;
+}
+
+.labOrderWorkspaceContent {
+  min-width: 0;
+}
+
+.issueActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+.intakeContextWorkspace {
+  display: grid;
+  min-width: 0;
+  min-height: 100dvh;
+  grid-template-columns: minmax(16rem, 18.75rem) minmax(0, 1fr);
+  background: var(--color-surface);
+}
+
+.intakeContextRail {
+  block-size: 100%;
+  max-block-size: 100dvh;
+  overflow-y: auto;
+}
+
+.intakeContextCanvas {
+  display: grid;
+  min-width: 0;
+  min-height: 100dvh;
+  place-items: center;
+  padding: var(--space-8) var(--space-page-gutter);
+  background: var(--color-surface-2);
+}
+
+.intakeContextCanvas[data-workspace="true"] {
+  place-items: stretch;
+  align-content: start;
+  background: var(--color-surface);
+}
+
+.intakeHandoffCard {
+  width: min(100%, 37.25rem);
+  transition: width var(--motion-layout);
+}
+
+.intakeHandoffCard[data-state="unknown"],
+.intakeHandoffCard[data-state="complete"] {
+  width: min(100%, 29rem);
+}
+
+.intakeHandoffCard :global([data-slot="card-header"]) {
+  padding: var(--space-6) var(--space-6) 0;
+}
+
+.intakeHandoffCard :global([data-slot="card-title"]) {
+  font-size: var(--type-xl);
+  line-height: var(--leading-tight);
+}
+
+/* Sending, waiting and received are different messages, not edits of one
+   message, so the replacement is stated rather than swapped mid-sentence. */
+.intakeHandoffCard[data-live] .intakeCardHeading {
+  animation: intake-heading-in var(--duration-base) var(--ease-out);
+}
+
+@keyframes intake-heading-in {
+  from {
+    opacity: 0;
+    transform: translateY(var(--space-1));
+  }
+}
+
+.intakeHandoffCard :global([data-slot="card-description"]) {
+  margin-top: var(--space-1);
+  color: var(--color-text-tertiary);
+  font-size: var(--type-xs);
+}
+
+.intakeHandoffCard :global([data-slot="card-content"]) {
+  padding: var(--space-8) var(--space-6) 0;
+}
+
+.intakeHandoffCard .intakeCardActions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--space-2);
+  padding: var(--space-8) var(--space-6) var(--space-6);
+}
+
+.intakeHandoffCard[data-state="unknown"] .intakeCardActions {
+  grid-template-columns: minmax(0, 0.56fr) minmax(0, 1fr);
+}
+
+.intakeHandoffCard[data-state="complete"] .intakeCardActions {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.intakeCardActions :global([data-slot="button"]) {
+  width: 100%;
+  min-width: 0;
+}
+
+/* The next action follows the evidence it depends on: the answers land first,
+   then ordering tests becomes the one thing left to do. */
+.intakeHandoffCard[data-live][data-state="complete"] .intakeCardActions {
+  animation: intake-actions-in var(--duration-base) var(--ease-out)
+    calc(3 * var(--motion-stagger-step)) both;
+}
+
+@keyframes intake-actions-in {
+  from {
+    opacity: 0;
+    transform: translateY(var(--space-1));
+  }
+}
+
+.intakeStatusList {
+  display: grid;
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.intakeStatusRow {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: var(--space-6) minmax(0, 1fr) auto;
+  gap: var(--space-2-5);
+  align-items: center;
+  --intake-row-delay: 0ms;
+}
+
+/* Four answers arriving in the same frame read as a page swap. One step of
+   delay per row reads as the patient's replies landing in order. */
+.intakeHandoffCard[data-live][data-state="complete"]
+  .intakeStatusRow:nth-child(2) {
+  --intake-row-delay: var(--motion-stagger-step);
+}
+
+.intakeHandoffCard[data-live][data-state="complete"]
+  .intakeStatusRow:nth-child(3) {
+  --intake-row-delay: calc(2 * var(--motion-stagger-step));
+}
+
+.intakeHandoffCard[data-live][data-state="complete"]
+  .intakeStatusRow:nth-child(4) {
+  --intake-row-delay: calc(3 * var(--motion-stagger-step));
+}
+
+.intakeStatusMarker {
+  display: inline-flex;
+  width: var(--space-6);
+  height: var(--space-6);
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+  background: var(--color-action-primary-subtle);
+  color: var(--primary-accent);
+  font-size: var(--type-sm);
+  font-weight: var(--weight-medium);
+  line-height: 1;
+  transition:
+    background-color var(--motion-color) var(--intake-row-delay),
+    color var(--motion-color) var(--intake-row-delay);
+}
+
+.intakeStatusRow[data-answered="true"] .intakeStatusMarker {
+  background: var(--color-status-success-bg);
+  color: var(--color-status-success-fg);
+}
+
+.intakeHandoffCard[data-live][data-state="complete"] .intakeStatusCheck {
+  animation: intake-check-in var(--duration-base) var(--ease-emphasized)
+    var(--intake-row-delay) both;
+}
+
+@keyframes intake-check-in {
+  from {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+}
+
+.intakeStatusCopy {
+  display: grid;
+  min-width: 0;
+}
+
+/* The answer opens the row it belongs to instead of the card jumping to a new
+   height, so the list stays the same object throughout. */
+.intakeStatusAnswer {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition:
+    grid-template-rows var(--motion-layout) var(--intake-row-delay),
+    opacity var(--motion-color) var(--intake-row-delay);
+}
+
+.intakeStatusAnswer > strong {
+  min-height: 0;
+  padding-top: var(--space-0-5);
+  overflow: hidden;
+}
+
+.intakeStatusRow[data-answered="true"] .intakeStatusAnswer {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+
+.intakeStatusLabel {
+  color: var(--color-text-tertiary);
+  font-size: var(--type-sm);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-normal);
+}
+
+.intakeStatusCopy strong {
+  color: var(--color-text-primary);
+  font-size: var(--type-sm);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-normal);
+  overflow-wrap: anywhere;
+}
+
+.intakeWaiting {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--color-text-secondary);
+  font-size: var(--type-xs);
+  white-space: nowrap;
+}
+
+.intakeWaiting em {
+  font-style: italic;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  padding: 0;
+  border: 0;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
 .primaryCard,
 .focusCard,
 .formCard,
 .handoffCard {
   width: min(100%, calc(var(--space-32) * 5));
   margin: 0 auto;
+}
+
+/* What the patient has answered so far. An unanswered row stays visible and
+   quiet rather than disappearing, so the clinic can see how far the patient
+   has actually got. */
+.intakeProgress {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.intakeProgressRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: var(--space-3);
+}
+
+.intakeProgressLabel {
+  font-size: var(--type-sm);
+  color: var(--color-text-primary);
+  overflow-wrap: anywhere;
+}
+
+.intakeProgressRow[data-answered="false"] .intakeProgressLabel {
+  color: var(--color-text-tertiary);
+}
+
+.intakeProgressAnswer {
+  font-size: var(--type-sm);
+  font-weight: var(--weight-medium);
+  color: var(--color-text-primary);
+  text-align: end;
+  overflow-wrap: anywhere;
+}
+
+.intakeProgressRow[data-answered="false"] .intakeProgressAnswer {
+  font-weight: var(--weight-regular);
+  font-style: italic;
+  color: var(--color-text-tertiary);
 }
 
 .requirementList {
@@ -300,6 +667,190 @@
   align-items: start;
 }
 
+.workflowRail {
+  display: grid;
+  width: min(100%, 38rem);
+  margin: 0 auto;
+  gap: var(--space-4);
+}
+
+.workflowRail > :global([data-slot="card"]),
+.workflowRail > :global([data-slot="alert"]) {
+  width: 100%;
+  max-width: none;
+}
+
+.verificationContent,
+.pickupContent {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.qrStep {
+  display: grid;
+  grid-template-columns: var(--space-6) minmax(0, 1fr) auto;
+  gap: var(--space-3);
+  align-items: start;
+}
+
+.qrStep h3,
+.qrStep p,
+.photoChecklist h3,
+.photoChecklist p,
+.courierChecklist h3 {
+  margin: 0;
+}
+
+.qrStep h3,
+.photoChecklist h3,
+.courierChecklist h3 {
+  color: var(--color-text-primary);
+  font-size: var(--type-sm);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-normal);
+}
+
+.qrStep p,
+.photoChecklist p {
+  margin-top: var(--space-1);
+  color: var(--color-text-secondary);
+  font-size: var(--type-sm);
+  line-height: var(--leading-normal);
+}
+
+.qrStep .prototypeNote {
+  color: var(--color-text-tertiary);
+  font-size: var(--type-xs);
+}
+
+.qrStep :global([data-slot="button"]) {
+  margin-top: var(--space-3);
+}
+
+.stepNumber,
+.sampleIndex {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+  background: var(--color-action-primary-subtle);
+  color: var(--primary-accent);
+  font-size: var(--type-xs);
+  font-weight: var(--weight-semibold);
+}
+
+.stepNumber {
+  width: var(--space-5);
+  height: var(--space-5);
+}
+
+.qrCode {
+  display: inline-flex;
+  padding: var(--space-2);
+  border-radius: var(--radius-control);
+  background: var(--color-surface-2);
+  color: var(--color-text-primary);
+}
+
+.photoChecklist {
+  display: grid;
+  gap: var(--space-3);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border);
+}
+
+.photoChecklistHeader {
+  display: grid;
+  grid-template-columns: var(--space-6) minmax(0, 1fr) auto;
+  gap: var(--space-3);
+  align-items: start;
+}
+
+.photoRows {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.photoRows li {
+  display: grid;
+  grid-template-columns: var(--space-6) var(--space-2) minmax(0, 1fr) auto;
+  gap: var(--space-2);
+  align-items: center;
+  padding-block: var(--space-2);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.photoRows li:last-child {
+  border-bottom: 0;
+}
+
+.sampleIndex {
+  width: var(--space-5);
+  height: var(--space-5);
+  background: var(--color-surface-2);
+  color: var(--color-text-secondary);
+}
+
+.sampleStopper {
+  width: var(--space-2);
+  height: var(--space-4);
+  border-radius: var(--radius-indicator);
+}
+
+.sampleCopy {
+  display: grid;
+  min-width: 0;
+  gap: var(--space-0-5);
+}
+
+.sampleCopy strong,
+.sampleCopy span {
+  overflow-wrap: anywhere;
+}
+
+.sampleCopy strong {
+  font-size: var(--type-sm);
+  font-weight: var(--weight-medium);
+}
+
+.sampleCopy span {
+  color: var(--color-text-secondary);
+  font-size: var(--type-xs);
+}
+
+.courierChecklist {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.courierChecklist ul {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.courierChecklist li {
+  padding-block: var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text-primary);
+  font-size: var(--type-sm);
+  line-height: var(--leading-normal);
+}
+
+.courierChecklist li:last-child {
+  border-bottom: 0;
+}
+
+.courierNote {
+  margin: 0;
+  color: var(--color-text-tertiary);
+  font-size: var(--type-xs);
+  text-align: center;
+}
+
 .stageIntro {
   display: grid;
   max-width: calc(var(--space-32) * 3);
@@ -322,6 +873,26 @@
 
   .singleRail > :last-child {
     width: min(100%, calc(var(--space-32) * 3.25));
+  }
+}
+
+@media (max-width: 64rem) {
+  .intakeContextWorkspace {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .intakeContextWorkspace .intakeContextRail {
+    inline-size: 100%;
+    max-inline-size: none;
+    block-size: auto;
+    max-block-size: none;
+    border: 0;
+    border-bottom: 1px solid var(--color-border);
+    border-radius: 0;
+  }
+
+  .intakeContextCanvas {
+    min-height: 34rem;
   }
 }
 
@@ -351,6 +922,34 @@
   .content {
     padding-right: var(--space-4);
     padding-left: var(--space-4);
+  }
+
+  .intakeContextCanvas {
+    min-height: 30rem;
+    padding: var(--space-5) var(--space-4);
+  }
+
+  .intakeHandoffCard :global([data-slot="card-header"]) {
+    padding: var(--space-5) var(--space-4) 0;
+  }
+
+  .intakeHandoffCard :global([data-slot="card-content"]) {
+    padding: var(--space-6) var(--space-4) 0;
+  }
+
+  .intakeHandoffCard .intakeCardActions,
+  .intakeHandoffCard[data-state="unknown"] .intakeCardActions {
+    grid-template-columns: minmax(0, 1fr);
+    padding: var(--space-6) var(--space-4) var(--space-5);
+  }
+
+  .intakeStatusRow {
+    grid-template-columns: var(--space-6) minmax(0, 1fr);
+  }
+
+  .intakeWaiting {
+    grid-column: 2;
+    white-space: normal;
   }
 
   .content {
@@ -385,12 +984,51 @@
     content: none;
   }
 
+  .journeyProgressHeading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: var(--space-1);
+  }
+
   .factGrid,
   .metricGrid {
     grid-template-columns: minmax(0, 1fr);
   }
 
+  .labOrderWorkspace {
+    gap: var(--space-4);
+  }
+
+  .labOrderWorkspaceHeading h2 {
+    font-size: var(--type-lg);
+  }
+
+  .issueActions,
+  .issueActions :global([data-slot="button"]) {
+    width: 100%;
+  }
+
   .orderGrid > :last-child {
     order: -1;
+  }
+
+  .qrStep,
+  .photoChecklistHeader {
+    grid-template-columns: var(--space-6) minmax(0, 1fr);
+  }
+
+  .qrCode,
+  .photoChecklistHeader :global([data-slot="badge"]) {
+    grid-column: 2;
+    justify-self: start;
+  }
+
+  .photoRows li {
+    grid-template-columns: var(--space-6) var(--space-2) minmax(0, 1fr);
+  }
+
+  .photoRows li :global([data-slot="button"]) {
+    grid-column: 3;
+    justify-self: stretch;
   }
 }

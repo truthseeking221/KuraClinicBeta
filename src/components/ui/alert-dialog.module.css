@@ -20,7 +20,7 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-overlay);
   padding: var(--space-inset-panel);
-  background: var(--card);
+  background: var(--color-surface);
   color: var(--card-foreground);
   box-shadow: var(--elevation-modal);
   font-family: var(--font-family-sans);

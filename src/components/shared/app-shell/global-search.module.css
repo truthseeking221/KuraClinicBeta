@@ -6,7 +6,7 @@
 
 .emptyHint {
   font-size: var(--type-sm);
-  color: var(--color-text-muted);
+  color: var(--color-text-tertiary);
 }
 
 .itemBody {
@@ -17,6 +17,6 @@
 
 .itemHint {
   font-size: var(--type-sm);
-  color: var(--color-text-muted);
+  color: var(--color-text-tertiary);
   overflow-wrap: anywhere;
 }

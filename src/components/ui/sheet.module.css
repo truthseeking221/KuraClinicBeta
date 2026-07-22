@@ -13,7 +13,7 @@
 }
 
 .content::backdrop {
-  background: rgba(11, 20, 36, var(--opacity-scrim));
+  background: var(--color-overlay-scrim);
 }
 
 .content[open]::backdrop {

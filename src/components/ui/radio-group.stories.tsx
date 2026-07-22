@@ -25,7 +25,7 @@ import styles from "./radio-group.stories.module.css";
 const meta = {
   title: "Design System/Patterns/Radio Group",
   component: RadioGroup,
-  tags: ["autodocs", "source-reui", "adapted-kura"],
+  tags: ["autodocs", "source-kura", "adapted-kura"],
   args: {
     legend: "Choice",
     name: "radio-group-example",
@@ -37,9 +37,9 @@ const meta = {
     },
     kura: {
       source: {
-        vendor: "ReUI",
-        registryItem: "c-radio-group-1 through c-radio-group-17",
-        sourceUrl: "https://reui.io/components/radio-group",
+        vendor: "Kura",
+        registryItem: "radio",
+        visualReference: "Kura radio",
       },
       intake: {
         decision: "EXTEND",
@@ -72,7 +72,7 @@ const meta = {
             "Use status text and canonical Badge where semantic context is required.",
         },
         {
-          capability: "ReUI Frame styling baked into the group",
+          capability: "Frame styling baked into the group",
           reason:
             "A radio group is form structure, not a surface or page shell.",
           replacement:

@@ -1,6 +1,6 @@
 'use client';
 
-import { useId, useState } from 'react';
+import { useId, useLayoutEffect, useRef, useState } from 'react';
 import type { KeyboardEvent, ReactNode } from 'react';
 
 import { Button } from './button';
@@ -50,6 +50,7 @@ export function SegmentedToggle({
   value,
 }: SegmentedToggleProps) {
   const labelId = useId();
+  const toggleRef = useRef<HTMLDivElement>(null);
   const initialValue = defaultValue ?? firstEnabledValue(options);
   const [uncontrolledValue, setUncontrolledValue] = useState(initialValue);
   const selectedValue = value ?? uncontrolledValue;
@@ -60,6 +61,40 @@ export function SegmentedToggle({
     value !== undefined ? (selectedOption?.value ?? '') : (selectedOption?.value ?? firstEnabledValue(options));
   // Roving tabindex needs a tab stop even before any selection exists.
   const tabStopValue = resolvedValue || firstEnabledValue(options);
+
+  useLayoutEffect(() => {
+    const toggle = toggleRef.current;
+    if (!toggle) return;
+
+    const updateIndicator = () => {
+      const selected = toggle.querySelector<HTMLButtonElement>(
+        '[data-slot="button"][data-selected="true"]',
+      );
+
+      if (!selected) {
+        toggle.removeAttribute('data-indicator-ready');
+        toggle.style.removeProperty('--segmented-indicator-x');
+        toggle.style.removeProperty('--segmented-indicator-width');
+        return;
+      }
+
+      toggle.style.setProperty('--segmented-indicator-x', `${selected.offsetLeft}px`);
+      toggle.style.setProperty('--segmented-indicator-width', `${selected.offsetWidth}px`);
+      toggle.setAttribute('data-indicator-ready', 'true');
+    };
+
+    updateIndicator();
+
+    if (typeof ResizeObserver === 'undefined') return;
+
+    const observer = new ResizeObserver(updateIndicator);
+    observer.observe(toggle);
+    toggle
+      .querySelectorAll<HTMLElement>('[data-slot="button"]')
+      .forEach((button) => observer.observe(button));
+
+    return () => observer.disconnect();
+  }, [options, resolvedValue]);
 
   function select(nextValue: string) {
     if (disabled || nextValue === resolvedValue) {
@@ -127,10 +162,12 @@ export function SegmentedToggle({
       aria-labelledby={labelVisible ? labelId : undefined}
       role="radiogroup"
       segmented
+      ref={toggleRef}
       className={joinClasses(styles.toggle, !labelVisible ? className : undefined)}
       data-slot="segmented-toggle"
       data-disabled={disabled ? 'true' : undefined}
     >
+      <span aria-hidden="true" className={styles.indicator} data-slot="segmented-toggle-indicator" />
       {options.map((option, index) => {
         const isSelected = option.value === resolvedValue;
         const isOptionDisabled = disabled || option.disabled;

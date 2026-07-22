@@ -64,6 +64,7 @@ import {
   CircleChevronRightIcon as CircleChevronRightBulkRoundedIcon,
   CircleChevronUpIcon as CircleChevronUpBulkRoundedIcon,
   ListChevronsDownUpIcon as ListChevronsDownUpBulkRoundedIcon,
+  PanelRightIcon as PanelRightBulkRoundedIcon,
   UserCircleIcon as UserCircleBulkRoundedIcon,
   UserMultipleIcon as UserMultipleBulkRoundedIcon,
   UserGroupIcon as UserGroupBulkRoundedIcon,
@@ -254,6 +255,7 @@ import {
   CircleChevronRightIcon as CircleChevronRightDuotoneRoundedIcon,
   CircleChevronUpIcon as CircleChevronUpDuotoneRoundedIcon,
   ListChevronsDownUpIcon as ListChevronsDownUpDuotoneRoundedIcon,
+  PanelRightIcon as PanelRightDuotoneRoundedIcon,
   UserCircleIcon as UserCircleDuotoneRoundedIcon,
   UserMultipleIcon as UserMultipleDuotoneRoundedIcon,
   UserGroupIcon as UserGroupDuotoneRoundedIcon,
@@ -444,6 +446,7 @@ import {
   CircleChevronRightIcon as CircleChevronRightDuotoneStandardIcon,
   CircleChevronUpIcon as CircleChevronUpDuotoneStandardIcon,
   ListChevronsDownUpIcon as ListChevronsDownUpDuotoneStandardIcon,
+  PanelRightIcon as PanelRightDuotoneStandardIcon,
   UserCircleIcon as UserCircleDuotoneStandardIcon,
   UserMultipleIcon as UserMultipleDuotoneStandardIcon,
   UserGroupIcon as UserGroupDuotoneStandardIcon,
@@ -634,6 +637,7 @@ import {
   CircleChevronRightIcon as CircleChevronRightSolidRoundedIcon,
   CircleChevronUpIcon as CircleChevronUpSolidRoundedIcon,
   ListChevronsDownUpIcon as ListChevronsDownUpSolidRoundedIcon,
+  PanelRightIcon as PanelRightSolidRoundedIcon,
   UserCircleIcon as UserCircleSolidRoundedIcon,
   UserMultipleIcon as UserMultipleSolidRoundedIcon,
   UserGroupIcon as UserGroupSolidRoundedIcon,
@@ -824,6 +828,7 @@ import {
   CircleChevronRightIcon as CircleChevronRightSolidSharpIcon,
   CircleChevronUpIcon as CircleChevronUpSolidSharpIcon,
   ListChevronsDownUpIcon as ListChevronsDownUpSolidSharpIcon,
+  PanelRightIcon as PanelRightSolidSharpIcon,
   UserCircleIcon as UserCircleSolidSharpIcon,
   UserMultipleIcon as UserMultipleSolidSharpIcon,
   UserGroupIcon as UserGroupSolidSharpIcon,
@@ -1014,6 +1019,7 @@ import {
   CircleChevronRightIcon as CircleChevronRightSolidStandardIcon,
   CircleChevronUpIcon as CircleChevronUpSolidStandardIcon,
   ListChevronsDownUpIcon as ListChevronsDownUpSolidStandardIcon,
+  PanelRightIcon as PanelRightSolidStandardIcon,
   UserCircleIcon as UserCircleSolidStandardIcon,
   UserMultipleIcon as UserMultipleSolidStandardIcon,
   UserGroupIcon as UserGroupSolidStandardIcon,
@@ -1204,6 +1210,7 @@ import {
   CircleChevronRightIcon as CircleChevronRightStrokeRoundedIcon,
   CircleChevronUpIcon as CircleChevronUpStrokeRoundedIcon,
   ListChevronsDownUpIcon as ListChevronsDownUpStrokeRoundedIcon,
+  PanelRightIcon as PanelRightStrokeRoundedIcon,
   UserCircleIcon as UserCircleStrokeRoundedIcon,
   UserMultipleIcon as UserMultipleStrokeRoundedIcon,
   UserGroupIcon as UserGroupStrokeRoundedIcon,
@@ -1394,6 +1401,7 @@ import {
   CircleChevronRightIcon as CircleChevronRightStrokeSharpIcon,
   CircleChevronUpIcon as CircleChevronUpStrokeSharpIcon,
   ListChevronsDownUpIcon as ListChevronsDownUpStrokeSharpIcon,
+  PanelRightIcon as PanelRightStrokeSharpIcon,
   UserCircleIcon as UserCircleStrokeSharpIcon,
   UserMultipleIcon as UserMultipleStrokeSharpIcon,
   UserGroupIcon as UserGroupStrokeSharpIcon,
@@ -1584,6 +1592,7 @@ import {
   CircleChevronRightIcon as CircleChevronRightStrokeStandardIcon,
   CircleChevronUpIcon as CircleChevronUpStrokeStandardIcon,
   ListChevronsDownUpIcon as ListChevronsDownUpStrokeStandardIcon,
+  PanelRightIcon as PanelRightStrokeStandardIcon,
   UserCircleIcon as UserCircleStrokeStandardIcon,
   UserMultipleIcon as UserMultipleStrokeStandardIcon,
   UserGroupIcon as UserGroupStrokeStandardIcon,
@@ -1774,6 +1783,7 @@ import {
   CircleChevronRightIcon as CircleChevronRightTwotoneRoundedIcon,
   CircleChevronUpIcon as CircleChevronUpTwotoneRoundedIcon,
   ListChevronsDownUpIcon as ListChevronsDownUpTwotoneRoundedIcon,
+  PanelRightIcon as PanelRightTwotoneRoundedIcon,
   UserCircleIcon as UserCircleTwotoneRoundedIcon,
   UserMultipleIcon as UserMultipleTwotoneRoundedIcon,
   UserGroupIcon as UserGroupTwotoneRoundedIcon,
@@ -2792,6 +2802,19 @@ export const ListChevronsDownUpIcon = /* @__PURE__ */ createKuraIcon(
   },
   KURA_CHEVRON_ICON_STYLE,
 );
+
+export const PanelRightIcon = /* @__PURE__ */ createKuraIcon("panel-right", {
+  "bulk-rounded": PanelRightBulkRoundedIcon,
+  "duotone-rounded": PanelRightDuotoneRoundedIcon,
+  "duotone-standard": PanelRightDuotoneStandardIcon,
+  "solid-rounded": PanelRightSolidRoundedIcon,
+  "solid-sharp": PanelRightSolidSharpIcon,
+  "solid-standard": PanelRightSolidStandardIcon,
+  "stroke-rounded": PanelRightStrokeRoundedIcon,
+  "stroke-sharp": PanelRightStrokeSharpIcon,
+  "stroke-standard": PanelRightStrokeStandardIcon,
+  "twotone-rounded": PanelRightTwotoneRoundedIcon,
+});
 
 export const UserCircleIcon = /* @__PURE__ */ createKuraIcon("user-circle", {
   "bulk-rounded": UserCircleBulkRoundedIcon,
@@ -4675,6 +4698,7 @@ export type CircleChevronLeftIconProps = KuraIconProps;
 export type CircleChevronRightIconProps = KuraIconProps;
 export type CircleChevronUpIconProps = KuraIconProps;
 export type ListChevronsDownUpIconProps = KuraIconProps;
+export type PanelRightIconProps = KuraIconProps;
 export type UserCircleIconProps = KuraIconProps;
 export type UserMultipleIconProps = KuraIconProps;
 export type UserGroupIconProps = KuraIconProps;
@@ -4740,15 +4764,18 @@ export type RefundIconProps = KuraIconProps;
 export type SuccessIconProps = KuraIconProps;
 export type WarningIconProps = KuraIconProps;
 
-export const ShoppingCartIcon = /* @__PURE__ */ createKuraIcon("shopping-cart", {
-  "bulk-rounded": ShoppingCart01BulkRoundedIcon,
-  "duotone-rounded": ShoppingCart01DuotoneRoundedIcon,
-  "duotone-standard": ShoppingCart01DuotoneStandardIcon,
-  "solid-rounded": ShoppingCart01SolidRoundedIcon,
-  "solid-sharp": ShoppingCart01SolidSharpIcon,
-  "solid-standard": ShoppingCart01SolidStandardIcon,
-  "stroke-rounded": ShoppingCart01StrokeRoundedIcon,
-  "stroke-sharp": ShoppingCart01StrokeSharpIcon,
-  "stroke-standard": ShoppingCart01StrokeStandardIcon,
-  "twotone-rounded": ShoppingCart01TwotoneRoundedIcon,
-});
+export const ShoppingCartIcon = /* @__PURE__ */ createKuraIcon(
+  "shopping-cart",
+  {
+    "bulk-rounded": ShoppingCart01BulkRoundedIcon,
+    "duotone-rounded": ShoppingCart01DuotoneRoundedIcon,
+    "duotone-standard": ShoppingCart01DuotoneStandardIcon,
+    "solid-rounded": ShoppingCart01SolidRoundedIcon,
+    "solid-sharp": ShoppingCart01SolidSharpIcon,
+    "solid-standard": ShoppingCart01SolidStandardIcon,
+    "stroke-rounded": ShoppingCart01StrokeRoundedIcon,
+    "stroke-sharp": ShoppingCart01StrokeSharpIcon,
+    "stroke-standard": ShoppingCart01StrokeStandardIcon,
+    "twotone-rounded": ShoppingCart01TwotoneRoundedIcon,
+  },
+);

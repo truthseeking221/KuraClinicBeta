@@ -88,9 +88,14 @@ export function filterDoctorLedgers(
   });
 }
 
-export function retryReason(pull: Pull) {
+/**
+ * English stays the stable key; the caller passes the active translator so the
+ * slot count keeps Arabic digits while the surrounding words follow the
+ * interface language.
+ */
+export function retryReason(pull: Pull, t: (source: string) => string = (source) => source) {
   if (pull.retry.allowed) {
-    return `Eligible · ${pull.retry.remainingSlots} remaining`;
+    return `${t('Eligible')} · ${pull.retry.remainingSlots} ${t('remaining')}`;
   }
   const labels: Record<Pull['retry']['reason'], string> = {
     eligible: 'Eligible',
@@ -99,7 +104,7 @@ export function retryReason(pull: Pull) {
     budget_exhausted: 'Retry budget exhausted',
     notice_cap_exhausted: 'Notice amount cap exhausted',
   };
-  return labels[pull.retry.reason];
+  return t(labels[pull.retry.reason]);
 }
 
 export function formatBankingDate(value: string) {

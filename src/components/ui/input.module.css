@@ -25,28 +25,42 @@
   gap: var(--space-inline-icon);
   min-height: var(--field-h);
   padding-inline: var(--space-inset-control);
-  background: var(--color-surface);
-  border: 1px solid var(--color-border-strong);
+  border: 0;
   border-radius: var(--radius-control);
-  transition: border-color var(--duration-fast) var(--ease-standard), box-shadow var(--duration-fast) var(--ease-standard);
+  box-shadow: inset 0 0 0 var(--space-0-5) transparent;
+  transition:
+    background-color var(--motion-color),
+    box-shadow var(--motion-color),
+    color var(--motion-color);
+}
+
+.variantFilled {
+  background: var(--color-field-bg);
+}
+
+.variantSurface {
+  background: var(--color-surface);
+}
+
+.control:hover {
+  box-shadow: inset 0 0 0 var(--space-0-5) var(--color-border-button-hover);
 }
 
 .control:focus-within {
-  border-color: var(--color-border-focus);
-  box-shadow: var(--shadow-focus);
+  box-shadow: inset 0 0 0 var(--space-0-5) var(--color-border-button-active);
 }
 
 .field[data-invalid='true'] .control {
-  border-color: var(--destructive);
+  background: var(--color-background-tertiary-error);
+  box-shadow: inset 0 0 0 var(--space-0-5) var(--color-foreground-icon-error);
 }
 
 .field[data-invalid='true'] .control:focus-within {
-  box-shadow: 0 0 0 3px var(--color-danger-100);
+  box-shadow: inset 0 0 0 var(--space-0-5) var(--color-foreground-icon-error);
 }
 
 .field[data-disabled='true'] .control {
-  background: var(--color-surface-sunken);
-  border-color: var(--color-border);
+  background: var(--color-background-primary-disabled);
 }
 
 .field[data-read-only='true'] .control {
@@ -75,8 +89,10 @@
 }
 
 .input::placeholder {
-  color: var(--color-text-placeholder);
+  color: var(--color-text-tertiary);
 }
+
+.input:focus::placeholder { color: var(--color-text-primary); }
 
 .prefix,
 .suffix {

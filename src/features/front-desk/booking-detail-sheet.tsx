@@ -25,6 +25,7 @@ import {
   TimelineTitle,
 } from '../../components/ui';
 import { TestTubeIcon } from '../../components/ui/icons';
+import { useT } from '../../components/foundations/i18n';
 
 import {
   bookingBlockMeta,
@@ -79,6 +80,7 @@ export function BookingDetailSheet({
   open,
   patient,
 }: BookingDetailSheetProps) {
+  const t = useT();
   const blockReason = bookingBlockReason(booking, deskBranchId);
   const block = blockReason ? bookingBlockMeta(blockReason) : null;
   const status = collectionCodeStatusMeta(booking.codeStatus);
@@ -96,15 +98,15 @@ export function BookingDetailSheet({
 
   return (
     <Sheet onOpenChange={onOpenChange} open={open}>
-      <SheetContent aria-label={`Booking ${booking.code}`} side="right">
+      <SheetContent aria-label={`${t('Booking')} ${booking.code}`} side="right">
         <SheetHeader>
           <div className={styles.headerMain}>
             <div className={styles.headerRow}>
               <SheetTitle>
-                Booking <span className={styles.code}>{booking.code}</span>
+                {t('Booking')} <span className={styles.code}>{booking.code}</span>
               </SheetTitle>
               <Badge size="sm" variant={BADGE_VARIANT[status.tone]}>
-                {status.label}
+                {t(status.label)}
               </Badge>
             </div>
             <SheetDescription>
@@ -113,19 +115,19 @@ export function BookingDetailSheet({
                 .join(' · ')}
             </SheetDescription>
           </div>
-          <SheetClose aria-label="Close booking detail" />
+          <SheetClose aria-label={t('Close booking detail')} />
         </SheetHeader>
 
         <SheetBody className={styles.body}>
           {block ? (
             <Alert tone="warning">
-              <AlertTitle>{block.title}</AlertTitle>
-              <AlertDescription>{block.description}</AlertDescription>
+              <AlertTitle>{t(block.title)}</AlertTitle>
+              <AlertDescription>{t(block.description)}</AlertDescription>
             </Alert>
           ) : null}
 
           <section aria-labelledby="booking-patient-heading" className={styles.section}>
-            <h3 className={styles.sectionTitle} id="booking-patient-heading">Patient</h3>
+            <h3 className={styles.sectionTitle} id="booking-patient-heading">{t('Patient')}</h3>
             <div className={styles.patientRow}>
               <div className={styles.patientNames}>
                 <p className={styles.patientName}>{patient.name}</p>
@@ -134,14 +136,14 @@ export function BookingDetailSheet({
                 ) : null}
               </div>
               <Badge size="sm" variant={patient.assurance === 'verified' ? 'success' : 'warning'}>
-                {patient.assurance === 'verified' ? 'Verified' : 'Unverified'}
+                {patient.assurance === 'verified' ? t('Verified') : t('Unverified')}
               </Badge>
             </div>
             {patient.phone ? <p className={styles.patientMeta}>{patient.phone}</p> : null}
           </section>
 
           <section aria-labelledby="booking-order-heading" className={styles.section}>
-            <h3 className={styles.sectionTitle} id="booking-order-heading">Ordered tests</h3>
+            <h3 className={styles.sectionTitle} id="booking-order-heading">{t('Ordered tests')}</h3>
             <ul className={styles.testList}>
               {items.map((item) => (
                 <li className={styles.testRow} key={item}>
@@ -153,7 +155,7 @@ export function BookingDetailSheet({
             {booking.payment ? (
               <div className={styles.paymentRow}>
                 <span className={styles.paymentLabel}>
-                  {booking.payment.state === 'paid' ? 'Paid' : 'Payment pending'}
+                  {booking.payment.state === 'paid' ? t('Paid') : t('Payment pending')}
                 </span>
                 <Badge size="sm" variant={booking.payment.state === 'paid' ? 'success' : 'neutral'}>
                   <MoneyText currency="USD" minor={booking.payment.amountMinor} />
@@ -163,17 +165,17 @@ export function BookingDetailSheet({
           </section>
 
           <section aria-labelledby="booking-history-heading" className={styles.section}>
-            <h3 className={styles.sectionTitle} id="booking-history-heading">History</h3>
-            <Timeline aria-label="Booking history" value={currentStep}>
+            <h3 className={styles.sectionTitle} id="booking-history-heading">{t('History')}</h3>
+            <Timeline aria-label={t('Booking history')} value={currentStep}>
               {events.map((event) => (
                 <TimelineItem key={`${event.step}-${event.title}`} step={event.step} tone={event.tone}>
                   <TimelineIndicator />
                   <TimelineSeparator />
                   <TimelineHeader>
                     {event.dateLabel ? <TimelineDate>{event.dateLabel}</TimelineDate> : null}
-                    <TimelineTitle>{event.title}</TimelineTitle>
+                    <TimelineTitle>{t(event.title)}</TimelineTitle>
                   </TimelineHeader>
-                  {event.detail ? <TimelineContent>{event.detail}</TimelineContent> : null}
+                  {event.detail ? <TimelineContent>{t(event.detail)}</TimelineContent> : null}
                 </TimelineItem>
               ))}
             </Timeline>
@@ -185,33 +187,35 @@ export function BookingDetailSheet({
             <>
               {blockReason === 'redeemed' && onOpenDeskQueue ? (
                 <Button onClick={onOpenDeskQueue} variant="primary">
-                  Check desk queue
+                  {t('Check desk queue')}
                 </Button>
               ) : null}
               {blockReason === 'cancelled' && onConfirmWalkIn ? (
                 <Button onClick={onConfirmWalkIn} variant="primary">
-                  Confirm walk-in
+                  {t('Confirm walk-in')}
                 </Button>
               ) : null}
               {blockReason !== 'redeemed' && blockReason !== 'cancelled' && onContinueAsWalkIn ? (
                 <Button onClick={onContinueAsWalkIn} variant="primary">
-                  Continue as walk-in
+                  {t('Continue as walk-in')}
                 </Button>
               ) : null}
               {!hasBlockedAction ? (
-                <span className={styles.footerNote}>Check-in unavailable for this booking.</span>
+                <span className={styles.footerNote}>
+                  {t('Check-in unavailable for this booking.')}
+                </span>
               ) : null}
             </>
           ) : (
             <>
               {onResendCode && canResend ? (
                 <Button onClick={() => onResendCode(booking.code)} variant="outline">
-                  Resend code
+                  {t('Resend code')}
                 </Button>
               ) : null}
               {onCheckIn ? (
                 <Button onClick={() => onCheckIn(booking.code)} variant="primary">
-                  Check in booking {booking.code}
+                  {t('Check in booking')} {booking.code}
                 </Button>
               ) : null}
             </>

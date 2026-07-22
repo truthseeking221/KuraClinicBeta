@@ -156,3 +156,20 @@ export type ResultsPatient = {
   sexAtBirth: string;
   medicalRecordNumber: string;
 };
+
+/**
+ * One patient-level result waiting in a clinician review queue.
+ *
+ * This is deliberately separate from `LabAnalyteResult`: the queue item owns
+ * cross-patient identity and routing, while `LabResultRow` owns analyte detail
+ * after the patient workspace has been opened.
+ */
+export type ResultReviewQueueStatus = 'routine' | 'abnormal' | 'critical' | 'amended';
+
+export type ResultReviewQueueEntry = {
+  id: string;
+  patient: ResultsPatient;
+  testName: string;
+  returnedLabel: string;
+  status: ResultReviewQueueStatus;
+};

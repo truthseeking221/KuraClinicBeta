@@ -41,7 +41,7 @@
   transform: translate(-50%, -50%);
   border: 1px solid var(--border);
   border-radius: var(--radius-overlay);
-  background: var(--card);
+  background: var(--color-surface);
   color: var(--card-foreground);
   box-shadow: var(--elevation-modal);
   font-family: var(--font-family-sans);

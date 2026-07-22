@@ -1,4 +1,4 @@
-import type { ComponentPropsWithoutRef, ReactNode } from 'react';
+import type { ComponentPropsWithoutRef, ReactNode, Ref } from 'react';
 
 import { SpinnerGapIcon } from './icons';
 import styles from './icon-button.module.css';
@@ -11,6 +11,8 @@ export type IconButtonProps = Omit<
   ComponentPropsWithoutRef<'button'>,
   'aria-label' | 'children'
 > & {
+  /** Enables Base UI compositions such as PopoverTrigger to retain the native control. */
+  ref?: Ref<HTMLButtonElement>;
   /** Required accessible name; icon-only controls must never rely on the glyph alone. */
   'aria-label': string;
   /** Default is a 44px touch target; use micro for a smaller visual glyph, not a smaller target. */
@@ -49,6 +51,7 @@ export function IconButton({
   className,
   disabled = false,
   loading = false,
+  ref,
   size = 'default',
   tone = 'default',
   variant = 'default',
@@ -58,6 +61,7 @@ export function IconButton({
 
   return (
     <button
+      ref={ref}
       {...props}
       type={props.type ?? 'button'}
       aria-label={ariaLabel}

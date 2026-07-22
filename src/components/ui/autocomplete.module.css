@@ -28,7 +28,7 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-control);
   padding-inline-start: var(--space-inset-control);
-  background: var(--card);
+  background: var(--color-surface);
   color: var(--card-foreground);
   transition:
     border-color var(--duration-fast) var(--ease-standard),
@@ -76,6 +76,11 @@
 
 .controls > :global([data-slot='icon-button']) {
   color: var(--muted-foreground);
+  box-shadow: none;
+}
+
+.controls > :global([data-slot='icon-button']:focus-visible) {
+  box-shadow: var(--elevation-focus);
 }
 
 .loadingIcon {
@@ -95,7 +100,7 @@
   overflow-y: auto;
   border: 1px solid var(--border);
   border-radius: var(--radius-card-surface);
-  background: var(--card);
+  background: var(--color-surface);
   color: var(--card-foreground);
   box-shadow: var(--elevation-popover);
   transform-origin: top;

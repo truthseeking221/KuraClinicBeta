@@ -6,7 +6,7 @@ import { PhoneInput, type PhoneInputSize, type PhoneValue } from './phone-input'
 
 function ControlledPhoneInput({
   defaultCountry = 'KH',
-  size = 'md',
+  size = 'lg',
 }: {
   defaultCountry?: 'GB' | 'KH' | 'US' | 'VN';
   size?: PhoneInputSize;

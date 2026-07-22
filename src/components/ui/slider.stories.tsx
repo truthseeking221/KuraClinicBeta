@@ -8,11 +8,11 @@ import styles from './intake-components.stories.module.css';
 const meta = {
   title: 'Design System/Primitives/Slider',
   component: Slider,
-  tags: ['autodocs', 'source-reui', 'adapted-kura'],
+  tags: ['autodocs', 'source-kura', 'adapted-kura'],
   parameters: {
     layout: 'padded',
     kura: {
-      source: { vendor: 'ReUI', registryItem: '@reui/c-slider-1' },
+      source: { vendor: 'Kura', registryItem: 'slider', visualReference: 'Kura slider' },
       intake: {
         decision: 'EXTEND',
         owner: 'src/components/ui',

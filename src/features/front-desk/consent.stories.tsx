@@ -87,9 +87,10 @@ export const ImagingConsentChain: Story = {
   render: () => <ConsentPlayground initial={orderReady('consent-imaging', 'Male')} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
+    const body = within(canvasElement.ownerDocument.body);
     await userEvent.click(canvas.getByRole('tab', { name: /Orders/ }));
-    const row = (await canvas.findByText('Chest X-ray')).closest('li') as HTMLElement;
-    await userEvent.click(within(row).getByRole('button', { name: 'Add' }));
+    await userEvent.click(canvas.getByRole('button', { name: /Additional order types/ }));
+    await userEvent.click(body.getByRole('checkbox', { name: 'Chest X-ray' }));
     await expect((await canvas.findAllByText('Consent needed'))[0]).toBeVisible();
     await userEvent.click(canvas.getByRole('button', { name: 'Send sign-off' }));
     await expect(canvas.getByText('Sent · awaiting signature')).toBeVisible();
@@ -106,8 +107,7 @@ export const VerbalConsentSensitiveWitness: Story = {
     const canvas = within(canvasElement);
     const body = within(canvasElement.ownerDocument.body);
     await userEvent.click(canvas.getByRole('tab', { name: /Orders/ }));
-    const row = (await canvas.findByText('HIV Ag/Ab combo')).closest('li') as HTMLElement;
-    await userEvent.click(within(row).getByRole('button', { name: 'Add' }));
+    await userEvent.click(canvas.getByRole('checkbox', { name: 'HIV 4th-gen Ag/Ab' }));
     await userEvent.click(await canvas.findByRole('button', { name: 'Verbal consent' }));
     await expect(await body.findByText(/supervisor witness/)).toBeVisible();
     const record = body.getByRole('button', { name: 'Record consent' });
@@ -129,8 +129,8 @@ export const PregnancyGateNotPregnant: Story = {
     const canvas = within(canvasElement);
     const body = within(canvasElement.ownerDocument.body);
     await userEvent.click(canvas.getByRole('tab', { name: /Orders/ }));
-    const row = (await canvas.findByText('Chest X-ray')).closest('li') as HTMLElement;
-    await userEvent.click(within(row).getByRole('button', { name: 'Add' }));
+    await userEvent.click(canvas.getByRole('button', { name: /Additional order types/ }));
+    await userEvent.click(body.getByRole('checkbox', { name: 'Chest X-ray' }));
     await expect(await body.findByText(/Could the patient be pregnant/)).toBeVisible();
     await userEvent.click(body.getByRole('button', { name: 'Not pregnant — add order' }));
     // The scan is ordered, but its consent chain still gates payment.
@@ -146,8 +146,8 @@ export const PregnancyGateClinicianOverride: Story = {
     const canvas = within(canvasElement);
     const body = within(canvasElement.ownerDocument.body);
     await userEvent.click(canvas.getByRole('tab', { name: /Orders/ }));
-    const row = (await canvas.findByText('Chest X-ray')).closest('li') as HTMLElement;
-    await userEvent.click(within(row).getByRole('button', { name: 'Add' }));
+    await userEvent.click(canvas.getByRole('button', { name: /Additional order types/ }));
+    await userEvent.click(body.getByRole('checkbox', { name: 'Chest X-ray' }));
     await userEvent.click(await body.findByRole('button', { name: 'Possibly pregnant' }));
     await expect(await body.findByText('Clinician override required')).toBeVisible();
     const record = body.getByRole('button', { name: 'Record & add' });
@@ -171,11 +171,12 @@ export const PregnancyGateCancelOrder: Story = {
     const canvas = within(canvasElement);
     const body = within(canvasElement.ownerDocument.body);
     await userEvent.click(canvas.getByRole('tab', { name: /Orders/ }));
-    const row = (await canvas.findByText('Chest X-ray')).closest('li') as HTMLElement;
-    await userEvent.click(within(row).getByRole('button', { name: 'Add' }));
+    await userEvent.click(canvas.getByRole('button', { name: /Additional order types/ }));
+    const chestXray = body.getByRole('checkbox', { name: 'Chest X-ray' });
+    await userEvent.click(chestXray);
     await userEvent.click(await body.findByRole('button', { name: 'Cancel order' }));
     await waitFor(async () => {
-      await expect(within(row).getByRole('button', { name: 'Add' })).toBeVisible();
+      await expect(chestXray).not.toBeChecked();
     });
     await expect(canvas.queryByText('Consent needed')).not.toBeInTheDocument();
   },

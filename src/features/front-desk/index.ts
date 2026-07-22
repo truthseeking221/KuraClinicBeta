@@ -1,5 +1,7 @@
 export { BookingDetailSheet } from './booking-detail-sheet';
 export type { BookingDetailSheetProps } from './booking-detail-sheet';
+export { CheckInComplete } from './check-in-complete';
+export type { CheckInCompleteProps } from './check-in-complete';
 export { CheckInWizard } from './check-in-wizard';
 export type { CheckInWizardProps } from './check-in-wizard';
 export { IdentitySearch } from './identity-search';
@@ -22,6 +24,8 @@ export {
   DEMO_CASHIER,
   DEMO_CONFIRMED_AT,
   DEMO_OTP,
+  DEMO_PROMOS,
   DEMO_RECEIPT_ID,
   EXISTING_PATIENTS,
+  findDemoPromo,
 } from './demo-data';

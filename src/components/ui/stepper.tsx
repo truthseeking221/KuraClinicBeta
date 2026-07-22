@@ -23,6 +23,7 @@ import { CheckIcon } from './icons';
 import styles from './stepper.module.css';
 
 export type StepperOrientation = 'horizontal' | 'vertical';
+export type StepperMode = 'interactive' | 'status';
 export type StepState = 'active' | 'completed' | 'inactive' | 'loading';
 
 export type StepIndicators = {
@@ -36,6 +37,7 @@ type StepperContextValue = {
   activeStep: number;
   setActiveStep: (step: number) => void;
   stepsCount: number;
+  mode: StepperMode;
   orientation: StepperOrientation;
   registerTrigger: (node: HTMLButtonElement | null) => void;
   triggerNodes: HTMLButtonElement[];
@@ -78,6 +80,8 @@ export type StepperProps = HTMLAttributes<HTMLDivElement> & {
   /** The current active step index (controlled). */
   value?: number;
   onValueChange?: (value: number) => void;
+  /** Interactive tab control or read-only ordered progress. */
+  mode?: StepperMode;
   orientation?: StepperOrientation;
   /** Custom indicator content per step state. */
   indicators?: StepIndicators;
@@ -88,6 +92,7 @@ export function Stepper({
   className,
   defaultValue = 1,
   indicators = {},
+  mode = 'interactive',
   onValueChange,
   orientation = 'horizontal',
   value,
@@ -135,6 +140,7 @@ export function Stepper({
         (child): child is ReactElement =>
           isValidElement(child) && child.type === StepperItem,
       ).length,
+      mode,
       orientation,
       registerTrigger,
       triggerNodes,
@@ -149,6 +155,7 @@ export function Stepper({
       children,
       focusTrigger,
       indicators,
+      mode,
       orientation,
       registerTrigger,
       setActiveStep,
@@ -160,11 +167,12 @@ export function Stepper({
     <StepperContext.Provider value={contextValue}>
       <div
         {...props}
-        aria-orientation={orientation}
+        aria-orientation={mode === 'interactive' ? orientation : undefined}
         className={joinClasses(styles.stepper, className)}
+        data-mode={mode}
         data-orientation={orientation}
         data-slot="stepper"
-        role="tablist"
+        role={mode === 'interactive' ? 'tablist' : undefined}
       >
         {children}
       </div>
@@ -172,7 +180,7 @@ export function Stepper({
   );
 }
 
-export type StepperItemProps = HTMLAttributes<HTMLDivElement> & {
+export type StepperItemProps = HTMLAttributes<HTMLElement> & {
   /** 1-indexed step position. */
   step: number;
   /** Mark completed regardless of position, e.g. a skipped optional step. */
@@ -190,7 +198,7 @@ export function StepperItem({
   step,
   ...props
 }: StepperItemProps) {
-  const { activeStep } = useStepper();
+  const { activeStep, mode } = useStepper();
 
   const state: StepState =
     completed || step < activeStep ? 'completed' : activeStep === step ? 'active' : 'inactive';
@@ -201,17 +209,21 @@ export function StepperItem({
     [disabled, isLoading, state, step],
   );
 
+  const sharedProps = {
+    ...props,
+    className: joinClasses(styles.item, className),
+    'data-loading': isLoading ? 'true' : undefined,
+    'data-slot': 'stepper-item',
+    'data-state': state,
+  };
+
   return (
     <StepItemContext.Provider value={itemValue}>
-      <div
-        {...props}
-        className={joinClasses(styles.item, className)}
-        data-loading={isLoading ? 'true' : undefined}
-        data-slot="stepper-item"
-        data-state={state}
-      >
-        {children}
-      </div>
+      {mode === 'status' ? (
+        <li {...sharedProps}>{children}</li>
+      ) : (
+        <div {...sharedProps}>{children}</div>
+      )}
     </StepItemContext.Provider>
   );
 }
@@ -235,6 +247,7 @@ export function StepperTrigger({
     focusLast,
     focusNext,
     focusPrev,
+    mode,
     registerTrigger,
     setActiveStep,
     triggerNodes,
@@ -243,9 +256,10 @@ export function StepperTrigger({
   const buttonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
+    if (mode === 'status') return;
     registerTrigger(buttonRef.current);
     return () => registerTrigger(null);
-  }, [registerTrigger]);
+  }, [mode, registerTrigger]);
 
   function handleKeyDown(event: KeyboardEvent<HTMLButtonElement>) {
     const triggerIndex = triggerNodes.findIndex((node) => node === event.currentTarget);
@@ -277,9 +291,15 @@ export function StepperTrigger({
     }
   }
 
-  if (asChild) {
+  if (asChild || mode === 'status') {
     return (
-      <span className={joinClasses(styles.trigger, className)} data-slot="stepper-trigger" data-state={state}>
+      <span
+        aria-current={state === 'active' ? 'step' : undefined}
+        className={joinClasses(styles.trigger, className)}
+        data-loading={isLoading ? 'true' : undefined}
+        data-slot="stepper-trigger"
+        data-state={state}
+      >
         {children}
       </span>
     );
@@ -397,20 +417,22 @@ export function StepperDescription({ children, className, ...props }: StepperDes
   );
 }
 
-export type StepperNavProps = ComponentPropsWithoutRef<'nav'>;
+export type StepperNavProps = HTMLAttributes<HTMLElement>;
 
 export function StepperNav({ children, className, ...props }: StepperNavProps) {
-  const { orientation } = useStepper();
+  const { mode, orientation } = useStepper();
 
-  return (
-    <nav
-      {...props}
-      className={joinClasses(styles.nav, className)}
-      data-orientation={orientation}
-      data-slot="stepper-nav"
-    >
-      {children}
-    </nav>
+  const sharedProps = {
+    ...props,
+    className: joinClasses(styles.nav, className),
+    'data-orientation': orientation,
+    'data-slot': 'stepper-nav',
+  };
+
+  return mode === 'status' ? (
+    <ol {...sharedProps}>{children}</ol>
+  ) : (
+    <nav {...sharedProps}>{children}</nav>
   );
 }
 

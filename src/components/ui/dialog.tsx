@@ -4,8 +4,8 @@ import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { forwardRef } from 'react';
 import type { ComponentPropsWithoutRef, ComponentRef } from 'react';
 
-import { CloseIcon } from './icons';
-import { IconButton } from './icon-button';
+import { useT } from '../foundations/i18n';
+import { CloseButton } from './close-button';
 import styles from './dialog.module.css';
 
 function joinClasses(...classes: Array<string | undefined | false>) {
@@ -71,6 +71,7 @@ export type DialogContentProps = ComponentPropsWithoutRef<typeof DialogPrimitive
   mobilePresentation?: DialogMobilePresentation;
   showCloseButton?: boolean;
   closeLabel?: string;
+  overlayClassName?: string;
 };
 
 export const DialogContent = forwardRef<
@@ -80,17 +81,20 @@ export const DialogContent = forwardRef<
   {
     children,
     className,
-    closeLabel = 'Close dialog',
+    closeLabel,
     mobilePresentation = 'full',
+    overlayClassName,
     showCloseButton = true,
     size = 'md',
     ...props
   },
   ref,
 ) {
+  const t = useT();
+
   return (
     <DialogPortal>
-      <DialogOverlay />
+      <DialogOverlay className={overlayClassName} />
       <DialogPrimitive.Content
         ref={ref}
         data-slot="dialog-content"
@@ -102,14 +106,11 @@ export const DialogContent = forwardRef<
         {children}
         {showCloseButton ? (
           <DialogPrimitive.Close asChild>
-            <IconButton
-              aria-label={closeLabel}
+            <CloseButton
+              aria-label={closeLabel ?? t('Close dialog')}
               className={styles.close}
-              size="micro"
-              variant="tertiary"
-            >
-              <CloseIcon aria-hidden="true" />
-            </IconButton>
+              size="md"
+            />
           </DialogPrimitive.Close>
         ) : null}
       </DialogPrimitive.Content>

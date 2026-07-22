@@ -19,8 +19,8 @@ import type {
   SyntheticEvent,
 } from 'react';
 
-import { XIcon } from './icons';
-import { IconButton } from './icon-button';
+import { useT } from '../foundations/i18n';
+import { CloseButton } from './close-button';
 import styles from './sheet.module.css';
 
 export type SheetSide = 'top' | 'left' | 'right' | 'bottom';
@@ -303,18 +303,16 @@ export type SheetCloseProps = {
   className?: string;
 };
 
-export function SheetClose({ 'aria-label': ariaLabel = 'Close', className }: SheetCloseProps) {
+export function SheetClose({ 'aria-label': ariaLabel, className }: SheetCloseProps) {
+  const t = useT();
   const { setOpen } = useSheetContext('SheetClose');
 
   return (
-    <IconButton
-      aria-label={ariaLabel}
+    <CloseButton
+      aria-label={ariaLabel ?? t('Close')}
       className={joinClasses(styles.close, className)}
       onClick={() => setOpen(false)}
-      size="micro"
-      variant="tertiary"
-    >
-      <XIcon size={18} />
-    </IconButton>
+      size="md"
+    />
   );
 }

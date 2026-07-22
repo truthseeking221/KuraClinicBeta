@@ -96,7 +96,7 @@
 
 .item[data-current='true'] .indicator {
   border-color: var(--primary-accent);
-  box-shadow: 0 0 0 var(--space-1) var(--color-brand-50);
+  box-shadow: 0 0 0 var(--space-1) var(--color-selection-bg);
 }
 
 .separator {
@@ -144,8 +144,8 @@
 
 .item[data-tone='warning'] .indicator,
 .item[data-tone='warning'][data-completed='true'] .indicator {
-  border-color: var(--color-badge-warning-icon);
-  background: var(--color-badge-warning-icon);
+  border-color: var(--color-status-warning-solid);
+  background: var(--color-status-warning-solid);
 }
 
 .item[data-tone='danger'] .indicator,

@@ -10,6 +10,8 @@ export { VitalsForm } from './vitals-form';
 export type { VitalsFormProps } from './vitals-form';
 export { DrawWorksheet } from './draw-worksheet';
 export type { DrawWorksheetProps } from './draw-worksheet';
+export { TubeLabeling } from './tube-labeling';
+export type { TubeLabelingProps } from './tube-labeling';
 export * from './types';
 export * from './catalog';
 export * from './logic';

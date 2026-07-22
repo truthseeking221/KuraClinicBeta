@@ -5,15 +5,18 @@
   gap: var(--space-stack-label);
 }
 
+/* Card options are white tiles nested inside a tray, so they share the tile
+   radius — not the tray-level surface radius. The inset lives on the label
+   below, never here: padding on this wrapper would leave a dead rim the
+   pointer cannot click. */
 .field[data-appearance="card"] {
   box-sizing: border-box;
   width: 100%;
-  min-height: var(--touch-target-min);
   gap: 0;
-  padding: var(--space-1) var(--space-2);
+  padding: 0;
   border: 1px solid var(--card-border-outline);
-  border-radius: var(--radius-card-surface);
-  background: var(--card);
+  border-radius: var(--radius-card-tile);
+  background: var(--color-surface);
   box-shadow: var(--elevation-card-outline);
   transition:
     background-color var(--duration-fast) var(--ease-standard),
@@ -42,10 +45,14 @@
 
 .field[data-appearance="card"] .control {
   width: 100%;
-  min-height: var(--control-h);
+  min-height: var(--touch-target-min);
   align-items: flex-start;
-  padding: 0;
-  border-radius: 0;
+  padding: var(--space-2) var(--space-3);
+  border-radius: inherit;
+}
+
+.field[data-appearance="card"][data-card-density="comfortable"] .control {
+  padding: var(--space-inset-control) var(--space-4);
 }
 
 .field[data-appearance="card"] .control:hover:not([data-disabled="true"]),
@@ -67,6 +74,10 @@
   flex: 1;
   flex-direction: column;
   gap: var(--space-0-5);
+}
+
+.field[data-appearance="card"][data-card-density="comfortable"] .optionCopy {
+  gap: var(--space-stack-label);
 }
 
 .optionCopy .helpText {
@@ -133,9 +144,9 @@
   flex: 0 0 auto;
   align-items: center;
   justify-content: center;
-  border: 1px solid var(--border);
+  border: 1px solid var(--color-border-checkbox-default);
   border-radius: var(--radius-full);
-  background: var(--card);
+  background: var(--color-background-primary-default);
   box-shadow: var(--shadow-xs);
   transition:
     background-color var(--duration-fast) var(--ease-standard),
@@ -145,7 +156,7 @@
 }
 
 .control:hover:not([data-disabled="true"]) .indicator {
-  border-color: var(--border-strong);
+  border-color: var(--color-border-button-active);
 }
 
 .control:hover:not([data-disabled="true"]):not([data-read-only="true"]) {
@@ -161,9 +172,9 @@
 }
 
 .control:has(.input:checked) .indicator {
-  border-color: var(--primary);
-  background: var(--primary);
-  box-shadow: var(--elevation-selected);
+  border-color: transparent;
+  background-image: var(--gradient-button-primary-default);
+  box-shadow: var(--shadow-checkbox-selected);
 }
 
 .control[data-invalid="true"] .indicator {
@@ -171,10 +182,10 @@
 }
 
 .dot {
-  width: var(--space-2);
-  height: var(--space-2);
+  width: var(--space-1-5);
+  height: var(--space-1-5);
   border-radius: var(--radius-full);
-  background: var(--primary-foreground);
+  background: var(--color-foreground-full);
   opacity: 0;
   transform: scale(0.5);
   transition:

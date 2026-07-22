@@ -1,0 +1,111 @@
+import type { KhmerDictionary } from '../types';
+
+/**
+ * The episode spine — one patient from first contact to a signed care plan —
+ * and the clinic flow landscape that maps every journey to its evidence.
+ *
+ * Money, specimen, and result are reported as three independent phrases. The
+ * Khmer keeps them independent too: "paid" must never read as "collected".
+ *
+ * Three strings this area renders are owned elsewhere so one English string
+ * keeps one Khmer rendering: `Verified` (home), `Care plan` (care-plan), and
+ * `Sample` (common). They belong in `common.ts` once that file is opened.
+ */
+export const JOURNEY_KM: KhmerDictionary = {
+  // Identity
+  'Not identified': 'មិនបានកំណត់អត្តសញ្ញាណ',
+  Provisional: 'បណ្តោះអាសន្ន',
+
+  // Phase strip
+  'Journey phases': 'ដំណាក់កាលដំណើរ',
+  Identity: 'អត្តសញ្ញាណ',
+
+  // Next step
+  Waiting: 'កំពុងរង់ចាំ',
+  'Reception or doctor': 'តុទទួល ឬវេជ្ជបណ្ឌិត',
+  'Lab, then doctor': 'មន្ទីរពិសោធន៍ រួចវេជ្ជបណ្ឌិត',
+  'Verify the phone and open the patient record':
+    'ផ្ទៀងផ្ទាត់លេខទូរស័ព្ទ និងបើកកំណត់ត្រាអ្នកជំងឺ',
+  'Record the reason for visit and a working diagnosis':
+    'កត់ត្រាមូលហេតុមកពិនិត្យ និងរោគវិនិច្ឆ័យដែលកំពុងសង្ស័យ',
+  'Order the tests': 'បញ្ជាតេស្ត',
+  'No working diagnosis recorded yet': 'មិនទាន់មានរោគវិនិច្ឆ័យដែលកំពុងសង្ស័យត្រូវបានកត់ត្រា',
+  'Choose the tests this diagnosis needs': 'ជ្រើសរើសតេស្តដែលរោគវិនិច្ឆ័យនេះត្រូវការ',
+  'Set up collection and payment': 'រៀបចំការយកសំណាក និងការទូទាត់',
+  'Check the patient in and prepare the tubes': 'ចុះឈ្មោះអ្នកជំងឺចូល និងរៀបចំបំពង់',
+  'Draw the sample and confirm the tubes': 'យកសំណាក និងបញ្ជាក់បំពង់',
+  'Wait for the lab to receive the samples': 'រង់ចាំមន្ទីរពិសោធន៍ទទួលសំណាក',
+  'Samples have not reached the lab': 'សំណាកមិនទាន់ដល់មន្ទីរពិសោធន៍',
+  'Wait for the lab to release the results': 'រង់ចាំមន្ទីរពិសោធន៍ចេញលទ្ធផល',
+  'Review the released results with the patient': 'ពិនិត្យលទ្ធផលដែលចេញផ្សាយជាមួយអ្នកជំងឺ',
+  'Sign the care plan so the next measurement is scheduled':
+    'ចុះហត្ថលេខាលើផែនការព្យាបាល ដើម្បីកំណត់ពេលវាស់លើកក្រោយ',
+
+  // The three independent axes
+  'No charge raised': 'មិនបានចេញវិក្កយបត្រ',
+  'Payment due': 'ត្រូវបង់ប្រាក់',
+  'No sample': 'គ្មានសំណាក',
+  'Received at lab': 'មន្ទីរពិសោធន៍បានទទួល',
+  'No result': 'គ្មានលទ្ធផល',
+  'In the lab': 'នៅមន្ទីរពិសោធន៍',
+  Released: 'បានចេញផ្សាយ',
+  Reviewed: 'បានពិនិត្យ',
+
+  // Operator steps
+  'Identify the patient': 'កំណត់អត្តសញ្ញាណអ្នកជំងឺ',
+  'Phone verified, open the record': 'លេខទូរស័ព្ទបានផ្ទៀងផ្ទាត់ បើកកំណត់ត្រា',
+  'A verified phone proves Kura can reach this number. It does not prove who the patient is, so the record opens as provisional until an identity document is checked.':
+    'លេខទូរស័ព្ទដែលបានផ្ទៀងផ្ទាត់បញ្ជាក់ថា Kura អាចទាក់ទងលេខនេះបាន។ វាមិនបញ្ជាក់ថាអ្នកជំងឺជានរណាទេ ដូច្នេះកំណត់ត្រាបើកជាបណ្តោះអាសន្ន រហូតដល់មានការពិនិត្យឯកសារអត្តសញ្ញាណ។',
+  'Send booking code': 'ផ្ញើលេខកូដកក់',
+  'Ten baseline tests, ordered for': 'តេស្តមូលដ្ឋានដប់ បញ្ជាសម្រាប់',
+  'The patient will pay at the Kura desk.': 'អ្នកជំងឺនឹងបង់ប្រាក់នៅតុ Kura។',
+  'Collect payment and samples': 'ទទួលការទូទាត់ និងយកសំណាក',
+  'Payment taken, tubes drawn': 'បានទទួលប្រាក់ បានយកបំពង់',
+  'Cash collected at the desk and four tubes drawn after the positive-identification check. Payment and collection are recorded separately: one can happen without the other.':
+    'បានទទួលសាច់ប្រាក់នៅតុ និងបានយកបំពង់បួន បន្ទាប់ពីការផ្ទៀងផ្ទាត់អត្តសញ្ញាណ។ ការទូទាត់ និងការយកសំណាកត្រូវបានកត់ត្រាដោយឡែកពីគ្នា៖ មួយអាចកើតឡើងដោយគ្មានមួយទៀត។',
+  'Lab runs the tests': 'មន្ទីរពិសោធន៍ធ្វើតេស្ត',
+  'Release results to the doctor': 'ចេញលទ្ធផលទៅវេជ្ជបណ្ឌិត',
+  'The courier delivered the samples and the lab has verified them.':
+    'អ្នកដឹកជញ្ជូនបានប្រគល់សំណាក ហើយមន្ទីរពិសោធន៍បានផ្ទៀងផ្ទាត់រួច។',
+  'both below range.': 'ទាំងពីរទាបជាងជួរធម្មតា។',
+
+  // Clinic flow landscape
+  'Clinic flow landscape': 'ផែនទីលំហូរការងារគ្លីនិក',
+  'journeys from access to documented continuity.':
+    'ដំណើរ ចាប់ពីការចូលប្រើរហូតដល់ការបន្តថែទាំដែលមានឯកសារ។',
+  'Journey evidence coverage': 'វិសាលភាពភស្តុតាងនៃដំណើរ',
+  'Evidence map': 'ផែនទីភស្តុតាង',
+  'Journey status comes from the clinic catalog. Current backend behavior comes from kura-platform; legacy screens are evidence only, not release truth.':
+    'ស្ថានភាពដំណើរមកពីកាតាឡុកគ្លីនិក។ ឥរិយាបថខាងក្រោយបច្ចុប្បន្នមកពី kura-platform។ អេក្រង់ចាស់ជាភស្តុតាងតែប៉ុណ្ណោះ មិនមែនជាការពិតនៃការចេញផ្សាយទេ។',
+  'Care journey': 'ដំណើរថែទាំ',
+  'Select a stage to inspect its owner, closure, handoffs, and unresolved work.':
+    'ជ្រើសរើសដំណាក់កាល ដើម្បីពិនិត្យម្ចាស់ ការបិទ ការប្រគល់ និងការងារដែលមិនទាន់ដោះស្រាយ។',
+  journeys: 'ដំណើរ',
+  unresolved: 'មិនទាន់ដោះស្រាយ',
+  'No open journey status': 'គ្មានស្ថានភាពដំណើរដែលនៅបើក',
+  Stage: 'ដំណាក់កាល',
+  'Primary actors': 'អ្នកពាក់ព័ន្ធសំខាន់',
+  Entry: 'ការចូល',
+  Closure: 'ការបិទ',
+  'Required handoffs': 'ការប្រគល់ដែលត្រូវការ',
+  'Evidence and gaps': 'ភស្តុតាង និងចន្លោះខ្វះ',
+  coverage: 'វិសាលភាព',
+  'Independent truths': 'ការពិតដែលឯករាជ្យពីគ្នា',
+  'Never infer one lifecycle from another.': 'កុំសន្និដ្ឋានវដ្តមួយពីវដ្តមួយទៀត។',
+  'Sources: doctor care-loop map, journey catalog, journey case matrix, and pinned kura-platform evidence.':
+    'ប្រភព៖ ផែនទីវដ្តព្យាបាលរបស់វេជ្ជបណ្ឌិត កាតាឡុកដំណើរ ម៉ាទ្រីសករណីដំណើរ និងភស្តុតាង kura-platform ដែលបានខ្ទាស់។',
+
+  // Independent truths
+  'Phone control, patient match, and identity assurance are separate.':
+    'ការគ្រប់គ្រងលេខទូរស័ព្ទ ការផ្គូផ្គងអ្នកជំងឺ និងការធានាអត្តសញ្ញាណ គឺដាច់ដោយឡែកពីគ្នា។',
+  'Arrival does not prove that collection or service is complete.':
+    'ការមកដល់មិនបញ្ជាក់ថាការយកសំណាក ឬសេវាកម្មបានបញ្ចប់ទេ។',
+  'Collected does not mean received, accepted, or consumed.':
+    'បានយករួច មិនមានន័យថាបានទទួល បានព្រមទទួល ឬបានប្រើប្រាស់ទេ។',
+  'Paid does not mean served.': 'បានបង់ប្រាក់ មិនមានន័យថាបានផ្តល់សេវាទេ។',
+  'Released does not mean acknowledged, actioned, or closed.':
+    'បានចេញផ្សាយ មិនមានន័យថាបានទទួលស្គាល់ បានចាត់វិធានការ ឬបានបិទទេ។',
+  Settlement: 'ការទូទាត់សង',
+  'Payment and service proofs are both required.':
+    'ត្រូវការភស្តុតាងទាំងការទូទាត់ និងសេវាកម្ម។',
+};

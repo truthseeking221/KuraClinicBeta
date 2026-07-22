@@ -1,0 +1,73 @@
+import{c as e,i as t}from"./preload-helper-MclHqJXp.js";import{U as n,g as r}from"./iframe-DWdOCsUQ.js";import{qt as i,t as a}from"./ui-C9kmmzkH.js";import{t as o}from"./button-B6_zsN5-.js";import{a as ee,n as te,r as ne,t as s}from"./collapsible-Cfc9M9oP.js";import{t as c}from"./segmented-toggle-DDpNscFF.js";import{t as l}from"./input-UaJWx_9h.js";import{l as u,o as re,r as ie,t as ae}from"./card-DMMaaphC.js";import{r as d,t as f}from"./patient-sOP5Ucga.js";import{n as p,t as m}from"./vitals-form-B1wk1Eqg.js";var h,g,_,v,y,b,x,S,C,w,T,E,D,O,k,A,j,M,N,P,F,I=t((()=>{h=`_card_104fb_1`,g=`_identity_104fb_5`,_=`_patientName_104fb_13`,v=`_demographics_104fb_19`,y=`_content_104fb_25`,b=`_vitals_104fb_31`,x=`_assessment_104fb_37`,S=`_sectionTitle_104fb_47`,C=`_sectionHint_104fb_54`,w=`_empty_104fb_60`,T=`_diagnosisList_104fb_66`,E=`_diagnosis_104fb_66`,D=`_diagnosisMain_104fb_86`,O=`_diagnosisLabel_104fb_93`,k=`_diagnosisEvidence_104fb_100`,A=`_addRow_104fb_106`,j=`_footer_104fb_113`,M=`_blockers_104fb_123`,N=`_blockersTitle_104fb_129`,P=`_grounded_104fb_140`,F={card:h,identity:g,patientName:_,demographics:v,content:y,vitals:b,assessment:x,sectionTitle:S,sectionHint:C,empty:w,diagnosisList:T,diagnosis:E,diagnosisMain:D,diagnosisLabel:O,diagnosisEvidence:k,addRow:A,footer:j,blockers:M,blockersTitle:N,grounded:P}})),L,R,z,B,V=t((()=>{d(),L=[{code:`E11.9`,label:`Type 2 diabetes without complications`},{code:`E78.5`,label:`Hyperlipidaemia, unspecified`},{code:`I10`,label:`Essential hypertension`},{code:`D50.9`,label:`Iron deficiency anaemia, unspecified`},{code:`N18.3`,label:`Chronic kidney disease, stage 3`},{code:`E05.9`,label:`Thyrotoxicosis, unspecified`},{code:`R53.83`,label:`Other fatigue`}],R=[{id:`dx-fatigue`,code:`R53.83`,label:`Other fatigue`,certainty:`working`,evidence:`Two weeks, worse in the afternoon, no fever`},{id:`dx-anaemia`,code:`D50.9`,label:`Iron deficiency anaemia, unspecified`,certainty:`working`,evidence:`Pale conjunctiva, resting pulse 96`}],z={patientId:f.userId,reasonForVisit:``,subjective:``,objective:``,diagnoses:[],plan:``,recordedBy:`Dr. Sok Vanna`,status:`draft`},B={...z,reasonForVisit:`Tired for two weeks, wants a general checkup`,subjective:`Fatigue for two weeks, worse in the afternoons. Sleeping normally. No fever, no weight loss. No known allergies. Not on any regular medicine.`,objective:`Alert, no distress. Pale conjunctiva. Chest clear, heart sounds normal. No oedema. Resting pulse 96.`,vitals:{heightCm:`168`,weightKg:`71`,hr:`96`,bpSys:`128`,bpDia:`82`,tempC:`36.8`,tempUnit:`C`,spo2:`98`,breathing:`16`,painVas:0,fasting:null,vaccinationNote:``},diagnoses:R,plan:`Baseline bloods today to separate anaemia from a thyroid or glycaemic cause. Review together once results return.`}}));function H(e){return J[e]}function U(e){return e.filter(e=>e.certainty!==`ruled-out`)}function W(e){let t=[];return e.reasonForVisit.trim()===``&&t.push({field:`reasonForVisit`,label:`Record the reason for visit`}),U(e.diagnoses).length===0&&t.push({field:`diagnoses`,label:`Add a working diagnosis`}),t}function G(e){return W(e).length===0}function K(e){return{diagnosisId:e.id,code:e.code,label:e.label,certainty:e.certainty}}function q(e){return e.code===``?e.label:`${e.code} · ${e.label}`}var J,Y=t((()=>{J={working:`Working`,confirmed:`Confirmed`,"ruled-out":`Ruled out`}}));function oe(e){return[e.bpSys&&e.bpDia?`BP ${e.bpSys}/${e.bpDia}`:``,e.hr?`HR ${e.hr}`:``,e.tempC?`Temp ${e.tempC} °${e.tempUnit}`:``,e.spo2?`SpO₂ ${e.spo2}%`:``].filter(Boolean).join(` · `)}function X({assessment:e,onChange:t,onOrderTests:n,orderActionLabel:r=`Order tests`,patientDemographics:a,patientName:d}){let[f,p]=(0,Q.useState)(``),[h,g]=(0,Q.useState)(``),[_,v]=(0,Q.useState)(``),y=W(e),b=G(e),x=U(e.diagnoses),S=n=>t({...e,...n}),C=()=>{let t=f.trim();if(t===``)return;let n=L.find(e=>e.label.toLowerCase()===t.toLowerCase()),r={id:`dx-${e.diagnoses.length+1}-${t.toLowerCase().replace(/\W+/g,`-`)}`,code:h.trim()||n?.code||``,label:n?.label??t,certainty:`working`,evidence:_.trim()||void 0};S({diagnoses:[...e.diagnoses,r]}),p(``),g(``),v(``)},w=(t,n)=>S({diagnoses:e.diagnoses.map(e=>e.id===t?{...e,certainty:n}:e)}),T=t=>S({diagnoses:e.diagnoses.filter(e=>e.id!==t)});return(0,Z.jsxs)(ae,{as:`section`,"aria-label":`Clinical assessment`,className:F.card,children:[(0,Z.jsxs)(re,{children:[(0,Z.jsx)(u,{children:`Clinical assessment`}),(0,Z.jsxs)(`div`,{className:F.identity,children:[(0,Z.jsx)(`span`,{className:F.patientName,children:d}),(0,Z.jsx)(`span`,{className:F.demographics,children:a}),e.status===`signed`?(0,Z.jsx)(ee,{variant:`success`,children:`Signed`}):null]})]}),(0,Z.jsxs)(ie,{className:F.content,children:[(0,Z.jsx)(l,{label:`Reason for visit`,required:!0,helpText:`In the patient's own words.`,onChange:e=>S({reasonForVisit:e.target.value}),value:e.reasonForVisit}),(0,Z.jsx)(i,{label:`Symptoms and history`,onChange:e=>S({subjective:e.target.value}),rows:3,value:e.subjective}),(0,Z.jsx)(i,{label:`Examination findings`,onChange:e=>S({objective:e.target.value}),rows:3,value:e.objective}),(0,Z.jsxs)(s,{className:F.vitals,children:[(0,Z.jsx)(ne,{children:e.vitals?`Vital signs · ${oe(e.vitals)}`:`Record vital signs`}),(0,Z.jsx)(te,{children:(0,Z.jsx)(m,{initial:e.vitals,onSubmit:e=>S({vitals:e}),patientId:e.patientId})})]}),(0,Z.jsxs)(`section`,{"aria-label":`Assessment`,className:F.assessment,children:[(0,Z.jsx)(`h3`,{className:F.sectionTitle,children:`Assessment`}),(0,Z.jsx)(`p`,{className:F.sectionHint,children:`Every test ordered from this visit carries one of these as its stated reason.`}),e.diagnoses.length===0?(0,Z.jsx)(`p`,{className:F.empty,children:`No diagnosis recorded yet.`}):(0,Z.jsx)(`ul`,{className:F.diagnosisList,children:e.diagnoses.map(e=>(0,Z.jsxs)(`li`,{className:F.diagnosis,children:[(0,Z.jsxs)(`div`,{className:F.diagnosisMain,children:[(0,Z.jsx)(`span`,{className:F.diagnosisLabel,children:q(e)}),e.evidence?(0,Z.jsx)(`span`,{className:F.diagnosisEvidence,children:e.evidence}):null]}),(0,Z.jsx)(c,{label:`Certainty for ${e.label}`,onValueChange:t=>w(e.id,t),options:$,value:e.certainty}),(0,Z.jsx)(o,{"aria-label":`Remove ${e.label}`,onClick:()=>T(e.id),size:`sm`,variant:`ghost`,children:`Remove`})]},e.id))}),(0,Z.jsxs)(`div`,{className:F.addRow,children:[(0,Z.jsx)(l,{label:`Diagnosis or impression`,list:`assessment-icd-shortlist`,onChange:e=>p(e.target.value),placeholder:`Type or pick a coded diagnosis`,value:f}),(0,Z.jsx)(`datalist`,{id:`assessment-icd-shortlist`,children:L.map(e=>(0,Z.jsx)(`option`,{value:e.label,children:e.code},e.code))}),(0,Z.jsx)(l,{label:`ICD-10`,helpText:`Optional while the impression is uncoded.`,onChange:e=>g(e.target.value),value:h}),(0,Z.jsx)(l,{label:`Evidence`,onChange:e=>v(e.target.value),value:_}),(0,Z.jsx)(o,{disabled:f.trim()===``,onClick:C,variant:`outline`,children:`Add diagnosis`})]})]}),(0,Z.jsx)(i,{label:`Plan`,onChange:e=>S({plan:e.target.value}),rows:2,value:e.plan})]}),(0,Z.jsxs)(`footer`,{className:F.footer,children:[y.length>0?(0,Z.jsxs)(`div`,{className:F.blockers,children:[(0,Z.jsx)(`p`,{className:F.blockersTitle,children:`Still needed`}),(0,Z.jsx)(`ul`,{children:y.map(e=>(0,Z.jsx)(`li`,{children:e.label},e.field))})]}):(0,Z.jsx)(`p`,{className:F.grounded,children:x.length===1?`Orders will carry ${q(x[0])} (${H(x[0].certainty).toLowerCase()}).`:`${x.length} diagnoses available as an order reason.`}),(0,Z.jsx)(o,{disabled:!b,onClick:()=>n?.(e),children:r})]})]})}var Z,Q,$,se=t((()=>{Z=r(),Q=e(n()),a(),p(),I(),V(),Y(),$=[{value:`working`,label:`Working`},{value:`confirmed`,label:`Confirmed`},{value:`ruled-out`,label:`Ruled out`}],X.__docgenInfo={description:`The doctor's encounter surface. The assessment section is the loudest part
+of the card because it is the only part the rest of the journey reads: an
+order, a care plan, and a later review all trace back to a diagnosis
+recorded here.`,methods:[],displayName:`AssessmentWorkspace`,props:{patientName:{required:!0,tsType:{name:`string`},description:``},patientDemographics:{required:!0,tsType:{name:`string`},description:``},assessment:{required:!0,tsType:{name:`signature`,type:`object`,raw:`{
+  patientId: string;
+  reasonForVisit: string;
+  subjective: string;
+  objective: string;
+  vitals?: VitalsValues;
+  diagnoses: readonly WorkingDiagnosis[];
+  plan: string;
+  recordedBy: string;
+  status: AssessmentStatus;
+}`,signature:{properties:[{key:`patientId`,value:{name:`string`,required:!0}},{key:`reasonForVisit`,value:{name:`string`,required:!0}},{key:`subjective`,value:{name:`string`,required:!0}},{key:`objective`,value:{name:`string`,required:!0}},{key:`vitals`,value:{name:`signature`,type:`object`,raw:`{
+  heightCm: string;
+  weightKg: string;
+  hr: string;
+  bpSys: string;
+  bpDia: string;
+  tempC: string;
+  tempUnit: 'C' | 'F';
+  spo2: string;
+  breathing: string;
+  painVas: number;
+  fasting: string | null;
+  vaccinationNote: string;
+}`,signature:{properties:[{key:`heightCm`,value:{name:`string`,required:!0}},{key:`weightKg`,value:{name:`string`,required:!0}},{key:`hr`,value:{name:`string`,required:!0}},{key:`bpSys`,value:{name:`string`,required:!0}},{key:`bpDia`,value:{name:`string`,required:!0}},{key:`tempC`,value:{name:`string`,required:!0}},{key:`tempUnit`,value:{name:`union`,raw:`'C' | 'F'`,elements:[{name:`literal`,value:`'C'`},{name:`literal`,value:`'F'`}],required:!0}},{key:`spo2`,value:{name:`string`,required:!0}},{key:`breathing`,value:{name:`string`,required:!0}},{key:`painVas`,value:{name:`number`,required:!0}},{key:`fasting`,value:{name:`union`,raw:`string | null`,elements:[{name:`string`},{name:`null`}],required:!0}},{key:`vaccinationNote`,value:{name:`string`,required:!0}}]},required:!1}},{key:`diagnoses`,value:{name:`unknown`,required:!0}},{key:`plan`,value:{name:`string`,required:!0}},{key:`recordedBy`,value:{name:`string`,required:!0}},{key:`status`,value:{name:`union`,raw:`'draft' | 'signed'`,elements:[{name:`literal`,value:`'draft'`},{name:`literal`,value:`'signed'`}],required:!0}}]}},description:``},onChange:{required:!0,tsType:{name:`signature`,type:`function`,raw:`(assessment: ClinicalAssessment) => void`,signature:{arguments:[{type:{name:`signature`,type:`object`,raw:`{
+  patientId: string;
+  reasonForVisit: string;
+  subjective: string;
+  objective: string;
+  vitals?: VitalsValues;
+  diagnoses: readonly WorkingDiagnosis[];
+  plan: string;
+  recordedBy: string;
+  status: AssessmentStatus;
+}`,signature:{properties:[{key:`patientId`,value:{name:`string`,required:!0}},{key:`reasonForVisit`,value:{name:`string`,required:!0}},{key:`subjective`,value:{name:`string`,required:!0}},{key:`objective`,value:{name:`string`,required:!0}},{key:`vitals`,value:{name:`signature`,type:`object`,raw:`{
+  heightCm: string;
+  weightKg: string;
+  hr: string;
+  bpSys: string;
+  bpDia: string;
+  tempC: string;
+  tempUnit: 'C' | 'F';
+  spo2: string;
+  breathing: string;
+  painVas: number;
+  fasting: string | null;
+  vaccinationNote: string;
+}`,signature:{properties:[{key:`heightCm`,value:{name:`string`,required:!0}},{key:`weightKg`,value:{name:`string`,required:!0}},{key:`hr`,value:{name:`string`,required:!0}},{key:`bpSys`,value:{name:`string`,required:!0}},{key:`bpDia`,value:{name:`string`,required:!0}},{key:`tempC`,value:{name:`string`,required:!0}},{key:`tempUnit`,value:{name:`union`,raw:`'C' | 'F'`,elements:[{name:`literal`,value:`'C'`},{name:`literal`,value:`'F'`}],required:!0}},{key:`spo2`,value:{name:`string`,required:!0}},{key:`breathing`,value:{name:`string`,required:!0}},{key:`painVas`,value:{name:`number`,required:!0}},{key:`fasting`,value:{name:`union`,raw:`string | null`,elements:[{name:`string`},{name:`null`}],required:!0}},{key:`vaccinationNote`,value:{name:`string`,required:!0}}]},required:!1}},{key:`diagnoses`,value:{name:`unknown`,required:!0}},{key:`plan`,value:{name:`string`,required:!0}},{key:`recordedBy`,value:{name:`string`,required:!0}},{key:`status`,value:{name:`union`,raw:`'draft' | 'signed'`,elements:[{name:`literal`,value:`'draft'`},{name:`literal`,value:`'signed'`}],required:!0}}]}},name:`assessment`}],return:{name:`void`}}},description:``},onOrderTests:{required:!1,tsType:{name:`signature`,type:`function`,raw:`(assessment: ClinicalAssessment) => void`,signature:{arguments:[{type:{name:`signature`,type:`object`,raw:`{
+  patientId: string;
+  reasonForVisit: string;
+  subjective: string;
+  objective: string;
+  vitals?: VitalsValues;
+  diagnoses: readonly WorkingDiagnosis[];
+  plan: string;
+  recordedBy: string;
+  status: AssessmentStatus;
+}`,signature:{properties:[{key:`patientId`,value:{name:`string`,required:!0}},{key:`reasonForVisit`,value:{name:`string`,required:!0}},{key:`subjective`,value:{name:`string`,required:!0}},{key:`objective`,value:{name:`string`,required:!0}},{key:`vitals`,value:{name:`signature`,type:`object`,raw:`{
+  heightCm: string;
+  weightKg: string;
+  hr: string;
+  bpSys: string;
+  bpDia: string;
+  tempC: string;
+  tempUnit: 'C' | 'F';
+  spo2: string;
+  breathing: string;
+  painVas: number;
+  fasting: string | null;
+  vaccinationNote: string;
+}`,signature:{properties:[{key:`heightCm`,value:{name:`string`,required:!0}},{key:`weightKg`,value:{name:`string`,required:!0}},{key:`hr`,value:{name:`string`,required:!0}},{key:`bpSys`,value:{name:`string`,required:!0}},{key:`bpDia`,value:{name:`string`,required:!0}},{key:`tempC`,value:{name:`string`,required:!0}},{key:`tempUnit`,value:{name:`union`,raw:`'C' | 'F'`,elements:[{name:`literal`,value:`'C'`},{name:`literal`,value:`'F'`}],required:!0}},{key:`spo2`,value:{name:`string`,required:!0}},{key:`breathing`,value:{name:`string`,required:!0}},{key:`painVas`,value:{name:`number`,required:!0}},{key:`fasting`,value:{name:`union`,raw:`string | null`,elements:[{name:`string`},{name:`null`}],required:!0}},{key:`vaccinationNote`,value:{name:`string`,required:!0}}]},required:!1}},{key:`diagnoses`,value:{name:`unknown`,required:!0}},{key:`plan`,value:{name:`string`,required:!0}},{key:`recordedBy`,value:{name:`string`,required:!0}},{key:`status`,value:{name:`union`,raw:`'draft' | 'signed'`,elements:[{name:`literal`,value:`'draft'`},{name:`literal`,value:`'signed'`}],required:!0}}]}},name:`assessment`}],return:{name:`void`}}},description:`Hands the grounded assessment to test ordering.`},orderActionLabel:{required:!1,tsType:{name:`string`},description:``,defaultValue:{value:`'Order tests'`,computed:!1}}}}}));export{U as a,V as c,Y as i,se as n,z as o,K as r,B as s,X as t};

@@ -88,7 +88,10 @@ export const AddOnReopensEpisode: Story = {
     sections: ADD_ON_EPISODE_SECTIONS,
   },
   play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).getAllByText('2 of 3 ready')).toHaveLength(2);
+    const canvas = within(canvasElement);
+    // Episode progress is stated once; the section states what is outstanding.
+    await expect(canvas.getAllByText('2 of 3 ready')).toHaveLength(1);
+    await expect(canvas.getByText('1 pending')).toBeVisible();
   },
 };
 
@@ -100,7 +103,8 @@ export const ReleasedWithCancelledLine: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getAllByText('1 of 2 ready · 1 unavailable')).toHaveLength(2);
+    await expect(canvas.getAllByText('1 of 2 ready · 1 unavailable')).toHaveLength(1);
+    await expect(canvas.getByText('1 unavailable')).toBeVisible();
     await expect(canvas.getByText('Cancelled')).toBeVisible();
   },
 };
@@ -112,7 +116,8 @@ export const AllCancelledAndDismissed: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getAllByText('No results — episode cancelled')).toHaveLength(2);
+    await expect(canvas.getAllByText('No results — episode cancelled')).toHaveLength(1);
+    await expect(canvas.getByText('1 unavailable')).toBeVisible();
     await expect(canvas.getByText('ALT')).toBeVisible();
     await expect(canvas.queryByText('TSH')).not.toBeInTheDocument();
   },

@@ -9,13 +9,19 @@ import { READINESS } from '../../components/foundations/readiness-data';
 
 const SEARCH_LABEL = 'Find patient by phone, booking code, or name';
 
-function IdentityPlayground({ initial }: { initial?: FrontDeskPatient }) {
+function IdentityPlayground({
+  existingPatients = EXISTING_PATIENTS,
+  initial,
+}: {
+  existingPatients?: FrontDeskPatient[];
+  initial?: FrontDeskPatient;
+}) {
   const [patient, setPatient] = useState<FrontDeskPatient>(
     initial ?? blankWalkIn('walk-in-identity', 27),
   );
   return (
     <CheckInWizard
-      existingPatients={EXISTING_PATIENTS}
+      existingPatients={existingPatients}
       identityRegistry={IDENTITY_REGISTRY}
       onCheckIn={() => {}}
       onPatientChange={setPatient}
@@ -36,9 +42,9 @@ const meta = {
         decision: 'EXTEND (front-desk Step 1) + CREATE PatientResolutionCard/IdentitySearch',
         owner: 'src/features/front-desk',
         evidence:
-          'UX ported from Kura-med/ui-kit `Receptionist/Wizard/Step 1 Identity` (source-kura-ui-kit). Search-first resolution replaces the manual name form: one field understands the three reception doors (exact-phone, booking-code, walk-in name), resolution renders as one card organism, and capturing identity advances the wizard in a single action. Rebound to house tokens, Card/Badge/Avatar/Button/Input/Dialog/DropdownMenu primitives, and Hugeicons; Tailwind, tabler icons, and the upstream pink sex glyph were replaced (sex reads as a text chip — never color alone).',
+          'UX ported from Kura-med/ui-kit `Receptionist/Wizard/Step 1 Identity` (source-kura-ui-kit). One search field understands phone, booking code, or name; the result renders as one resolution card, and selecting a patient advances the wizard in one action. Selection provenance stays visually neutral until the backend reports verified assurance. Rebound to house tokens, Card, Badge, Avatar, Button, Input, and Dialog primitives, with canonical Kura icons.',
         exclusions: [
-          'National ID chip/QR capture (hardware ceremony — menu shows them as Coming soon, matching upstream)',
+          'National ID chip and QR capture (hardware ceremony, deferred)',
           'Upstream StepShell/aside scaffold (this wizard owns its own shell and cart rail)',
         ],
       },
@@ -55,7 +61,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'Step 1 captures who is checking in. One search field resolves phone, booking code, or name; the result renders as a resolution card (known here, known elsewhere, shared phone, booking-linked, candidates, no match). Selecting a minor gates on a present guardian. Capturing identity advances to Step 2 in one action.',
+          'Step 1 finds the patient who is checking in. One search field resolves phone, booking code, or name; the result renders as a resolution card (known here, known elsewhere, shared phone, booking-linked, candidates, no match). Selecting a minor requires a present guardian. Selecting a patient advances to Step 2 in one action.',
       },
     },
   },
@@ -73,12 +79,30 @@ const baseArgs = {
 
 export const BlankWalkIn: Story = {
   args: baseArgs,
+  parameters: { layout: 'fullscreen' },
   render: () => <IdentityPlayground />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getByLabelText(SEARCH_LABEL)).toHaveFocus();
-    await expect(canvas.getByRole('button', { name: /Other ID methods/ })).toBeVisible();
-    await expect(canvas.getByRole('button', { name: 'Continue' })).toBeDisabled();
+    await expect(canvas.getByRole('heading', { level: 2, name: 'Find or create a patient' })).toBeVisible();
+    await expect(canvas.queryByRole('button', { name: /Other ID methods/ })).not.toBeInTheDocument();
+    await expect(canvas.getByRole('button', { name: 'Review details' })).toBeDisabled();
+
+    const workspace = canvasElement.querySelector<HTMLElement>(
+      '[data-slot="check-in-workspace"]',
+    );
+    const panel = canvasElement.querySelector<HTMLElement>(
+      '[data-slot="check-in-step-panel"]',
+    );
+    if (!workspace || !panel) throw new Error('Identity start layout did not render.');
+    const workspaceBounds = workspace.getBoundingClientRect();
+    const panelBounds = panel.getBoundingClientRect();
+    expect(
+      Math.abs(
+        workspaceBounds.top + workspaceBounds.height / 2 -
+          (panelBounds.top + panelBounds.height / 2),
+      ),
+    ).toBeLessThanOrEqual(8);
   },
 };
 
@@ -220,7 +244,7 @@ export const NoMatchNewPatient: Story = {
     await expect(await canvas.findByText('No existing record')).toBeVisible();
 
     // Capturing advances to Step 2 with the phone carried over.
-    await userEvent.click(canvas.getByRole('button', { name: 'Continue as new patient' }));
+    await userEvent.click(canvas.getByRole('button', { name: 'Create a new patient' }));
     await expect(
       await canvas.findByRole('heading', { level: 2, name: /Review & confirm/ }),
     ).toBeVisible();
@@ -236,43 +260,74 @@ export const UnknownBookingCode: Story = {
     await userEvent.type(canvas.getByLabelText(SEARCH_LABEL), 'ZZ99999');
     await expect(await canvas.findByText('No existing record')).toBeVisible();
     await expect(
-      canvas.queryByRole('button', { name: 'Continue as new patient' }),
+      canvas.queryByRole('button', { name: 'Create a new patient' }),
     ).not.toBeInTheDocument();
   },
 };
 
 export const IdentityCaptured: Story = {
-  name: 'Identity captured · re-capture path',
+  name: 'Patient selected · manual entry and change patient path',
   args: baseArgs,
   render: () => {
     const captured: FrontDeskPatient = {
       ...blankWalkIn('walk-in-captured', 28),
-      name: 'Sok Phearom',
-      dob: '1974-03-15',
-      sexAtBirth: 'Male',
-      idNumber: '012345678',
-      phoneNumber: '0931238123',
-      identity: { source: 'existing', lockedFields: ['name', 'dob', 'sexAtBirth'] },
+      name: 'Sokha Chan',
+      dob: '1992-03-14',
+      sexAtBirth: 'Female',
+      idNumber: '',
+      phoneNumber: '12777088',
+      identity: { source: 'manual', lockedFields: [] },
     };
-    return <IdentityPlayground initial={captured} />;
+    return <IdentityPlayground existingPatients={[]} initial={captured} />;
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    // A captured patient reopens on Step 2 (first not-done step); Step 1 stays
-    // reachable to review or re-capture identity.
+    // A selected patient reopens on Step 2 (first not-done step); Step 1 stays
+    // reachable to review or choose another patient.
     await userEvent.click(canvas.getByRole('tab', { name: /Identity/ }));
     await expect(
-      await canvas.findByRole('heading', { level: 2, name: 'Identity captured' }),
+      await canvas.findByRole('heading', { level: 2, name: 'Patient selected' }),
     ).toBeVisible();
-    await expect(canvas.getByText('Captured via existing record')).toBeVisible();
-    await expect(canvas.getByRole('button', { name: 'Continue' })).toBeEnabled();
+    await expect(canvas.getByText('Source: Manual entry')).toBeVisible();
+    await expect(canvas.getByText('Review and edit details on the next step.')).toBeVisible();
+    await expect(canvas.getByRole('button', { name: 'Review details' })).toBeEnabled();
 
-    // Re-capture asks first, then returns to the search.
-    await userEvent.click(canvas.getByRole('button', { name: 'Re-capture' }));
-    await expect(canvas.getByText('Re-capture identity?')).toBeVisible();
-    await userEvent.click(canvas.getByRole('button', { name: 'Yes, re-capture' }));
+    // Changing patients asks first, then returns to the search.
+    await userEvent.click(canvas.getByRole('button', { name: 'Choose a different patient' }));
+    await expect(canvas.getByText('Choose a different patient?')).toBeVisible();
+    await userEvent.click(canvas.getByRole('button', { name: 'Search again' }));
     await expect(await canvas.findByLabelText(SEARCH_LABEL)).toBeVisible();
-    await expect(canvas.getByRole('button', { name: 'Continue' })).toBeDisabled();
+    await expect(canvas.getByRole('button', { name: 'Review details' })).toBeDisabled();
+  },
+};
+
+export const IdentityCapturedMobile: Story = {
+  name: 'Patient selected · narrow viewport and long name',
+  args: baseArgs,
+  globals: { viewport: { value: 'kura390' } },
+  parameters: { chromatic: { viewports: [320, 390] } },
+  render: () => {
+    const captured: FrontDeskPatient = {
+      ...blankWalkIn('walk-in-captured-mobile', 29),
+      name: 'Sokha Chanmony Rattanak Sambath',
+      dob: '1992-03-14',
+      sexAtBirth: 'Female',
+      phoneNumber: '12777088',
+      identity: { source: 'manual', lockedFields: [] },
+    };
+    return <IdentityPlayground existingPatients={[]} initial={captured} />;
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(canvas.getByRole('tab', { name: /Identity/ }));
+    await expect(canvas.getAllByText('Patient selected')).toHaveLength(1);
+    // The name reads twice on this step by design: the identity strip carries
+    // it through all six steps, the card confirms what was just captured.
+    // Both must survive a long name at 390px without clipping the other.
+    await expect(canvas.getAllByText('Sokha Chanmony Rattanak Sambath')).toHaveLength(2);
+    await expect(canvas.getByText('Source: Manual entry')).toBeVisible();
+    await expect(canvas.getByRole('button', { name: 'Choose a different patient' })).toBeVisible();
+    await expect(canvas.getByRole('button', { name: 'Review details' })).toBeEnabled();
   },
 };
 
@@ -327,7 +382,7 @@ export const BookingAlreadyRedeemed: Story = {
     await expect(await canvas.findByText('Code already redeemed')).toBeVisible();
     await expect(canvas.getByText(/may already be checked in/)).toBeVisible();
     // Duplicate-visit risk: the recovery is deliberately secondary, never primary.
-    await expect(canvas.getByRole('button', { name: 'Continue as walk-in anyway' })).toBeVisible();
+    await expect(canvas.getByRole('button', { name: 'Continue as a walk-in' })).toBeVisible();
   },
 };
 
@@ -439,11 +494,11 @@ export const CollisionSupervisorPin: Story = {
 };
 
 /**
- * Provenance survives capture: source + time + locked-field count + the bound
- * booking; re-capture asks first and promises data stays until overwritten.
+ * Selection provenance survives: source + time + locked-field count + the
+ * bound booking; changing patients asks first and preserves data until replaced.
  */
 export const CapturedProvenance: Story = {
-  name: 'Identity captured · provenance and re-capture confirm',
+  name: 'Patient selected · provenance and change patient confirmation',
   args: baseArgs,
   render: () => {
     const draft: FrontDeskPatient = {
@@ -463,18 +518,18 @@ export const CapturedProvenance: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    // A captured patient reopens on Step 2; Step 1 stays reachable for review.
+    // A selected patient reopens on Step 2; Step 1 stays reachable for review.
     await userEvent.click(canvas.getByRole('tab', { name: /Identity/ }));
     await expect(
-      await canvas.findByText('Captured via existing record · 08:31'),
+      await canvas.findByText('Source: Existing Kura record · Captured 08:31'),
     ).toBeVisible();
     await expect(canvas.getByText('3 fields locked')).toBeVisible();
     await expect(canvas.getByText('Booking GW87430')).toBeVisible();
     await expect(canvas.getByText('Q-034')).toBeVisible();
     await expect(canvas.getByText('Arrived 08:24 · 12 min ago')).toBeVisible();
-    await userEvent.click(canvas.getByRole('button', { name: 'Re-capture' }));
-    await expect(canvas.getByText('Re-capture identity?')).toBeVisible();
+    await userEvent.click(canvas.getByRole('button', { name: 'Choose a different patient' }));
+    await expect(canvas.getByText('Choose a different patient?')).toBeVisible();
     await userEvent.click(canvas.getByRole('button', { name: 'Keep current' }));
-    await expect(canvas.queryByText('Re-capture identity?')).not.toBeInTheDocument();
+    await expect(canvas.queryByText('Choose a different patient?')).not.toBeInTheDocument();
   },
 };

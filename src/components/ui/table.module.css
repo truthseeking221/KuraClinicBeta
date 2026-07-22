@@ -2,8 +2,8 @@
   width: 100%;
   overflow-x: auto;
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-card-surface);
-  background: var(--color-surface);
+  border-radius: var(--radius-popover);
+  background: var(--color-background-primary-default);
 }
 
 .table {
@@ -22,20 +22,25 @@
 }
 
 .head {
-  padding: var(--space-2) var(--space-3);
+  padding: var(--space-2-5) var(--space-3);
   text-align: left;
-  font-size: var(--type-2xs);
-  font-weight: var(--weight-semibold);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  font-size: var(--type-base);
+  font-weight: var(--weight-medium);
+  letter-spacing: normal;
+  text-transform: none;
   color: var(--color-text-tertiary);
+  background: var(--color-background-secondary-default);
+  border-top: 1px solid var(--color-border-button-default);
   border-bottom: 1px solid var(--color-border);
   white-space: nowrap;
 }
 
 .cell {
-  padding: var(--space-2) var(--space-3);
+  padding: var(--space-2-5) var(--space-3);
   border-bottom: 1px solid var(--color-border);
+  color: var(--color-text-primary);
+  font-size: var(--type-base);
+  font-weight: var(--weight-medium);
   vertical-align: middle;
 }
 
@@ -56,7 +61,7 @@
 }
 
 .row[data-interactive='true']:hover {
-  background: var(--color-surface-2);
+  background: var(--color-background-primary-hover);
 }
 
 .row[data-interactive='true']:focus-visible {
@@ -65,7 +70,7 @@
 }
 
 .row[data-selected='true'] {
-  background: var(--color-brand-25);
+  background: var(--color-action-primary-subtle);
 }
 
 .numeric {

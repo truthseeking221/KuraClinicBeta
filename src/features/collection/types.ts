@@ -102,3 +102,18 @@ export type SafetyChecks = {
 };
 
 export type TimerTone = 'success' | 'warn' | 'danger';
+
+/**
+ * How the tubes are identified after a draw. A printed Kura sticker keeps the
+ * order identity machine-readable end to end; handwriting is the fallback a
+ * clinic without stickers still needs, and it carries a photo check because
+ * nothing downstream can verify a pen stroke.
+ */
+export type TubeLabelMethod = 'sticker' | 'pen';
+
+/** Photo evidence recorded when the sticker route is used. */
+export type TubeLabelPhotoCheck = {
+  applied: boolean;
+  readable: boolean;
+  photographed: boolean;
+};

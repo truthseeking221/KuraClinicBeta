@@ -1,0 +1,182 @@
+.card {
+  max-width: 44rem;
+}
+
+.subtitle {
+  margin: 0;
+  font-size: var(--type-sm);
+  color: var(--color-text-secondary);
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+/* Physical tubes read as objects, so they sit on their own white tile with the
+   stopper colour carrying identity — paired with its name, never colour alone. */
+.tubes {
+  list-style: none;
+  margin: 0;
+  padding: var(--space-4);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4) var(--space-5);
+  border-radius: var(--radius-card-tile);
+  background: var(--color-surface);
+  box-shadow: var(--elevation-card-tile);
+}
+
+.tube {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+/* Cap + body drawn as one glyph; the sunken band on the body is the spot the
+   label covers, which is what this whole step is about. */
+.tubeGlyph {
+  display: flex;
+  flex-direction: column;
+  width: 20px;
+  height: 56px;
+}
+
+.stopper {
+  height: 16px;
+  border: 1.5px solid;
+  border-radius: 6px 6px 3px 3px;
+}
+
+.tubeBody {
+  position: relative;
+  flex: 1;
+  width: 16px;
+  margin: 0 auto;
+  border: 1px solid var(--color-border-strong);
+  border-top: 0;
+  border-radius: 0 0 8px 8px;
+  background: var(--color-surface);
+}
+
+.tubeBody::after {
+  content: '';
+  position: absolute;
+  inset: 9px 2px auto;
+  height: 18px;
+  border-radius: 2px;
+  background: var(--color-surface-sunken);
+}
+
+.tubeLabel {
+  font-size: var(--type-xs);
+  color: var(--color-text-primary);
+  white-space: nowrap;
+}
+
+.methods {
+  min-width: 0;
+}
+
+.methodTitle {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-2);
+  font-weight: var(--weight-medium);
+}
+
+/* The badge moves to its own line whole instead of breaking mid-word at
+   narrow widths. */
+.methodTitle :global([data-slot='badge']) {
+  white-space: nowrap;
+}
+
+/* What the operator copies onto each tube. The sunken band echoes the label
+   band on the tube glyphs above: this text is what goes in that spot. */
+.penTemplate {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border-radius: var(--radius-card-tile);
+  background: var(--color-surface);
+  box-shadow: var(--elevation-card-tile);
+}
+
+.templateCaption {
+  margin: 0;
+  font-size: var(--type-xs);
+  color: var(--color-text-tertiary);
+}
+
+.templateLine {
+  margin: 0;
+  align-self: flex-start;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-control);
+  background: var(--color-surface-sunken);
+  font-family: var(--font-family-mono);
+  font-size: var(--type-md);
+  letter-spacing: 0.04em;
+  color: var(--color-text-primary);
+}
+
+/* The sticker route's evidence requirement lives on its own white tile so the
+   checklist reads as one obligation, not three floating rows. */
+.photoBlock {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-radius: var(--radius-card-tile);
+  background: var(--color-surface);
+  box-shadow: var(--elevation-card-tile);
+}
+
+.photoCaption {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  font-size: var(--type-sm);
+  font-weight: var(--weight-medium);
+  color: var(--color-text-primary);
+}
+
+.photoList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-top: 1px solid var(--color-border);
+}
+
+.blocked {
+  margin: 0 auto 0 0;
+  min-width: 0;
+  font-size: var(--type-sm);
+  color: var(--color-status-warning-fg);
+}
+
+@media (max-width: 599px) {
+  .footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .footer :global([data-slot='button']) {
+    width: 100%;
+  }
+}

@@ -9,13 +9,13 @@
     calc(100vw - (var(--space-page-gutter) * 2))
   );
   grid-template-columns: minmax(0, 1fr);
-  align-items: start;
+  align-items: center;
   gap: var(--space-3);
-  padding: var(--space-3);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-card-surface);
-  background: var(--color-surface);
-  box-shadow: var(--shadow-overlay);
+  padding: var(--space-4);
+  border: 1px solid var(--color-border-button-default);
+  border-radius: var(--radius-popover);
+  background: var(--color-background-primary-default);
+  box-shadow: var(--shadow-dropdown);
   color: var(--color-text-primary);
 }
 
@@ -26,29 +26,16 @@
   gap: var(--space-stack-label);
 }
 
-.toast:has(.icon):not(:has(.closeButton)) {
+.toast:has(.icon) {
   grid-template-columns: auto minmax(0, 1fr);
 }
 
-.toast:has(.closeButton):not(:has(.icon)) {
-  grid-template-columns: minmax(0, 1fr) auto;
-}
-
-.toast:has(.closeButton):has(.icon) {
-  grid-template-columns: auto minmax(0, 1fr) auto;
-}
-
-.closeButton,
 .icon {
   grid-row: 1;
 }
 
 .icon {
   grid-column: 1;
-}
-
-.closeButton {
-  grid-column: -2;
 }
 
 .toast:has(.icon) .content {
@@ -58,22 +45,22 @@
 .title {
   color: var(--color-text-primary);
   font-size: var(--type-sm);
-  font-weight: var(--weight-semibold);
+  font-weight: var(--weight-medium);
   line-height: var(--leading-normal);
   overflow-wrap: anywhere;
 }
 
 .description {
-  color: var(--color-text-tertiary);
-  font-size: var(--type-xs);
+  color: var(--color-text-secondary);
+  font-size: var(--type-base);
   line-height: var(--leading-normal);
   overflow-wrap: anywhere;
 }
 
 .icon {
   display: inline-flex;
-  width: var(--space-6);
-  height: var(--space-6);
+  width: var(--space-10);
+  height: var(--space-10);
   align-items: center;
   justify-content: center;
   border-radius: var(--radius-full);
@@ -82,8 +69,8 @@
 }
 
 .icon svg {
-  width: var(--space-4);
-  height: var(--space-4);
+  width: var(--space-5);
+  height: var(--space-5);
 }
 
 .success .icon {
@@ -107,8 +94,7 @@
 }
 
 .actionButton,
-.cancelButton,
-.closeButton {
+.cancelButton {
   min-height: var(--control-h-sm);
   border: 0;
   border-radius: var(--radius-control-compact);
@@ -139,32 +125,15 @@
 }
 
 .actionButton:hover,
-.cancelButton:hover,
-.closeButton:hover {
+.cancelButton:hover {
   background: var(--color-surface-2);
   color: var(--color-text-primary);
 }
 
 .actionButton:focus-visible,
-.cancelButton:focus-visible,
-.closeButton:focus-visible {
+.cancelButton:focus-visible {
   outline: none;
   box-shadow: var(--shadow-focus);
-}
-
-.closeButton {
-  display: inline-flex;
-  width: var(--space-6);
-  height: var(--space-6);
-  min-height: 0;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-}
-
-.closeButton svg {
-  width: var(--space-4);
-  height: var(--space-4);
 }
 
 .loadingIcon {
@@ -185,8 +154,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .actionButton,
-  .cancelButton,
-  .closeButton {
+  .cancelButton {
     transition: none;
   }
 

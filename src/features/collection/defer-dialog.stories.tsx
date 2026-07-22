@@ -107,9 +107,13 @@ export const Default: Story = {
     const action = canvas.getByRole('button', { name: 'Defer draw' });
     await expect(action).toBeDisabled();
 
-    await userEvent.selectOptions(
-      canvas.getByRole('combobox', { name: 'Reason' }),
-      'Difficult vein',
+    // The reason list is a Base UI listbox in a portal, so it is opened and
+    // chosen the way an operator does rather than set as a native value.
+    await userEvent.click(canvas.getByRole('combobox', { name: 'Reason' }));
+    await userEvent.click(
+      await within(canvasElement.ownerDocument.body).findByRole('option', {
+        name: 'Difficult vein',
+      }),
     );
     await userEvent.type(
       canvas.getByRole('textbox', { name: 'Note for the next attempt (optional)' }),

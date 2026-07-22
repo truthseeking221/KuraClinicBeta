@@ -1,0 +1,81 @@
+.header {
+  padding-bottom: var(--space-2);
+}
+
+.content {
+  padding-block: 0;
+}
+
+.footer {
+  padding-top: var(--space-2);
+}
+
+.viewAll {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--color-text-secondary);
+  font-size: var(--type-sm);
+  font-weight: var(--weight-medium);
+  text-decoration: none;
+  transition: color var(--motion-color);
+}
+
+.viewAll:hover {
+  color: var(--color-text-brand);
+}
+
+.viewAll:focus-visible {
+  border-radius: var(--radius-control-compact);
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
+
+.message {
+  display: flex;
+  align-items: flex-start;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.message p,
+.unavailable {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--type-sm);
+  line-height: var(--leading-normal);
+}
+
+.loadingItem {
+  grid-template-columns: auto minmax(0, 1fr);
+  margin-inline: calc(var(--space-2) * -1);
+  width: calc(100% + (var(--space-2) * 2));
+}
+
+.avatarSkeleton {
+  width: var(--space-8);
+  height: var(--space-8);
+}
+
+.nameSkeleton {
+  width: min(45%, var(--space-32));
+  height: var(--space-3);
+}
+
+.detailSkeleton {
+  width: min(80%, var(--space-48));
+  height: var(--space-3);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .viewAll {
+    transition: none;
+  }
+}
+
+/* Narrow viewports give the identity rows back every pixel the tray can spare. */
+@media (max-width: 480px) {
+  .preview {
+    --card-inset: var(--space-3);
+  }
+}

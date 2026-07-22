@@ -10,7 +10,7 @@ import {
 } from './accordion';
 
 const meta = {
-  title: 'Design System/Primitives/Accordion',
+  title: 'Design System/Components/Accordion',
   component: Accordion,
   tags: ['autodocs', 'source-reui', 'adapted-kura'],
   parameters: {

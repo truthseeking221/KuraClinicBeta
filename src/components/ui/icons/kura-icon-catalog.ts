@@ -100,6 +100,7 @@ export const KURA_ICON_CATEGORIES: readonly KuraIconCatalogCategory[] = [
       icon("DragIcon", "Drag or reorder"),
       icon("GridViewIcon", "Grid view"),
       icon("ListViewIcon", "List view"),
+      icon("PanelRightIcon", "Right panel"),
       icon(
         "ChevronDoubleCloseIcon",
         "Close panel",

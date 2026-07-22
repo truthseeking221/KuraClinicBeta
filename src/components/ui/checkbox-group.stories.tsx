@@ -18,9 +18,9 @@ import {
 } from './index';
 
 const meta = {
-  title: 'Design System/Patterns/CheckboxGroup',
+  title: 'Design System/Patterns/Checkbox Group',
   component: CheckboxGroup,
-  tags: ['autodocs', 'source-reui', 'adapted-kura'],
+  tags: ['autodocs', 'source-kura', 'adapted-kura'],
   parameters: {
     layout: 'centered',
     chromatic: {
@@ -34,9 +34,9 @@ const meta = {
           'Kura has a canonical Checkbox primitive but no semantic owner for a related multiple-choice set. A fieldset and legend add native group semantics while preserving Checkbox as the only binary control owner.',
       },
       source: {
-        vendor: 'ReUI',
-        registryItem: 'checkbox — group, inline, nested, card, icon, avatar, and badge examples',
-        sourceUrl: 'https://reui.io/components/checkbox',
+        vendor: 'Kura',
+        registryItem: 'checkbox',
+        visualReference: 'Kura checkbox',
       },
       binding: {
         colors: 'kura-semantic-and-delegated-to-kura-children',

@@ -22,7 +22,9 @@ const BASE: DoctorOnboardingSnapshot = {
   banking: 'not_eligible',
 };
 
-function snapshot(overrides: Partial<DoctorOnboardingSnapshot> = {}): DoctorOnboardingSnapshot {
+function snapshot(
+  overrides: Partial<DoctorOnboardingSnapshot> = {},
+): DoctorOnboardingSnapshot {
   return { ...BASE, ...overrides };
 }
 
@@ -56,7 +58,8 @@ const meta = {
       contract: {
         status: 'source-backed-design-target',
         backendMapping: 'direct-with-explicit-ui-projection',
-        backendRef: 'Kura-med/kura-platform@8b5772caefd1aaace2825f481ebca766894eca2a',
+        backendRef:
+          'Kura-med/kura-platform@8b5772caefd1aaace2825f481ebca766894eca2a',
         consulted: [
           'docs/design/onboarding-auth/auth-onboarding-product-spec.md',
           'docs/design/doctor-auth-licence/kyd-grill-decision-log.md',
@@ -65,8 +68,7 @@ const meta = {
           'apps/services/order-ms/src/app/order/order.service.ts',
           'docs/design/doctor-banking/aof-product-spec.md',
         ],
-        note:
-          'The source repository is private. These stories mirror current contract states and enforcement seams; they do not claim backend delivery inside this local Storybook workspace.',
+        note: 'The source repository is private. These stories mirror current contract states and enforcement seams; they do not claim backend delivery inside this local Storybook workspace.',
       },
       intake: {
         decision: 'FEATURE-OWN',
@@ -122,18 +124,28 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** A new owner may use the clinic while choosing to upload a licence later. */
-export const NewOwnerUploadLater: Story = {
+/** A new owner may use the clinic while the professional licence is still required for attribution. */
+export const NewOwnerNeedsLicence: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByRole('heading', { name: 'Complete your medical licence' })).toBeVisible();
     await expect(
-      canvas.getByText('Browse catalog', { selector: '[data-slot="item-title"]' }).closest('[data-slot="item"]'),
+      canvas.getByRole('heading', { name: 'Complete your medical licence' }),
+    ).toBeVisible();
+    await expect(
+      canvas
+        .getByText('Browse catalog', { selector: '[data-slot="item-title"]' })
+        .closest('[data-slot="item"]'),
     ).toHaveTextContent('Available');
     await expect(
-      canvas.getByText('Place clinic order', { selector: '[data-slot="item-title"]' }).closest('[data-slot="item"]'),
+      canvas
+        .getByText('Place clinic order', {
+          selector: '[data-slot="item-title"]',
+        })
+        .closest('[data-slot="item"]'),
     ).toHaveTextContent('Licence required');
-    await expect(canvas.getByRole('button', { name: 'Verify medical licence' })).toBeVisible();
+    await expect(
+      canvas.getByRole('button', { name: 'Verify medical licence' }),
+    ).toBeVisible();
   },
 };
 
@@ -141,9 +153,15 @@ export const LicenceUnderReview: Story = {
   args: { snapshot: snapshot({ licence: 'pending_review' }) },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByRole('heading', { name: 'Your licence is under review' })).toBeVisible();
-    await expect(canvas.getByRole('button', { name: 'View licence status' })).toBeVisible();
-    await expect(canvas.queryByRole('button', { name: 'Start clinic order' })).not.toBeInTheDocument();
+    await expect(
+      canvas.getByRole('heading', { name: 'Your licence is under review' }),
+    ).toBeVisible();
+    await expect(
+      canvas.getByRole('button', { name: 'View licence status' }),
+    ).toBeVisible();
+    await expect(
+      canvas.queryByRole('button', { name: 'Start clinic order' }),
+    ).not.toBeInTheDocument();
   },
 };
 
@@ -151,10 +169,18 @@ export const RejectedWithRecovery: Story = {
   args: { snapshot: snapshot({ licence: 'rejected' }) },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByRole('heading', { name: 'Your licence needs attention' })).toBeVisible();
-    await expect(canvas.getByRole('button', { name: 'Review and resubmit' })).toBeVisible();
-    await userEvent.click(canvas.getByRole('button', { name: 'Setup details (7 checks)' }));
-    await expect(canvas.getByText('Review the reason and submit a corrected document.')).toBeVisible();
+    await expect(
+      canvas.getByRole('heading', { name: 'Your licence needs attention' }),
+    ).toBeVisible();
+    await expect(
+      canvas.getByRole('button', { name: 'Review and resubmit' }),
+    ).toBeVisible();
+    await userEvent.click(
+      canvas.getByRole('button', { name: 'Setup details (7 checks)' }),
+    );
+    await expect(
+      canvas.getByText('Review the reason and submit a corrected document.'),
+    ).toBeVisible();
   },
 };
 
@@ -164,8 +190,12 @@ export const VerifiedReady: Story = {
   },
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByRole('heading', { name: 'You’re ready to work' })).toBeVisible();
-    const primaryAction = canvas.getByRole('button', { name: 'Open clinic home' });
+    await expect(
+      canvas.getByRole('heading', { name: 'You’re ready to work' }),
+    ).toBeVisible();
+    const primaryAction = canvas.getByRole('button', {
+      name: 'Open clinic home',
+    });
     await expect(primaryAction).toBeEnabled();
     await userEvent.click(primaryAction);
     await expect(args.onPrimaryAction).toHaveBeenCalledWith('open_home');
@@ -179,11 +209,19 @@ export const ExpiringStillLive: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByRole('heading', { name: 'Renew your licence soon' })).toBeVisible();
     await expect(
-      canvas.getByText('Place clinic order', { selector: '[data-slot="item-title"]' }).closest('[data-slot="item"]'),
+      canvas.getByRole('heading', { name: 'Renew your licence soon' }),
+    ).toBeVisible();
+    await expect(
+      canvas
+        .getByText('Place clinic order', {
+          selector: '[data-slot="item-title"]',
+        })
+        .closest('[data-slot="item"]'),
     ).toHaveTextContent('Available');
-    await expect(canvas.getByRole('button', { name: 'Renew licence' })).toBeVisible();
+    await expect(
+      canvas.getByRole('button', { name: 'Renew licence' }),
+    ).toBeVisible();
   },
 };
 
@@ -193,9 +231,15 @@ export const GracePeriodStillLive: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByRole('heading', { name: 'Renew your licence soon' })).toBeVisible();
     await expect(
-      canvas.getByText('Place clinic order', { selector: '[data-slot="item-title"]' }).closest('[data-slot="item"]'),
+      canvas.getByRole('heading', { name: 'Renew your licence soon' }),
+    ).toBeVisible();
+    await expect(
+      canvas
+        .getByText('Place clinic order', {
+          selector: '[data-slot="item-title"]',
+        })
+        .closest('[data-slot="item"]'),
     ).toHaveTextContent('Available');
   },
 };
@@ -204,11 +248,19 @@ export const LapsedBlocksOnlyNewOrders: Story = {
   args: { snapshot: snapshot({ licence: 'lapsed' }) },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByRole('heading', { name: 'Renew your medical licence' })).toBeVisible();
     await expect(
-      canvas.getByText('Place clinic order', { selector: '[data-slot="item-title"]' }).closest('[data-slot="item"]'),
+      canvas.getByRole('heading', { name: 'Renew your medical licence' }),
+    ).toBeVisible();
+    await expect(
+      canvas
+        .getByText('Place clinic order', {
+          selector: '[data-slot="item-title"]',
+        })
+        .closest('[data-slot="item"]'),
     ).toHaveTextContent('Licence required');
-    await expect(canvas.getByRole('button', { name: 'Renew licence' })).toBeVisible();
+    await expect(
+      canvas.getByRole('button', { name: 'Renew licence' }),
+    ).toBeVisible();
   },
 };
 
@@ -225,11 +277,21 @@ export const DelegatedOrderingWhileOwnLicenceReviews: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByRole('heading', { name: 'Ready to work with another prescriber' })).toBeVisible();
     await expect(
-      canvas.getByText('Place clinic order', { selector: '[data-slot="item-title"]' }).closest('[data-slot="item"]'),
+      canvas.getByRole('heading', {
+        name: 'Ready to work with another prescriber',
+      }),
+    ).toBeVisible();
+    await expect(
+      canvas
+        .getByText('Place clinic order', {
+          selector: '[data-slot="item-title"]',
+        })
+        .closest('[data-slot="item"]'),
     ).toHaveTextContent('Available');
-    await expect(canvas.getByRole('button', { name: 'View licence status' })).toBeVisible();
+    await expect(
+      canvas.getByRole('button', { name: 'View licence status' }),
+    ).toBeVisible();
   },
 };
 
@@ -243,10 +305,18 @@ export const MissingOrderCapability: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByRole('heading', { name: 'Ask for order access' })).toBeVisible();
-    await expect(canvas.getByRole('button', { name: 'Request order access' })).toBeVisible();
     await expect(
-      canvas.getByText('Place clinic order', { selector: '[data-slot="item-title"]' }).closest('[data-slot="item"]'),
+      canvas.getByRole('heading', { name: 'Ask for order access' }),
+    ).toBeVisible();
+    await expect(
+      canvas.getByRole('button', { name: 'Request order access' }),
+    ).toBeVisible();
+    await expect(
+      canvas
+        .getByText('Place clinic order', {
+          selector: '[data-slot="item-title"]',
+        })
+        .closest('[data-slot="item"]'),
     ).toHaveTextContent('Permission required');
   },
 };
@@ -262,24 +332,39 @@ export const BranchScopeBlocked: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByRole('heading', { name: 'Choose an assigned branch' })).toBeVisible();
-    await expect(canvas.getByRole('button', { name: 'Choose an assigned branch' })).toBeVisible();
     await expect(
-      canvas.getByText('Browse catalog', { selector: '[data-slot="item-title"]' }).closest('[data-slot="item"]'),
+      canvas.getByRole('heading', { name: 'Choose an assigned branch' }),
+    ).toBeVisible();
+    await expect(
+      canvas.getByRole('button', { name: 'Choose an assigned branch' }),
+    ).toBeVisible();
+    await expect(
+      canvas
+        .getByText('Browse catalog', { selector: '[data-slot="item-title"]' })
+        .closest('[data-slot="item"]'),
     ).toHaveTextContent('Blocked');
   },
 };
 
 export const BankingActionIsNotAnOnboardingTier: Story = {
   args: {
-    snapshot: snapshot({ licence: 'verified', banking: 'self_action_required' }),
+    snapshot: snapshot({
+      licence: 'verified',
+      banking: 'self_action_required',
+    }),
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByRole('heading', { name: 'Complete one payment step' })).toBeVisible();
-    await expect(canvas.getByRole('button', { name: 'Complete payment step' })).toBeVisible();
     await expect(
-      canvas.getByText('Doctor banking', { selector: '[data-slot="item-title"]' }).closest('[data-slot="item"]'),
+      canvas.getByRole('heading', { name: 'Complete one payment step' }),
+    ).toBeVisible();
+    await expect(
+      canvas.getByRole('button', { name: 'Complete payment step' }),
+    ).toBeVisible();
+    await expect(
+      canvas
+        .getByText('Doctor banking', { selector: '[data-slot="item-title"]' })
+        .closest('[data-slot="item"]'),
     ).toHaveTextContent('Action needed');
   },
 };
@@ -298,9 +383,15 @@ export const DelegatedBankingPrivacy: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByRole('button', { name: 'Notify prescriber' })).toBeVisible();
-    await expect(canvas.queryByRole('button', { name: /banking/i })).not.toBeInTheDocument();
-    await expect(canvas.queryByText(/exact balance|masked account|mandate/i)).not.toBeInTheDocument();
+    await expect(
+      canvas.getByRole('button', { name: 'Notify prescriber' }),
+    ).toBeVisible();
+    await expect(
+      canvas.queryByRole('button', { name: /banking/i }),
+    ).not.toBeInTheDocument();
+    await expect(
+      canvas.queryByText(/exact balance|masked account|mandate/i),
+    ).not.toBeInTheDocument();
   },
 };
 
@@ -314,11 +405,15 @@ export const ConflictingFactsFailClosed: Story = {
   },
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByText('Setup details need to be refreshed')).toBeVisible();
+    await expect(
+      canvas.getByText('Setup details need to be refreshed'),
+    ).toBeVisible();
     const refresh = canvas.getByRole('button', { name: 'Refresh setup' });
     await userEvent.click(refresh);
     await expect(args.onPrimaryAction).toHaveBeenCalledWith('refresh_status');
-    await expect(canvas.queryByRole('button', { name: 'Open clinic home' })).not.toBeInTheDocument();
+    await expect(
+      canvas.queryByRole('button', { name: 'Open clinic home' }),
+    ).not.toBeInTheDocument();
   },
 };
 
@@ -329,8 +424,12 @@ export const Mobile320: Story = {
   parameters: { viewport: { defaultViewport: 'kura320' } },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByRole('button', { name: 'View licence status' })).toBeVisible();
-    await expect(canvasElement.ownerDocument.documentElement.scrollWidth).toBeLessThanOrEqual(
+    await expect(
+      canvas.getByRole('button', { name: 'View licence status' }),
+    ).toBeVisible();
+    await expect(
+      canvasElement.ownerDocument.documentElement.scrollWidth,
+    ).toBeLessThanOrEqual(
       canvasElement.ownerDocument.documentElement.clientWidth,
     );
   },
@@ -343,7 +442,9 @@ export const MobileReady: Story = {
   parameters: { viewport: { defaultViewport: 'kura320' } },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByRole('button', { name: 'Open clinic home' })).toBeVisible();
+    await expect(
+      canvas.getByRole('button', { name: 'Open clinic home' }),
+    ).toBeVisible();
   },
 };
 
@@ -354,22 +455,29 @@ export const MobileRejectedRecovery: Story = {
   parameters: { viewport: { defaultViewport: 'kura320' } },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByRole('button', { name: 'Review and resubmit' })).toBeVisible();
+    await expect(
+      canvas.getByRole('button', { name: 'Review and resubmit' }),
+    ).toBeVisible();
   },
 };
 
 export const LongClinicContextMobile: Story = {
   args: {
     actorName: 'Dr. Sokha Vannak Chansopheakmony',
-    workspaceName: 'Mekong International Family Medicine and Community Care Centre',
+    workspaceName:
+      'Mekong International Family Medicine and Community Care Centre',
     branchName: 'Preah Norodom Boulevard Specialist Clinic',
     snapshot: snapshot({ licence: 'pending_review', branch: 'active' }),
   },
   parameters: { viewport: { defaultViewport: 'kura320' } },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByText(/Preah Norodom Boulevard Specialist Clinic/i)).toBeVisible();
-    await expect(canvasElement.ownerDocument.documentElement.scrollWidth).toBeLessThanOrEqual(
+    await expect(
+      canvas.getByText(/Preah Norodom Boulevard Specialist Clinic/i),
+    ).toBeVisible();
+    await expect(
+      canvasElement.ownerDocument.documentElement.scrollWidth,
+    ).toBeLessThanOrEqual(
       canvasElement.ownerDocument.documentElement.clientWidth,
     );
   },

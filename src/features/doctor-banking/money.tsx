@@ -1,4 +1,7 @@
+'use client';
+
 import { MoneyText } from '../../components/ui';
+import { useT } from '../../components/foundations/i18n';
 
 import { balanceDirection, splitSignedUsdMinorForDisplay } from './logic';
 import type { Amount, SignedMoney } from './types';
@@ -24,19 +27,20 @@ export function SignedMoneyText({
   className?: string;
   announceDirection?: boolean;
 }) {
+  const t = useT();
   const display = splitSignedUsdMinorForDisplay(value.minor);
   if (display.kind === 'unavailable') {
-    return <span className={className}>{display.text}</span>;
+    return <span className={className}>{t(display.text)}</span>;
   }
 
   const direction = balanceDirection(value.minor);
   const label =
     direction === 'doctor-owes'
-      ? 'Doctor owes Kura'
+      ? t('Doctor owes Kura')
       : direction === 'kura-owes'
-        ? 'Kura owes doctor'
+        ? t('Kura owes doctor')
         : direction === 'settled'
-          ? 'Settled balance'
+          ? t('Settled balance')
           : undefined;
 
   return (

@@ -1,6 +1,6 @@
 # Kura Clinic Product Truth Pack
 
-Last consolidated: 2026-07-14.
+Last consolidated: 2026-07-21.
 
 This folder is the single entry point for product logic, journeys, business rules, design specifications, and audits for the Kura Clinic application. It covers the doctor, receptionist, phlebotomist, Kura operations, courier/lab, patient, payer, and finance views of the same episode of care.
 
@@ -13,21 +13,23 @@ Read in this order:
 1. [Complete Business, Product & Clinical Handbook](00-source-of-truth/handbook/Kura_Complete_Business_Product_Clinical_Handbook_2026-07-14.docx) for the compiled business-to-clinical operating-system narrative. Treat its evidence labels and source register as part of the document; it does not override higher-authority sources below.
 2. [Clinic operations domain truth](00-source-of-truth/clinic-operations-domain-truth.md) for the current non-negotiable rules and state machines.
 3. [End-to-end journeys](01-journeys/end-to-end-journeys.md) for complete cross-role lifecycle flows.
-4. [Journey catalog](01-journeys/journey-catalog.md) to find every product surface and journey ID.
-5. [Journey case matrix](01-journeys/journey-case-matrix.md) for happy, reject, exception, concurrency, and recovery cases.
-6. [Source register](05-traceability/source-register.md) when two documents appear to conflict.
-7. Legacy analysis/specification documents only for deeper historical detail or component behavior.
+4. [Doctor care-loop map](01-journeys/doctor-care-loop-map.md) for the doctor-centered trigger-to-closure projection and required handoffs.
+5. [Doctor journey coverage matrix](01-journeys/doctor-journey-coverage-matrix.md) for every doctor-direct and doctor-impacting journey, actor, readiness state, and case count.
+6. [Journey catalog](01-journeys/journey-catalog.md) to find every product surface and journey ID.
+7. [Journey case matrix](01-journeys/journey-case-matrix.md) for happy, reject, exception, concurrency, and recovery cases.
+8. [Source register](05-traceability/source-register.md) when two documents appear to conflict.
+9. Legacy analysis/specification documents only for deeper historical detail or component behavior.
 
 ## Authority order
 
 When two sources disagree, use this order:
 
-1. Current clinic domain code and the domain-truth document.
-2. Explicitly resolved business decisions in Kura Notion.
-3. Current executable application behavior.
-4. Kura platform/clinic architecture and service contracts.
-5. Figma journeys and component flows.
-6. Older product analysis, business specs, and design specs.
+1. Current backend code, migrations, contracts, and tests in [`Kura-med/kura-platform`](https://github.com/Kura-med/kura-platform).
+2. Accepted, non-superseded platform ADRs and specifications for intended behavior, with built status checked separately.
+3. The clinic domain-truth document and explicitly resolved business decisions.
+4. Current Storybook and prototype behavior as implementation evidence only.
+5. Legacy UI kit, receptionist, phlebotomist, and DCM sources as historical evidence only.
+6. Figma journeys, older analysis, and older specifications.
 
 Delivery status is a separate question. A rule may be decided but not implemented; a screen may be implemented but still violate the decided rule. The coverage fields in this pack preserve that distinction.
 
@@ -43,6 +45,8 @@ docs/kura-clinic/
 │   └── product-goal.md
 ├── 01-journeys/
 │   ├── end-to-end-journeys.md
+│   ├── doctor-care-loop-map.md
+│   ├── doctor-journey-coverage-matrix.md
 │   ├── journey-catalog.md
 │   ├── journey-case-matrix.md
 │   ├── lab-catalog-order-journey.md
@@ -138,4 +142,4 @@ Kura is not declared a complete EMR by this pack. Insurance claims, blood-in/sen
 
 ## Known source limitation
 
-The ChatGPT “Kura project” could not be enumerated through the available project/browser bridge. This pack therefore does not claim that private ChatGPT project conversations were reviewed. The gap is recorded in the [source register](05-traceability/source-register.md); all available local code/docs, the supplied Figma journeys, GitHub context, and relevant Notion pages were used.
+The ChatGPT “Kura project” could not be enumerated through the available project/browser bridge. This pack therefore does not claim that private ChatGPT project conversations were reviewed. The gap is recorded in the [source register](05-traceability/source-register.md). Reviewed code sources now include the current Kura platform plus the legacy UI kit, receptionist, phlebotomist, and FINAL DCM repositories at pinned evidence refs.

@@ -2,24 +2,8 @@ import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import { expect, fn, userEvent, within } from 'storybook/test';
 
 import { PaymentReceipt } from './payment-receipt';
-import type { CartItem, CartPayment } from './types';
+import { FRONT_DESK_PAYMENT_DEMO_SCENARIOS } from './demo-data';
 import { READINESS } from '../../components/foundations/readiness-data';
-
-const ITEMS: CartItem[] = [
-  { id: 'hba1c', kind: 'lab', name: 'HbA1c', priceMinor: '900', currencyCode: 'USD', qty: 1 },
-  { id: 'lipid', kind: 'lab', name: 'Lipid panel', priceMinor: '1200', currencyCode: 'USD', qty: 1 },
-];
-
-const PAID: CartPayment = {
-  status: 'confirmed',
-  method: 'cash',
-  tendered: '25',
-  changeMinor: '400',
-  receiptId: 'R-58213',
-  confirmedAt: '09:42',
-  amountMinor: '2100',
-  cashier: 'Linh Nguyen',
-};
 
 const meta = {
   title: 'Clinic/Front Desk/Payment Receipt',
@@ -52,10 +36,7 @@ const meta = {
     },
   },
   args: {
-    patientName: 'Dara Phan',
-    items: ITEMS,
-    payment: PAID,
-    branchLabel: 'Branch BKK1',
+    ...FRONT_DESK_PAYMENT_DEMO_SCENARIOS['payment-paid'],
     onPrint: fn(),
   },
 } satisfies Meta<typeof PaymentReceipt>;
@@ -80,15 +61,7 @@ export const Paid: Story = {
 /** A paid-edit adjustment: the new receipt references the original, never edits it. */
 export const SupplementalChain: Story = {
   args: {
-    payment: {
-      ...PAID,
-      receiptId: 'R-58214',
-      supplementalDue: true,
-      previousReceiptId: 'R-58213',
-      previousPaidAmountMinor: '2100',
-      amountMinor: '600',
-    },
-    items: [...ITEMS, { id: 'cbc', kind: 'lab', name: 'CBC', priceMinor: '600', currencyCode: 'USD', qty: 1 }],
+    ...FRONT_DESK_PAYMENT_DEMO_SCENARIOS['payment-supplemental'],
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
@@ -100,7 +73,7 @@ export const SupplementalChain: Story = {
 
 /** Voided evidence stays readable — history is never deleted. */
 export const VoidedEvidence: Story = {
-  args: { voided: true },
+  args: FRONT_DESK_PAYMENT_DEMO_SCENARIOS['payment-voided'],
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getByText('Voided')).toBeVisible();

@@ -5,7 +5,12 @@ import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 import { AppShell } from '../../components/shared/app-shell';
 
 import { CheckInWizard } from './check-in-wizard';
-import { blankWalkIn, DESK_VISITS, DESK_VISITS_LONG_WAIT, EXISTING_PATIENTS } from './demo-data';
+import {
+  blankWalkIn,
+  DESK_VISITS,
+  EXISTING_PATIENTS,
+  FRONT_DESK_QUEUE_DEMO_SCENARIOS,
+} from './demo-data';
 import { DeskQueue } from './desk-queue';
 import type { DeskVisit, FrontDeskPatient } from './types';
 import { READINESS } from '../../components/foundations/readiness-data';
@@ -13,7 +18,7 @@ import { READINESS } from '../../components/foundations/readiness-data';
 const meta = {
   title: 'Clinic/Front Desk/Desk Queue',
   component: DeskQueue,
-  tags: ['autodocs', 'adapted-kura'],
+  tags: ['autodocs', 'source-reui', 'adapted-kura'],
   parameters: {
     layout: 'padded',
     kura: {
@@ -25,10 +30,20 @@ const meta = {
           'kura-platform has no queue, visit, or check-in engine today — no controller, proto, or enum. This surface is the reception workbench the truth pack mandates (REC-01/02/05, workbench lifecycle §5.1) and must not be read as an executable backend capability.',
       },
       intake: {
-        decision: 'FEATURE-OWN',
+        decision: 'DOMAIN-ADAPT',
         owner: 'src/features/front-desk',
         evidence:
-          'Legacy prototype had no queue surface either (nav stub only); the truth pack §5.1 workbench lifecycle and §7 queue scenario contract define it. Composes canonical Badge, Button, Alert, Skeleton, and shared EmptyState.',
+          'ReUI data-grid-base-7 supplies the dense identity/facts/action grid anatomy. Kura keeps its canonical DataGrid, receptionist-owned ordering and actions, responsive Item composition, semantic tokens, and all queue states.',
+        exclusions: [
+          'Progress rings do not represent a visit lifecycle and were removed.',
+          'Search, user sorting, filters, and pagination were removed because this short live queue must preserve authoritative urgency order.',
+          'ReUI icons, toast actions, module data, and vendor namespace were not promoted.',
+        ],
+      },
+      source: {
+        vendor: 'ReUI',
+        registryItem: 'data-grid-base-7',
+        visualReference: 'https://reui.io/preview/base/data-grid-base-7',
       },
       journeys: ['REC-01-check-in-planned-visit', 'REC-02-walk-in-check-in', 'REC-05-queue-for-phlebotomy', 'WQ-09-empty-error-stale-worklist'],
       binding: {
@@ -43,12 +58,12 @@ const meta = {
     docs: {
       description: {
         component:
-          'Desk arrivals queue. Each row states the independent lifecycle facts — visit stage, identity assurance, payment — and offers exactly one next action derived from those axes (resume an unfinished check-in, or queue a resolved identity for phlebotomy). Payment success never advances the visit axis. Later stages are owned by phlebotomy and only observed here.',
+          'Reception worklist adapted from ReUI data-grid-base-7. Each row keeps visit stage, identity assurance, payment, reception wait, and the one valid desk action separate. Reception wait ends at handoff, so downstream visits never keep raising false desk escalations. Completed visits are available in a secondary disclosure instead of competing with active work.',
       },
     },
   },
   args: {
-    visits: DESK_VISITS,
+    visits: FRONT_DESK_QUEUE_DEMO_SCENARIOS['queue-default'].visits,
     onResumeVisit: fn(),
     onQueueForDraw: fn(),
     onNewWalkIn: fn(),
@@ -67,7 +82,8 @@ export const Default: Story = {
     await expect(canvas.getByText('5 in progress · 1 completed today')).toBeVisible();
 
     // Unfinished check-ins first; each row carries independent axis facts.
-    const rows = within(canvas.getByRole('list', { name: "Today's visits" })).getAllByRole('listitem');
+    const activeTable = canvas.getByRole('table', { name: 'Active visits' });
+    const rows = within(activeTable).getAllByRole('row').slice(1);
     await expect(within(rows[0]).getByText('Chenda Sreymom')).toBeVisible();
     await expect(within(rows[0]).getByText('ID unverified')).toBeVisible();
     await expect(within(rows[0]).getByText('Pay later')).toBeVisible();
@@ -75,8 +91,13 @@ export const Default: Story = {
     await userEvent.click(within(rows[0]).getByRole('button', { name: 'Resume check-in · Step 2' }));
     await expect(args.onResumeVisit).toHaveBeenCalledWith('v-2');
 
-    await userEvent.click(canvas.getByRole('button', { name: 'Queue for phlebotomy' }));
+    await userEvent.click(within(activeTable).getByRole('button', { name: 'Queue for phlebotomy' }));
     await expect(args.onQueueForDraw).toHaveBeenCalledWith('v-3');
+
+    // A handed-off visit keeps arrival context without a false reception timer.
+    const handedOffRow = rows.find((row) => within(row).queryByText('Vibol Keo'))!;
+    await expect(within(handedOffRow).getByText('Handoff complete')).toBeVisible();
+    await expect(within(handedOffRow).queryByText(/waiting 62m/)).not.toBeInTheDocument();
   },
 };
 
@@ -92,26 +113,29 @@ export const IndependentAxes: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    const rows = within(canvas.getByRole('list', { name: "Today's visits" })).getAllByRole('listitem');
+    const rows = within(canvas.getByRole('table', { name: 'Active visits' }))
+      .getAllByRole('row')
+      .slice(1);
     await expect(within(rows[0]).getByText('Checking in')).toBeVisible();
     await expect(within(rows[0]).getByText('Paid')).toBeVisible();
-    await expect(within(rows[1]).getByText('Identity resolved')).toBeVisible();
+    await expect(within(rows[1]).getByText('With phlebotomy')).toBeVisible();
     await expect(within(rows[1]).getByText('KHQR waiting')).toBeVisible();
   },
 };
 
 /** Over 30 minutes warns, over 60 escalates — the copy carries the word, not just color. */
 export const LongWait: Story = {
-  args: { visits: DESK_VISITS_LONG_WAIT },
+  args: FRONT_DESK_QUEUE_DEMO_SCENARIOS['queue-long-wait'],
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByText(/waiting 85m — escalate/)).toBeVisible();
-    await expect(canvas.getByText(/waiting 70m — escalate/)).toBeVisible();
+    const activeTable = within(canvas.getByRole('table', { name: 'Active visits' }));
+    await expect(activeTable.getByText(/waiting 85m — escalate/)).toBeVisible();
+    await expect(activeTable.getByText(/waiting 70m — escalate/)).toBeVisible();
   },
 };
 
 export const Empty: Story = {
-  args: { visits: [] },
+  args: FRONT_DESK_QUEUE_DEMO_SCENARIOS['queue-empty'],
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getByText('No arrivals yet')).toBeVisible();
@@ -121,7 +145,7 @@ export const Empty: Story = {
 };
 
 export const Loading: Story = {
-  args: { state: 'loading' },
+  args: FRONT_DESK_QUEUE_DEMO_SCENARIOS['queue-loading'],
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getByText('Loading today’s visits…')).toBeVisible();
@@ -131,7 +155,7 @@ export const Loading: Story = {
 
 /** Load failure never blocks new walk-ins — the desk keeps working. */
 export const LoadError: Story = {
-  args: { state: 'error' },
+  args: FRONT_DESK_QUEUE_DEMO_SCENARIOS['queue-error'],
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getByText('The queue could not be loaded')).toBeVisible();
@@ -142,7 +166,7 @@ export const LoadError: Story = {
 };
 
 export const Offline: Story = {
-  args: { state: 'offline', asOf: '09:12' },
+  args: FRONT_DESK_QUEUE_DEMO_SCENARIOS['queue-offline'],
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getByText('You are offline')).toBeVisible();
@@ -151,7 +175,7 @@ export const Offline: Story = {
 };
 
 export const Stale: Story = {
-  args: { state: 'stale', asOf: '09:12' },
+  args: FRONT_DESK_QUEUE_DEMO_SCENARIOS['queue-stale'],
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getByText('Updated 09:12')).toBeVisible();
@@ -174,7 +198,8 @@ export const Mobile: Story = {
   globals: { viewport: { value: 'kura320' } },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByRole('button', { name: 'Queue for phlebotomy' })).toBeVisible();
+    const list = canvas.getByRole('list', { name: 'Active visits' });
+    await expect(within(list).getByRole('button', { name: 'Queue for phlebotomy' })).toBeVisible();
   },
 };
 
@@ -272,6 +297,6 @@ export const CheckInToQueueFlow: Story = {
 
     // A new walk-in opens the wizard from the queue.
     await userEvent.click(canvas.getByRole('button', { name: 'New walk-in' }));
-    await expect(await canvas.findByText('Capture identity')).toBeVisible();
+    await expect(await canvas.findByText('Find or create a patient')).toBeVisible();
   },
 };

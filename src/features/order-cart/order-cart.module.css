@@ -11,6 +11,10 @@
   overflow: hidden;
 }
 
+.cart[data-empty="true"] {
+  min-height: calc(var(--space-32) * 2);
+}
+
 .srOnly {
   position: absolute;
   width: 1px;
@@ -29,6 +33,28 @@
   justify-content: space-between;
   gap: var(--space-2);
   padding: var(--space-4) var(--space-4) var(--space-2);
+}
+
+/* The stated reason sits directly under the title because it applies to every
+   line below it, not to any one test. */
+.indication {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-0-5);
+  margin: 0;
+  padding: 0 var(--space-4) var(--space-2);
+}
+
+.indicationLabel {
+  font-size: var(--type-xs);
+  color: var(--color-text-tertiary);
+}
+
+.indicationValue {
+  font-size: var(--type-sm);
+  font-weight: var(--weight-medium);
+  color: var(--color-text-primary);
+  overflow-wrap: anywhere;
 }
 
 .titleGroup {
@@ -84,18 +110,33 @@
   flex-basis: 100%;
 }
 
-:global([data-density='compact']) .line {
+:global([data-density="compact"]) .line {
   min-height: var(--space-7);
 }
 
-/* Keep the 36px touch target while letting the row sit at 32px: the target
- * bleeds into the row gaps instead of propping the row open. */
-.lineRemove {
-  margin-block: calc((var(--control-h) - var(--space-8)) / -2);
+/* Keep the remove control visually quiet: 28px on fine pointers, while the
+ * shared coarse-pointer token expands it to the required touch target. */
+:global([data-slot="icon-button"]).lineRemove {
+  width: var(--control-h-xs);
+  min-width: var(--control-h-xs);
+  min-height: var(--control-h-xs);
+  margin-block: calc((var(--control-h-xs) - var(--space-8)) / -2);
+  padding: var(--space-1);
+  box-shadow: none;
 }
 
-:global([data-density='compact']) .lineRemove {
-  margin-block: calc((var(--control-h) - var(--space-7)) / -2);
+:global([data-slot="icon-button"]).lineRemove > svg {
+  width: var(--space-3);
+  height: var(--space-3);
+}
+
+:global([data-slot="icon-button"]).lineRemove:focus-visible {
+  box-shadow: var(--elevation-focus);
+}
+
+:global([data-density="compact"])
+  :global([data-slot="icon-button"]).lineRemove {
+  margin-block: calc((var(--control-h-xs) - var(--space-7)) / -2);
 }
 
 .lineName {
@@ -110,13 +151,13 @@
 }
 
 /* A state pill must never break mid-phrase — the test name wraps instead. */
-.lineName > :global([data-slot='badge']) {
+.lineName > :global([data-slot="badge"]) {
   flex: none;
   white-space: nowrap;
 }
 
-.line[data-state='cancelled'] .lineName {
-  color: var(--color-text-muted);
+.line[data-state="cancelled"] .lineName {
+  color: var(--color-text-tertiary);
   text-decoration: line-through;
 }
 
@@ -148,7 +189,7 @@
 .emptyIcon {
   display: inline-flex;
   margin-bottom: var(--space-2);
-  color: var(--brand-400);
+  color: var(--color-action-primary-accent);
 }
 
 .empty strong {
@@ -182,8 +223,8 @@
 .decisionCard {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
-  padding: var(--space-3) var(--space-4);
+  gap: var(--space-4);
+  padding: var(--space-5);
   background: var(--color-surface-2);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
@@ -226,7 +267,7 @@
 .question {
   display: flex;
   flex-direction: column;
-  gap: var(--space-1);
+  gap: var(--space-2);
   margin: 0;
   padding: 0;
   border: none;
@@ -238,13 +279,13 @@
  * Carry the same rhythm on the legend itself.
  */
 .question > legend {
-  margin-block-end: var(--space-1);
+  margin-block-end: var(--space-2);
 }
 
 .decisionEditor {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
+  gap: var(--space-4);
 }
 
 /*
@@ -267,23 +308,39 @@
   margin-top: 0;
 }
 
-.decisionMotion[data-state='open'] {
-  animation: decision-editor-open var(--motion-control);
+.decisionMotion[data-state="open"] {
+  animation: decision-editor-open var(--motion-overlay-in);
 }
 
-.decisionMotion[data-state='closed'] {
-  display: none;
+.decisionMotion[data-state="closed"] {
+  animation: decision-editor-close var(--motion-overlay-out);
 }
 
 @keyframes decision-editor-open {
   from {
+    height: 0;
     opacity: 0;
     transform: translateY(calc(var(--space-1) * -1));
   }
 
   to {
+    height: var(--radix-collapsible-content-height);
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes decision-editor-close {
+  from {
+    height: var(--radix-collapsible-content-height);
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  to {
+    height: 0;
+    opacity: 0;
+    transform: translateY(calc(var(--space-1) * -1));
   }
 }
 
@@ -297,7 +354,7 @@
 .optionGrid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr));
-  gap: var(--space-2);
+  gap: var(--space-3);
 }
 
 /*
@@ -315,13 +372,15 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
-  padding: var(--space-2) var(--space-3);
+  padding: var(--space-3);
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   text-align: left;
   cursor: pointer;
-  transition: border-color var(--motion-color), box-shadow var(--motion-color);
+  transition:
+    border-color var(--motion-color),
+    box-shadow var(--motion-color);
 }
 
 .optionCard:hover:not([data-disabled]) {
@@ -335,7 +394,7 @@
 }
 
 .optionCard[data-selected] {
-  border-color: var(--brand-500);
+  border-color: var(--color-action-primary-accent);
   box-shadow: var(--shadow-selected);
 }
 
@@ -381,14 +440,14 @@
 }
 
 .optionRadio[data-selected] {
-  border-color: var(--brand-500);
+  border-color: var(--color-action-primary-accent);
 }
 
 .optionRadioDot {
   width: 9px;
   height: 9px;
   border-radius: var(--radius-full);
-  background: var(--brand-500);
+  background: var(--color-action-primary-accent);
 }
 
 .optionLabel {
@@ -408,9 +467,13 @@
   align-items: center;
   gap: var(--space-2);
   padding: var(--space-2) var(--space-3);
-  background: var(--color-warn-25);
+  background: color-mix(
+    in srgb,
+    var(--color-status-warning-bg) 40%,
+    var(--color-surface)
+  );
   border-radius: var(--radius-sm);
-  color: var(--color-warn-600);
+  color: var(--color-status-warning-fg);
   font-size: var(--type-xs);
 }
 
@@ -461,10 +524,89 @@
   font-size: var(--type-lg);
 }
 
-.earnHelp {
+.earningsDisclosure,
+.earningsHoverDisclosure,
+.earningsPressDisclosure {
   display: inline-flex;
+}
+
+.earningsPressDisclosure {
+  display: none;
+}
+
+.earningsTrigger {
   color: var(--color-status-success-fg);
-  opacity: 0.8;
+}
+
+.earningsDetails {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.earningsTitle {
+  color: var(--color-text-primary);
+  font-size: var(--type-md);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-snug);
+}
+
+.earningsDescription,
+.earningsSettlement {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--type-sm);
+  line-height: var(--leading-normal);
+}
+
+.earningsBreakdown {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.earningsBreakdown > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.earningsBreakdown dt,
+.earningsBreakdown dd {
+  margin: 0;
+  font-size: var(--type-sm);
+}
+
+.earningsBreakdown dt {
+  color: var(--color-text-secondary);
+}
+
+.earningsBreakdown dd {
+  color: var(--color-text-primary);
+  font-weight: var(--weight-medium);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.earningsBreakdown .earningsTotal {
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--color-border);
+}
+
+.earningsTotal dt,
+.earningsTotal dd {
+  color: var(--color-status-success-fg);
+  font-weight: var(--weight-semibold);
+}
+
+@media (max-width: 48rem), (hover: none), (pointer: coarse) {
+  .earningsHoverDisclosure {
+    display: none;
+  }
+
+  .earningsPressDisclosure {
+    display: inline-flex;
+  }
 }
 
 /* ── Attestation + CTA ── */
@@ -522,11 +664,11 @@
   color: var(--color-text-secondary);
 }
 
-.blockers > div[data-tone='warning'] {
+.blockers > div[data-tone="warning"] {
   color: var(--color-status-warning-fg);
 }
 
-.blockers > div[data-tone='danger'] {
+.blockers > div[data-tone="danger"] {
   color: var(--color-status-danger-fg);
 }
 
@@ -661,8 +803,8 @@
   height: 18px;
   flex: none;
   border-radius: var(--radius-full);
-  background: var(--color-success-500);
-  color: var(--color-ink-0);
+  background: var(--color-status-success-solid);
+  color: var(--color-status-on-solid);
 }
 
 /* ── Responsive ── */
@@ -707,7 +849,7 @@
 }
 
 .childRelation {
-  color: var(--color-text-muted);
+  color: var(--color-text-tertiary);
 }
 
 .childCredit {
@@ -717,13 +859,13 @@
 }
 
 .childDash {
-  color: var(--color-text-muted);
+  color: var(--color-text-tertiary);
 }
 
 .struckPrice {
   margin-right: var(--space-1);
   text-decoration: line-through;
-  color: var(--color-text-muted);
+  color: var(--color-text-tertiary);
 }
 
 .creditValue {

@@ -1,5 +1,6 @@
 'use client';
 
+import { useT } from '../../components/foundations/i18n';
 import { Checkbox, SegmentedToggle, Select } from '../../components/ui';
 
 import { ARM_SITES, SAFETY_CHECK_ITEMS } from './catalog';
@@ -30,15 +31,16 @@ export function SafetyChecklist({
   onToggle,
   site,
 }: SafetyChecklistProps) {
+  const t = useT();
   const confirmedCount = Object.values(checks).filter(Boolean).length;
   const complete = checklistComplete(checks);
 
   return (
-    <section aria-label="Pre-draw safety checklist" className={styles.checklist}>
+    <section aria-label={t('Pre-draw safety checklist')} className={styles.checklist}>
       <header className={styles.header}>
-        <h3 className={styles.title}>Before the draw</h3>
+        <h3 className={styles.title}>{t('Before the draw')}</h3>
         <span className={styles.progress} data-complete={complete ? 'true' : undefined}>
-          {confirmedCount}/{SAFETY_CHECK_ITEMS.length} confirmed
+          {confirmedCount}/{SAFETY_CHECK_ITEMS.length} {t('confirmed')}
         </span>
       </header>
 
@@ -49,7 +51,7 @@ export function SafetyChecklist({
               checked={checks[item.id as keyof SafetyChecks]}
               onCheckedChange={() => onToggle(item.id as keyof SafetyChecks)}
             >
-              {item.label}
+              {t(item.label)}
             </Checkbox>
           </li>
         ))}
@@ -57,18 +59,18 @@ export function SafetyChecklist({
 
       <div className={styles.site}>
         <SegmentedToggle
-          label="Arm"
+          label={t('Arm')}
           onValueChange={(value) => onArmChange(value as 'L' | 'R')}
           options={[
-            { value: 'L', label: 'Left arm' },
-            { value: 'R', label: 'Right arm' },
+            { value: 'L', label: t('Left arm') },
+            { value: 'R', label: t('Right arm') },
           ]}
           value={arm}
         />
         <Select
-          label="Site"
+          label={t('Site')}
           onChange={(event) => onSiteChange(event.target.value)}
-          options={ARM_SITES.map((option) => ({ value: option, label: option }))}
+          options={ARM_SITES.map((option) => ({ value: option, label: t(option) }))}
           value={site}
         />
       </div>

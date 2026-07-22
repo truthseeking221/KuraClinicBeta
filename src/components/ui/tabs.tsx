@@ -1,7 +1,7 @@
 'use client';
 
 import { Tabs as TabsPrimitive } from '@base-ui/react/tabs';
-import type { ComponentPropsWithoutRef } from 'react';
+import type { ComponentPropsWithoutRef, ReactNode } from 'react';
 
 import styles from './tabs.module.css';
 
@@ -50,15 +50,20 @@ export function TabsList({ children, className, ...props }: TabsListProps) {
   );
 }
 
-export type TabsTriggerProps = ComponentPropsWithoutRef<typeof TabsPrimitive.Tab>;
+export type TabsTriggerProps = ComponentPropsWithoutRef<typeof TabsPrimitive.Tab> & {
+  count?: ReactNode;
+};
 
-export function TabsTrigger({ className, ...props }: TabsTriggerProps) {
+export function TabsTrigger({ children, className, count, ...props }: TabsTriggerProps) {
   return (
     <TabsPrimitive.Tab
       {...props}
       className={mergeClassName<TabsPrimitive.Tab.State>(styles.trigger, className)}
       data-slot="tabs-trigger"
-    />
+    >
+      <span className={styles.triggerLabel}>{children}</span>
+      {count == null ? null : <span className={styles.count}>{count}</span>}
+    </TabsPrimitive.Tab>
   );
 }
 

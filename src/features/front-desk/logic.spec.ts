@@ -9,13 +9,20 @@ import {
   phonesMatch,
   wizardGate,
 } from './logic';
-import { acceptReprice, attributionBlocker, deskNextAction, eligiblePrescribers, orderBlockerMessage, orderBlockers, orderDeskVisits, waitTone } from './logic';
+import { acceptReprice, attributionBlocker, deskNextAction, deskWaitIsActive, eligiblePrescribers, orderBlockerMessage, orderBlockers, orderDeskVisits, waitTone } from './logic';
 import {
   collisionOverridePinValid,
   identityEditClearsAcks,
-  matchConfidence,
   matchedOnLabel,
   trustSignalsFor,
+} from './logic';
+import {
+  checkedInVisit,
+  inProgressVisit,
+  intakeStatus,
+  nextQueueNumber,
+  promoLines,
+  visitPaymentFact,
 } from './logic';
 import {
   consentBlockers,
@@ -42,6 +49,17 @@ describe('wizard gate engine', () => {
       identity: { source: 'manual' as const, lockedFields: [] },
     };
     gate = wizardGate(named);
+    expect(gate.step1Done).toBe(true);
+    expect(gate.stepStatus[2]).toBe('active');
+  });
+
+  it('does not deadlock a phone-only capture that has no name yet', () => {
+    const phoneOnly = {
+      ...blankWalkIn('gate-test', 1),
+      phoneNumber: '12345678',
+      identity: { source: 'manual' as const, lockedFields: [] },
+    };
+    const gate = wizardGate(phoneOnly);
     expect(gate.step1Done).toBe(true);
     expect(gate.stepStatus[2]).toBe('active');
   });
@@ -186,6 +204,16 @@ describe('order attribution (ADR-0057)', () => {
     expect(eligiblePrescribers(prescribers).map((p) => p.userId)).toEqual(['a']);
   });
 
+  it('accepts every backend-live licence state and rejects a new unverified doctor', () => {
+    expect(
+      eligiblePrescribers([
+        { userId: 'expiring', name: 'Dr. E', workspaceMember: true, licence: 'expiring' },
+        { userId: 'grace', name: 'Dr. G', workspaceMember: true, licence: 'in_grace' },
+        { userId: 'new', name: 'Dr. N', workspaceMember: true, licence: 'none' },
+      ]).map((p) => p.userId),
+    ).toEqual(['expiring', 'grace']);
+  });
+
   it('an empty cart has nothing to attribute', () => {
     expect(attributionBlocker({ ...cart(), items: [] }, prescribers)).toBeNull();
   });
@@ -251,6 +279,16 @@ describe('desk queue', () => {
     expect(waitTone(61)).toBe('escalate');
   });
 
+  it('stops reception wait pressure after the visit is handed off', () => {
+    expect(deskWaitIsActive(visit({ stage: 'arrived' }))).toBe(true);
+    expect(deskWaitIsActive(visit({ stage: 'identity-resolved' }))).toBe(true);
+    expect(
+      deskWaitIsActive(visit({ stage: 'identity-resolved', queuedForDraw: true })),
+    ).toBe(false);
+    expect(deskWaitIsActive(visit({ stage: 'draw-complete' }))).toBe(false);
+    expect(deskWaitIsActive(visit({ stage: 'completed' }))).toBe(false);
+  });
+
   it('derives exactly one next action from independent axes', () => {
     expect(deskNextAction(visit({ resumeStep: 4 }))).toEqual({
       kind: 'resume',
@@ -274,6 +312,14 @@ describe('desk queue', () => {
       visit({ id: 'ready', stage: 'identity-resolved', waitMinutes: 70 }),
     ]);
     expect(ordered.map((v) => v.id)).toEqual(['long', 'short', 'ready', 'done']);
+  });
+
+  it('keeps reception actions above handed-off visits', () => {
+    const ordered = orderDeskVisits([
+      visit({ id: 'handed-off', stage: 'identity-resolved', queuedForDraw: true, waitMinutes: 80 }),
+      visit({ id: 'ready', stage: 'identity-resolved', waitMinutes: 20 }),
+    ]);
+    expect(ordered.map((v) => v.id)).toEqual(['ready', 'handed-off']);
   });
 });
 
@@ -306,14 +352,6 @@ describe('order composition blockers', () => {
 });
 
 describe('identity trust + duplicate override', () => {
-  it('tiers match confidence from signals, sex never gates', () => {
-    expect(matchConfidence(['idMatch', 'sexMismatch'], 88).tier).toBe('identity');
-    expect(matchConfidence(['phoneMatch', 'nameDobMatch'], 80).tier).toBe('strong');
-    expect(matchConfidence(['nameDobMatch', 'sexMatch'], 54).tier).toBe('possible');
-    expect(matchConfidence(['phoneMatch'], 34).tier).toBe('low');
-    expect(matchConfidence(['idMatch'], 140).score).toBe(100);
-  });
-
   it('names the evidence without sex modifiers', () => {
     expect(matchedOnLabel(['idMatch', 'phoneMatch', 'sexMatch'])).toBe(
       'Matched on National ID + Phone',
@@ -459,5 +497,181 @@ describe('teleconsult TAT coupling', () => {
     expect(tatDayOffset(0)).toBe(0);
     expect(tatDayOffset(4)).toBe(1);
     expect(tatDayOffset(48)).toBe(2);
+  });
+});
+
+describe('promo engine (item → fixed → percent on the running remainder)', () => {
+  const payment = blankWalkIn('promo', 1).cart.payment;
+  const items = [
+    { id: 'cbc', kind: 'lab' as const, name: 'CBC', priceMinor: '600', currencyCode: 'USD' as const, qty: 1 },
+    { id: 'lipid', kind: 'lab' as const, name: 'Lipid panel', priceMinor: '1200', currencyCode: 'USD' as const, qty: 1 },
+  ];
+
+  it('applies in money order regardless of entry order', () => {
+    const lines = promoLines({
+      items,
+      payment,
+      promos: [
+        { code: 'PCT10', label: '10% off', kind: 'percent', percentOff: 10 },
+        { code: 'FLAT5', label: '$5 off', kind: 'fixed', amountMinor: '500' },
+        { code: 'CBC50', label: 'CBC half price', kind: 'item', itemId: 'cbc', percentOff: 50 },
+      ],
+    });
+    // item: 300 → remainder 1500; fixed: 500 → remainder 1000; percent: 100.
+    expect(lines.map((line) => [line.code, line.amountMinor])).toEqual([
+      ['CBC50', '300'],
+      ['FLAT5', '500'],
+      ['PCT10', '100'],
+    ]);
+  });
+
+  it('never discounts below zero and reflects into cartTotals', () => {
+    const cart = {
+      items,
+      payment,
+      promos: [{ code: 'BIG', label: 'Huge', kind: 'fixed' as const, amountMinor: '99999' }],
+    };
+    expect(promoLines(cart)[0].amountMinor).toBe('1800');
+    const totals = cartTotals(cart);
+    expect(totals.discountMinor).toBe('1800');
+    expect(totals.patientDueMinor).toBe('0');
+  });
+
+  it('a cart without promos has zero discount', () => {
+    const totals = cartTotals({ items, payment });
+    expect(totals.discountMinor).toBe('0');
+    expect(totals.patientDueMinor).toBe('1800');
+  });
+});
+
+describe('intake status machine', () => {
+  const base = blankWalkIn('intake', 1);
+  const maleNoSensitive = { ...base, sexAtBirth: 'Male' as const };
+
+  it('walks not-started → waiting → in-progress → complete', () => {
+    expect(intakeStatus(maleNoSensitive, [])).toBe('not-started');
+    expect(intakeStatus({ ...maleNoSensitive, intakeSentAtLabel: 'just now' }, [])).toBe('waiting');
+    expect(
+      intakeStatus(
+        { ...maleNoSensitive, intake: { ...base.intake, medications: 'Metformin' } },
+        [],
+      ),
+    ).toBe('in-progress');
+    expect(
+      intakeStatus(
+        {
+          ...maleNoSensitive,
+          visitReason: ['Follow-up'],
+          intake: {
+            chiefComplaint: 'Fatigue',
+            preTestPrep: 'Fasted 10h',
+            medications: 'Metformin',
+            womensHealth: '',
+            recentEvents: 'None',
+            lifestyle: 'Non-smoker',
+            sampleComfort: 'Faints easily',
+            sensitiveConsent: '',
+          },
+        },
+        [],
+      ),
+    ).toBe('complete');
+  });
+
+  it('a recorded skip wins and auto-filled sections alone are not progress', () => {
+    expect(
+      intakeStatus(
+        { ...maleNoSensitive, intakeSkipped: { code: 'patient-declined' } },
+        [],
+      ),
+    ).toBe('skipped');
+    // Male + no sensitive tests auto-fills two sections — still not started.
+    expect(intakeStatus(maleNoSensitive, [])).toBe('not-started');
+  });
+});
+
+describe('check-in terminal outcome', () => {
+  const paid = {
+    ...blankWalkIn('done', 27),
+    name: 'Sok Phearom',
+    arrivedLabel: '08:24 · 12 min ago',
+    otpVerified: true,
+  };
+
+  it('maps the cart payment onto the desk payment fact', () => {
+    expect(visitPaymentFact({ ...paid.cart.payment, status: 'confirmed' })).toBe('collected');
+    expect(visitPaymentFact({ ...paid.cart.payment, status: 'no-charge' })).toBe('collected');
+    expect(visitPaymentFact({ ...paid.cart.payment, status: 'deferred' })).toBe('deferred');
+    expect(visitPaymentFact({ ...paid.cart.payment, status: 'pending-claim' })).toBe('deferred');
+    expect(visitPaymentFact({ ...paid.cart.payment, status: 'waiting' })).toBe('waiting');
+    expect(visitPaymentFact(paid.cart.payment)).toBe('pending');
+  });
+
+  it('produces an identity-resolved desk visit with independent axes', () => {
+    const visit = checkedInVisit(paid);
+    expect(visit.stage).toBe('identity-resolved');
+    expect(visit.queueNumber).toBe(27);
+    expect(visit.arrivedLabel).toBe('08:24');
+    expect(visit.assurance).toBe('verified');
+    expect(visit.payment).toBe('pending');
+  });
+
+  it('spawns the next blank slot number after check-in', () => {
+    expect(nextQueueNumber([27, 28, 25])).toBe(29);
+    expect(nextQueueNumber([])).toBe(1);
+  });
+});
+
+describe('an open check-in survives leaving the wizard', () => {
+  const touched = {
+    ...blankWalkIn('open', 14),
+    name: 'Sok Phearom',
+    arrivedLabel: '08:24 · 12 min ago',
+    identity: { source: 'manual' as const, lockedFields: [] },
+  };
+
+  it('a blank slot is not a visit', () => {
+    expect(inProgressVisit(blankWalkIn('blank', 14))).toBeNull();
+  });
+
+  it('carries the step the desk resumes at', () => {
+    const visit = inProgressVisit(touched)!;
+    expect(visit.stage).toBe('arrived');
+    // Identity captured, details not yet — resume at Review.
+    expect(visit.resumeStep).toBe(2);
+    expect(deskNextAction(visit)).toEqual({
+      kind: 'resume',
+      label: 'Resume check-in · Step 2',
+    });
+  });
+
+  it('moves the resume point forward as the wizard progresses', () => {
+    const contactable = {
+      ...touched,
+      dob: '1974-03-15',
+      sexAtBirth: 'Male' as const,
+      otpVerified: true,
+      insuranceAcked: true,
+    };
+    expect(inProgressVisit(contactable)?.resumeStep).toBe(4);
+  });
+
+  it('stops being an open check-in once it is ready to finish', () => {
+    const ready = {
+      ...touched,
+      dob: '1974-03-15',
+      sexAtBirth: 'Male' as const,
+      otpVerified: true,
+      insuranceAcked: true,
+      cart: {
+        ...touched.cart,
+        items: [
+          { id: 'cbc', kind: 'lab' as const, name: 'CBC', priceMinor: '600', currencyCode: 'USD' as const, qty: 1 },
+        ],
+        payment: { ...touched.cart.payment, status: 'deferred' as const },
+      },
+    };
+    expect(wizardGate(ready).isReadyToCheckIn).toBe(true);
+    expect(inProgressVisit(ready)).toBeNull();
   });
 });

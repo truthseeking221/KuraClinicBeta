@@ -2,9 +2,14 @@ import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { useState } from 'react';
 
-import { Alert, AlertDescription, AlertTitle } from '../../ui';
+import { Alert, AlertDescription, AlertTitle, Button } from '../../ui';
 
 import { AppShell } from './app-shell';
+import {
+  SHELL_DEMO_ACCESS_PROFILES,
+  SHELL_DEMO_MODULES,
+} from './demo-data';
+import styles from './app-shell.module.css';
 import type { AppShellProps } from './app-shell';
 import { deriveAvailableModes, MODE_REGISTRY } from './mode-registry';
 import type { ClinicMode, ClinicWorkspace, ShellUser, Station } from './types';
@@ -38,41 +43,19 @@ const nurseUser: ShellUser = {
   licenceVerified: false,
 };
 
+const receptionistUser: ShellUser = {
+  name: 'Linh Nguyen',
+  email: 'linh@mekong.clinic',
+  licenceVerified: false,
+};
+
+const phlebotomistUser: ShellUser = {
+  name: 'Srey Neang',
+  email: 'neang@mekong.clinic',
+  licenceVerified: false,
+};
+
 const psc01: Station = { id: 'PSC-01', role: 'phlebotomy', shift: 'morning' };
-
-/** Permission sets that mirror the proposed clinical capability catalog. */
-const PERMISSIONS = {
-  doctorFull: [
-    'patient.read',
-    'order.create',
-    'result.review',
-    'reception.check_in',
-    'booking.manage',
-    'payment.collect',
-    'sample.collect',
-    'member.manage',
-    'branch.manage',
-    'role.manage',
-    'workspace.settings.manage',
-    'doctor.banking.view.self',
-  ],
-  soloDoctor: ['patient.read', 'order.create', 'result.review', 'doctor.banking.view.self'],
-  nurseFrontDeskCollection: [
-    'reception.check_in',
-    'booking.manage',
-    'payment.collect',
-    'sample.collect',
-    'sample.label',
-    'sample.handoff',
-    'vitals.record',
-  ],
-};
-
-const ALL_MODULES = {
-  clinical: true,
-  reception: true,
-  collection: true,
-};
 
 function DemoContent({ label }: { label: string }) {
   return (
@@ -103,7 +86,7 @@ function ShellPlayground(
   const { initialMode, licenceVerified = true, permissions, ...rest } = props;
   const availableModes = deriveAvailableModes({
     permissions,
-    enabledModules: ALL_MODULES,
+    enabledModules: SHELL_DEMO_MODULES,
     licenceVerified,
   });
   const [mode, setMode] = useState<ClinicMode>(initialMode);
@@ -157,9 +140,9 @@ const meta = {
         typography: 'kura',
         spacing: 'kura',
         radius: 'kura',
-        elevation: 'kura-topbar-and-focus',
+        elevation: 'kura-station-mobile-topbar-and-focus',
         icons: 'kura-hugeicons-canonical',
-        motion: 'kura-sidebar-width-reduced-motion-safe',
+        motion: 'kura-sidebar-layout-label-crossfade-reduced-motion-safe',
         density: 'kura-root-attribute',
         responsive: 'sidebar collapses to icon rail; below 768px nav moves into a left sheet',
       },
@@ -176,7 +159,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'Unified Clinic App shell. One workspace context (workspace → branch → mode → station), capability-derived operational modes (clinical, front desk, collection), and two caller-selected postures independent from mode: sidebar for navigation-first work and station for scan-first booth work. The sidebar states who and where (workspace identity + navigation); the mode switcher lives in the topbar and states what kind of work — one level, never a sibling of the workspace switcher, and reachable on mobile where the sidebar is a sheet. A single mode hides the switcher entirely — a solo doctor never learns modes exist. Roles never gate anything; capabilities do.',
+          'Unified Clinic App shell. One workspace context (workspace → branch → mode → station), capability-derived operational modes (clinical, front desk, collection), and two caller-selected postures independent from mode. Switching work areas always preserves the sidebar; station posture is reserved for a dedicated booth entry point. On desktop, the sidebar owns brand, workspace, work area, navigation, utilities, account, and collapse. Mobile keeps a topbar for the navigation-sheet trigger. A single mode hides the switcher entirely — a solo doctor never learns modes exist. Roles never gate anything; capabilities do.',
       },
     },
   },
@@ -200,23 +183,55 @@ export const FullClinic: Story = {
   args: requiredArgs,
   render: () => (
     <ShellPlayground
+      headerActions={
+        <Button size="sm" variant="outline">
+          Demo
+        </Button>
+      }
       initialMode="clinical"
-      permissions={PERMISSIONS.doctorFull}
+      permissions={[...SHELL_DEMO_ACCESS_PROFILES['full-clinic'].permissions]}
       workspaces={allWorkspaces}
     />
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const body = within(canvasElement.ownerDocument.body);
-    await expect(canvas.getByRole('navigation', { name: 'Primary' })).toBeVisible();
-    // Work-area control: mode icon + value + chevron; the kicker stays for
-    // assistive technology only.
-    const modeButton = canvas.getByRole('button', { name: 'Work area Clinical' });
+    await expect(canvas.getByRole('img', { name: 'Kura' })).toBeVisible();
+    const primaryNavigation = canvas.getByRole('navigation', { name: 'Primary' });
+    await expect(primaryNavigation).toBeVisible();
+    const navHoverRule = Array.from(document.styleSheets)
+      .flatMap((sheet) => {
+        try {
+          return Array.from(sheet.cssRules);
+        } catch {
+          return [];
+        }
+      })
+      .find(
+        (rule): rule is CSSStyleRule =>
+          rule instanceof CSSStyleRule && rule.selectorText === `.${styles.navItem}:hover`,
+      );
+    if (!navHoverRule) throw new Error('App Shell navigation hover rule did not render.');
+    expect(navHoverRule.style.background).toBe('var(--sidebar-active-bg)');
+    // The context selector names its axis, keeps the text label primary, and
+    // reserves the icon-only representation for the collapsed rail.
+    const modeButton = canvas.getByRole('button', { name: 'Work area: Clinical' });
     await expect(modeButton).toBeVisible();
-    await expect(modeButton.querySelector('[data-kura-icon="stethoscope"]')).toBeVisible();
+    await expect(within(modeButton).getByText('Work area')).toBeVisible();
+    await expect(modeButton.querySelector('[data-kura-icon="stethoscope"]')).toBeNull();
     await expect(modeButton.querySelector('[data-kura-icon="chevron-down"]')).toBeVisible();
+    await expect(canvasElement.querySelector('[data-slot="app-shell-topbar"]')).not.toBeVisible();
+    const sidebarFooterElement = canvasElement.querySelector(
+      '[data-slot="app-shell-sidebar-footer"]',
+    );
+    if (!sidebarFooterElement) throw new Error('Sidebar footer did not render.');
+    const sidebarFooter = within(sidebarFooterElement as HTMLElement);
+    await expect(sidebarFooter.getByRole('button', { name: 'Demo' })).toBeVisible();
+    // Collapse moved to the brand row; settings lives in the account menu.
+    await expect(canvas.getByRole('button', { name: 'Collapse navigation' })).toBeVisible();
+    await expect(sidebarFooter.getByText('Dr. Sok Vanna')).toBeVisible();
 
-    await userEvent.click(canvas.getByRole('button', { name: 'Account: Dr. Sok Vanna' }));
+    await userEvent.click(sidebarFooter.getByRole('button', { name: 'Account: Dr. Sok Vanna' }));
     await waitFor(() => {
       const openMenu = body
         .getAllByRole('menu')
@@ -227,9 +242,35 @@ export const FullClinic: Story = {
       .getAllByRole('menu')
       .find((menu) => menu.getAttribute('data-state') === 'open');
     if (!accountMenu) throw new Error('Account menu did not open.');
-    await expect(within(accountMenu).getByRole('menuitem', { name: 'Settings' })).toBeInTheDocument();
+    await expect(
+      within(accountMenu).getByRole('menuitem', { name: 'Settings' }),
+    ).toBeInTheDocument();
     await expect(within(accountMenu).getByRole('menuitem', { name: 'Sign out' })).toBeInTheDocument();
     await expect(body.queryByLabelText('Licence verified')).not.toBeInTheDocument();
+  },
+};
+
+/** Edge-to-edge workspace ownership without shell gutters. */
+export const FullBleedWorkspace: Story = {
+  args: requiredArgs,
+  render: () => (
+    <ShellPlayground
+      contentInset="none"
+      initialMode="clinical"
+      permissions={[...SHELL_DEMO_ACCESS_PROFILES['full-clinic'].permissions]}
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const content = canvasElement.querySelector('[data-slot="app-shell-content"]');
+    if (!(content instanceof HTMLElement) || !(content.firstElementChild instanceof HTMLElement)) {
+      throw new Error('App shell content did not render.');
+    }
+
+    await expect(content).toHaveAttribute('data-content-inset', 'none');
+    const contentRect = content.getBoundingClientRect();
+    const childRect = content.firstElementChild.getBoundingClientRect();
+    await expect(Math.abs(childRect.left - contentRect.left)).toBeLessThanOrEqual(1);
+    await expect(Math.abs(childRect.top - contentRect.top)).toBeLessThanOrEqual(1);
   },
 };
 
@@ -242,15 +283,15 @@ export const SoloDoctor: Story = {
   render: () => (
     <ShellPlayground
       initialMode="clinical"
-      permissions={PERMISSIONS.soloDoctor}
+      permissions={[...SHELL_DEMO_ACCESS_PROFILES['solo-doctor'].permissions]}
       workspace={soloCabinet}
     />
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const modes = deriveAvailableModes({
-      permissions: PERMISSIONS.soloDoctor,
-      enabledModules: ALL_MODULES,
+      permissions: [...SHELL_DEMO_ACCESS_PROFILES['solo-doctor'].permissions],
+      enabledModules: SHELL_DEMO_MODULES,
       licenceVerified: true,
     });
     await expect(modes).toEqual(['clinical']);
@@ -258,41 +299,29 @@ export const SoloDoctor: Story = {
   },
 };
 
-/**
- * Roadmap surfaces collapse behind one "More" launcher: the always-visible
- * rail stays short, while every deferred surface stays listed and tagged
- * "Soon" inside the menu — omission is not a product decision, and deferred
- * work must never look live. In the mobile nav sheet the group renders inline
- * instead: no overlay stacked on an overlay.
- */
-export const RoadmapMoreGroup: Story = {
+/** The registry exposes only destinations backed by an app route. */
+export const ExistingDestinationsOnly: Story = {
   args: requiredArgs,
   render: () => (
-    <ShellPlayground initialMode="clinical" permissions={PERMISSIONS.doctorFull} />
+    <ShellPlayground
+      initialMode="clinical"
+      permissions={[...SHELL_DEMO_ACCESS_PROFILES['full-clinic'].permissions]}
+    />
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
 
-    // The rail shows live worklists plus a single "More" launcher.
-    await expect(canvas.getByRole('button', { name: 'Results' })).toBeVisible();
-    await expect(canvas.getByRole('button', { name: 'Bookings' })).toBeVisible();
-    const more = canvas.getByRole('button', { name: 'More' });
-    await expect(more).toBeVisible();
-
-    // The menu lists every roadmap surface, each tagged — never silently hidden.
-    await userEvent.click(more);
-    const body = within(canvasElement.ownerDocument.body);
-    for (const label of ['Care plans', 'Telehealth', 'Inbox', 'Tasks', 'Calendar']) {
-      await expect(body.getByRole('menuitem', { name: `${label} Soon` })).toBeVisible();
+    for (const label of [
+      'Home',
+      'Results',
+      'Patients',
+      'Earnings',
+      'Catalog',
+    ]) {
+      await expect(canvas.getByRole('button', { name: label })).toBeVisible();
     }
-
-    // Navigation still works — the destination explains the roadmap state.
-    await userEvent.click(body.getByRole('menuitem', { name: 'Inbox Soon' }));
-    await expect(canvas.getByText('Clinical · inbox')).toBeVisible();
-    await expect(canvas.getByRole('button', { name: 'More' })).toHaveAttribute(
-      'data-active',
-      'true',
-    );
+    await expect(canvas.queryByRole('button', { name: 'More' })).not.toBeInTheDocument();
+    await expect(canvas.queryByRole('button', { name: 'Care plans' })).not.toBeInTheDocument();
   },
 };
 
@@ -305,7 +334,7 @@ export const MultiRoleNurse: Story = {
   render: () => (
     <ShellPlayground
       initialMode="front-desk"
-      permissions={PERMISSIONS.nurseFrontDeskCollection}
+      permissions={[...SHELL_DEMO_ACCESS_PROFILES['front-desk-collection'].permissions]}
       licenceVerified={false}
       user={nurseUser}
       station={{ id: 'DESK-02', shift: 'morning' }}
@@ -313,8 +342,8 @@ export const MultiRoleNurse: Story = {
   ),
   play: async ({ canvasElement }) => {
     const modes = deriveAvailableModes({
-      permissions: PERMISSIONS.nurseFrontDeskCollection,
-      enabledModules: ALL_MODULES,
+      permissions: [...SHELL_DEMO_ACCESS_PROFILES['front-desk-collection'].permissions],
+      enabledModules: SHELL_DEMO_MODULES,
       licenceVerified: false,
     });
     await expect(modes).toEqual(['front-desk', 'collection']);
@@ -322,10 +351,65 @@ export const MultiRoleNurse: Story = {
     const canvas = within(canvasElement);
     await expect(canvas.getByRole('button', { name: 'Arrivals' })).toBeVisible();
 
-    const reports = canvas.getByRole('button', { name: 'Reports' });
-    await userEvent.click(reports);
-    await expect(reports).toHaveAttribute('aria-current', 'page');
-    await expect(reports.querySelector('[data-kura-icon-style="bulk-rounded"]')).toBeTruthy();
+    const payments = canvas.getByRole('button', { name: 'Payments' });
+    await userEvent.click(payments);
+    await expect(payments).toHaveAttribute('aria-current', 'page');
+    await expect(payments.querySelector('[data-kura-icon-style="bulk-rounded"]')).toBeTruthy();
+    await expect(canvas.queryByRole('button', { name: 'Reports' })).not.toBeInTheDocument();
+  },
+};
+
+/** Reception-only access opens the desk and does not expose clinical or collection work. */
+export const ReceptionistOnly: Story = {
+  args: requiredArgs,
+  render: () => (
+    <ShellPlayground
+      initialMode="front-desk"
+      licenceVerified={false}
+      permissions={[...SHELL_DEMO_ACCESS_PROFILES.receptionist.permissions]}
+      station={{ id: 'DESK-01', shift: 'morning' }}
+      user={receptionistUser}
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const modes = deriveAvailableModes({
+      permissions: [...SHELL_DEMO_ACCESS_PROFILES.receptionist.permissions],
+      enabledModules: SHELL_DEMO_MODULES,
+      licenceVerified: false,
+    });
+    await expect(modes).toEqual(['front-desk']);
+
+    const canvas = within(canvasElement);
+    await expect(canvas.getByRole('button', { name: 'Arrivals' })).toBeVisible();
+    await expect(canvas.queryByText('Switch work area')).not.toBeInTheDocument();
+    await expect(canvas.queryByRole('button', { name: 'Scan' })).not.toBeInTheDocument();
+  },
+};
+
+/** Phlebotomy-only access opens the collection station without desk or clinical work. */
+export const PhlebotomistOnly: Story = {
+  args: requiredArgs,
+  render: () => (
+    <ShellPlayground
+      initialMode="collection"
+      licenceVerified={false}
+      permissions={[...SHELL_DEMO_ACCESS_PROFILES.phlebotomist.permissions]}
+      station={psc01}
+      user={phlebotomistUser}
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const modes = deriveAvailableModes({
+      permissions: [...SHELL_DEMO_ACCESS_PROFILES.phlebotomist.permissions],
+      enabledModules: SHELL_DEMO_MODULES,
+      licenceVerified: false,
+    });
+    await expect(modes).toEqual(['collection']);
+
+    const canvas = within(canvasElement);
+    await expect(canvas.getByRole('button', { name: 'Scan' })).toBeVisible();
+    await expect(canvas.queryByText('Switch work area')).not.toBeInTheDocument();
+    await expect(canvas.queryByRole('button', { name: 'Arrivals' })).not.toBeInTheDocument();
   },
 };
 
@@ -333,7 +417,10 @@ export const MultiRoleNurse: Story = {
 export const ModeSwitch: Story = {
   args: requiredArgs,
   render: () => (
-    <ShellPlayground initialMode="clinical" permissions={PERMISSIONS.doctorFull} />
+    <ShellPlayground
+      initialMode="clinical"
+      permissions={[...SHELL_DEMO_ACCESS_PROFILES['full-clinic'].permissions]}
+    />
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
@@ -350,42 +437,44 @@ export const ModeSwitch: Story = {
   },
 };
 
-/**
- * Collection defaults to the shared navigation shell for mixed-role work.
- */
+/** Selecting Collection preserves the shared navigation shell. */
 export const CollectionSidebar: Story = {
   args: requiredArgs,
   render: () => (
     <ShellPlayground
-      initialMode="collection"
-      permissions={PERMISSIONS.nurseFrontDeskCollection}
+      initialMode="front-desk"
+      permissions={[...SHELL_DEMO_ACCESS_PROFILES['front-desk-collection'].permissions]}
       licenceVerified={false}
       user={nurseUser}
     />
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
+    const body = within(canvasElement.ownerDocument.body);
+
+    await userEvent.click(canvas.getByRole('button', { name: /Front desk/ }));
+    await userEvent.click(await body.findByRole('menuitemradio', { name: /Collection/ }));
+
     await expect(canvasElement.querySelector('[data-slot="app-shell"]')).toHaveAttribute(
       'data-posture',
       'sidebar',
     );
     await expect(canvas.getByRole('navigation', { name: 'Primary' })).toBeVisible();
     await expect(canvas.getByRole('button', { name: 'Scan' })).toBeVisible();
-    await expect(canvas.getByRole('button', { name: 'Handoffs' })).toBeVisible();
-    await expect(canvas.queryByText(/Station PSC-/)).not.toBeInTheDocument();
+    await expect(canvas.getByRole('button', { name: /Collection/ })).toBeVisible();
   },
 };
 
 /**
- * Explicit station posture: no sidebar, station identity + shift in the topbar.
- * Scan-first booth work is not navigation-first work — the chrome yields.
+ * Dedicated booth entry: no work-area transition and no cross-area navigation.
+ * This posture must never be activated by the shared work-area switcher.
  */
 export const CollectionStation: Story = {
   args: requiredArgs,
   render: () => (
     <ShellPlayground
       initialMode="collection"
-      permissions={PERMISSIONS.nurseFrontDeskCollection}
+      permissions={[...SHELL_DEMO_ACCESS_PROFILES['front-desk-collection'].permissions]}
       licenceVerified={false}
       user={nurseUser}
       posture="station"
@@ -411,7 +500,7 @@ export const WithLicenceBanner: Story = {
   render: () => (
     <ShellPlayground
       initialMode="front-desk"
-      permissions={PERMISSIONS.doctorFull}
+      permissions={[...SHELL_DEMO_ACCESS_PROFILES['full-clinic'].permissions]}
       licenceVerified={false}
       banner={
         <Alert tone="warning">
@@ -443,7 +532,7 @@ export const WithBadgeCounts: Story = {
     return (
       <ShellPlayground
         initialMode="front-desk"
-        permissions={PERMISSIONS.nurseFrontDeskCollection}
+        permissions={[...SHELL_DEMO_ACCESS_PROFILES['front-desk-collection'].permissions]}
         licenceVerified={false}
         user={nurseUser}
         nav={nav}
@@ -459,7 +548,7 @@ export const EarningsPersonGlobalScope: Story = {
     <ShellPlayground
       activeKey="earnings"
       initialMode="clinical"
-      permissions={PERMISSIONS.doctorFull}
+      permissions={[...SHELL_DEMO_ACCESS_PROFILES['full-clinic'].permissions]}
       scopeLabel="All Kura workspaces"
     />
   ),
@@ -487,24 +576,99 @@ export const EarningsHiddenWithoutSelfAccess: Story = {
   },
 };
 
-/** Collapsed rail keeps every destination reachable at 68px. */
+/** Collapsed rail keeps navigation reachable and reverses cleanly under rapid input. */
 export const CollapsedRail: Story = {
   args: requiredArgs,
   render: () => (
     <ShellPlayground
       initialMode="clinical"
-      permissions={PERMISSIONS.doctorFull}
+      permissions={[...SHELL_DEMO_ACCESS_PROFILES['full-clinic'].permissions]}
       defaultCollapsed
     />
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByRole('button', { name: 'Expand navigation' })).toBeVisible();
+    const sidebar = canvasElement.querySelector('[data-slot="app-shell-sidebar"]');
+    const brand = canvasElement.querySelector('[data-slot="app-shell-sidebar-brand"]');
+    if (!(sidebar instanceof HTMLElement) || !(brand instanceof HTMLElement)) {
+      throw new Error('Collapsed sidebar anatomy did not render.');
+    }
+
+    const expandToggle = canvas.getByRole('button', { name: 'Expand navigation' });
+    const homeButton = canvas.getByRole('button', { name: 'Home' });
+    await expect(expandToggle).toBeInTheDocument();
     await expect(canvas.getByRole('button', { name: 'Patients' })).toBeVisible();
-    // The mode switcher lives in the topbar, so collapsing the rail never
-    // hides it.
+    await expect(homeButton).toHaveAttribute('aria-current', 'page');
+    expect(getComputedStyle(homeButton).boxShadow).toBe('none');
+    await expect(within(homeButton).getByText('Home')).toBeVisible();
+    await waitFor(() => expect(sidebar.getBoundingClientRect().width).toBeGreaterThan(70));
+    const homeIcon = homeButton.querySelector('svg');
+    if (!(homeIcon instanceof SVGElement)) {
+      throw new Error('Collapsed Home navigation icon did not render.');
+    }
+    await waitFor(() => expect(homeIcon.getBoundingClientRect().width).toBeGreaterThanOrEqual(20));
+    // The mode switcher stays in the rail, so collapse changes density only.
     const modeButton = canvas.getByRole('button', { name: 'Work area: Clinical' });
     await expect(modeButton).toBeVisible();
+
+    await userEvent.tab();
+    await expect(expandToggle).toHaveFocus();
+    await waitFor(() => expect(expandToggle).toBeVisible());
+
+    // Two fast activations must reverse from the current state without losing
+    // the active destination or creating a second navigation model.
+    await userEvent.dblClick(expandToggle);
+    await expect(expandToggle).toHaveAttribute('aria-expanded', 'false');
+    await expect(canvas.getByRole('button', { name: 'Home' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    );
+
+    await userEvent.click(expandToggle);
+    await waitFor(() => expect(sidebar.getBoundingClientRect().width).toBeGreaterThan(200));
+    await expect(canvas.getByRole('button', { name: 'Collapse navigation' })).toBeVisible();
+    await expect(within(sidebar).getByText('Work')).toBeVisible();
+  },
+};
+
+/**
+ * Language switch lives in the account menu: a per-user, infrequent choice, so
+ * it stays out of permanent chrome. Each language names itself in its own
+ * script, so a user who lands in the wrong language can still find the way
+ * back. Switching retranslates the shell in place — the active destination,
+ * work area, and workspace context all survive.
+ */
+export const LanguageSwitch: Story = {
+  args: requiredArgs,
+  render: () => (
+    <ShellPlayground
+      initialMode="clinical"
+      permissions={[...SHELL_DEMO_ACCESS_PROFILES['full-clinic'].permissions]}
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const body = within(canvasElement.ownerDocument.body);
+
+    await expect(canvas.getByRole('button', { name: 'Search ⌘K' })).toBeVisible();
+
+    await userEvent.click(canvas.getByRole('button', { name: 'Account: Dr. Sok Vanna' }));
+    const englishItem = await body.findByRole('menuitemradio', { name: 'English' });
+    await expect(englishItem).toHaveAttribute('aria-checked', 'true');
+
+    await userEvent.click(body.getByRole('menuitemradio', { name: 'ភាសាខ្មែរ' }));
+
+    // The shell retranslates in place and keeps the user where they were.
+    await waitFor(() => expect(canvas.getByRole('button', { name: 'ស្វែងរក ⌘K' })).toBeVisible());
+    const homeItem = canvas.getByRole('button', { name: 'ទំព័រដើម' });
+    await expect(homeItem).toHaveAttribute('aria-current', 'page');
+
+    // Khmer needs more vertical room than Latin: a clipped coeng subscript is
+    // an unreadable word, so the nav row must grow rather than crop.
+    const homeLabel = within(homeItem).getByText('ទំព័រដើម');
+    await waitFor(() =>
+      expect(homeLabel.scrollHeight).toBeLessThanOrEqual(homeLabel.clientHeight),
+    );
   },
 };
 
@@ -515,7 +679,10 @@ export const Mobile: Story = {
     viewport: { defaultViewport: 'mobile1' },
   },
   render: () => (
-    <ShellPlayground initialMode="clinical" permissions={PERMISSIONS.doctorFull} />
+    <ShellPlayground
+      initialMode="clinical"
+      permissions={[...SHELL_DEMO_ACCESS_PROFILES['full-clinic'].permissions]}
+    />
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
@@ -525,13 +692,102 @@ export const Mobile: Story = {
   },
 };
 
+/**
+ * The workspace row opened on a multi-branch clinic: change workspace, change
+ * branch, then the workspace-scoped destinations. Both radio groups keep the
+ * current value checked, so the menu also answers "where am I".
+ */
+export const WorkspaceMenu: Story = {
+  args: requiredArgs,
+  render: () => (
+    <ShellPlayground
+      initialMode="clinical"
+      onOpenTeamAccess={() => {}}
+      onOpenWorkspaceSettings={() => {}}
+      permissions={[...SHELL_DEMO_ACCESS_PROFILES['full-clinic'].permissions]}
+      workspaces={allWorkspaces}
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const body = within(canvasElement.ownerDocument.body);
+
+    await userEvent.click(canvas.getByRole('button', { name: 'Workspace: Mekong Clinic' }));
+    const menu = await body.findByRole('menu');
+    const scoped = within(menu);
+
+    await expect(scoped.getByRole('menuitemradio', { name: 'Mekong Clinic' })).toBeChecked();
+    await expect(scoped.getByRole('menuitemradio', { name: 'BKK1 Branch' })).toBeChecked();
+    await expect(scoped.getByRole('menuitem', { name: 'Workspace settings' })).toBeVisible();
+    await expect(scoped.getByRole('menuitem', { name: 'Team access' })).toBeVisible();
+
+    await userEvent.click(scoped.getByRole('menuitemradio', { name: 'Toul Kork Branch' }));
+    await waitFor(async () => {
+      await expect(canvas.getByText('Toul Kork Branch')).toBeVisible();
+    });
+  },
+};
+
+/**
+ * One cabinet, one branch: nothing to switch, so the menu carries only the
+ * workspace-scoped destinations. The row still opens, because those
+ * destinations are real.
+ */
+export const SoloCabinetMenu: Story = {
+  args: requiredArgs,
+  render: () => (
+    <ShellPlayground
+      initialMode="clinical"
+      onOpenTeamAccess={() => {}}
+      onOpenWorkspaceSettings={() => {}}
+      permissions={[...SHELL_DEMO_ACCESS_PROFILES['solo-doctor'].permissions]}
+      workspace={soloCabinet}
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const body = within(canvasElement.ownerDocument.body);
+
+    await userEvent.click(canvas.getByRole('button', { name: 'Workspace: Dr. Vanna Cabinet' }));
+    const menu = await body.findByRole('menu');
+    const scoped = within(menu);
+
+    await expect(scoped.getByRole('menuitem', { name: 'Workspace settings' })).toBeVisible();
+    await expect(scoped.getByRole('menuitem', { name: 'Team access' })).toBeVisible();
+    await expect(scoped.queryByRole('menuitemradio')).not.toBeInTheDocument();
+  },
+};
+
+/**
+ * Nothing to switch and no workspace destination the actor may reach: the row
+ * is the cabinet name and nothing else. A control that opens nothing is worse
+ * than a label.
+ */
+export const WorkspaceIdentityOnly: Story = {
+  args: requiredArgs,
+  render: () => (
+    <ShellPlayground
+      initialMode="clinical"
+      permissions={[...SHELL_DEMO_ACCESS_PROFILES['solo-doctor'].permissions]}
+      workspace={soloCabinet}
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByLabelText('Workspace: Dr. Vanna Cabinet')).toBeVisible();
+    await expect(
+      canvas.queryByRole('button', { name: 'Workspace: Dr. Vanna Cabinet' }),
+    ).not.toBeInTheDocument();
+  },
+};
+
 /** Long Khmer + English workspace and branch names must truncate, not break layout. */
 export const LongContent: Story = {
   args: requiredArgs,
   render: () => (
     <ShellPlayground
       initialMode="front-desk"
-      permissions={PERMISSIONS.doctorFull}
+      permissions={[...SHELL_DEMO_ACCESS_PROFILES['full-clinic'].permissions]}
       workspace={{
         id: 'ws-long',
         name: 'គ្លីនិកវេជ្ជសាស្ត្រ Mekong International Family Medicine & Diagnostics',

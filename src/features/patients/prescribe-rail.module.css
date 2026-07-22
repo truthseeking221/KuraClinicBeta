@@ -1,0 +1,399 @@
+/* Medication draft — surface law applied.
+ *
+ * The page is white and the sections are bare: proximity, labels, and
+ * dividers carry the grouping. Only three surfaces earn a container — each
+ * medication awaiting a decision is an outline card (a unit with its own
+ * state on the white page), and the AI proposals sit in the one grey tray,
+ * because AI-drafted work must stay visibly separate from clinician-authored
+ * work. Everything settled is a flat row: facts, not work. Status is a Badge
+ * with text, never a coloured string.
+ */
+
+/* Bare sections need clearer air between them than trays did: section
+   separation is carried by spacing alone. */
+.rail {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  min-height: 0;
+  min-width: 0;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  overflow: hidden;
+  background: var(--color-surface);
+  font-family: var(--font-family-sans);
+}
+
+/* ── Page header (bare — the page itself, not a tray) ─────── */
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  min-width: 0;
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.headerLead {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--type-lg);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-snug);
+  color: var(--color-text-primary);
+}
+
+.content {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+  gap: var(--space-5);
+  overflow-y: auto;
+  padding: var(--space-4);
+  scrollbar-gutter: stable;
+}
+
+/* ── Sections: bare page groups, no container ─────────────── */
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.sectionHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.sectionLabel {
+  margin: 0;
+  font-size: var(--type-sm);
+  font-weight: var(--weight-medium);
+  color: var(--color-text-secondary);
+}
+
+/* ── Diagnoses ────────────────────────────────────────────── */
+
+.rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.diagnosis {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.diagnosisCode {
+  flex-shrink: 0;
+  font-family: var(--font-family-mono);
+  font-size: var(--type-xs);
+  color: var(--color-text-tertiary);
+}
+
+.diagnosisWarning {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.diagnosisWarning p {
+  margin: 0;
+  min-width: 0;
+  font-size: var(--type-sm);
+  color: var(--color-status-warning-fg);
+}
+
+/* ── Current regimen ──────────────────────────────────────── */
+
+.medicationList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+/* A medication awaiting a decision: an outline card — a unit with its own
+   state and expansion, sitting directly on the white page, so the hairline
+   is what marks it as one object. */
+.reviewItem {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card-tile);
+  background: var(--color-surface);
+  overflow: hidden;
+}
+
+.reviewTrigger {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+  transition: background-color var(--motion-color);
+}
+
+.reviewTrigger:hover {
+  background: var(--color-background-primary-hover);
+}
+
+.reviewTrigger:focus-visible {
+  outline: none;
+  box-shadow: inset var(--shadow-focus);
+}
+
+.rowCopy {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--space-0-5);
+}
+
+.rowDrug {
+  font-size: var(--type-base);
+  font-weight: var(--weight-medium);
+  color: var(--color-text-primary);
+  overflow-wrap: anywhere;
+}
+
+.rowMeta {
+  font-size: var(--type-sm);
+  color: var(--color-text-secondary);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+/* Clinical risk stays fully visible — it is why the row needs eyes. */
+.rowRisk {
+  font-size: var(--type-sm);
+  color: var(--color-status-warning-fg);
+  overflow-wrap: anywhere;
+}
+
+.reviewState {
+  flex-shrink: 0;
+}
+
+.chevron,
+.chevronOpen {
+  flex-shrink: 0;
+  color: var(--color-foreground-icon-tertiary);
+  transition: rotate var(--motion-control);
+}
+
+.chevronOpen {
+  rotate: 180deg;
+}
+
+/* Expansion continues the same tile; the hairline separates trigger from
+   work area without implying a second object. */
+.reviewBody {
+  padding: var(--space-3);
+  border-top: 1px solid var(--color-border);
+}
+
+.decisions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.adjust {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.adjustActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+/* Settled medications: flat rows — facts, not work. A divider separates
+   them from the decision cards above without implying another object. */
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-1);
+}
+
+.row + .row {
+  border-top: 1px solid var(--color-border);
+}
+
+.emptyMessage,
+.searchEmpty {
+  margin: 0;
+  font-size: var(--type-sm);
+  color: var(--color-text-secondary);
+}
+
+/* ── New medications ──────────────────────────────────────── */
+
+.addAction {
+  flex-shrink: 0;
+}
+
+.draftGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.groupLabel {
+  margin: 0;
+  font-size: var(--type-xs);
+  color: var(--color-text-tertiary);
+}
+
+/* AI proposals: the one grey tray on this page. The background change is the
+   boundary — AI-drafted work must read as a different kind of content from
+   everything clinician-authored around it, and never louder than it. */
+.aiPanel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  border-radius: var(--radius-card-surface);
+  padding: var(--space-inset-card);
+  background: var(--card);
+}
+
+.aiHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  color: var(--color-status-ai-fg);
+}
+
+.aiTitle {
+  margin: 0;
+  font-size: var(--type-sm);
+  font-weight: var(--weight-medium);
+  color: var(--color-text-primary);
+}
+
+.aiDescription {
+  margin: 0;
+  font-size: var(--type-xs);
+  color: var(--color-text-secondary);
+}
+
+.aiRows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.aiRow {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding-block: var(--space-2);
+}
+
+.aiRow + .aiRow {
+  border-top: 1px solid var(--color-border);
+}
+
+.aiEvidence {
+  font-size: var(--type-xs);
+  color: var(--color-text-secondary);
+}
+
+.aiMissing {
+  font-size: var(--type-xs);
+  color: var(--color-status-warning-fg);
+}
+
+.addedMark {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--type-sm);
+  font-weight: var(--weight-medium);
+  color: var(--color-status-success-fg);
+}
+
+/* ── Footer ───────────────────────────────────────────────── */
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-top: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.footerCopy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--space-0-5);
+}
+
+.draftNotice {
+  margin: 0;
+  font-size: var(--type-xs);
+  color: var(--color-text-tertiary);
+}
+
+.footerGate {
+  margin: 0;
+  min-width: 0;
+  font-size: var(--type-sm);
+  color: var(--color-text-secondary);
+}
+
+@media (max-width: 599px) {
+  .header,
+  .content,
+  .footer {
+    padding-inline: var(--space-3);
+  }
+
+  .footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .footer :global([data-slot='button']) {
+    width: 100%;
+  }
+
+  .decisions :global([data-slot='button']) {
+    flex: 1 1 40%;
+  }
+}

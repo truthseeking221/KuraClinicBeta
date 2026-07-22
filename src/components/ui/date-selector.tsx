@@ -3,6 +3,7 @@
 import { useId, useMemo, useState } from 'react';
 import type { ComponentPropsWithoutRef, ReactNode } from 'react';
 
+import { useT } from '../foundations/i18n';
 import {
   Calendar,
   type CalendarDateMatcher,
@@ -140,6 +141,7 @@ export function DateSelector({
   weekStartsOn,
   ...props
 }: DateSelectorProps) {
+  const t = useT();
   const generatedId = useId();
   const rootId = id ?? `date-selector-${generatedId}`;
   const labelId = `${rootId}-label`;
@@ -176,7 +178,7 @@ export function DateSelector({
         ? [nextValue.from, nextValue.to].filter((date): date is Date => Boolean(date))
         : [];
     if (dates.some(isUnavailable)) {
-      setEntryError('Choose an available date within the allowed range.');
+      setEntryError(t('Choose an available date within the allowed range.'));
       return;
     }
     setEntryError(undefined);
@@ -197,7 +199,7 @@ export function DateSelector({
           <Input
             aria-describedby={describedBy}
             aria-invalid={Boolean(activeError) || undefined}
-            aria-label={mode === 'range' ? 'Start date' : undefined}
+            aria-label={mode === 'range' ? t('Start date') : undefined}
             disabled={inputDisabled}
             id={`${rootId}-start`}
             max={formatDateInput(maxDate) || undefined}
@@ -222,7 +224,7 @@ export function DateSelector({
             <Input
               aria-describedby={describedBy}
               aria-invalid={Boolean(activeError) || undefined}
-              aria-label="End date"
+              aria-label={t('End date')}
               disabled={inputDisabled}
               id={`${rootId}-end`}
               max={formatDateInput(maxDate) || undefined}
@@ -265,7 +267,7 @@ export function DateSelector({
           />
           {clearable && selection && !inputDisabled ? (
             <Button className={styles.clearButton} onClick={() => updateValue(undefined)} size="sm" variant="link">
-              Clear date
+              {t('Clear date')}
             </Button>
           ) : null}
         </div>

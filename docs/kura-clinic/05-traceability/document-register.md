@@ -8,6 +8,8 @@ All Kura Clinic product documents that previously lived at the `FINAL DCM` repos
 | --- | --- | --- |
 | [Pack index](../README.md) | Entry point, authority order, folder map, product boundary | Canonical index |
 | [End-to-end journeys](../01-journeys/end-to-end-journeys.md) | Cross-role lifecycle flows and recovery | Canonical journey narrative |
+| [Doctor care-loop map](../01-journeys/doctor-care-loop-map.md) | Doctor-centered trigger-to-closure projection, independent state axes, handoffs, and open gates | Canonical journey projection; domain truth and catalog remain authoritative |
+| [Doctor journey coverage matrix](../01-journeys/doctor-journey-coverage-matrix.md) | Generated inventory of every doctor-direct and doctor-impacting journey, actor, status, and case count | Generated traceability projection; journey catalog remains authoritative |
 | [Journey catalog](../01-journeys/journey-catalog.md) | Complete journey inventory and coverage state | Canonical inventory |
 | [Journey case matrix](../01-journeys/journey-case-matrix.md) | Happy/reject/retry/concurrency/recovery cases | Canonical acceptance inventory |
 | [Figma journey logic audit](../04-audits-and-quality/figma-journey-logic-audit.md) | Logic-only review of supplied Figma journeys | Canonical design audit |

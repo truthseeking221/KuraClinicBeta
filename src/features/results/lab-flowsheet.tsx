@@ -2,6 +2,7 @@
 
 import type { ComponentPropsWithoutRef, ReactNode } from 'react';
 
+import { useT } from '../../components/foundations/i18n';
 import {
   EmptyState,
   EmptyStateDescription,
@@ -18,6 +19,7 @@ import {
 import {
   episodeProgress,
   episodeProgressLabel,
+  sectionOutstandingLabel,
   visibleSections,
 } from './logic';
 import { LabResultRow, type LabResultRowMode } from './lab-result-row';
@@ -53,6 +55,7 @@ export function LabFlowsheet({
   title,
   ...props
 }: LabFlowsheetProps) {
+  const t = useT();
   const allResults = sections.flatMap((section) => section.results);
   const renderedSections = visibleSections(sections);
   const progress = episodeProgress(allResults);
@@ -73,6 +76,7 @@ export function LabFlowsheet({
       className={joinClasses(styles.flowsheet, className)}
       data-slot="lab-flowsheet"
       dividers
+      variant="outline"
     >
       <CardHeader className={styles.header}>
         <CardTitle as="h2">{title}</CardTitle>
@@ -80,7 +84,7 @@ export function LabFlowsheet({
         {shouldShowProgress ? (
           <div className={styles.progress} role="status" aria-live="polite">
             <Badge size="sm" variant={progressVariant}>
-              {episodeProgressLabel(progress)}
+              {episodeProgressLabel(progress, t)}
             </Badge>
           </div>
         ) : null}
@@ -90,27 +94,27 @@ export function LabFlowsheet({
         {renderedSections.map((section) => {
           const sectionProgress = episodeProgress(section.results);
           return (
-            <Collapsible key={section.code} className={styles.section} defaultOpen>
-              <CollapsibleTrigger className={styles.sectionTrigger}>
-                <span className={styles.sectionLabel}>
-                  <span className={styles.sectionTitle}>{section.title}</span>
-                  {sectionProgress.status !== 'completed' || sectionProgress.unavailable > 0 ? (
-                    <span className={styles.sectionMeta}>
-                      {episodeProgressLabel(sectionProgress)}
-                    </span>
-                  ) : null}
-                </span>
+            <Collapsible key={section.code} className={styles.section} defaultOpen inset="none">
+              <CollapsibleTrigger
+                className={styles.sectionTrigger}
+                headingLevel={3}
+                meta={sectionOutstandingLabel(sectionProgress, t)}
+              >
+                {section.title}
               </CollapsibleTrigger>
               <CollapsibleContent>
-                {section.results.map((result) => (
-                  <LabResultRow
-                    key={`${result.testId}-${result.analyteCode}`}
-                    result={result}
-                    mode={mode}
-                    locale={locale}
-                    trailing={renderRowTrailing?.(result)}
-                  />
-                ))}
+                <div className={styles.rows} role="list">
+                  {section.results.map((result) => (
+                    <LabResultRow
+                      key={`${result.testId}-${result.analyteCode}`}
+                      result={result}
+                      mode={mode}
+                      locale={locale}
+                      role="listitem"
+                      trailing={renderRowTrailing?.(result)}
+                    />
+                  ))}
+                </div>
               </CollapsibleContent>
             </Collapsible>
           );
@@ -119,8 +123,8 @@ export function LabFlowsheet({
         {renderedSections.length === 0 ? (
           <EmptyState align="center" surface="plain" className={styles.empty}>
             <EmptyStateHeader>
-              <EmptyStateTitle>{emptyTitle}</EmptyStateTitle>
-              <EmptyStateDescription>{emptyDescription}</EmptyStateDescription>
+              <EmptyStateTitle>{t(emptyTitle)}</EmptyStateTitle>
+              <EmptyStateDescription>{t(emptyDescription)}</EmptyStateDescription>
             </EmptyStateHeader>
           </EmptyState>
         ) : null}

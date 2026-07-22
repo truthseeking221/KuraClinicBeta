@@ -1,258 +1,154 @@
 /* Phone-gate modal — spec docs/design/phone-gate/phone-gate-ui-spec.md.
- * Spec pixel values map to tokens: 790px shell ≈ two panes on the control
- * scale; surfaces separate by tone (border diet), never border + shadow. */
+ * The shell, close button, mobile presentation, scroll ownership, and footer
+ * action bar all come from the canonical Dialog. This file only styles what
+ * the gate itself owns: the bound-number line and the matched identity. */
 
 .content {
-  width: min(calc(var(--space-16) * 12 + var(--space-6)), calc(100vw - var(--space-8)));
-  max-width: none;
-  padding: 0;
-  overflow: visible;
+  --dialog-inset: var(--space-5);
 }
 
-.frame {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) calc(var(--space-16) * 4);
-  min-height: 0;
+/* The title and the control it introduces share one surface, one task, and no
+ * scroll, so spacing carries the boundary. The footer keeps its rule: an
+ * action bar is a boundary that means something. */
+.content > :global([data-slot='dialog-header']) {
+  border-bottom: 0;
+  padding-bottom: 0;
 }
 
-.pane {
+.body,
+.stack {
   display: flex;
   min-width: 0;
   flex-direction: column;
   gap: var(--space-4);
-  order: 1;
-  padding: var(--space-5);
 }
 
-.backLink {
-  align-self: flex-start;
+.footer {
+  align-items: center;
+}
+
+/* ── The number the gate is about (spec §4/§6/§8) ─────────── */
+
+.phoneLine {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  column-gap: var(--space-3);
+}
+
+/* The verified number is established context, not a field to fill: it carries
+   a different functional role from the inputs below it, so it sits on its own
+   quiet tray inside the white dialog. Flat and borderless — contrast is the
+   boundary. The inline OTP destination stays bare; it supports the title
+   rather than forming a region of its own. */
+.phoneLine:not([data-inline='true']) {
+  padding: var(--space-2-5) var(--space-3);
+  border-radius: var(--radius-card-tile);
+  background: var(--color-surface-2);
+  align-items: center;
+  row-gap: var(--space-0-5);
+}
+
+/* Inside the tray the value and its one action share a row, so Change is
+   optically centred on the number it changes rather than sitting on the
+   control-height baseline the standalone line uses. Button block padding only
+   pads wrapped text, so a single-line link gives it up and the row collapses
+   to the height of the value it sits beside. */
+.phoneLine:not([data-inline='true']) > :global([data-slot='button']) {
+  min-height: 0;
+  padding-block: 0;
+}
+
+/* A finger still needs the full target: give the height back on touch, where
+   the row can afford it, rather than shipping a 23px tap area. */
+@media (pointer: coarse) {
+  .phoneLine:not([data-inline='true']) > :global([data-slot='button']) {
+    min-height: var(--touch-target-min);
+  }
+}
+
+.phoneLineLabel {
+  grid-column: 1;
+  color: var(--color-text-secondary);
+  font-size: var(--type-xs);
+}
+
+.phoneLineInlineLabel {
+  color: var(--color-text-secondary);
+  font-weight: var(--weight-normal);
+}
+
+.phoneLineValue {
+  display: flex;
+  min-width: 0;
+  grid-column: 1;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--color-text-primary);
+  font-size: var(--type-sm);
+  font-weight: var(--weight-medium);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+/* Verified is stated by the check plus the label above it, never by color. */
+.phoneLineCheck {
+  width: var(--space-4);
+  height: var(--space-4);
+  flex: none;
+  color: var(--color-status-success-fg);
+}
+
+.phoneLineNumber {
+  min-width: 0;
+}
+
+/* Change sits on the value row it changes, so proximity carries its meaning. */
+.phoneLine > :global([data-slot='button']) {
+  grid-row: 2;
+  grid-column: 2;
+  align-self: center;
   padding-inline: 0;
 }
 
-.title {
-  margin: 0;
+/* The OTP destination supports the title; it is not a second field. */
+.phoneLine[data-inline='true'] {
+  align-items: center;
+}
+
+.phoneLine[data-inline='true'] .phoneLineValue {
+  grid-row: 1;
+  flex-wrap: wrap;
+}
+
+.phoneLine[data-inline='true'] > :global([data-slot='button']) {
+  grid-row: 1;
+  grid-column: 2;
+}
+
+/* ── Matched identity (spec §7) ───────────────────────────── */
+
+.identity {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+
+/* The name answers the dialog's question, so it is the loudest value here. */
+.identityName {
   color: var(--color-text-primary);
   font-size: var(--type-lg);
   font-weight: var(--weight-semibold);
   line-height: var(--leading-snug);
-}
-
-.subtitle {
-  margin: 0;
-  color: var(--color-text-secondary);
-  font-size: var(--type-sm);
-  line-height: var(--leading-normal);
-}
-
-.subtitleStrong {
-  color: var(--color-text-primary);
-  font-weight: var(--weight-medium);
-  font-variant-numeric: tabular-nums;
-}
-
-.resendRow {
-  display: flex;
-  justify-content: center;
-}
-
-.pending {
-  margin: 0;
-  padding-block: var(--space-6);
-  color: var(--color-text-secondary);
-  font-size: var(--type-sm);
-  text-align: center;
-}
-
-/* Detached canonical IconButton outside the shell (spec §3). */
-.closeButton {
-  position: absolute;
-  top: calc(var(--space-4) * -1);
-  right: calc(var(--space-4) * -1);
-  z-index: 1;
-  width: var(--control-h-sm);
-  min-width: var(--control-h-sm);
-  height: var(--control-h-sm);
-  border-radius: var(--radius-full);
-  box-shadow: var(--shadow-sm);
-}
-
-/* ── Persistent safety pane (spec §4) ─────────────────────── */
-
-.safetyPane {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  order: 2;
-  align-items: center;
-  justify-content: center;
-  border-inline-start: 1px solid var(--color-border);
-  padding: var(--space-5);
-  text-align: center;
-}
-
-.safetyIllustration {
-  width: var(--space-12);
-  height: var(--space-12);
-  color: var(--color-text-brand);
-}
-
-.safetyLabel {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1);
-  margin: 0;
-  color: var(--color-status-warning-fg);
-  font-size: var(--type-2xs);
-  font-weight: var(--weight-semibold);
-  letter-spacing: 0.04em;
-}
-
-.safetyLabelIcon {
-  width: var(--space-3);
-  height: var(--space-3);
-}
-
-.safetyBody {
-  margin: 0;
-  color: var(--color-text-secondary);
-  font-size: var(--type-sm);
-  font-weight: var(--weight-medium);
-  line-height: var(--leading-normal);
-}
-
-/* ── Known-match card (spec §7) ───────────────────────────── */
-
-.matchCard {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  padding: var(--space-3);
-}
-
-.matchText {
-  display: flex;
-  min-width: 0;
-  flex: 1;
-  flex-direction: column;
-}
-
-.matchName {
-  color: var(--color-text-primary);
-  font-size: var(--type-base);
-  font-weight: var(--weight-semibold);
   overflow-wrap: anywhere;
 }
 
-.matchMeta {
-  color: var(--color-text-tertiary);
-  font-size: var(--type-xs);
-}
-
-.sharedMatches {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-}
-
-.candidateList {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-
-/* ── Temporary-patient details (spec §8/§9) ───────────────── */
-
-.detailsForm {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-}
-
-.verifiedField {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-stack-label);
-}
-
-.verifiedLabel {
+.identityMeta {
   color: var(--color-text-secondary);
   font-size: var(--type-sm);
-  font-weight: var(--weight-medium);
 }
 
-.verifiedRow {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-2);
-}
-
-.verifiedValue {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  min-height: var(--control-h);
-  border-radius: var(--radius-field);
-  background: var(--color-status-success-bg);
-  color: var(--color-status-success-fg);
-  padding-inline: var(--space-inset-control);
-  font-variant-numeric: tabular-nums;
-}
-
-.verifiedCheck,
-.verifiedLock {
-  width: var(--space-4);
-  height: var(--space-4);
-}
-
-.verifiedPhone {
-  color: var(--color-text-primary);
-  font-weight: var(--weight-medium);
-}
-
-.verifiedHint {
-  margin: 0;
-  color: var(--color-text-tertiary);
-  font-size: var(--type-xs);
-}
-
-.fieldGrid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--space-3);
-  align-items: start;
-}
-
-.formError {
-  margin: 0;
-  color: var(--destructive);
-  font-size: var(--type-xs);
-}
-
-/* ── Mobile: safety message stacks above the form (spec §11.6) ── */
-
-@media (max-width: 767px) {
-  .frame {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .safetyPane {
-    order: 0;
-    border-inline-start: none;
-    border-block-end: 1px solid var(--color-border);
-    padding: var(--space-4) var(--space-5);
-  }
-
-  .closeButton {
-    top: var(--space-2);
-    right: var(--space-2);
-    border-color: transparent;
-    box-shadow: none;
-  }
-
-  .fieldGrid {
-    grid-template-columns: 1fr;
-  }
+.candidates {
+  min-width: 0;
 }

@@ -1,11 +1,8 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import type { CSSProperties } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   DCM_COLOR_MIGRATION_ALIASES,
-  DCM_COLOR_TOKENS,
   DCM_PRIMITIVE_TOKENS,
   DCM_SEMANTIC_TOKENS,
-  DCM_SEMANTIC_TONE_RULES,
   KURA_COLOR_COMPATIBILITY_ALIASES,
   KURA_COLOR_EXTENSIONS,
 } from './color-tokens';
@@ -14,82 +11,10 @@ import type {
   DcmColorToken,
   DcmPrimitiveToken,
   DcmSemanticToken,
-  DcmSemanticTone,
 } from './color-tokens';
-
-const TONE_SYMBOLS: Record<DcmSemanticTone, string> = {
-  neutral: '○',
-  info: 'i',
-  success: '✓',
-  warning: '!',
-  danger: '×',
-  ai: '✦',
-  brand: '→',
-};
 
 const primitiveGroups = [...new Set(DCM_PRIMITIVE_TOKENS.map((token) => token.group))];
 const semanticGroups = [...new Set(DCM_SEMANTIC_TOKENS.map((token) => token.group))];
-const canonicalTokenCount = DCM_COLOR_TOKENS.length;
-
-function readTokenValue(element: HTMLElement, name: CssColorVariableName) {
-  return getComputedStyle(element).getPropertyValue(name).trim() || 'Unavailable in this canvas';
-}
-
-function ResolvedValue({ name }: { name: CssColorVariableName }) {
-  const ref = useRef<HTMLSpanElement>(null);
-  const [value, setValue] = useState('Resolving…');
-
-  const resolve = useCallback(() => {
-    if (ref.current) {
-      setValue(readTokenValue(ref.current, name));
-    }
-  }, [name]);
-
-  useEffect(() => {
-    resolve();
-    const observer = new MutationObserver(resolve);
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ['class', 'data-theme'],
-    });
-    return () => observer.disconnect();
-  }, [resolve]);
-
-  return (
-    <span ref={ref} className="select-text font-mono tabular-nums" data-resolved-token={name}>
-      {value}
-    </span>
-  );
-}
-
-function CopyToken({ name, value }: { name: CssColorVariableName; value: string }) {
-  const [status, setStatus] = useState<'Copy' | 'Copied.' | 'Select text'>('Copy');
-
-  const copy = async () => {
-    if (!navigator.clipboard) {
-      setStatus('Select text');
-      return;
-    }
-
-    try {
-      await navigator.clipboard.writeText(`${name}: ${value}`);
-      setStatus('Copied.');
-    } catch {
-      setStatus('Select text');
-    }
-  };
-
-  return (
-    <button
-      type="button"
-      onClick={copy}
-      aria-label={`Copy ${name} and ${value}`}
-      className="min-h-[var(--field-h)] min-w-0 rounded-md border border-border bg-background px-2 font-mono text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-sunken)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:ring-offset-2"
-    >
-      <span aria-live="polite" className="k-caption">{status}</span>
-    </button>
-  );
-}
 
 function sourceDisplay(token: DcmColorToken) {
   return token.kind === 'semantic' ? (token.sourceAnnotation ?? token.sourceValue) : token.sourceValue;
@@ -124,75 +49,62 @@ function SectionHeader({
 
 function ReferenceHeader() {
   return (
-    <header data-color-section="provenance" className="border-b border-border pb-8">
-      <p className="k-label">DCM color contract</p>
-      <h1 className="k-h1 mt-2 text-balance">Colors</h1>
-      <p className="k-body mt-3 max-w-3xl text-[var(--color-text-secondary)]">
-        One canonical contract: <strong className="font-mono">{DCM_SEMANTIC_TOKENS.length}</strong> semantic roles over{' '}
-        <strong className="font-mono">{DCM_PRIMITIVE_TOKENS.length}</strong> primitives in{' '}
-        <strong className="font-mono">{primitiveGroups.length}</strong> ramps —{' '}
-        <strong className="font-mono">{canonicalTokenCount}</strong> canonical entries. Light values follow the DCM source{' '}
-        <code className="select-text break-all font-mono">FINAL DCM/src/styles/kura/variables.css</code>; dark values are Kura
-        runtime adaptations. Build with semantic roles first; reach for primitives only when no role expresses the intent.
+    <header data-color-section="provenance">
+      <p className="k-caption text-[var(--color-text-secondary)]">Foundations</p>
+      <h1 className="k-h1 mt-2 text-balance">Color</h1>
+      <p className="k-body-sm mt-3 max-w-3xl text-[var(--color-text-secondary)]">
+        Kura&apos;s complete color contract: {DCM_SEMANTIC_TOKENS.length} semantic roles backed by three controlled blue
+        primitive families.
       </p>
+      <section aria-labelledby="color-system-heading" className="mt-8 max-w-3xl">
+        <h2 id="color-system-heading" className="k-h4">How the system works</h2>
+        <p className="k-body-sm mt-2 text-[var(--color-text-secondary)]">
+          Components consume purpose-based roles, never raw palette values. Core UI, brand actions, status, data, and
+          clinical identity are separated so the same hue cannot silently change meaning. Dark semantics remain pending
+          until they are designed and contrast-validated as a complete theme.
+        </p>
+      </section>
     </header>
   );
 }
 
-/* ── Semantic roles (light + dark, live) ─────────────────── */
+/* ── Semantic roles ──────────────────────────────────────── */
+
+const SEMANTIC_GROUP_DESCRIPTIONS = {
+  Foreground: 'Icon fills and inverse or on-color foregrounds.',
+  Text: 'Reading hierarchy, links, placeholders, inverse content, disabled text, and errors.',
+  Background: 'Application surfaces and their hover, active, disabled, and error states.',
+  Border: 'Structural, control, and focus boundaries.',
+  'Brand and action': 'Kura identity, primary actions, links, focus, and selection states.',
+  'Status and presence': 'Neutral, information, success, warning, danger, critical, AI, and presence meaning.',
+  'Data visualization': 'Tracks, cursors, neutral data, and eight categorical series with active states.',
+  'Clinical and domain': 'Physical specimen identity; never reused as status meaning.',
+} as const;
 
 function SemanticRow({ token }: { token: DcmSemanticToken }) {
   const value = sourceDisplay(token);
-  const forcedLight = { [token.name]: token.lightResolvedValue } as CSSProperties;
 
   return (
     <article
       data-canonical-token
       data-token-name={token.name}
-      className="dcm-sem-row min-w-0 border-b border-border px-4 py-3 last:border-b-0"
+      className="dcm-sem-row min-w-0 border-b border-border-button-default bg-background-primary-default px-4 py-3 last:border-b-0"
     >
-      <div className="flex items-center gap-1.5">
-        <span
-          role="img"
-          aria-label={`${token.name} in light theme`}
-          className="h-9 w-9 shrink-0 rounded-md border border-[var(--color-border-strong)]"
-          style={{ ...forcedLight, backgroundColor: `var(${token.name})` }}
-        />
-        <span
-          role="img"
-          aria-label={`${token.name} in dark theme`}
-          data-theme="dark"
-          className="h-9 w-9 shrink-0 rounded-md border border-[var(--color-border-strong)]"
-          style={{ backgroundColor: `var(${token.name})` }}
-        />
-      </div>
-
-      <div className="min-w-0">
-        <code className="k-body-sm block select-text break-all font-mono font-medium">{token.name}</code>
-        <p className="k-caption mt-1 text-[var(--color-text-secondary)]">{token.description}</p>
-        <p className="k-caption mt-1 select-text break-all font-mono text-[var(--color-text-tertiary)]">
-          {value}
-          {token.aliases.length ? ` · ${token.aliases.join(' · ')}` : ''}
-        </p>
-      </div>
-
-      <div className="min-w-0">
-        <span className="k-label mr-2 lg:mr-0 lg:block">Light</span>
-        <code className="k-caption select-text break-all font-mono text-[var(--color-text-secondary)]">
-          {token.lightResolvedValue}
-        </code>
-      </div>
-
-      <div className="min-w-0" data-theme="dark">
-        <span className="k-label mr-2 lg:mr-0 lg:block">Dark</span>
-        <span className="k-caption break-all text-[var(--color-text-secondary)]">
-          <ResolvedValue name={token.name} />
-        </span>
-      </div>
-
-      <div className="justify-self-end">
-        <CopyToken name={token.name} value={value} />
-      </div>
+      <span
+        role="img"
+        aria-label={`${token.name} swatch`}
+        className="block size-6 shrink-0 rounded-md border border-border-button-default"
+        style={{ backgroundColor: `var(${token.name})` }}
+      />
+      <code className="k-caption min-w-0 select-text break-all font-mono text-[var(--color-text-primary)]">
+        <span className="dcm-mobile-label">Token</span>{token.name}
+      </code>
+      <code className="k-caption min-w-0 select-text break-all font-mono text-[var(--color-text-secondary)]">
+        <span className="dcm-mobile-label">Tailwind class</span>{token.tailwindClass}
+      </code>
+      <code className="k-caption min-w-0 select-text break-all font-mono text-[var(--color-text-secondary)]">
+        <span className="dcm-mobile-label">Value</span>{value}
+      </code>
     </article>
   );
 }
@@ -201,65 +113,34 @@ function SemanticGroup({ title, tokens }: { title: string; tokens: readonly DcmS
   const id = `semantic-${title.toLowerCase()}`;
 
   return (
-    <section aria-labelledby={id} className="overflow-hidden rounded-lg border border-border bg-[var(--color-surface)]">
-      <header className="flex items-baseline justify-between gap-3 border-b border-border px-4 py-3">
-        <h3 id={id} className="k-h5">{title}</h3>
-        <span className="k-caption font-mono text-[var(--color-text-secondary)]">{tokens.length}</span>
+    <section aria-labelledby={id}>
+      <header className="mb-3">
+        <h2 id={id} className="k-h4">{title}</h2>
+        <p className="k-body-sm mt-1 max-w-3xl text-[var(--color-text-secondary)]">
+          {SEMANTIC_GROUP_DESCRIPTIONS[title as keyof typeof SEMANTIC_GROUP_DESCRIPTIONS]}
+        </p>
       </header>
-      {tokens.map((token) => <SemanticRow key={token.name} token={token} />)}
+      <div className="overflow-hidden rounded-lg border border-border-button-default">
+        <div aria-hidden="true" className="dcm-sem-head bg-background-secondary-default px-4 py-2">
+          <span />
+          <span>Token</span>
+          <span>Tailwind class</span>
+          <span>Value</span>
+        </div>
+        {tokens.map((token) => <SemanticRow key={token.name} token={token} />)}
+      </div>
     </section>
   );
 }
 
 function SemanticInventory() {
   return (
-    <section data-color-section="semantics" aria-labelledby="semantic-heading">
-      <SectionHeader id="semantic-heading" title="Semantic roles" meta={`${DCM_SEMANTIC_TOKENS.length} canonical`}>
-        The working vocabulary. Each role renders both theme specimens live: light is the DCM source value, dark is the Kura
-        runtime adaptation resolved in this canvas.
-      </SectionHeader>
-      {/* The light/dark matrix lives inside the semantic rows since the merge. */}
-      <div className="flex flex-col gap-5" data-color-section="theme-comparison">
+    <section data-color-section="semantics" aria-label={`${DCM_SEMANTIC_TOKENS.length} Kura semantic colors`}>
+      <div className="flex flex-col gap-8" data-color-section="theme-comparison">
         {semanticGroups.map((group) => (
           <SemanticGroup key={group} title={group} tokens={DCM_SEMANTIC_TOKENS.filter((token) => token.group === group)} />
         ))}
       </div>
-    </section>
-  );
-}
-
-/* ── Status tones ────────────────────────────────────────── */
-
-function ToneLegend() {
-  return (
-    <section data-color-section="tone-meanings" aria-labelledby="tone-meanings-heading">
-      <SectionHeader id="tone-meanings-heading" title="Status tones">
-        Color never stands alone: every status pairs its tone with a label, symbol, or written state.
-      </SectionHeader>
-      <ul className="grid gap-x-8 gap-y-5 sm:grid-cols-2 xl:grid-cols-3">
-        {DCM_SEMANTIC_TONE_RULES.map((rule) => (
-          <li key={rule.tone} className="flex min-w-0 items-start gap-3">
-            <span
-              className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full border border-[var(--color-border-strong)] px-3 font-semibold capitalize"
-              style={{
-                backgroundColor: rule.background ? `var(${rule.background})` : 'var(--color-surface-sunken)',
-                color: `var(${rule.foreground})`,
-              }}
-            >
-              <span aria-hidden="true">{TONE_SYMBOLS[rule.tone]}</span>
-              {rule.tone}
-            </span>
-            <div className="min-w-0">
-              <p className="k-body-sm">{rule.description}</p>
-              <p className="k-caption mt-0.5 text-[var(--color-text-tertiary)]">{rule.meanings.join(' · ')}</p>
-            </div>
-          </li>
-        ))}
-      </ul>
-      <p className="k-body-sm mt-5 border-l border-[var(--color-border-strong)] pl-3 text-[var(--color-text-secondary)]">
-        Text or icon cue required — never color-only. <code className="font-mono">--color-status-low-fg</code> is
-        foreground-only; its component supplies the cue and background context.
-      </p>
     </section>
   );
 }
@@ -325,44 +206,16 @@ function PrimitiveRamp({ title, tokens }: { title: string; tokens: readonly DcmP
   );
 }
 
-function PrimitivePalette() {
+function KuraBluePalette() {
   return (
     <section data-color-section="primitives" aria-labelledby="primitive-heading">
-      <SectionHeader id="primitive-heading" title="Primitive palette" meta={`${DCM_PRIMITIVE_TOKENS.length} canonical`}>
-        Immutable DCM ramps, lightest to strongest. Click a step to copy its token; hover for its role.
+      <SectionHeader id="primitive-heading" title="Kura blue primitives" meta={`${DCM_PRIMITIVE_TOKENS.length} steps`}>
+        These values are foundation inputs, not component APIs. Click a step to copy its token.
       </SectionHeader>
       <div className="flex flex-col gap-6">
         {primitiveGroups.map((group) => (
           <PrimitiveRamp key={group} title={group} tokens={DCM_PRIMITIVE_TOKENS.filter((token) => token.group === group)} />
         ))}
-      </div>
-    </section>
-  );
-}
-
-/* ── Keyboard focus ──────────────────────────────────────── */
-
-function FocusBand() {
-  const buttonClass = 'min-h-[var(--field-h)] rounded-md border border-[var(--color-border-focus)] bg-[var(--color-surface)] px-3 text-[var(--color-text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:ring-offset-2 focus-visible:shadow-[var(--shadow-focus)]';
-
-  return (
-    <section data-color-section="focus" aria-labelledby="focus-heading">
-      <SectionHeader id="focus-heading" title="Keyboard focus">
-        Tab through all three surfaces to inspect the solid boundary, halo, and ring offset.
-      </SectionHeader>
-      <div className="grid gap-4 lg:grid-cols-3">
-        <article className="rounded-lg border border-border bg-[var(--color-surface)] p-4">
-          <p className="k-label">Normal surface</p>
-          <button type="button" aria-label="Normal surface focus specimen" className={`${buttonClass} mt-3`}>Focus specimen</button>
-        </article>
-        <article className="rounded-lg border border-border bg-[var(--color-surface-sunken)] p-4">
-          <p className="k-label">Sunken surface</p>
-          <button type="button" aria-label="Sunken surface focus specimen" className={`${buttonClass} mt-3`}>Focus specimen</button>
-        </article>
-        <article data-theme="dark" className="rounded-lg border border-border bg-[var(--color-surface-bg)] p-4 text-[var(--color-text-primary)]">
-          <p className="k-label">Dark surface</p>
-          <button type="button" aria-label="Dark surface focus specimen" className={`${buttonClass} mt-3`}>Focus specimen</button>
-        </article>
       </div>
     </section>
   );
@@ -405,9 +258,9 @@ function DenseExtensionDetails() {
   return (
     <details className="overflow-hidden rounded-lg border border-border bg-[var(--color-surface)]">
       <summary className="k-label cursor-pointer px-4 py-3 hover:bg-[var(--color-surface-sunken)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-border-focus)]">
-        Kura palette extensions · {KURA_COLOR_EXTENSIONS.length}
+        Component roles · {KURA_COLOR_EXTENSIONS.length}
       </summary>
-      <div role="table" aria-label="Kura palette extensions" className="border-t border-border">
+      <div role="table" aria-label="Kura component color roles" className="border-t border-border">
         <div role="row" className="dcm-extension-row hidden border-b border-border px-4 py-2 sm:grid">
           {['Swatch', 'Name', 'Group', 'Value'].map((label) => <span key={label} role="columnheader" className="k-label">{label}</span>)}
         </div>
@@ -437,13 +290,10 @@ function CompatibilityInventory() {
   return (
     <section data-color-section="compatibility" aria-labelledby="compatibility-heading">
       <SectionHeader id="compatibility-heading" title="Compatibility inventory">
-        Aliases and Kura extensions stay outside the {canonicalTokenCount} canonical entries. Note the intentional pair{' '}
-        <code className="select-text font-mono">--text-muted → #8d94a8</code> versus{' '}
-        <code className="select-text font-mono">--color-text-muted → #6b7388</code>, and the shadcn bridge{' '}
-        <code className="select-text font-mono">--border → --border-color → --color-border</code>.
+        Temporary legacy names resolve into the Kura semantic graph. New component code must not consume these aliases.
       </SectionHeader>
       <div className="flex flex-col gap-3">
-        <DenseAliasDetails title="DCM migration aliases" aliases={DCM_COLOR_MIGRATION_ALIASES} />
+        <DenseAliasDetails title="Legacy aliases" aliases={DCM_COLOR_MIGRATION_ALIASES} />
         <DenseAliasDetails title="Kura compatibility aliases" aliases={KURA_COLOR_COMPATIBILITY_ALIASES} />
         <DenseExtensionDetails />
       </div>
@@ -453,37 +303,32 @@ function CompatibilityInventory() {
 
 export function ColorsReference() {
   return (
-    <main className="min-h-screen w-full min-w-0 bg-background px-4 py-8 text-foreground sm:px-8" data-density="compact">
+    <main className="dcm-color-page min-h-screen w-full min-w-0 bg-background-primary-default px-4 py-8 text-text-primary sm:px-8" data-density="compact">
       <style>{`
+        .dcm-color-page .k-caption { color: var(--color-text-secondary); }
         .dcm-ramp { display: grid; gap: 1px; grid-template-columns: repeat(auto-fit, minmax(calc(var(--space-16) * 1.5), 1fr)); }
-        .dcm-sem-row { display: grid; grid-template-columns: calc(var(--space-16) + var(--space-6)) minmax(0, 1.8fr) minmax(0, 0.7fr) minmax(0, 0.7fr) auto; gap: var(--space-4); align-items: center; }
-        .dcm-sem-row .k-label { display: none; }
+        .dcm-sem-head, .dcm-sem-row { display: grid; grid-template-columns: 40px minmax(0, 1.3fr) minmax(0, 1.1fr) minmax(0, 0.7fr); gap: var(--space-4); align-items: center; }
+        .dcm-sem-head { font-size: var(--type-2xs); font-weight: var(--weight-medium); color: var(--color-neutral-600); }
+        .dcm-sem-row > code { color: var(--color-text-secondary); }
+        .dcm-sem-row > code:nth-child(2) { color: var(--color-text-primary); }
+        .dcm-mobile-label { display: none; }
         .dcm-alias-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) minmax(0, 1.5fr); gap: var(--space-3); align-items: start; }
         .dcm-extension-row { display: grid; grid-template-columns: var(--space-8) minmax(0, 1.4fr) minmax(0, 0.7fr) minmax(0, 1fr); gap: var(--space-3); align-items: center; }
-        @media (min-width: 1024px) {
-          .dcm-sem-row .k-label { display: block; }
-        }
-        @media (max-width: 1023px) {
-          .dcm-sem-row { grid-template-columns: minmax(0, 1fr) auto; row-gap: var(--space-2); }
-          .dcm-sem-row > :nth-child(1) { grid-row: 1; grid-column: 1; }
-          .dcm-sem-row > :nth-child(5) { grid-row: 1; grid-column: 2; }
-          .dcm-sem-row > :nth-child(2),
-          .dcm-sem-row > :nth-child(3),
-          .dcm-sem-row > :nth-child(4) { grid-column: 1 / -1; }
-          .dcm-sem-row .k-label { display: inline; margin-right: var(--space-2); }
-        }
         @media (max-width: 639px) {
+          .dcm-sem-head { display: none; }
+          .dcm-sem-row { grid-template-columns: 32px minmax(0, 1fr); row-gap: var(--space-1); align-items: start; }
+          .dcm-sem-row > :first-child { grid-row: 1 / span 3; }
+          .dcm-sem-row > :not(:first-child) { grid-column: 2; }
+          .dcm-mobile-label { display: inline-block; min-width: 88px; margin-right: var(--space-2); color: var(--color-neutral-600); font-family: var(--font-family-sans); font-weight: var(--weight-medium); }
           .dcm-alias-row { grid-template-columns: minmax(0, 1fr); }
           .dcm-extension-row { grid-template-columns: var(--space-8) minmax(0, 1fr); }
           .dcm-extension-row > :first-child { grid-row: span 3; }
         }
       `}</style>
-      <div className="mx-auto flex w-full max-w-7xl min-w-0 flex-col gap-12">
+      <div className="mx-auto flex w-full max-w-5xl min-w-0 flex-col gap-12">
         <ReferenceHeader />
         <SemanticInventory />
-        <ToneLegend />
-        <PrimitivePalette />
-        <FocusBand />
+        <KuraBluePalette />
         <CompatibilityInventory />
       </div>
     </main>

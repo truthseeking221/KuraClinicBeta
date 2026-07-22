@@ -15,6 +15,7 @@ import type {
   ReactNode,
 } from 'react';
 
+import { useT } from '../foundations/i18n';
 import { ChevronDownIcon, SpinnerGapIcon, XIcon } from './icons';
 import { IconButton } from './icon-button';
 import styles from './autocomplete.module.css';
@@ -128,7 +129,7 @@ export function Autocomplete<T extends AutocompleteItem>({
   defaultValue,
   disabled = false,
   disabledReason,
-  emptyMessage = 'No options are available.',
+  emptyMessage,
   errorMessage,
   filterItems,
   helperText,
@@ -137,14 +138,14 @@ export function Autocomplete<T extends AutocompleteItem>({
   items,
   label,
   loading = false,
-  loadingMessage = 'Searching options…',
+  loadingMessage,
   name,
-  noResultsMessage = 'No matching options found.',
+  noResultsMessage,
   onOpenChange,
   onQueryChange,
   onValueChange,
   open,
-  placeholder = 'Search options',
+  placeholder,
   query,
   readOnly = false,
   renderItem,
@@ -153,6 +154,11 @@ export function Autocomplete<T extends AutocompleteItem>({
   statusMessage,
   value,
 }: AutocompleteProps<T>) {
+  const t = useT();
+  const resolvedEmptyMessage = emptyMessage ?? t('No options are available.');
+  const resolvedLoadingMessage = loadingMessage ?? t('Searching options…');
+  const resolvedNoResultsMessage = noResultsMessage ?? t('No matching options found.');
+  const resolvedPlaceholder = placeholder ?? t('Search options');
   const generatedId = useId().replaceAll(':', '');
   const fieldId = id ?? `autocomplete-${generatedId}`;
   const listboxId = `${fieldId}-listbox`;
@@ -354,9 +360,9 @@ export function Autocomplete<T extends AutocompleteItem>({
 
   const helperMessage = errorMessage ?? disabledReason ?? helperText;
   const popupMessage = loading
-    ? loadingMessage
+    ? resolvedLoadingMessage
     : filteredItems.length === 0
-      ? (inputValue ? noResultsMessage : emptyMessage)
+      ? (inputValue ? resolvedNoResultsMessage : resolvedEmptyMessage)
       : null;
   const announcedStatus = statusMessage
     ?? (isOpen && !loading ? `${filteredItems.length} option${filteredItems.length === 1 ? '' : 's'} available.` : '');
@@ -394,7 +400,7 @@ export function Autocomplete<T extends AutocompleteItem>({
             aria-readonly={readOnly || undefined}
             className={joinClasses(styles.input, inputClassName)}
             disabled={disabled}
-            placeholder={placeholder}
+            placeholder={resolvedPlaceholder}
             readOnly={readOnly}
             value={inputValue}
             onChange={handleInputChange}
@@ -409,13 +415,13 @@ export function Autocomplete<T extends AutocompleteItem>({
           <div className={styles.controls}>
             {loading ? <SpinnerGapIcon className={styles.loadingIcon} aria-hidden="true" /> : null}
             {clearable && hasClearValue && !disabled && !readOnly ? (
-              <IconButton aria-label="Clear selection" size="micro" variant="tertiary" onClick={clearSelection}>
+              <IconButton aria-label={t('Clear selection')} size="micro" variant="tertiary" onClick={clearSelection}>
                 <XIcon aria-hidden="true" />
               </IconButton>
             ) : null}
             {showTrigger && !disabled && !readOnly ? (
               <IconButton
-                aria-label={isOpen ? 'Hide options' : 'Show options'}
+                aria-label={isOpen ? t('Hide options') : t('Show options')}
                 aria-expanded={isOpen}
                 size="micro"
                 variant="tertiary"
@@ -438,7 +444,7 @@ export function Autocomplete<T extends AutocompleteItem>({
             {popupMessage ? (
               <div className={styles.menuStatus} role="status">{popupMessage}</div>
             ) : (
-              <ul id={listboxId} role="listbox" aria-label={typeof label === 'string' ? label : 'Options'} className={styles.list}>
+              <ul id={listboxId} role="listbox" aria-label={typeof label === 'string' ? label : t('Options')} className={styles.list}>
                 {groups.map((group) => (
                   <li key={group.label ?? 'ungrouped'} role="presentation" className={styles.group}>
                     {group.label ? <div className={styles.groupLabel}>{group.label}</div> : null}

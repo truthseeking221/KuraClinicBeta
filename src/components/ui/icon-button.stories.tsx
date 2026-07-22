@@ -4,9 +4,9 @@ import { expect, userEvent, within } from 'storybook/test';
 import { IconButton, PlusIcon, XIcon } from './index';
 
 const meta = {
-  title: 'Design System/Primitives/IconButton',
+  title: 'Design System/Primitives/Icon Button',
   component: IconButton,
-  tags: ['autodocs', 'source-reui', 'adapted-kura'],
+  tags: ['autodocs', 'source-kura', 'adapted-kura'],
   parameters: {
     layout: 'centered',
     kura: {
@@ -14,12 +14,12 @@ const meta = {
         decision: 'CREATE',
         owner: 'src/components/ui',
         evidence:
-          'ReUI exposes icon-only button examples, but the fresh Kura index had no canonical icon-only action owner. The capability is promoted as an accessible Kura primitive.',
+          'The accessible Kura icon-only action owner adopts Kura size, surface, border, and shadow geometry.',
       },
       source: {
-        vendor: 'ReUI',
-        registryItem: 'components/ui/button.tsx — icon-only examples',
-        sourceUrl: 'https://reui.io/components/button',
+        vendor: 'Kura',
+        registryItem: 'icon-button',
+        visualReference: 'Kura icon-button',
       },
       binding: {
         colors: 'kura-semantic',
@@ -85,6 +85,12 @@ export const VariantsAndTones: Story = {
       </IconButton>
     </div>
   ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const [tertiaryButton] = canvas.getAllByRole('button', { name: 'Remove draft' });
+    await expect(tertiaryButton).toHaveAttribute('data-variant', 'tertiary');
+    await expect(tertiaryButton).toHaveStyle({ boxShadow: 'none' });
+  },
 };
 
 export const Sizes: Story = {

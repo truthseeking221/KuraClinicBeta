@@ -63,29 +63,53 @@ export type PhoneGateOutcome =
       auditReason: 'different_patient' | 'shared_phone_override' | 'no_match';
     };
 
+/**
+ * Each step title names the task, so the heading and the controls below it
+ * never disagree.
+ */
 export const PHONE_GATE_COPY = {
-  title: 'Choose patient',
-  subtitle: 'Start with a patient, guardian, or guarantor phone.',
-  verifyTitle: 'Verify number',
-  changePhone: 'Change phone',
+  phoneTitle: 'Contact phone number',
+  phoneSubtitle: 'Use the patient’s number, or a guardian’s or guarantor’s.',
+  otpTitle: 'Enter the code',
   matchTitle: 'Is this the patient?',
-  someoneElse: 'Patient is someone else',
-  differentTitle: 'This looks like a different patient',
+  sharedTitle: 'Which patient?',
+  newPatientTitle: 'Patient details',
+  lookupTitle: 'Patient lookup',
+
+  sendCode: 'Send SMS code',
+  verifyCode: 'Verify code',
+  verifying: 'Checking code…',
+  resendCode: 'Resend code',
+  useThisPatient: 'Use this patient',
+  someoneElse: 'Someone else',
+  choosePatient: 'Use selected patient',
+  noneOfThese: 'None of these',
+  createTemporary: 'Create provisional patient',
+  creating: 'Creating provisional patient…',
+  changePhone: 'Change',
+  changePhoneLabel: 'Change phone number',
+
+  verifiedLabel: 'Phone checked',
+  sentToLabel: 'Sent to',
+  /** The one fact the gate exists to protect: possession is not identity. */
+  identityCaveat: 'SMS confirms the number, not who is being tested.',
+  differentTitle: 'This may be a different patient',
   differentBody:
-    'This phone belongs to another Kura patient. Confirm this is a different person.',
-  noMatchTitle: 'No match found',
-  noMatchBody: 'Add details. Kura will check for possible duplicates.',
-  beforeSendLabel: 'BEFORE YOU SEND',
-  beforeSendBody:
-    'Confirm the phone and the person taking the tests. Reception can finish ID checks later.',
+    'This number belongs to a Kura patient. Creating another record is logged as a possible duplicate.',
+  noMatchBody: 'No patient matches this phone number. PSC confirms identity.',
+
   invalidPhone: 'Enter a valid Cambodia phone number.',
   rateLimited: 'Too many codes requested — try again in a few minutes.',
   invalidCode: 'Incorrect or expired code — try again.',
+  lookupErrorTitle: 'Lookup unavailable',
   lookupError: 'The patient lookup did not respond. Your entries are kept.',
-  unlockPhone: 'Unlock phone number',
+  nameRequired: 'Enter the full name.',
+  dobRequired: 'Enter a date of birth or estimated age.',
+  sexRequired: 'Select a sex.',
+  noSelection: 'Select a patient, or add a provisional patient.',
+
   phoneChecked: 'Phone checked',
   pscConfirms: 'PSC will confirm identity',
-  detailsRequired: 'Add the full name, DOB or age, and sex to continue.',
   closeLabel: 'Close patient identity gate',
 } as const;
 
@@ -120,12 +144,27 @@ export function stateAfterLookup(result: PhoneLookupResult): PhoneGateState {
   return 'error';
 }
 
-/** Creation gate for both temporary-patient forms (spec §8/§9). */
-export function draftPatientError(draft: DraftPatient): string | null {
-  if (!draft.name.trim() || !draft.dobOrAge.trim() || draft.sex === null) {
-    return PHONE_GATE_COPY.detailsRequired;
-  }
-  return null;
+export type DraftPatientErrors = {
+  name?: string;
+  dobOrAge?: string;
+  sex?: string;
+};
+
+/**
+ * Creation gate for both temporary-patient forms (spec §8/§9). Errors are
+ * returned per field so each message lands on the control that is missing,
+ * instead of one lumped sentence under the form.
+ */
+export function draftPatientErrors(draft: DraftPatient): DraftPatientErrors {
+  const errors: DraftPatientErrors = {};
+  if (!draft.name.trim()) errors.name = PHONE_GATE_COPY.nameRequired;
+  if (!draft.dobOrAge.trim()) errors.dobOrAge = PHONE_GATE_COPY.dobRequired;
+  if (draft.sex === null) errors.sex = PHONE_GATE_COPY.sexRequired;
+  return errors;
+}
+
+export function hasDraftErrors(errors: DraftPatientErrors): boolean {
+  return Object.keys(errors).length > 0;
 }
 
 /**
@@ -157,8 +196,8 @@ export function hasUnsavedEntries(input: {
 export function temporaryPatientContext(draft: DraftPatient, provisionalCode: string) {
   return {
     heading: `For ${draft.name.trim()}`,
-    meta: `${provisionalCode} · New patient · ${PHONE_GATE_COPY.phoneChecked}`,
+    meta: `${provisionalCode} · Provisional patient · ${PHONE_GATE_COPY.phoneChecked}`,
     status: PHONE_GATE_COPY.pscConfirms,
-    supporting: 'Phone checked. Not matched in Kura.',
+    supporting: 'Phone checked. No patient matches this number.',
   };
 }

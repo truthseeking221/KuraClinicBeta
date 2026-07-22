@@ -2,6 +2,7 @@
 
 import type { ComponentPropsWithoutRef } from 'react';
 
+import { useT } from '../../components/foundations/i18n';
 import { markerFor, zonesFor } from './logic';
 import type { LabResultValue, ReferenceRange } from './types';
 import styles from './lab-range-band.module.css';
@@ -49,6 +50,7 @@ export function LabRangeBand({
   'aria-label': ariaLabel,
   ...props
 }: LabRangeBandProps) {
+  const t = useT();
   const zones = zonesFor(range);
   if (zones.length === 0) return null;
 
@@ -58,10 +60,12 @@ export function LabRangeBand({
     marker == null ? null : ((marker.zoneIndex + marker.fraction) / zoneCount) * 100;
 
   const fallbackLabel = [
-    'Reference scale',
+    t('Reference scale'),
     zones.map((zone) => `${zone.tier.label} ${zone.label}`).join(', '),
     marker && value
-      ? `value ${valueDisplay(value)} in ${zones[marker.zoneIndex].tier.label} zone`
+      ? t('value {value} in {zone} zone')
+          .replace('{value}', valueDisplay(value) ?? '')
+          .replace('{zone}', zones[marker.zoneIndex].tier.label)
       : null,
   ]
     .filter(Boolean)

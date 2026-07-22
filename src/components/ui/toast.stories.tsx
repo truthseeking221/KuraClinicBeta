@@ -4,16 +4,25 @@ import { expect, userEvent, within } from "storybook/test";
 import { Button, Toaster, toast } from "./index";
 import styles from "./intake-components.stories.module.css";
 
+const toasterIds = {
+  default: "storybook-toast-default-toaster",
+  semanticTones: "storybook-toast-semantic-tones-toaster",
+  withAction: "storybook-toast-with-action-toaster",
+  promiseUpdate: "storybook-toast-promise-update-toaster",
+  mobileNarrow: "storybook-toast-mobile-narrow-toaster",
+} as const;
+
 const meta = {
   title: "Design System/Components/Toast",
   component: Toaster,
-  tags: ["autodocs", "source-reui", "adapted-kura"],
+  tags: ["autodocs", "source-kura", "adapted-kura"],
   parameters: {
     layout: "padded",
     kura: {
       source: {
-        vendor: "ReUI",
-        registryItem: "@reui/c-sonner-1",
+        vendor: "Kura",
+        registryItem: "notification",
+        visualReference: "Kura notification",
         behaviorDependency: "sonner",
       },
       intake: {
@@ -84,16 +93,21 @@ function expectToastContentAfterIcon(toastElement: HTMLElement) {
   expect(Math.abs(actualGap - expectedGap)).toBeLessThanOrEqual(1);
 }
 
+function expectToastHasNoVendorCloseButton(toastElement: HTMLElement) {
+  expect(toastElement.querySelector("[data-close-button]")).toBeNull();
+}
+
 export const Default: Story = {
   args: {},
   render: () => (
     <div className={styles.actionStack}>
-      <Toaster />
+      <Toaster id={toasterIds.default} />
       <Button
         onClick={() =>
           toast("Appointment saved", {
             description: "Friday, 09:30 · Toul Kork Branch",
             id: "storybook-toast-default",
+            toasterId: toasterIds.default,
           })
         }
       >
@@ -121,12 +135,13 @@ export const SemanticTones: Story = {
   args: {},
   render: () => (
     <div className={styles.row}>
-      <Toaster />
+      <Toaster id={toasterIds.semanticTones} />
       <Button
         variant="outline"
         onClick={() =>
           toast.success("Payment recorded", {
             id: "storybook-toast-semantic-tones",
+            toasterId: toasterIds.semanticTones,
           })
         }
       >
@@ -137,6 +152,7 @@ export const SemanticTones: Story = {
         onClick={() =>
           toast.info("Booking updated", {
             id: "storybook-toast-semantic-tones",
+            toasterId: toasterIds.semanticTones,
           })
         }
       >
@@ -147,6 +163,7 @@ export const SemanticTones: Story = {
         onClick={() =>
           toast.warning("Coverage needs review", {
             id: "storybook-toast-semantic-tones",
+            toasterId: toasterIds.semanticTones,
           })
         }
       >
@@ -157,6 +174,7 @@ export const SemanticTones: Story = {
         onClick={() =>
           toast.error("Result could not be sent", {
             id: "storybook-toast-semantic-tones",
+            toasterId: toasterIds.semanticTones,
           })
         }
       >
@@ -182,13 +200,14 @@ export const WithAction: Story = {
   args: {},
   render: () => (
     <div className={styles.actionStack}>
-      <Toaster />
+      <Toaster id={toasterIds.withAction} />
       <Button
         onClick={() =>
           toast.success("Patient added to the queue", {
             action: { label: "View queue", onClick: () => undefined },
             description: "Sokha Chan · Walk-in",
             id: "storybook-toast-with-action",
+            toasterId: toasterIds.withAction,
           })
         }
       >
@@ -229,20 +248,41 @@ export const PromiseUpdate: Story = {
   args: {},
   render: () => (
     <div className={styles.actionStack}>
-      <Toaster />
+      <Toaster id={toasterIds.promiseUpdate} />
       <Button
         onClick={() =>
-          toast.promise(Promise.resolve("sent"), {
-            loading: "Sending appointment reminder…",
-            success: "Reminder sent",
-            error: "Reminder could not be sent",
-          })
+          toast.promise(
+            new Promise<string>((resolve) => {
+              window.setTimeout(() => resolve("sent"), 300);
+            }),
+            {
+              id: "storybook-toast-promise-update",
+              loading: "Sending appointment reminder…",
+              success: "Reminder sent",
+              error: "Reminder could not be sent",
+              toasterId: toasterIds.promiseUpdate,
+            },
+          )
         }
       >
         Send reminder
       </Button>
     </div>
   ),
+  play: async ({ canvasElement }) => {
+    toast.dismiss();
+    const documentCanvas = within(canvasElement.ownerDocument.body);
+    await userEvent.click(
+      within(canvasElement).getByRole("button", { name: "Send reminder" }),
+    );
+    await expect(
+      await documentCanvas.findByText("Reminder sent"),
+    ).toBeVisible();
+    expectToastHasNoVendorCloseButton(
+      getVisibleToast(canvasElement.ownerDocument),
+    );
+    toast.dismiss();
+  },
 };
 
 export const MobileNarrow: Story = {
@@ -250,7 +290,7 @@ export const MobileNarrow: Story = {
   parameters: { viewport: { defaultViewport: "mobile1" } },
   render: () => (
     <div className={styles.actionStack}>
-      <Toaster position="top-center" />
+      <Toaster id={toasterIds.mobileNarrow} position="top-center" />
       <Button
         fullWidth
         onClick={() =>
@@ -258,6 +298,7 @@ export const MobileNarrow: Story = {
             description:
               "The patient will receive the updated date, clinic, and preparation instructions.",
             id: "storybook-toast-mobile-narrow",
+            toasterId: toasterIds.mobileNarrow,
           })
         }
       >

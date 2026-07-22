@@ -39,6 +39,43 @@
   font-variant-numeric: tabular-nums;
 }
 
+.changePhone {
+  align-self: flex-start;
+}
+
+.expiry {
+  color: var(--color-text-tertiary);
+  font-size: var(--type-xs);
+  line-height: var(--leading-normal);
+}
+
+.verificationMeta {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.otpSection {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.resendStatus {
+  margin: 0;
+  padding-block: var(--space-0-5);
+  color: var(--color-text-secondary);
+  font-size: var(--type-xs);
+  line-height: var(--leading-snug);
+}
+
+.resendAction {
+  align-self: flex-start;
+}
+
 .actionRow {
   display: flex;
   align-items: center;
@@ -47,14 +84,27 @@
   gap: var(--space-2);
 }
 
-.actionCluster {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
+.licenceActionRow {
+  margin-block-start: var(--space-2);
 }
 
 .inlineEnd {
   align-self: flex-end;
+}
+
+/* First and last name are one answer split across two fields, so they sit on
+   one row at a tighter gap than the step's own rhythm. An error under one
+   field must not drag the other's label down. */
+.nameRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: start;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.nameRow > * {
+  min-width: 0;
 }
 
 .fieldGroup {
@@ -101,6 +151,11 @@
     margin-inline: 0;
   }
 
+  .nameRow {
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+  }
+
   .actionRow {
     align-items: stretch;
     flex-direction: column;
@@ -111,15 +166,6 @@
   }
 
   .actionRow > :global([data-slot="button"]) {
-    width: 100%;
-  }
-
-  .actionCluster {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .actionCluster :global([data-slot="button"]) {
     width: 100%;
   }
 

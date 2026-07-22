@@ -4,6 +4,8 @@ import type {
   LabResultSection,
   ReferenceRange,
   ReferenceTier,
+  ResultReviewQueueEntry,
+  ResultsDataState,
   ResultsPatient,
 } from './types';
 
@@ -607,3 +609,190 @@ export const IRREGULAR_DATE_RESULT: LabAnalyteResult = {
   ],
   observedAt: '2026-07-01T08:40:00Z',
 };
+
+/** Synthetic cross-patient queue data used by Results and Home stories. */
+export const RESULT_REVIEW_QUEUE: ResultReviewQueueEntry[] = [
+  {
+    id: 'review-dara-phally-lipid',
+    patient: {
+      id: 'patient-dara-phally',
+      name: 'Dara Phally',
+      dob: '1982-03-12',
+      sexAtBirth: 'Female',
+      medicalRecordNumber: 'MK-10482',
+    },
+    testName: 'Lipid panel',
+    returnedLabel: '2 hours ago',
+    status: 'abnormal',
+  },
+  {
+    id: 'review-sokha-chan-hba1c',
+    patient: {
+      id: 'patient-sokha-chan',
+      name: 'Sokha Chan',
+      dob: '1976-11-04',
+      sexAtBirth: 'Male',
+      medicalRecordNumber: 'MK-09831',
+    },
+    testName: 'Hemoglobin A1c',
+    returnedLabel: '48 minutes ago',
+    status: 'abnormal',
+  },
+  {
+    id: 'review-chenda-sreymom-cbc',
+    patient: {
+      id: 'patient-chenda-sreymom',
+      name: 'Chenda Sreymom',
+      dob: '1991-08-24',
+      sexAtBirth: 'Female',
+      medicalRecordNumber: 'MK-11720',
+    },
+    testName: 'Complete blood count',
+    returnedLabel: '35 minutes ago',
+    status: 'routine',
+  },
+  {
+    id: 'review-vicheka-sam-creatinine',
+    patient: {
+      id: 'patient-vicheka-sam',
+      name: 'Vicheka Sam',
+      dob: '1968-01-17',
+      sexAtBirth: 'Male',
+      medicalRecordNumber: 'MK-07654',
+    },
+    testName: 'Creatinine and eGFR',
+    returnedLabel: '22 minutes ago',
+    status: 'amended',
+  },
+  {
+    id: 'review-maly-sok-thyroid',
+    patient: {
+      id: 'patient-maly-sok',
+      name: 'Maly Sok',
+      dob: '1987-06-09',
+      sexAtBirth: 'Female',
+      medicalRecordNumber: 'MK-12106',
+    },
+    testName: 'Thyroid panel',
+    returnedLabel: '12 minutes ago',
+    status: 'routine',
+  },
+];
+
+export type ResultsDemoScenario = {
+  mode: 'workspace' | 'review';
+  episodeLabel: string;
+  sections: LabResultSection[];
+  state?: ResultsDataState;
+  staleAt?: string;
+  readOnly?: boolean;
+};
+
+const RETURNING_SECTIONS: LabResultSection[] = [
+  { code: 'monitoring', title: 'Monitored analytes', results: RETURNING_RESULTS },
+];
+
+/** Storybook-owned result states consumed by stories and the app route adapter. */
+export const RESULTS_DEMO_SCENARIOS = {
+  longitudinal: {
+    mode: 'workspace',
+    episodeLabel: 'Current episode · Jul 1, 2026',
+    sections: RETURNING_SECTIONS,
+  },
+  first: {
+    mode: 'review',
+    episodeLabel: 'First visit · Jun 10, 2026',
+    sections: FIRST_VISIT_SECTIONS,
+  },
+  critical: {
+    mode: 'review',
+    episodeLabel: 'Episode · Jun 10, 2026',
+    sections: CRITICAL_COMPLETE_SECTIONS,
+  },
+  partial: {
+    mode: 'review',
+    episodeLabel: 'Episode · results arriving',
+    sections: PARTIAL_EPISODE_SECTIONS,
+  },
+  redraw: {
+    mode: 'workspace',
+    episodeLabel: 'Episode · redraw in progress',
+    sections: REDRAW_EPISODE_SECTIONS,
+  },
+  'add-on': {
+    mode: 'workspace',
+    episodeLabel: 'Episode · add-on placed',
+    sections: ADD_ON_EPISODE_SECTIONS,
+  },
+  'with-cancelled': {
+    mode: 'workspace',
+    episodeLabel: 'Episode · released with cancellations',
+    sections: RELEASED_WITH_CANCELLED_SECTIONS,
+  },
+  cancelled: {
+    mode: 'workspace',
+    episodeLabel: 'Episode · cancelled',
+    sections: ALL_CANCELLED_SECTIONS,
+  },
+  'long-content': {
+    mode: 'workspace',
+    episodeLabel: 'Current episode · Jul 1, 2026',
+    sections: [
+      {
+        code: 'other',
+        title: 'Other tests',
+        results: [LONG_CONTENT_RESULT, NO_REFERENCE_RESULT],
+      },
+    ],
+  },
+  loading: {
+    mode: 'workspace',
+    episodeLabel: '',
+    sections: [],
+    state: 'loading',
+  },
+  empty: {
+    mode: 'workspace',
+    episodeLabel: '',
+    sections: [],
+    state: 'empty',
+  },
+  error: {
+    mode: 'workspace',
+    episodeLabel: 'Unavailable episode',
+    sections: [],
+    state: 'error',
+  },
+  conflict: {
+    mode: 'workspace',
+    episodeLabel: 'Episode changed during review',
+    sections: PARTIAL_EPISODE_SECTIONS,
+    state: 'conflict',
+  },
+  permission: {
+    mode: 'workspace',
+    episodeLabel: '',
+    sections: [],
+    state: 'permission',
+  },
+  offline: {
+    mode: 'workspace',
+    episodeLabel: 'Cached episode',
+    sections: RETURNING_SECTIONS,
+    state: 'offline',
+  },
+  stale: {
+    mode: 'workspace',
+    episodeLabel: 'Current episode · Jul 1, 2026',
+    sections: RETURNING_SECTIONS,
+    staleAt: '2026-07-14T09:00:00Z',
+  },
+  'read-only': {
+    mode: 'workspace',
+    episodeLabel: 'Current episode · Jul 1, 2026',
+    sections: RETURNING_SECTIONS,
+    readOnly: true,
+  },
+} as const satisfies Record<string, ResultsDemoScenario>;
+
+export type ResultsDemoScenarioId = keyof typeof RESULTS_DEMO_SCENARIOS;

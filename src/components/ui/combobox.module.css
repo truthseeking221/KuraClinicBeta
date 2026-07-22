@@ -21,7 +21,7 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-control);
   padding-inline-start: var(--space-inset-control);
-  background: var(--card);
+  background: var(--color-surface);
   color: var(--card-foreground);
   font-family: var(--font-family-sans);
   transition: border-color var(--duration-fast) var(--ease-standard), box-shadow var(--duration-fast) var(--ease-standard);
@@ -36,6 +36,19 @@
 .control:has(.input[aria-invalid='true']),
 .chips:has(.chipsInput[aria-invalid='true']) {
   border-color: var(--destructive);
+}
+
+.leadingIcon {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted-foreground);
+}
+
+.leadingIcon > svg {
+  width: var(--space-4);
+  height: var(--space-4);
 }
 
 .input,
@@ -122,8 +135,7 @@
 }
 
 .positioner {
-  z-index: 1;
-  padding: var(--space-1);
+  z-index: 50;
 }
 
 .content {
@@ -136,7 +148,7 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-card-surface);
   padding: var(--space-1);
-  background: var(--card);
+  background: var(--color-surface);
   color: var(--card-foreground);
   box-shadow: var(--elevation-popover);
   outline: none;

@@ -7,7 +7,7 @@ import { Input, SearchIcon } from './index';
 const meta = {
   title: 'Design System/Primitives/Input',
   component: Input,
-  tags: ['autodocs', 'source-reui', 'adapted-kura'],
+  tags: ['autodocs', 'source-kura', 'adapted-kura'],
   parameters: {
     layout: 'centered',
     kura: {
@@ -15,12 +15,12 @@ const meta = {
         decision: 'EXTEND',
         owner: 'src/components/ui',
         evidence:
-          'The fresh Storybook and source search found Input as the canonical Kura text-entry primitive. ReUI c-input-1 through c-input-31 were inspected as a complete family; the owner is extended with an explicit read-only contract and compatible stories rather than duplicated.',
+          'The canonical Kura text-entry primitive keeps its field contract and adopts Kura neutral shell, inset ring, and state finish.',
       },
       source: {
-        vendor: 'ReUI',
-        registryItem: '@reui/c-input-1 through @reui/c-input-31',
-        sourceUrl: 'https://reui.io/components/input',
+        vendor: 'Kura',
+        registryItem: 'input',
+        visualReference: 'Kura input',
       },
       binding: {
         colors: 'kura-semantic',
@@ -48,6 +48,7 @@ const meta = {
   },
   argTypes: {
     size: { control: 'radio', options: ['sm', 'md', 'lg'] },
+    variant: { control: 'radio', options: ['filled', 'surface'] },
     disabled: { control: 'boolean' },
     readOnly: { control: 'boolean' },
     required: { control: 'boolean' },
@@ -92,8 +93,42 @@ export const Default: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const input = canvas.getByLabelText('Patient name');
+    const control = input.closest('[data-slot="input-control"]');
+    await expect(control).toHaveAttribute('data-variant', 'filled');
+    expect(control ? getComputedStyle(control).backgroundColor : '').not.toBe('rgb(255, 255, 255)');
     await userEvent.type(input, 'Sokha Chan');
     await expect(input).toHaveValue('Sokha Chan');
+  },
+};
+
+/** The white surface variant keeps a field distinct inside a gray tray. */
+export const SurfaceOnTray: Story = {
+  args: {
+    label: 'Tendered (USD)',
+    placeholder: '0.00',
+    variant: 'surface',
+  },
+  decorators: [
+    (Story) => (
+      <div
+        style={{
+          background: 'var(--color-surface-2)',
+          borderRadius: 'var(--radius-card-surface)',
+          padding: 'var(--space-inset-card)',
+          width: 'min(320px, 90vw)',
+        }}
+      >
+        <Story />
+      </div>
+    ),
+  ],
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const input = canvas.getByLabelText('Tendered (USD)');
+    await expect(input.closest('[data-slot="input-control"]')).toHaveAttribute(
+      'data-variant',
+      'surface',
+    );
   },
 };
 
@@ -168,7 +203,7 @@ export const ReadOnly: Story = {
   },
 };
 
-/** ReUI's counter is composed from native maxLength and existing Kura slots. */
+/** The counter composes native maxLength with existing Kura slots. */
 export const CharacterCounter: Story = {
   render: () => <CharacterCounterInput />,
   play: async ({ canvasElement }) => {

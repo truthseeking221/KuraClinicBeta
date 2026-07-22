@@ -23,11 +23,11 @@ function BookingTabs({ appearance = 'underline', orientation = 'horizontal' }: {
 const meta = {
   title: 'Design System/Components/Tabs',
   component: Tabs,
-  tags: ['autodocs', 'source-reui', 'adapted-kura'],
+  tags: ['autodocs', 'source-kura', 'adapted-kura'],
   parameters: {
     layout: 'padded',
     kura: {
-      source: { vendor: 'ReUI', registryItem: '@reui/c-tabs-1' },
+      source: { vendor: 'Kura', registryItem: 'tabs', visualReference: 'Kura tabs' },
       intake: {
         decision: 'EXTEND',
         owner: 'src/components/ui',
@@ -47,7 +47,10 @@ export const Default: Story = {
   render: () => <BookingTabs />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
+    const list = canvas.getByRole('tablist', { name: 'Booking details' });
     const summary = canvas.getByRole('tab', { name: 'Summary' });
+    await expect(getComputedStyle(list).overflowY).toBe('hidden');
+    await expect(getComputedStyle(list).scrollbarWidth).toBe('none');
     await expect(summary).toHaveAttribute('aria-selected', 'true');
     summary.focus();
     await userEvent.keyboard('{ArrowRight}');

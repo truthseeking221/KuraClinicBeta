@@ -6,15 +6,16 @@
  * semantics come entirely from the canonical PhoneGateModal.
  */
 
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 
-import { Badge, Button, toast } from '../../../components/ui';
-import { LabTestPicker } from '../../../features/lab-catalog';
+import { toast } from '../../../components/ui';
+import { CatalogOrderStart, LabTestPicker } from '../../../features/lab-catalog';
 import {
-  FIGMA_DEFAULT_SELECTED_TEST_IDS,
   LAB_CATALOG_CATEGORIES,
   LAB_CATALOG_TESTS,
 } from '../../../features/lab-catalog/demo-data';
+import { isLiveLicence } from '../../../features/licence/logic';
 import { PhoneGateModal } from '../../../features/phone-gate';
 import {
   DEMO_OTP,
@@ -23,30 +24,26 @@ import {
   demoRateLimited,
 } from '../../../features/phone-gate/demo-data';
 import styles from '../../_demo/app-pages.module.css';
+import { useDemoSession } from '../../_demo/demo-session';
+import { useSettingsDialog } from '../../_demo/settings-dialog-context';
 
-export default function CatalogPage() {
-  const [selectedTestIds, setSelectedTestIds] = useState<string[]>([
-    ...FIGMA_DEFAULT_SELECTED_TEST_IDS,
-  ]);
+function CatalogPageContent() {
+  const searchParams = useSearchParams();
+  const { session } = useDemoSession();
+  const { openSettings } = useSettingsDialog();
+  const [selectedTestIds, setSelectedTestIds] = useState<string[]>([]);
   const [gateOpen, setGateOpen] = useState(false);
+  const isPscBooking = searchParams.get('intent') === 'booking';
+  const canPlaceOrder = isPscBooking || isLiveLicence(session.licence);
 
   return (
     <div className={styles.stack}>
-      <div className={styles.toolbar}>
-        {selectedTestIds.length > 0 ? (
-          <Badge size="sm" variant="primary">
-            {selectedTestIds.length} selected
-          </Badge>
-        ) : null}
-        <Button
-          disabled={selectedTestIds.length === 0}
-          onClick={() => setGateOpen(true)}
-          size="sm"
-          variant="primary"
-        >
-          Choose patient
-        </Button>
-      </div>
+      <CatalogOrderStart
+        canPlaceOrder={canPlaceOrder}
+        onChoosePatient={() => setGateOpen(true)}
+        onVerifyLicence={() => openSettings('account')}
+        selectedCount={selectedTestIds.length}
+      />
       <LabTestPicker
         categories={LAB_CATALOG_CATEGORIES}
         onSelectedTestIdsChange={(ids) => setSelectedTestIds([...ids])}
@@ -70,5 +67,13 @@ export default function CatalogPage() {
         resendCooldownSecs={DEMO_RESEND_COOLDOWN_SECS}
       />
     </div>
+  );
+}
+
+export default function CatalogPage() {
+  return (
+    <Suspense fallback={null}>
+      <CatalogPageContent />
+    </Suspense>
   );
 }

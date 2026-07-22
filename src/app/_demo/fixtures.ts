@@ -4,8 +4,12 @@
  * This file only translates canonical shapes into the AppShell contract.
  */
 
-import { MODE_ORDER, MODE_REGISTRY } from '../../components/shared/app-shell';
+import {
+  permissionsForDemoAccessProfile,
+  SHELL_DEMO_MODULES,
+} from '../../components/shared/app-shell';
 import type { ClinicWorkspace, Station } from '../../components/shared/app-shell';
+import type { ShellDemoAccessProfile } from '../../components/shared/app-shell';
 import { DEMO_BRANCHES, DEMO_WORKSPACES } from '../../features/auth/demo-data';
 import type { FxRateQuote } from '../../features/front-desk/money';
 
@@ -36,16 +40,15 @@ export const SHELL_WORKSPACES: readonly ClinicWorkspace[] = DEMO_WORKSPACES.map(
   }),
 );
 
-/** Full-capability demo actor: the union of every mode's requirements. */
-export const SHELL_PERMISSIONS: readonly string[] = [
-  ...new Set(MODE_ORDER.flatMap((mode) => MODE_REGISTRY[mode].requiredAny)),
-  'doctor.banking.view.self',
-];
+/** Storybook-owned capability pack selected by the phone scenario. */
+export function shellPermissionsFor(
+  profile: ShellDemoAccessProfile,
+): string[] {
+  return permissionsForDemoAccessProfile(profile);
+}
 
 /** Every module the registry knows about is enabled for the demo workspace. */
-export const SHELL_MODULES: Record<string, boolean> = Object.fromEntries(
-  MODE_ORDER.map((mode) => [MODE_REGISTRY[mode].moduleFlag, true]),
-);
+export const SHELL_MODULES = SHELL_DEMO_MODULES;
 
 /** Station context per mode, mirroring the clinic-operations prototype. */
 export function stationForMode(mode: string, shift: 'morning' | 'afternoon'): Station | undefined {

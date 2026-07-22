@@ -11,6 +11,7 @@ import flags from 'react-phone-number-input/flags';
 import { createContext, forwardRef, useContext, useId, useMemo, useState } from 'react';
 import type { ComponentPropsWithoutRef, ReactNode } from 'react';
 
+import { useT } from '../foundations/i18n';
 import {
   Combobox,
   ComboboxContent,
@@ -37,7 +38,7 @@ type PhoneInputContextValue = {
 
 const PhoneInputContext = createContext<PhoneInputContextValue>({
   readOnly: false,
-  size: 'md',
+  size: 'lg',
 });
 
 export type PhoneInputProps = Omit<
@@ -94,7 +95,7 @@ export function PhoneInput({
   onChange,
   readOnly = false,
   required = false,
-  size = 'md',
+  size = 'lg',
   value,
   ...props
 }: PhoneInputProps) {
@@ -188,6 +189,7 @@ type CountrySelectProps = {
 };
 
 function CountrySelect({ disabled = false, onChange, options, value: selectedCountry }: CountrySelectProps) {
+  const t = useT();
   const { readOnly } = useContext(PhoneInputContext);
   const countryOptions = useMemo<PhoneCountryOption[]>(
     () =>
@@ -198,7 +200,7 @@ function CountrySelect({ disabled = false, onChange, options, value: selectedCou
   const selectedCallingCode = selectedCountry ? `+${getCountryCallingCode(selectedCountry)}` : undefined;
   const countryLabel = selectedOption
     ? `${selectedOption.label}, ${selectedCallingCode}`
-    : 'international number';
+    : t('international number');
   const unavailable = disabled || readOnly;
 
   return (
@@ -215,22 +217,22 @@ function CountrySelect({ disabled = false, onChange, options, value: selectedCou
       value={selectedOption}
     >
       <ComboboxTrigger
-        aria-label={`Change country or region, currently ${countryLabel}`}
+        aria-label={`${t('Change country or region, currently')} ${countryLabel}`}
         className={styles.countryTrigger}
         disabled={unavailable}
       >
-        <CountryFlag country={selectedCountry} countryName={selectedOption?.label ?? 'International number'} />
+        <CountryFlag country={selectedCountry} countryName={selectedOption?.label ?? t('International number')} />
         {selectedCallingCode ? (
           <span className={styles.selectedCountryCode}>{selectedCallingCode}</span>
         ) : null}
       </ComboboxTrigger>
       <ComboboxContent className={styles.countryContent}>
         <ComboboxInput
-          aria-label="Search country or region"
-          placeholder="e.g. United States"
+          aria-label={t('Search country or region')}
+          placeholder={t('e.g. United States')}
           showTrigger={false}
         />
-        <ComboboxEmpty>No country or region matches this search.</ComboboxEmpty>
+        <ComboboxEmpty>{t('No country or region matches this search.')}</ComboboxEmpty>
         <ComboboxList>
           {(option: PhoneCountryOption) => (
             <ComboboxItem key={option.value} value={option}>

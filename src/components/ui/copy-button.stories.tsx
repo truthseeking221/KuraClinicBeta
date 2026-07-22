@@ -4,7 +4,7 @@ import { expect, userEvent, within } from 'storybook/test';
 import { CopyButton } from './index';
 
 const meta = {
-  title: 'Design System/Patterns/CopyButton',
+  title: 'Design System/Patterns/Copy Button',
   component: CopyButton,
   tags: ['autodocs', 'source-reui', 'adapted-kura'],
   parameters: {

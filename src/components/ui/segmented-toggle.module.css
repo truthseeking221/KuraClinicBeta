@@ -1,32 +1,64 @@
 .toggle {
+  position: relative;
+  isolation: isolate;
   width: fit-content;
   max-width: 100%;
   border-radius: var(--radius-control);
   padding: var(--space-1);
-  background: var(--muted);
+  border: 0;
+  background: var(--color-background-tertiary-default);
+  box-shadow: none;
 }
 
-/* Doubled attribute selector outranks button-group's per-position radius
-   rules; every segment stays rounded inside the padded track. */
+.indicator {
+  position: absolute;
+  inset-block: var(--space-1);
+  inset-inline-start: 0;
+  z-index: 0;
+  width: var(--segmented-indicator-width, 0px);
+  border-radius: var(--radius-indicator);
+  background: var(--color-background-primary-default);
+  box-shadow: var(--shadow-xs);
+  opacity: 0;
+  pointer-events: none;
+  transform: translate3d(var(--segmented-indicator-x, 0px), 0, 0);
+  transition:
+    width var(--motion-indicator),
+    transform var(--motion-indicator);
+}
+
+.toggle[data-indicator-ready='true'] .indicator {
+  opacity: 1;
+}
+
+/* The doubled attribute selector outranks ButtonGroup's joined-segment
+   radius rules. One indicator owns selection; buttons keep stable geometry. */
 .toggle > :global([data-slot='button'][data-slot='button']) {
+  position: relative;
+  z-index: 1;
   min-width: 0;
   min-height: var(--space-6);
   gap: var(--space-1-5);
-  border-color: transparent;
-  border-radius: var(--radius-control);
+  border: 0;
+  border-radius: var(--radius-indicator);
   padding-block: 0;
   padding-inline: var(--space-1-5);
-  color: var(--muted-foreground);
-  transition:
-    color var(--duration-fast) var(--ease-standard),
-    background-color var(--duration-fast) var(--ease-standard);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-weight: var(--weight-medium);
+  transition: color var(--motion-color);
 }
 
 .toggle > :global([data-slot='button'][data-selected='true']) {
-  border-radius: var(--radius-control);
-  background: var(--card);
-  color: var(--card-foreground);
-  box-shadow: var(--elevation-2);
+  border-radius: var(--radius-indicator);
+  background: var(--color-background-primary-default);
+  color: var(--color-text-primary);
+  box-shadow: var(--shadow-xs);
+}
+
+.toggle[data-indicator-ready='true'] > :global([data-slot='button'][data-selected='true']) {
+  background: transparent;
+  box-shadow: none;
 }
 
 .toggle > :global([data-slot='button']:hover:not(:disabled):not([data-selected='true'])) {
@@ -61,8 +93,15 @@
 }
 
 @media (pointer: coarse) {
-  .toggle > :global([data-slot='button']) {
+  .toggle > :global([data-slot='button'][data-slot='button']) {
     min-height: var(--control-h);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .indicator,
+  .toggle > :global([data-slot='button']) {
+    transition: none;
   }
 }
 

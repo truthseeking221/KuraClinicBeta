@@ -19,7 +19,17 @@
 
 .card[data-variant='outline'] {
   border-color: var(--card-border-outline);
+  background: var(--color-surface);
   box-shadow: var(--elevation-card-outline);
+}
+
+/* White tile nested inside a gray tray: the only card surface that carries
+   the feather shadow. Smaller radius reads as one level deeper. */
+.card[data-variant='tile'] {
+  border-color: transparent;
+  border-radius: var(--radius-card-tile);
+  background: var(--color-surface);
+  box-shadow: var(--elevation-card-tile);
 }
 
 .card[data-size='sm'] {

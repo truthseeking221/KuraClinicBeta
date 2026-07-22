@@ -1,4 +1,5 @@
 import type { CollectionPatient } from './types';
+import { queueForRole } from './logic';
 
 /**
  * Deterministic demo queue. Times are fixed strings and waiting minutes are
@@ -198,3 +199,48 @@ export const DEMO_QUEUE: CollectionPatient[] = [
 ];
 
 export const DEMO_OPERATOR = 'Srey Neang';
+
+export type CollectionDemoVariant =
+  | 'scan-queue'
+  | 'scan-empty'
+  | 'worksheet-ready'
+  | 'worksheet-vitals-missing'
+  | 'worksheet-partial';
+
+type CollectionDemoScenario =
+  | {
+      view: 'scan';
+      queue: CollectionPatient[];
+    }
+  | {
+      view: 'worksheet';
+      queue: CollectionPatient[];
+      patient: CollectionPatient;
+      now: number;
+    };
+
+const PHLEBOTOMY_QUEUE = queueForRole(DEMO_QUEUE, 'phlebotomy');
+
+/** Canonical collection story states shared with the prototype app. */
+export const COLLECTION_DEMO_SCENARIOS = {
+  'scan-queue': { view: 'scan', queue: PHLEBOTOMY_QUEUE },
+  'scan-empty': { view: 'scan', queue: [] },
+  'worksheet-ready': {
+    view: 'worksheet',
+    queue: PHLEBOTOMY_QUEUE,
+    patient: DEMO_QUEUE[0],
+    now: DEMO_NOW,
+  },
+  'worksheet-vitals-missing': {
+    view: 'worksheet',
+    queue: PHLEBOTOMY_QUEUE,
+    patient: DEMO_QUEUE[1],
+    now: DEMO_NOW,
+  },
+  'worksheet-partial': {
+    view: 'worksheet',
+    queue: PHLEBOTOMY_QUEUE,
+    patient: DEMO_QUEUE[2],
+    now: DEMO_NOW + 4 * 60 * 1000,
+  },
+} satisfies Record<CollectionDemoVariant, CollectionDemoScenario>;

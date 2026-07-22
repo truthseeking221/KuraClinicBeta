@@ -4,7 +4,7 @@ import { expect, within } from 'storybook/test';
 import { Progress } from './index';
 
 const meta = {
-  title: 'Design System/Components/Progress',
+  title: 'Design System/Primitives/Progress',
   component: Progress,
   tags: ['autodocs', 'source-reui', 'adapted-kura'],
   parameters: {

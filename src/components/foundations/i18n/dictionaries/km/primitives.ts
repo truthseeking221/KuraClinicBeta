@@ -1,0 +1,140 @@
+import type { KhmerDictionary } from '../types';
+
+/**
+ * Built-in copy that a design-system primitive renders when the caller supplies
+ * nothing: dismiss and close labels, empty and loading states, and the
+ * accessible names on icon-only controls.
+ *
+ * Strings a caller passes in are the caller's to translate. Nothing here is
+ * clinical content — product names (Kura) and place names stay in Latin script.
+ */
+export const PRIMITIVES_KM: KhmerDictionary = {
+  // Dismiss, close, and overlay chrome
+  'Dismiss alert': 'បិទការជូនដំណឹង',
+  'Dismiss announcement': 'បិទសេចក្តីប្រកាស',
+  'Close dialog': 'បិទប្រអប់',
+  'Close search': 'បិទការស្វែងរក',
+
+  // Navigation landmarks
+  Breadcrumb: 'ផ្លូវរុករក',
+  'More breadcrumb levels': 'កម្រិតផ្លូវរុករកបន្ថែម',
+  Pagination: 'ការបែងចែកទំព័រ',
+  Previous: 'មុន',
+  'Go to previous page': 'ទៅទំព័រមុន',
+  'Go to next page': 'ទៅទំព័របន្ទាប់',
+  Timeline: 'កាលប្បវត្តិ',
+
+  // Carousel
+  'Previous slide': 'ស្លាយមុន',
+  'Next slide': 'ស្លាយបន្ទាប់',
+  'Slide navigation': 'ការរុករកស្លាយ',
+  'Go to slide': 'ទៅស្លាយ',
+
+  // Command palette
+  'Search Kura': 'ស្វែងរក Kura',
+  'Search the destinations and actions available in your current workspace.':
+    'ស្វែងរកទីតាំង និងសកម្មភាពដែលមាននៅក្នុងកន្លែងធ្វើការបច្ចុប្បន្នរបស់អ្នក។',
+
+  // Selection controls
+  'Select an option': 'ជ្រើសរើសជម្រើសមួយ',
+  Options: 'ជម្រើស',
+  'Search options': 'ស្វែងរកជម្រើស',
+  'Show options': 'បង្ហាញជម្រើស',
+  'Hide options': 'លាក់ជម្រើស',
+  'Clear selection': 'សម្អាតការជ្រើសរើស',
+  'No options are available.': 'គ្មានជម្រើសអាចប្រើបាន។',
+  'No matching options found.': 'រកមិនឃើញជម្រើសដែលត្រូវគ្នា។',
+  'Searching options…': 'កំពុងស្វែងរកជម្រើស…',
+
+  // Calendar and date fields
+  Calendar: 'ប្រតិទិន',
+  Month: 'ខែ',
+  Year: 'ឆ្នាំ',
+  Week: 'សប្តាហ៍',
+  'Previous month': 'ខែមុន',
+  'Next month': 'ខែបន្ទាប់',
+  'Loading dates': 'កំពុងផ្ទុកកាលបរិច្ឆេទ',
+  selected: 'បានជ្រើសរើស',
+  today: 'ថ្ងៃនេះ',
+  unavailable: 'មិនអាចប្រើបាន',
+  'within selected range': 'ក្នុងចន្លោះដែលបានជ្រើសរើស',
+  'Start date': 'ថ្ងៃចាប់ផ្តើម',
+  'End date': 'ថ្ងៃបញ្ចប់',
+  'Clear date': 'សម្អាតកាលបរិច្ឆេទ',
+  'Choose an available date within the allowed range.':
+    'ជ្រើសរើសថ្ងៃដែលអាចប្រើបាន ក្នុងចន្លោះដែលអនុញ្ញាត។',
+  'Date range': 'ចន្លោះកាលបរិច្ឆេទ',
+  'Select date range': 'ជ្រើសរើសចន្លោះកាលបរិច្ឆេទ',
+  'Date range shortcuts': 'ផ្លូវកាត់ចន្លោះកាលបរិច្ឆេទ',
+  'Choose a start and end date': 'ជ្រើសរើសថ្ងៃចាប់ផ្តើម និងថ្ងៃបញ្ចប់',
+  'days selected': 'ថ្ងៃដែលបានជ្រើសរើស',
+  'Last week': 'សប្តាហ៍មុន',
+  'This month': 'ខែនេះ',
+  'Last month': 'ខែមុន',
+  'This year': 'ឆ្នាំនេះ',
+
+  // Data grid
+  'Data grid': 'តារាងទិន្នន័យ',
+  'scroll area': 'តំបន់រំកិល',
+  'No records match the current view.': 'គ្មានកំណត់ត្រាត្រូវនឹងទិដ្ឋភាពបច្ចុប្បន្ន។',
+  'Loading records': 'កំពុងផ្ទុកកំណត់ត្រា',
+  'Load more records': 'ផ្ទុកកំណត់ត្រាបន្ថែម',
+  'All records loaded.': 'បានផ្ទុកកំណត់ត្រាទាំងអស់។',
+  'Rows per page': 'ជួរដេកក្នុងមួយទំព័រ',
+  Columns: 'ជួរឈរ',
+  'Visible columns': 'ជួរឈរដែលមើលឃើញ',
+  'Select all visible rows': 'ជ្រើសរើសជួរដេកដែលមើលឃើញទាំងអស់',
+  Resize: 'ប្តូរទំហំ',
+  column: 'ជួរឈរ',
+  'sorted ascending': 'តម្រៀបពីតូចទៅធំ',
+  'sorted descending': 'តម្រៀបពីធំទៅតូច',
+  'not sorted': 'មិនបានតម្រៀប',
+
+  // File upload
+  'Choose files': 'ជ្រើសរើសឯកសារ',
+  select: 'ជ្រើសរើស',
+  'Drag and drop to upload or': 'អូសហើយទម្លាក់ដើម្បីបញ្ចូល ឬ',
+  'Drop files here': 'ទម្លាក់ឯកសារនៅទីនេះ',
+  'File limit reached': 'ដល់ចំនួនកំណត់ឯកសារ',
+  'One file': 'ឯកសារមួយ',
+  'Up to': 'រហូតដល់',
+  file: 'ឯកសារ',
+  files: 'ឯកសារ',
+  each: 'ក្នុងមួយ',
+  'Attached files': 'ឯកសារភ្ជាប់',
+  'No files attached.': 'គ្មានឯកសារភ្ជាប់។',
+  'Some files were not added': 'ឯកសារខ្លះមិនត្រូវបានបន្ថែម',
+  'You can attach up to': 'អ្នកអាចភ្ជាប់បានរហូតដល់',
+  'is larger than': 'ធំជាង',
+  'is not an accepted file type.': 'មិនមែនជាប្រភេទឯកសារដែលទទួលយក។',
+  'is already attached.': 'ត្រូវបានភ្ជាប់រួចហើយ។',
+  Uploading: 'កំពុងបញ្ចូល',
+  Uploaded: 'បានបញ្ចូល',
+  'Upload failed': 'បញ្ចូលមិនបានសម្រេច',
+  'Ready to upload': 'រួចរាល់ដើម្បីបញ្ចូល',
+  'Upload progress for': 'វឌ្ឍនភាពការបញ្ចូលសម្រាប់',
+
+  // Phone and code entry
+  'One-time verification code': 'លេខកូដផ្ទៀងផ្ទាត់តែម្តង',
+  'International number': 'លេខអន្តរជាតិ',
+  'international number': 'លេខអន្តរជាតិ',
+  'Change country or region, currently': 'ប្តូរប្រទេស ឬតំបន់ បច្ចុប្បន្នគឺ',
+  'Search country or region': 'ស្វែងរកប្រទេស ឬតំបន់',
+  'e.g. United States': 'ឧ. United States',
+  'No country or region matches this search.': 'គ្មានប្រទេស ឬតំបន់ត្រូវនឹងការស្វែងរកនេះ។',
+
+  // Steppers, sliders, and layout controls
+  'Decrease value': 'បន្ថយតម្លៃ',
+  'Increase value': 'បង្កើនតម្លៃ',
+  Slider: 'គ្រាប់រំកិល',
+  'Resize panels': 'ប្តូរទំហំផ្ទាំង',
+  'Sortable items': 'ធាតុដែលអាចតម្រៀបបាន',
+  'Reorder item': 'តម្រៀបធាតុឡើងវិញ',
+  Rating: 'ការវាយតម្លៃ',
+  'out of': 'ក្នុងចំណោម',
+
+  // Copy, toast, and settings chrome
+  'Copy failed': 'ចម្លងមិនបានសម្រេច',
+  Notifications: 'ការជូនដំណឹង',
+  sections: 'ផ្នែក',
+};

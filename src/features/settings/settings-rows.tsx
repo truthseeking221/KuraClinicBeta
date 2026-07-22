@@ -3,6 +3,7 @@
 import { createContext, useContext, useId, useRef, useState } from 'react';
 import type { KeyboardEvent, ReactNode } from 'react';
 
+import { useT } from '../../components/foundations/i18n';
 import {
   Alert,
   AlertAction,
@@ -49,15 +50,20 @@ export type SettingsSectionProps = {
 /** One settings section: heading, status chip, description, then rows. */
 export function SettingsSection({ title, chip, sub, children }: SettingsSectionProps) {
   const headingId = useId();
+  const showTitle = useContext(SettingsSectionHeadingContext);
   return (
-    <section aria-labelledby={headingId} className={styles.section}>
+    <section aria-labelledby={showTitle ? headingId : undefined} className={styles.section}>
       <header className={styles.sectionHeader}>
-        <div className={styles.sectionTitleRow}>
-          <h2 className={styles.sectionTitle} id={headingId}>
-            {title}
-          </h2>
-          {chip}
-        </div>
+        {showTitle || chip ? (
+          <div className={styles.sectionTitleRow}>
+            {showTitle ? (
+              <h2 className={styles.sectionTitle} id={headingId}>
+                {title}
+              </h2>
+            ) : null}
+            {chip}
+          </div>
+        ) : null}
         {sub ? <p className={styles.sectionSub}>{sub}</p> : null}
       </header>
       {children}
@@ -68,6 +74,24 @@ export function SettingsSection({ title, chip, sub, children }: SettingsSectionP
 export type SettingsRowsProps = { children?: ReactNode };
 
 const SettingsCardContext = createContext(false);
+const SettingsSectionHeadingContext = createContext(true);
+
+type SettingsSectionHeadingProviderProps = {
+  visible: boolean;
+  children?: ReactNode;
+};
+
+/** Lets a containing shell supply the section title without repeating it. */
+export function SettingsSectionHeadingProvider({
+  children,
+  visible,
+}: SettingsSectionHeadingProviderProps) {
+  return (
+    <SettingsSectionHeadingContext.Provider value={visible}>
+      {children}
+    </SettingsSectionHeadingContext.Provider>
+  );
+}
 
 /** ReUI settings-7 row group, promoted to the canonical Kura Card surface. */
 export function SettingsRows({ children }: SettingsRowsProps) {
@@ -118,14 +142,18 @@ export type SettingsRowProps = {
  * middle, and at most one action on the right (ReUI settings-7 row anatomy).
  */
 export function SettingsRow({ label, locked = false, value, sub, action }: SettingsRowProps) {
+  const t = useT();
   return (
     <Item className={`${styles.row} ${styles.settingGrid}`} size="sm">
       <ItemContent className={styles.rowLabelCell}>
         <ItemTitle className={styles.rowLabel}>
           {label}
           {locked ? (
-            <span className={styles.rowLock} title="Verified by Kura. Not editable">
-              <LockKeyIcon aria-label="Verified by Kura. Not editable" />
+            <span
+              className={styles.rowLock}
+              title={t('Verified by Kura. Not editable')}
+            >
+              <LockKeyIcon aria-label={t('Verified by Kura. Not editable')} />
             </span>
           ) : null}
         </ItemTitle>
@@ -165,6 +193,7 @@ export function InlineEditRow({
   numeric = false,
   formatValue,
 }: InlineEditRowProps) {
+  const t = useT();
   const [value, setValue] = useState(initialValue);
   const [draft, setDraft] = useState(initialValue);
   const [editing, setEditing] = useState(false);
@@ -191,7 +220,7 @@ export function InlineEditRow({
     setValue(draft.trim());
     setEditing(false);
     setError(null);
-    toast.success(`${label} updated`);
+    toast.success(`${t(label)} ${t('updated')}`);
   };
 
   const handleKeyDown = (event: KeyboardEvent) => {
@@ -210,10 +239,10 @@ export function InlineEditRow({
       <SettingsRow
         action={
           <Button onClick={startEditing} size="sm" variant="ghost">
-            {actionLabel}
+            {t(actionLabel)}
           </Button>
         }
-        label={label}
+        label={t(label)}
         sub={sub}
         value={formatValue ? formatValue(value) : value}
       />
@@ -223,14 +252,14 @@ export function InlineEditRow({
   return (
     <Item className={`${styles.row} ${styles.settingGrid}`} size="sm">
       <ItemContent className={styles.rowLabelCell}>
-        <ItemTitle className={styles.rowLabel}>{label}</ItemTitle>
+        <ItemTitle className={styles.rowLabel}>{t(label)}</ItemTitle>
       </ItemContent>
       <div className={styles.editCell}>
         {multiline ? (
           <Textarea
-            aria-label={label}
+            aria-label={t(label)}
             autoFocus
-            error={error}
+            error={error ? t(error) : error}
             onChange={(event) => {
               setDraft(event.target.value);
               if (error) setError(null);
@@ -241,9 +270,9 @@ export function InlineEditRow({
           />
         ) : (
           <Input
-            aria-label={label}
+            aria-label={t(label)}
             autoFocus
-            error={error}
+            error={error ? t(error) : error}
             inputMode={numeric ? 'numeric' : undefined}
             onChange={(event) => {
               setDraft(event.target.value);
@@ -256,10 +285,10 @@ export function InlineEditRow({
         )}
         <div className={styles.editControls}>
           <Button disabled={!draft.trim()} onClick={save} size="sm" variant="primary">
-            Save
+            {t('Save')}
           </Button>
           <Button onClick={cancel} size="sm" variant="ghost">
-            Cancel
+            {t('Cancel')}
           </Button>
         </div>
       </div>
@@ -281,6 +310,7 @@ export type ChipListRowProps = {
  * say "None listed" rather than disappearing.
  */
 export function ChipListRow({ label, addLabel, placeholder, initialItems }: ChipListRowProps) {
+  const t = useT();
   const [items, setItems] = useState<string[]>([...initialItems]);
   const [removed, setRemoved] = useState<{ item: string; index: number } | null>(null);
   const [adding, setAdding] = useState(false);
@@ -291,7 +321,7 @@ export function ChipListRow({ label, addLabel, placeholder, initialItems }: Chip
     const index = items.indexOf(item);
     setItems((current) => current.filter((entry) => entry !== item));
     setRemoved({ item, index });
-    toast(`${item} removed. Undo is available.`);
+    toast(`${item} ${t('removed. Undo is available.')}`);
   };
 
   const undo = () => {
@@ -301,7 +331,7 @@ export function ChipListRow({ label, addLabel, placeholder, initialItems }: Chip
       next.splice(Math.min(removed.index, next.length), 0, removed.item);
       return next;
     });
-    toast.success(`${removed.item} restored`);
+    toast.success(`${removed.item} ${t('restored')}`);
     setRemoved(null);
   };
 
@@ -313,7 +343,7 @@ export function ChipListRow({ label, addLabel, placeholder, initialItems }: Chip
     }
     const next = draft.trim();
     setItems((current) => [...current, next]);
-    toast.success(`${next} added`);
+    toast.success(`${next} ${t('added')}`);
     setDraft('');
     setError(null);
     setAdding(false);
@@ -334,12 +364,12 @@ export function ChipListRow({ label, addLabel, placeholder, initialItems }: Chip
 
   return (
     <SettingsRow
-      label={label}
+      label={t(label)}
       value={
         <div className={styles.chipArea}>
           <div className={styles.chips}>
             {items.length === 0 ? (
-              <span className={styles.rowSub}>None listed</span>
+              <span className={styles.rowSub}>{t('None listed')}</span>
             ) : (
               items.map((item) => (
                 <span className={styles.chip} key={item}>
@@ -347,7 +377,7 @@ export function ChipListRow({ label, addLabel, placeholder, initialItems }: Chip
                     {item}
                   </Badge>
                   <IconButton
-                    aria-label={`Remove ${item}`}
+                    aria-label={`${t('Remove')} ${item}`}
                     onClick={() => remove(item)}
                     size="micro"
                     variant="tertiary"
@@ -361,20 +391,20 @@ export function ChipListRow({ label, addLabel, placeholder, initialItems }: Chip
           {adding ? (
             <div className={styles.chipInputRow}>
               <Input
-                aria-label={addLabel}
+                aria-label={t(addLabel)}
                 autoFocus
-                error={error}
+                error={error ? t(error) : error}
                 onChange={(event) => {
                   setDraft(event.target.value);
                   if (error) setError(null);
                 }}
                 onKeyDown={handleKeyDown}
-                placeholder={placeholder}
+                placeholder={t(placeholder)}
                 size="sm"
                 value={draft}
               />
               <Button onClick={add} size="sm" variant="primary">
-                Add
+                {t('Add')}
               </Button>
               <Button
                 onClick={() => {
@@ -385,7 +415,7 @@ export function ChipListRow({ label, addLabel, placeholder, initialItems }: Chip
                 size="sm"
                 variant="ghost"
               >
-                Cancel
+                {t('Cancel')}
               </Button>
             </div>
           ) : null}
@@ -395,12 +425,12 @@ export function ChipListRow({ label, addLabel, placeholder, initialItems }: Chip
         <div className={styles.rowActionStack}>
           {removed ? (
             <Button onClick={undo} size="sm" variant="ghost">
-              Undo
+              {t('Undo')}
             </Button>
           ) : null}
           {!adding ? (
             <Button onClick={() => setAdding(true)} size="sm" variant="ghost">
-              {addLabel}
+              {t(addLabel)}
             </Button>
           ) : null}
         </div>
@@ -430,6 +460,7 @@ export function FilePickButton({
   onSelected,
   variant = 'ghost',
 }: FilePickButtonProps) {
+  const t = useT();
   const inputRef = useRef<HTMLInputElement>(null);
 
   return (
@@ -441,7 +472,7 @@ export function FilePickButton({
           const file = event.target.files?.[0];
           if (file) {
             onSelected?.(file);
-            toast.success(`${file.name} selected`);
+            toast.success(`${file.name} ${t('selected')}`);
           }
           event.target.value = '';
         }}
@@ -467,10 +498,11 @@ export type VerificationBadgeProps = { status: VerificationStatus };
 
 /** License verification state; mirrors the verification store everywhere. */
 export function VerificationBadge({ status }: VerificationBadgeProps) {
+  const t = useT();
   const meta = VERIFICATION_META[status];
   return (
     <Badge size="sm" variant={meta.badge}>
-      {meta.label}
+      {t(meta.label)}
     </Badge>
   );
 }
@@ -482,15 +514,16 @@ export type VerificationBannerAlertProps = {
 
 /** Non-verified credential states get a persistent banner with one CTA. */
 export function VerificationBannerAlert({ status, onAction }: VerificationBannerAlertProps) {
+  const t = useT();
   if (status === 'verified') return null;
   const banner = VERIFICATION_BANNERS[status];
   return (
     <Alert role="status" tone={banner.tone}>
-      <AlertTitle>{banner.title}</AlertTitle>
-      <AlertDescription>{banner.body}</AlertDescription>
+      <AlertTitle>{t(banner.title)}</AlertTitle>
+      <AlertDescription>{t(banner.body)}</AlertDescription>
       <AlertAction>
         <Button onClick={onAction} size="sm" variant="secondary">
-          {banner.cta}
+          {t(banner.cta)}
         </Button>
       </AlertAction>
     </Alert>

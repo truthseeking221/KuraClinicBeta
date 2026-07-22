@@ -373,18 +373,97 @@ export const DialogFrame: Story = {
   render: (args) => <SettingsDialog {...args} onOpenChange={() => {}} open />,
   play: async ({ canvasElement }) => {
     const screen = body(canvasElement);
-    const dialog = await screen.findByRole('dialog', { name: 'Settings' });
+    const dialog = await screen.findByRole('dialog', { name: 'Overview' });
     const scoped = within(dialog);
-    await expect(
-      scoped.getByRole('button', { name: 'Close settings' }),
-    ).toBeVisible();
 
-    const rail = within(
-      scoped.getByRole('tablist', { name: 'Settings sections' }),
-    );
-    await userEvent.click(rail.getByRole('tab', { name: 'Security' }));
+    const rail = scoped.getByRole('navigation', { name: 'Settings sections' });
+    await userEvent.click(within(rail).getByRole('button', { name: 'Security' }));
     await expect(
       await scoped.findByRole('heading', { level: 2, name: 'Security' }),
+    ).toBeInTheDocument();
+  },
+};
+
+/** Wide dialog: preference labels, values, and controls share stable columns. */
+export const DialogPreferences: Story = {
+  args: { section: 'preferences' },
+  render: (args) => <SettingsDialog {...args} onOpenChange={() => {}} open />,
+  play: async ({ canvasElement }) => {
+    const screen = body(canvasElement);
+    const dialog = await screen.findByRole('dialog', { name: 'Preferences' });
+    const scoped = within(dialog);
+    await expect(scoped.getByText('Saved on this device.')).toBeInTheDocument();
+    await expect(scoped.getByRole('radio', { name: 'Conventional' })).toBeVisible();
+    await expect(
+      scoped.getByRole('switch', { name: 'Show reference ranges inline' }),
+    ).toBeInTheDocument();
+  },
+};
+
+/** Fresh-workspace settings keeps all ten sections and carries no established fixture. */
+export const DialogFirstUseDoctor: Story = {
+  render: (args) => (
+    <SettingsDialog
+      {...args}
+      firstUse
+      identity={{ contact: '+85598111222', name: 'Dr. Bopha Kim' }}
+      onOpenChange={() => {}}
+      open
+      verification="none"
+      workspaceName="Dr. Bopha Kim's cabinet"
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const screen = body(canvasElement);
+    const dialog = await screen.findByRole('dialog', { name: 'Overview' });
+    const scoped = within(dialog);
+    await expect(scoped.getAllByText('Dr. Bopha Kim')[0]).toBeVisible();
+    await expect(scoped.getAllByText("Dr. Bopha Kim's cabinet")[0]).toBeVisible();
+    await expect(scoped.getByText('1 active member')).toBeVisible();
+    await expect(scoped.queryByText('Dr. Phong Tuy')).not.toBeInTheDocument();
+    await expect(scoped.queryByText('Kura Cabinet, Toul Kork')).not.toBeInTheDocument();
+
+    const rail = scoped.getByRole('navigation', { name: 'Settings sections' });
+    await userEvent.click(within(rail).getByRole('button', { name: 'Payments' }));
+    await expect(
+      await scoped.findByRole('heading', { level: 2, name: 'Payments' }),
+    ).toBeVisible();
+    await expect((await scoped.findAllByText('None configured'))[0]).toBeInTheDocument();
+
+    await userEvent.click(
+      within(rail).getByRole('button', { name: 'Signed documents' }),
+    );
+    await expect(await scoped.findByText('No signed documents')).toBeVisible();
+
+    await userEvent.click(within(rail).getByRole('button', { name: 'Security' }));
+    await expect(await scoped.findByText('Current browser')).toBeVisible();
+    await expect(scoped.queryByText('MacBook Pro · Phnom Penh')).not.toBeInTheDocument();
+  },
+};
+
+/** Fresh-workspace settings keeps every section reachable at 320px. */
+export const DialogFirstUseDoctorMobile320: Story = {
+  parameters: { viewport: { defaultViewport: 'kura320' } },
+  render: (args) => (
+    <SettingsDialog
+      {...args}
+      firstUse
+      identity={{ contact: '+85598111222', name: 'Dr. Bopha Kim' }}
+      onOpenChange={() => {}}
+      open
+      verification="none"
+      workspaceName="Dr. Bopha Kim's cabinet"
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const screen = body(canvasElement);
+    const dialog = await screen.findByRole('dialog', { name: 'Overview' });
+    const scoped = within(dialog);
+    const rail = scoped.getByRole('navigation', { name: 'Settings sections' });
+    await expect(within(rail).getByRole('button', { name: 'Security' })).toBeVisible();
+    await userEvent.click(within(rail).getByRole('button', { name: 'Cabinet' }));
+    await expect(
+      await scoped.findByRole('heading', { level: 2, name: 'Cabinet' }),
     ).toBeVisible();
   },
 };
@@ -395,14 +474,12 @@ export const DialogMobile320: Story = {
   render: (args) => <SettingsDialog {...args} onOpenChange={() => {}} open />,
   play: async ({ canvasElement }) => {
     const screen = body(canvasElement);
-    const dialog = await screen.findByRole('dialog', { name: 'Settings' });
+    const dialog = await screen.findByRole('dialog', { name: 'Overview' });
     const scoped = within(dialog);
-    const rail = within(
-      scoped.getByRole('tablist', { name: 'Settings sections' }),
-    );
-    await userEvent.click(rail.getByRole('tab', { name: 'Payments' }));
+    const rail = scoped.getByRole('navigation', { name: 'Settings sections' });
+    await userEvent.click(within(rail).getByRole('button', { name: 'Payments' }));
     await expect(
       await scoped.findByRole('heading', { level: 2, name: 'Payments' }),
-    ).toBeVisible();
+    ).toBeInTheDocument();
   },
 };

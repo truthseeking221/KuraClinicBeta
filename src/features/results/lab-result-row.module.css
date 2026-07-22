@@ -1,8 +1,14 @@
+/* Three stable columns — identity, evidence, action — so rows read as a table.
+   Identity is a fixed measure and the evidence column absorbs the leftover, so
+   every row shares the same column starts whatever its action happens to be.
+   The band inside stops growing once the scale and its ticks are legible. */
 .row {
-  display: flex;
+  --lab-identity: 22rem;
+  display: grid;
+  grid-template-columns: minmax(0, var(--lab-identity)) minmax(0, 1fr) auto;
   align-items: center;
-  gap: var(--space-stack-section);
-  padding: var(--space-4) var(--space-inset-card);
+  column-gap: var(--space-inline-group);
+  padding: var(--space-3) var(--space-inset-card);
   border-bottom: 1px solid var(--color-border);
   background: var(--color-surface);
 }
@@ -16,13 +22,12 @@
 }
 
 :global([data-density='comfortable']) .row {
-  padding-block: var(--space-5);
+  padding-block: var(--space-4);
 }
 
 .identity {
   display: flex;
   min-width: 0;
-  flex: 0 1 calc(var(--space-32) * 2);
   flex-direction: column;
   gap: var(--space-1);
 }
@@ -52,22 +57,21 @@
 
 .valueLine {
   display: flex;
+  min-height: var(--control-h-sm);
   align-items: baseline;
   gap: var(--space-1);
 }
 
+/* Loud data: the reading is the largest thing in the row. Colour is reserved
+   for a reading that needs action — a normal value is not a status. */
 .value {
   color: var(--color-text-primary);
   font-size: var(--type-2xl);
-  font-weight: var(--weight-bold);
+  font-weight: var(--weight-semibold);
   line-height: var(--leading-tight);
   letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
   overflow-wrap: anywhere;
-}
-
-.value[data-tone='optimal'] {
-  color: var(--color-status-success-fg);
 }
 
 .value[data-tone='caution'] {
@@ -83,17 +87,13 @@
   font-size: var(--type-2xs);
 }
 
-.pendingLine {
-  display: flex;
-  min-height: var(--touch-target-min);
-  align-items: center;
-}
-
+/* Interpretation, reference, and provenance separate by weight and tone, not
+   by a glyph: a separator character orphans itself onto the next line. */
 .statusLine {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-1) var(--space-2);
+  gap: var(--space-1) var(--space-3);
   font-size: var(--type-2xs);
   line-height: var(--leading-normal);
 }
@@ -114,38 +114,29 @@
   color: var(--color-status-danger-fg);
 }
 
-.reference,
-.provenance {
+.reference {
   color: var(--color-text-secondary);
 }
 
-.reference + .provenance::before,
-.provenance + .provenance::before {
-  content: '·';
-  margin-right: var(--space-2);
+.provenance {
+  color: var(--color-text-tertiary);
 }
 
-.visual {
+.evidence {
   display: flex;
   min-width: 0;
-  flex: 1 1 auto;
   align-items: center;
   gap: var(--space-inline-group);
 }
 
-.visual[data-empty] {
-  justify-content: flex-end;
-}
-
-.trendCell {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-inline-group);
+/* Past this width the scale only adds pastel; the reading is already placed. */
+.evidence :global([data-slot='lab-range-band']) {
+  max-width: 30rem;
 }
 
 .trendLabel {
   display: inline-flex;
+  flex: 0 0 auto;
   align-items: center;
   gap: var(--space-1);
   color: var(--color-text-secondary);
@@ -160,10 +151,9 @@
   color: var(--color-text-secondary);
 }
 
-.trailing {
+.action {
   display: flex;
-  margin-left: auto;
-  align-items: center;
+  justify-content: flex-end;
 }
 
 .row[data-status='cancelled'] .name {
@@ -172,32 +162,33 @@
   text-decoration-color: var(--color-border-strong);
 }
 
+/* Stacked, not shrunk: the row keeps its reading order and the action stays a
+   secondary control instead of spanning the viewport. */
 @media (max-width: 48rem) {
   .row {
+    grid-template-columns: minmax(0, 1fr);
+    align-items: stretch;
+    row-gap: var(--space-2);
+  }
+
+  /* Stacked, the trend must not steal width from the scale: squeezed zones
+     wrap their tick labels onto two lines and stop being readable. */
+  .evidence {
     flex-direction: column;
     align-items: stretch;
-    gap: var(--space-inline-group);
+    gap: var(--space-2);
   }
 
-  .identity {
-    flex-basis: auto;
+  .trendLabel {
+    align-self: flex-start;
   }
 
-  .visual {
-    flex-wrap: wrap;
+  .evidence:empty,
+  .action:empty {
+    display: none;
+  }
+
+  .action {
     justify-content: flex-start;
   }
-
-  .trailing {
-    width: 100%;
-    margin-left: 0;
-  }
-
-  .trailing :global([data-slot='button']) {
-    width: 100%;
-  }
-}
-
-:global([data-density='compact']) .row .trailing :global([data-slot='button']) {
-  min-height: var(--touch-target-min);
 }

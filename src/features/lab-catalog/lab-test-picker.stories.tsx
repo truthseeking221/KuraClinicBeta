@@ -22,7 +22,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'Figma-bound doctor lab-test picker for browsing, searching, filtering, and selecting active catalog tests. It composes canonical Kura controls, supports server-backed or client fixture filtering, and keeps unavailable tests explicit and non-selectable.',
+          'Doctor lab-test picker for browsing, searching, filtering, and selecting active catalog tests. A delayed hover or keyboard focus reveals operational detail and price without adding noise to the scan view.',
       },
     },
   },
@@ -150,6 +150,69 @@ export const HoverState: Story = {
     await waitFor(() => {
       expect(getComputedStyle(row).backgroundColor).not.toBe(restingBackground);
     });
+  },
+};
+
+export const LegacyDetailPreview: Story = {
+  args: {
+    defaultQuery: 'fasting',
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'Proves the restored Legacy DCM preview: hover intent opens one anchored detail card, its action updates selection, and the card dismisses after the action.',
+      },
+    },
+  },
+  render: (args) => <Frame args={args} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const overlay = within(document.body);
+
+    await userEvent.hover(canvas.getByTestId('catalog-test-fasting-glucose'));
+    await waitFor(
+      () =>
+        expect(
+          overlay.getByRole('dialog', { name: 'Fasting glucose test details' }),
+        ).toBeVisible(),
+      { timeout: 2500 },
+    );
+    await expect(
+      overlay.getByText(
+        'Point-in-time fasting glucose for diagnosis and medication adjustment.',
+      ),
+    ).toBeVisible();
+    await expect(overlay.getByText('Ref 70–99 mg/dL')).toBeVisible();
+    await expect(overlay.getByText('$5.00')).toBeVisible();
+
+    await userEvent.click(
+      overlay.getByRole('button', { name: 'Add to order: Fasting glucose' }),
+    );
+    await expect(
+      canvas.getByRole('checkbox', { name: 'Fasting glucose' }),
+    ).toBeChecked();
+    await waitFor(() =>
+      expect(
+        overlay.queryByRole('dialog', { name: 'Fasting glucose test details' }),
+      ).not.toBeInTheDocument(),
+    );
+
+    const fastingGlucose = canvas.getByRole('checkbox', {
+      name: 'Fasting glucose',
+    });
+    fastingGlucose.focus();
+    await waitFor(() =>
+      expect(
+        overlay.getByRole('dialog', { name: 'Fasting glucose test details' }),
+      ).toBeVisible(),
+    );
+    await userEvent.keyboard('{Escape}');
+    await waitFor(() =>
+      expect(
+        overlay.queryByRole('dialog', { name: 'Fasting glucose test details' }),
+      ).not.toBeInTheDocument(),
+    );
   },
 };
 
@@ -314,6 +377,10 @@ export const MobileWidth412: Story = {
 export const MobileWidth480: Story = {
   globals: { viewport: { value: 'kura480' } },
   render: (args) => <Frame args={args} widthClass={styles.w480} />,
+};
+
+export const ContainerWidth560: Story = {
+  render: (args) => <Frame args={args} widthClass={styles.w560} />,
 };
 
 export const TabletWidth768: Story = {

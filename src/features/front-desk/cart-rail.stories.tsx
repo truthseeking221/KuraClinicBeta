@@ -49,6 +49,12 @@ const meta = {
   tags: ['autodocs', 'adapted-kura'],
   parameters: {
     layout: 'padded',
+    docs: {
+      description: {
+        component:
+          'Backend-priced order summary for the Check-In Wizard. The Payment step owns tender selection, payment capture, and check-in confirmation.',
+      },
+    },
     kura: {
       readiness: READINESS.frontDesk,
       intake: {
@@ -81,6 +87,9 @@ type Story = StoryObj<typeof meta>;
 export const Building: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
+    await expect(
+      canvas.getByRole('complementary', { name: 'Receptionist order summary' }),
+    ).toBeVisible();
     await expect(canvas.getByLabelText('2 tests selected')).toBeVisible();
     // Compact rule: the subtotal row only appears when it differs from the
     // amount due, so the hero figure is the single $18.00 on screen.
@@ -151,6 +160,18 @@ export const Supplemental: Story = {
         },
       },
     },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      canvas.getByRole('complementary', { name: 'Receptionist order summary' }),
+    ).toBeVisible();
+    await expect(canvas.getAllByText('Added after payment')).toHaveLength(2);
+    await expect(canvas.getByText(/Previously paid \(CAP-58213\)/)).toBeVisible();
+    await expect(canvas.queryByRole('button', { name: 'Set up payment' })).not.toBeInTheDocument();
+    await expect(
+      canvas.queryByRole('button', { name: 'Confirm payment & check in' }),
+    ).not.toBeInTheDocument();
   },
 };
 

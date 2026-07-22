@@ -11,8 +11,17 @@
 .identity {
   display: flex;
   align-items: flex-start;
-  gap: var(--space-2);
-  padding: var(--space-3) var(--space-4);
+  gap: var(--space-2-5);
+  padding: var(--space-3-5) var(--space-4) var(--space-3);
+}
+
+.identityAvatar {
+  --avatar-size: 34px;
+}
+
+.identityAvatar :global([data-slot='avatar-fallback']) {
+  background: var(--color-action-primary-subtle);
+  color: var(--primary-accent);
 }
 
 .identityCopy {
@@ -27,30 +36,35 @@
 .visitSummary,
 .reasonLabel,
 .emptySection,
-.readOnlyHint {
+.groupNote {
   margin: 0;
 }
 
 .patientName {
   color: var(--color-text-primary);
-  font-size: var(--type-md);
-  font-weight: var(--weight-semibold);
-  line-height: var(--leading-tight);
+  font-size: var(--type-lg);
+  font-weight: var(--weight-medium);
+  line-height: 1.5;
   overflow-wrap: anywhere;
 }
 
 .demographics {
   color: var(--color-text-tertiary);
   font-family: var(--font-family-mono);
-  font-size: var(--type-2xs);
-  line-height: var(--leading-normal);
+  font-size: var(--type-xs);
+  font-weight: var(--weight-regular);
+  line-height: 1.3;
   overflow-wrap: anywhere;
 }
 
 .patientStatus {
+  inline-size: fit-content;
+  padding: 1px var(--space-2);
+  border-radius: var(--radius-full);
+  background: var(--color-status-warning-bg);
   color: var(--color-status-warning-fg);
-  font-size: var(--type-2xs);
-  line-height: var(--leading-normal);
+  font-size: var(--type-xs);
+  line-height: 1.4;
 }
 
 .divider {
@@ -59,14 +73,8 @@
   background: var(--color-border);
 }
 
-.safety,
-.visitSection {
-  display: grid;
-  gap: var(--space-2);
-  padding: var(--space-3) var(--space-4);
-}
-
 .sectionLabel,
+.reasonHeader,
 .accordionLabel {
   display: flex;
   min-inline-size: 0;
@@ -74,28 +82,52 @@
   gap: var(--space-2);
 }
 
-.sectionLabel {
-  color: var(--color-text-secondary);
+.sectionLabel,
+.accordionLabel,
+.reasonLabel {
+  color: var(--color-text-primary);
   font-size: var(--type-xs);
   font-weight: var(--weight-medium);
-  line-height: var(--leading-normal);
+  line-height: 1.4;
 }
 
-.sectionLabel > svg,
-.accordionLabel > svg {
-  flex: 0 0 auto;
-  inline-size: var(--space-4);
-  block-size: var(--space-4);
+.sectionLabel h3,
+.accordionItem > h3 {
+  margin: 0;
+  font: inherit;
+}
+
+.reasonLabel {
+  text-transform: uppercase;
+}
+
+.iconBox,
+.missingIconBox {
+  display: inline-flex;
+  inline-size: var(--space-6);
+  block-size: var(--space-6);
+  flex: 0 0 var(--space-6);
+  align-items: center;
+  justify-content: center;
+}
+
+.iconBox > svg {
+  inline-size: 15px;
+  block-size: 15px;
   color: var(--primary-accent);
 }
 
-.safety .sectionLabel > svg {
+.safety .iconBox > svg {
   color: var(--color-status-warning-fg);
 }
 
-.sectionLabel h3 {
-  margin: 0;
-  font: inherit;
+.safety {
+  display: grid;
+}
+
+.safety > .sectionLabel {
+  min-block-size: var(--space-10);
+  padding: var(--space-2-5) var(--space-4) var(--space-1-5);
 }
 
 .safetyList,
@@ -108,7 +140,8 @@
 }
 
 .safetyList {
-  gap: var(--space-2);
+  gap: var(--space-1-5);
+  padding: 0 var(--space-4) var(--space-3);
 }
 
 .safetyItem {
@@ -117,8 +150,13 @@
   gap: var(--space-2);
   align-items: start;
   color: var(--color-text-primary);
-  font-size: var(--type-sm);
-  line-height: var(--leading-normal);
+  font-size: var(--type-xs);
+  line-height: 1.4;
+}
+
+.safetyItem[data-tone='neutral'] {
+  display: block;
+  color: var(--color-text-secondary);
 }
 
 .safetyMarker {
@@ -128,74 +166,137 @@
   background: var(--color-status-danger-fg);
 }
 
+.safetyItem[data-tone='warning'] .safetyMarker {
+  background: var(--color-status-warning-fg);
+}
+
 .safetyItem strong,
 .detailList strong {
   display: block;
   color: var(--color-text-primary);
+  font-size: 13px;
   font-weight: var(--weight-medium);
+  line-height: 1.45;
+}
+
+.safetyItem > span:last-child {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.safetyItem[data-tone='neutral'] strong {
+  color: inherit;
+  font-size: var(--type-xs);
+  font-weight: var(--weight-regular);
+  line-height: 1.4;
 }
 
 .safetyItem small,
 .detailList small {
   display: block;
-  color: var(--color-text-secondary);
+  color: var(--color-text-primary);
   font-size: var(--type-xs);
-  line-height: var(--leading-normal);
+  font-weight: var(--weight-regular);
+  line-height: 1.4;
+}
+
+.groupNote {
+  color: var(--color-text-tertiary);
+  font-size: var(--type-xs);
+  line-height: 1.4;
+}
+
+.safety > .groupNote {
+  padding: 0 var(--space-4) var(--space-3);
 }
 
 .visitContext {
   display: grid;
 }
 
-.visitContext > .visitSection + .visitSection {
-  padding-block-start: 0;
+.visitSection {
+  display: grid;
 }
 
-.visitSummary,
-.reasonList {
+.visitSection > .sectionLabel,
+.reasonHeader {
+  min-block-size: var(--space-11);
+  padding: var(--space-2-5) var(--space-4);
+}
+
+.visitSummary {
+  padding: 0 var(--space-4) var(--space-3-5);
   color: var(--color-text-secondary);
   font-size: var(--type-xs);
-  line-height: var(--leading-normal);
-}
-
-.reasonLabel {
-  color: var(--color-text-secondary);
-  font-size: var(--type-2xs);
-  font-weight: var(--weight-medium);
-  line-height: var(--leading-normal);
+  line-height: 1.4;
 }
 
 .reasonList {
-  gap: var(--space-1);
+  gap: var(--space-2);
+  padding: 0 var(--space-4) var(--space-3-5);
+  color: var(--color-text-primary);
+  font-size: var(--type-xs);
+  line-height: 1.4;
 }
 
-.reasonList li::before {
-  content: '— ';
-  color: var(--color-text-tertiary);
+.reasonList > li,
+.detailList > li {
+  display: grid;
+  min-inline-size: 0;
+  grid-template-columns: var(--space-2) minmax(0, 1fr);
+  column-gap: var(--space-2);
+  overflow-wrap: anywhere;
 }
 
-.accordion {
-  padding-block: var(--space-1);
+.reasonList > li::before,
+.detailList > li::before {
+  display: block;
+  block-size: 1px;
+  margin-block-start: calc(var(--space-2) + 1px);
+  background: var(--color-text-tertiary);
+  content: '';
+}
+
+.detailList strong,
+.detailList small {
+  grid-column: 2;
 }
 
 .accordionItem {
-  border-color: var(--color-border);
+  position: relative;
+  border-color: transparent;
+}
+
+.accordionItem:not(:last-child)::after {
+  position: absolute;
+  z-index: 1;
+  inset-inline: var(--space-4);
+  inset-block-end: 0;
+  block-size: 1px;
+  background: var(--color-border);
+  content: '';
 }
 
 .accordionTrigger {
-  min-block-size: var(--field-h);
-  padding: var(--space-2) var(--space-4);
+  box-sizing: border-box;
+  block-size: var(--space-11);
+  min-block-size: var(--space-11);
+  align-items: center;
+  padding: 9px var(--space-4);
+}
+
+.accordionTrigger > :global(.min-w-0) {
+  align-self: center;
+}
+
+.accordionTrigger :global([data-slot='accordion-trigger-icon']) {
+  inline-size: var(--space-3-5);
+  block-size: var(--space-3-5);
+  margin-block-start: 0;
 }
 
 .accordionTrigger:is(:hover, :focus-visible):not(:disabled) :global([data-slot='accordion-trigger-icon']) {
   color: var(--primary-accent);
-}
-
-.accordionLabel {
-  color: var(--color-text-primary);
-  font-size: var(--type-xs);
-  font-weight: var(--weight-medium);
-  line-height: var(--leading-normal);
 }
 
 .accordionLabel > span:nth-child(2) {
@@ -205,36 +306,40 @@
 
 .count {
   display: inline-flex;
-  min-inline-size: var(--space-4);
+  min-inline-size: var(--space-4-5);
+  block-size: var(--space-4-5);
+  align-items: center;
   justify-content: center;
+  padding-inline: var(--space-1);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  background: var(--color-background-canvas-subtle);
   color: var(--color-text-tertiary);
   font-family: var(--font-family-mono);
-  font-size: var(--type-2xs);
+  font-size: var(--type-xs);
   font-weight: var(--weight-regular);
+  line-height: 1;
 }
 
 .accordionContent {
-  padding-inline: var(--space-4);
-  color: var(--color-text-secondary);
+  padding: 0 var(--space-4) var(--space-3-5);
+  color: var(--color-text-primary);
 }
 
 .detailList {
   gap: var(--space-2);
-  padding-block-end: var(--space-1);
-  font-size: var(--type-sm);
-  line-height: var(--leading-normal);
 }
 
-.emptySection,
-.readOnlyHint {
+.accordionContent > .groupNote {
+  margin-block-start: var(--space-2);
+  margin-inline-start: var(--space-4);
+}
+
+.emptySection {
+  margin-inline-start: var(--space-4);
   color: var(--color-text-secondary);
   font-size: var(--type-xs);
-  line-height: var(--leading-normal);
-}
-
-.readOnlyHint {
-  margin-block-start: var(--space-2);
-  color: var(--color-text-tertiary);
+  line-height: 1.4;
 }
 
 .notice {

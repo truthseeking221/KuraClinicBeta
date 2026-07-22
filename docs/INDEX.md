@@ -13,6 +13,8 @@ owner: docs
 - [Kura Clinic Product Truth Pack](kura-clinic/README.md) — canonical entry point for clinic product logic, cross-role journeys, case coverage, Figma journey audits, source authority, and preserved historical specifications.
 - [Complete Business, Product & Clinical Handbook](kura-clinic/00-source-of-truth/handbook/Kura_Complete_Business_Product_Clinical_Handbook_2026-07-14.docx) — 79-page compiled handbook spanning business, product, clinical operations, finance, security, architecture, governance, and edge-case recovery.
 - [End-to-end journeys](kura-clinic/01-journeys/end-to-end-journeys.md) — doctor, receptionist, phlebotomist, courier/lab, results, and finance lifecycle flows.
+- [Doctor care-loop map](kura-clinic/01-journeys/doctor-care-loop-map.md) — doctor-centered trigger-to-closure flow, independent state axes, handoffs, and unresolved safety gates.
+- [Doctor journey coverage matrix](kura-clinic/01-journeys/doctor-journey-coverage-matrix.md) — generated projection of all 163 journey IDs with actor, doctor relationship, readiness, and case coverage.
 - [Journey catalog](kura-clinic/01-journeys/journey-catalog.md) — complete application journey inventory.
 - [Journey case matrix](kura-clinic/01-journeys/journey-case-matrix.md) — happy, reject, retry, concurrency, recovery, and N≥2 aggregate cases.
 - [Post-onboarding activation and first PSC booking prototype](kura-clinic/03-design-specifications/post-onboarding-activation-first-booking-prototype-spec.md) — implementation-ready mock-only specification for workspace activation, KYD branching, adaptive Home, and first PSC booking.

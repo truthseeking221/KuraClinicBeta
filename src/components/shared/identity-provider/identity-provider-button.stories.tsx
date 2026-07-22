@@ -9,7 +9,7 @@ import {
 } from './identity-provider-button';
 
 const meta = {
-  title: 'Design System/Patterns/Authentication/Identity Provider Button',
+  title: 'Design System/Patterns/Identity Provider Button',
   component: IdentityProviderButton,
   tags: ['autodocs', 'source-external', 'adapted-kura'],
   args: {

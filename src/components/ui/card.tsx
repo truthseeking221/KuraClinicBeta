@@ -3,7 +3,7 @@ import type { ComponentPropsWithoutRef, ReactNode } from 'react';
 import styles from './card.module.css';
 
 export type CardSize = 'sm' | 'md';
-export type CardVariant = 'elevated' | 'outline';
+export type CardVariant = 'elevated' | 'outline' | 'tile';
 export type CardElement = 'article' | 'section' | 'div';
 export type CardTitleElement = 'h2' | 'h3' | 'h4' | 'div';
 export type CardFooterAlign = 'start' | 'end' | 'between';
@@ -16,9 +16,10 @@ export type CardProps = Omit<ComponentPropsWithoutRef<'article'>, 'children'> & 
   /** Explicit inset size. When omitted, the card follows the root Kura density. */
   size?: CardSize;
   /**
-   * Surface separation. `elevated` follows the theme (feather shadow in light,
-   * border in dark). `outline` always uses a hairline border with no shadow —
-   * for dense card grids and cards nested inside panels or drawers.
+   * Surface separation. Default (`elevated`) is the flat gray tray that sits
+   * on the white page — contrast only, no border or shadow. `tile` is a white
+   * box with a feather shadow for nesting inside a tray. `outline` is a white
+   * surface with a hairline border — for bordered containers and tables.
    */
   variant?: CardVariant;
   /** Adds section dividers when the boundaries are meaningful to the task. */

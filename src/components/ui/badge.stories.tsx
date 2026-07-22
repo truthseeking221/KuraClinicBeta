@@ -5,7 +5,7 @@ import { Avatar, AvatarFallback, Badge, CheckIcon, XIcon } from './index';
 const meta = {
   title: 'Design System/Primitives/Badge',
   component: Badge,
-  tags: ['autodocs', 'source-reui', 'adapted-kura'],
+  tags: ['autodocs', 'source-kura', 'adapted-kura'],
   parameters: {
     layout: 'centered',
     kura: {
@@ -13,12 +13,12 @@ const meta = {
         decision: 'EXTEND',
         owner: 'src/components/ui',
         evidence:
-          'The existing Badge primitive already covered Kura status tones and density. The ReUI family adds solid/outline appearances, leading and trailing content, status dots, navigation rendering, and avatar pairing, so the canonical primitive was extended.',
+          'The existing Badge primitive keeps Kura status semantics while adopting Kura counter geometry and surface finish.',
       },
       source: {
-        vendor: 'ReUI',
-        registryItem: 'c-badge-1 through c-badge-25',
-        sourceUrl: 'https://reui.io/components/badge',
+        vendor: 'Kura',
+        registryItem: 'badge',
+        visualReference: 'Kura badge',
       },
       binding: {
         colors: 'kura-semantic',

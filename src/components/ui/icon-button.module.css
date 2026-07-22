@@ -1,8 +1,8 @@
 .iconButton {
-  --icon-button-bg: var(--card);
-  --icon-button-fg: var(--foreground);
-  --icon-button-border: var(--border);
-  --icon-button-hover-bg: var(--muted);
+  --icon-button-bg: var(--color-background-primary-default);
+  --icon-button-fg: var(--color-foreground-icon-primary);
+  --icon-button-border: var(--color-border-button-default);
+  --icon-button-hover-bg: var(--color-background-primary-hover);
   box-sizing: border-box;
   display: inline-flex;
   width: var(--control-h);
@@ -15,6 +15,7 @@
   padding: var(--space-2);
   background: var(--icon-button-bg);
   color: var(--icon-button-fg);
+  box-shadow: var(--shadow-xs);
   font-family: var(--font-family-sans);
   transition:
     background-color var(--duration-fast) var(--ease-standard),
@@ -38,6 +39,12 @@
 .iconButton:hover:not(:disabled):not([data-disabled='true']) {
   cursor: pointer;
   background: var(--icon-button-hover-bg);
+  border-color: var(--color-border-button-hover);
+}
+
+.iconButton:active:not(:disabled):not([data-disabled='true']) {
+  border-color: var(--color-border-button-active);
+  background: var(--color-background-primary-active);
 }
 
 .iconButton[aria-pressed='true'] {
@@ -47,7 +54,11 @@
 .iconButton:disabled,
 .iconButton[data-disabled='true'] {
   cursor: not-allowed;
-  opacity: var(--opacity-disabled);
+  border-color: var(--color-border-button-default);
+  background: var(--color-background-primary-disabled);
+  color: var(--color-foreground-icon-disabled);
+  box-shadow: none;
+  opacity: 1;
   pointer-events: none;
 }
 
@@ -62,7 +73,8 @@
   --icon-button-bg: transparent;
   --icon-button-fg: var(--foreground);
   --icon-button-border: transparent;
-  --icon-button-hover-bg: var(--muted);
+  --icon-button-hover-bg: var(--color-background-secondary-hover);
+  box-shadow: none;
 }
 
 .toneCritical {
@@ -82,6 +94,12 @@
 .sizeMicro > svg {
   width: var(--space-4);
   height: var(--space-4);
+}
+
+.sizeMicro {
+  width: var(--control-h-sm);
+  min-width: var(--control-h-sm);
+  min-height: var(--control-h-sm);
 }
 
 .sizeLarge {

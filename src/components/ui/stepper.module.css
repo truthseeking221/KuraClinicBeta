@@ -5,6 +5,9 @@
 .nav {
   display: flex;
   width: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
 .nav[data-orientation='horizontal'] {
@@ -53,6 +56,14 @@
   font: inherit;
   text-align: left;
   transition: background-color var(--motion-color);
+}
+
+.stepper[data-mode='status'] .trigger {
+  cursor: default;
+}
+
+.stepper[data-mode='status'] .trigger:hover {
+  background: transparent;
 }
 
 .trigger:hover:not(:disabled) {

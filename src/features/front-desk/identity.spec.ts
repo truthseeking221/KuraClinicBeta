@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { DEMO_BRANCH_ID, IDENTITY_REGISTRY } from './demo-data';
 import {
-  applyResolvedRecord,
+  resolvedRecordPatch,
   bookingBlockReason,
   collectionCodeStatusMeta,
   detectQueryKind,
@@ -94,14 +94,16 @@ describe('guardianGateBlocks', () => {
   });
 });
 
-describe('applyResolvedRecord', () => {
-  it('captures identity from the record and locks verified fields', () => {
+describe('resolvedRecordPatch', () => {
+  it('captures identity from the record, locks verified fields, re-arms acks', () => {
     const record = IDENTITY_REGISTRY.find((candidate) => candidate.id === 'rec-sok-phearom')!;
-    const next = applyResolvedRecord(blankWalkIn('p-1', 1), record);
+    const next = { ...blankWalkIn('p-1', 1), ...resolvedRecordPatch(record) };
     expect(next.name).toBe('Sok Phearom');
     expect(next.identity.source).toBe('existing');
     expect(next.identity.lockedFields).toContain('dob');
     expect(next.sexAtBirth).toBe('Male');
+    expect(next.phoneNumber).toBe('0931238123');
+    expect(next.collisionAcked).toEqual([]);
   });
 });
 

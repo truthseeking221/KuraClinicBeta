@@ -25,6 +25,8 @@ import {
   PopoverTrigger,
   SearchIcon,
 } from '../../components/ui';
+import { useT } from '../../components/foundations/i18n';
+import type { Translate } from '../../components/foundations/i18n';
 import {
   EmptyState,
   EmptyStateDescription,
@@ -46,6 +48,7 @@ import styles from './doctor-banking.module.css';
 
 const column = createColumnHelper<LedgerEntry>();
 
+/** English labels stay the stable dictionary keys; `useFilterFields` translates. */
 const FILTER_FIELDS: readonly FilterFieldConfig<string>[] = [
   {
     key: 'state',
@@ -80,10 +83,11 @@ const FILTER_FIELDS: readonly FilterFieldConfig<string>[] = [
  * need attention, so only they carry a badge.
  */
 function StateCell({ state }: { state: LedgerEntryState }) {
-  if (state === 'settled') return <span className={styles.stateSettled}>Settled</span>;
+  const t = useT();
+  if (state === 'settled') return <span className={styles.stateSettled}>{t('Settled')}</span>;
   return (
     <Badge variant={state === 'pending' ? 'warning' : 'neutral'}>
-      {state === 'pending' ? 'Pending' : 'Voided'}
+      {state === 'pending' ? t('Pending') : t('Voided')}
     </Badge>
   );
 }
@@ -95,11 +99,11 @@ function shortDate(value: string) {
   return new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short' }).format(date);
 }
 
-function dateRangeLabel(from: string, to: string) {
+function dateRangeLabel(from: string, to: string, t: Translate) {
   if (from && to) return `${shortDate(from)} – ${shortDate(to)}`;
-  if (from) return `From ${shortDate(from)}`;
-  if (to) return `To ${shortDate(to)}`;
-  return 'Dates';
+  if (from) return `${t('From')} ${shortDate(from)}`;
+  if (to) return `${t('To')} ${shortDate(to)}`;
+  return t('Dates');
 }
 
 const RECENT_LIMIT = 6;
@@ -122,11 +126,13 @@ export function ActivityLedger({
   title,
   variant = 'full',
 }: ActivityLedgerProps) {
+  const t = useT();
   const recent = variant === 'recent';
-  const resolvedTitle = title ?? (recent ? 'Recent activity' : 'Activity');
-  const resolvedDescription =
+  const resolvedTitle = t(title ?? (recent ? 'Recent activity' : 'Activity'));
+  const rawDescription =
     description ??
     (recent ? undefined : 'Search and filter immutable balance movements across your Kura workspaces.');
+  const resolvedDescription = rawDescription ? t(rawDescription) : undefined;
   const [query, setQuery] = useState('');
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
@@ -146,10 +152,20 @@ export function ActivityLedger({
     [entries, from, kindFilter, query, recent, stateFilter, to],
   );
 
+  const filterFields = useMemo<readonly FilterFieldConfig<string>[]>(
+    () =>
+      FILTER_FIELDS.map((field) => ({
+        ...field,
+        label: field.label ? t(field.label) : field.label,
+        options: field.options?.map((option) => ({ ...option, label: t(option.label) })),
+      })),
+    [t],
+  );
+
   const columns = useMemo(
     () => [
       column.accessor('title', {
-        header: 'Activity',
+        header: t('Activity'),
         size: 360,
         cell: ({ row }) => {
           const meta = [row.original.detail?.replace(/\.\s*$/, ''), row.original.workspaceLabel]
@@ -168,7 +184,7 @@ export function ActivityLedger({
         },
       }),
       column.accessor('occurredAt', {
-        header: 'When (ICT)',
+        header: t('When (ICT)'),
         size: 150,
         cell: ({ getValue }) => (
           <time className={styles.nowrap} dateTime={getValue()}>
@@ -177,12 +193,12 @@ export function ActivityLedger({
         ),
       }),
       column.accessor('state', {
-        header: 'State',
+        header: t('State'),
         size: 100,
         cell: ({ getValue }) => <StateCell state={getValue()} />,
       }),
       column.accessor('amount', {
-        header: 'Amount',
+        header: t('Amount'),
         size: 130,
         meta: { numeric: true },
         cell: ({ row, getValue }) => {
@@ -206,7 +222,7 @@ export function ActivityLedger({
         },
       }),
     ],
-    [],
+    [t],
   );
 
   const table = useReactTable({
@@ -226,12 +242,12 @@ export function ActivityLedger({
     state === 'error' || state === 'permission-denied' ? (
       <Alert tone="danger">
         <AlertTitle>
-          {state === 'permission-denied' ? 'Earnings access denied' : 'Activity unavailable'}
+          {state === 'permission-denied' ? t('Earnings access denied') : t('Activity unavailable')}
         </AlertTitle>
         <AlertDescription>
           {state === 'permission-denied'
-            ? 'Your current access cannot view this person-owned ledger.'
-            : 'The ledger could not be loaded. No activity has been inferred.'}
+            ? t('Your current access cannot view this person-owned ledger.')
+            : t('The ledger could not be loaded. No activity has been inferred.')}
         </AlertDescription>
       </Alert>
     ) : undefined;
@@ -246,18 +262,18 @@ export function ActivityLedger({
           ) : null}
         </div>
         {recent && onViewAll ? (
-          <Button onClick={onViewAll} size="sm" variant="ghost">View all</Button>
+          <Button onClick={onViewAll} size="sm" variant="ghost">{t('View all')}</Button>
         ) : null}
       </header>
       <DataGrid
         emptyState={
           <EmptyState align="center" surface="plain">
             <EmptyStateHeader>
-              <EmptyStateTitle>{recent ? 'No activity yet' : 'No matching activity'}</EmptyStateTitle>
+              <EmptyStateTitle>{recent ? t('No activity yet') : t('No matching activity')}</EmptyStateTitle>
               <EmptyStateDescription>
                 {recent
-                  ? 'Balance movements appear here as orders complete and payments settle.'
-                  : 'Change the search, filters, or date range to see more ledger activity.'}
+                  ? t('Balance movements appear here as orders complete and payments settle.')
+                  : t('Change the search, filters, or date range to see more ledger activity.')}
               </EmptyStateDescription>
             </EmptyStateHeader>
           </EmptyState>
@@ -265,17 +281,17 @@ export function ActivityLedger({
         errorState={errorState}
         isLoading={state === 'loading'}
         layout={{ borders: 'rows', density: 'compact', stickyHeader: !recent, width: 'fixed' }}
-        loadingMessage="Loading earnings activity"
+        loadingMessage={t('Loading earnings activity')}
         recordCount={visibleEntries.length}
         table={table}
       >
         {state === 'ready' && !recent ? (
           <DataGridToolbar className={styles.activityToolbar}>
             <Input
-              aria-label="Search activity"
+              aria-label={t('Search activity')}
               className={styles.searchField}
               onChange={(event) => setQuery(event.currentTarget.value)}
-              placeholder="Search activity"
+              placeholder={t('Search activity')}
               prefix={<SearchIcon aria-hidden="true" size={16} />}
               size="sm"
               type="search"
@@ -283,7 +299,7 @@ export function ActivityLedger({
             />
             <Filters
               allowMultiple={false}
-              fields={FILTER_FIELDS}
+              fields={filterFields}
               filters={filters}
               onChange={setFilters}
               size="sm"
@@ -296,13 +312,13 @@ export function ActivityLedger({
                     size="sm"
                     variant={from || to ? 'secondary' : 'ghost'}
                   >
-                    {dateRangeLabel(from, to)}
+                    {dateRangeLabel(from, to, t)}
                   </Button>
                 }
               />
               <PopoverContent align="end" className={styles.datePopover}>
-                <Input label="From" onChange={(event) => setFrom(event.currentTarget.value)} size="sm" type="date" value={from} />
-                <Input label="To" onChange={(event) => setTo(event.currentTarget.value)} size="sm" type="date" value={to} />
+                <Input label={t('From')} onChange={(event) => setFrom(event.currentTarget.value)} size="sm" type="date" value={from} />
+                <Input label={t('To')} onChange={(event) => setTo(event.currentTarget.value)} size="sm" type="date" value={to} />
                 {from || to ? (
                   <Button
                     onClick={() => {
@@ -312,16 +328,16 @@ export function ActivityLedger({
                     size="sm"
                     variant="ghost"
                   >
-                    Clear dates
+                    {t('Clear dates')}
                   </Button>
                 ) : null}
               </PopoverContent>
             </Popover>
           </DataGridToolbar>
         ) : null}
-        <DataGridTable aria-label="Earnings activity" scrollHeight={recent ? undefined : 'lg'} />
+        <DataGridTable aria-label={t('Earnings activity')} scrollHeight={recent ? undefined : 'lg'} />
         {state === 'ready' && !recent && visibleEntries.length > 0 ? (
-          <DataGridPagination pageSizes={[6, 12, 24]} rowsPerPageLabel="Activity per page" />
+          <DataGridPagination pageSizes={[6, 12, 24]} rowsPerPageLabel={t('Activity per page')} />
         ) : null}
       </DataGrid>
     </section>

@@ -1,0 +1,145 @@
+/* Past orders are read-only evidence rows. The canonical Item family supplies
+ * the row anatomy and ItemSeparator supplies scanning rhythm; no card boundary
+ * is needed when a historical order has no independent action. */
+
+.panel,
+.section,
+.list,
+.loading,
+.statusState {
+  display: flex;
+  flex-direction: column;
+}
+
+.panel {
+  gap: var(--space-6);
+}
+
+.section {
+  gap: var(--space-3);
+}
+
+.sectionHeading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.sectionHeading [data-slot='input-field'] {
+  inline-size: min(100%, 18rem);
+}
+
+.sectionTitle {
+  color: var(--color-text-primary);
+  font-size: var(--type-sm);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-snug);
+}
+
+.list {
+  min-width: 0;
+}
+
+.order {
+  min-width: 0;
+}
+
+.order[data-focused='true'],
+.order:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.orderMeta {
+  display: inline-flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.code {
+  color: var(--color-text-primary);
+  font-weight: var(--weight-semibold);
+  font-variant-numeric: tabular-nums;
+}
+
+.placed {
+  color: var(--color-text-tertiary);
+  font-size: var(--type-xs);
+}
+
+.headStatus {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-inline-start: auto;
+}
+
+.orderLines {
+  display: block;
+  width: 100%;
+}
+
+.lines {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.line {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  font-size: var(--type-sm);
+}
+
+.lineName {
+  color: var(--color-text-primary);
+  overflow-wrap: anywhere;
+}
+
+.lineCode {
+  color: var(--color-text-tertiary);
+  font-size: var(--type-xs);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.noMatches {
+  color: var(--color-text-secondary);
+  font-size: var(--type-sm);
+}
+
+.loading,
+.statusState {
+  gap: var(--space-4);
+}
+
+@media (max-width: 480px) {
+  .sectionHeading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .sectionHeading [data-slot='input-field'] {
+    inline-size: 100%;
+  }
+
+  .headStatus {
+    inline-size: 100%;
+    margin-inline-start: 0;
+  }
+}

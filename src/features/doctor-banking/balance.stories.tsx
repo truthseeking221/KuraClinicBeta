@@ -30,6 +30,7 @@ const meta = {
     data: doctorFixture,
     state: 'ready',
     onManageAutoPay: fn(),
+    onOpenLicence: fn(),
     onOpenStatements: fn(),
     onRetry: fn(),
     onSettle: fn(),
@@ -100,6 +101,18 @@ export const PermissionDenied: Story = {
     const canvas = within(canvasElement);
     await expect(canvas.getByText('Earnings access denied')).toBeVisible();
     await expect(canvas.queryByText('$184.50')).not.toBeInTheDocument();
+  },
+};
+
+export const NewDoctorNotEligible: Story = {
+  args: { state: 'not-eligible' },
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText('Earnings require a verified licence')).toBeVisible();
+    await userEvent.click(canvas.getByRole('button', { name: 'Manage licence' }));
+    await expect(args.onOpenLicence).toHaveBeenCalled();
+    await expect(canvas.queryByText('$184.50')).not.toBeInTheDocument();
+    await expect(canvas.queryByRole('button', { name: 'Activity & statements' })).not.toBeInTheDocument();
   },
 };
 

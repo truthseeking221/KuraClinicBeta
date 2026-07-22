@@ -1,0 +1,21 @@
+import{i as e}from"./preload-helper-MclHqJXp.js";import{g as t}from"./iframe-DWdOCsUQ.js";import{at as n,ct as r,dt as i,ft as a,it as o,lt as s,ot as c,rt as l,st as u,t as d,ut as f}from"./ui-C9kmmzkH.js";function p(){return(0,m.jsxs)(l,{"aria-label":`Clinic sections`,children:[(0,m.jsxs)(u,{children:[(0,m.jsxs)(n,{children:[(0,m.jsx)(i,{children:`Clinic`}),(0,m.jsxs)(o,{children:[(0,m.jsx)(c,{href:`#appointments`,children:(0,m.jsxs)(`span`,{children:[(0,m.jsx)(`strong`,{children:`Appointments`}),(0,m.jsx)(`small`,{children:`Review today’s scheduled visits.`})]})}),(0,m.jsx)(c,{href:`#patients`,children:(0,m.jsxs)(`span`,{children:[(0,m.jsx)(`strong`,{children:`Patients`}),(0,m.jsx)(`small`,{children:`Find identity and care context.`})]})})]})]}),(0,m.jsxs)(n,{children:[(0,m.jsx)(i,{children:`Laboratory`}),(0,m.jsxs)(o,{children:[(0,m.jsx)(c,{href:`#collection`,children:(0,m.jsxs)(`span`,{children:[(0,m.jsx)(`strong`,{children:`Collection`}),(0,m.jsx)(`small`,{children:`Track specimen collection work.`})]})}),(0,m.jsx)(c,{href:`#results`,children:(0,m.jsxs)(`span`,{children:[(0,m.jsx)(`strong`,{children:`Results`}),(0,m.jsx)(`small`,{children:`Review released laboratory findings.`})]})})]})]}),(0,m.jsx)(n,{children:(0,m.jsx)(c,{active:!0,href:`#dashboard`,children:`Dashboard`})})]}),(0,m.jsx)(s,{children:(0,m.jsx)(f,{children:(0,m.jsx)(r,{children:(0,m.jsx)(a,{})})})})]})}var m,h,g,_,v,y,b,x,S;e((()=>{m=t(),d(),{expect:h,userEvent:g,within:_}=__STORYBOOK_MODULE_TEST__,v={title:`Design System/Components/Navigation Menu`,component:l,tags:[`autodocs`,`source-reui`,`adapted-kura`],parameters:{layout:`centered`,kura:{source:{vendor:`ReUI`,registryItem:`navigation-menu`,familySize:5},intake:{decision:`CREATE`,owner:`src/components/ui`,evidence:`AppShell owns product shell navigation and DropdownMenu owns actions; no reusable link-first navigation disclosure with active-link and composite keyboard behavior existed.`},binding:{colors:`kura-semantic`,typography:`kura`,spacing:`kura`,radius:`kura-control-and-overlay`,elevation:`kura-popover`,icons:`kura-canonical`,responsive:`horizontal list and viewport-contained content`},exclusions:[{capability:`Mobile app navigation replacement`,replacement:`AppShell owns mobile navigation composition; this primitive only preserves horizontal link disclosure.`}]}}},y={render:()=>(0,m.jsx)(p,{}),play:async({canvasElement:e})=>{let t=_(e);await g.click(t.getByRole(`button`,{name:`Clinic`})),await h(await _(document.body).findByText(`Appointments`)).toBeVisible()}},b={render:()=>(0,m.jsx)(l,{"aria-label":`Results navigation`,children:(0,m.jsxs)(u,{children:[(0,m.jsx)(n,{children:(0,m.jsx)(c,{active:!0,href:`#current`,children:`Current results`})}),(0,m.jsx)(n,{children:(0,m.jsx)(c,{href:`#history`,children:`History`})})]})})},x={render:()=>(0,m.jsx)(p,{}),parameters:{viewport:{defaultViewport:`kura320`}}},y.parameters={...y.parameters,docs:{...y.parameters?.docs,source:{originalSource:`{
+  render: () => <Example />,
+  play: async ({
+    canvasElement
+  }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(canvas.getByRole('button', {
+      name: 'Clinic'
+    }));
+    await expect(await within(document.body).findByText('Appointments')).toBeVisible();
+  }
+}`,...y.parameters?.docs?.source}}},b.parameters={...b.parameters,docs:{...b.parameters?.docs,source:{originalSource:`{
+  render: () => <NavigationMenu aria-label="Results navigation"><NavigationMenuList><NavigationMenuItem><NavigationMenuLink active href="#current">Current results</NavigationMenuLink></NavigationMenuItem><NavigationMenuItem><NavigationMenuLink href="#history">History</NavigationMenuLink></NavigationMenuItem></NavigationMenuList></NavigationMenu>
+}`,...b.parameters?.docs?.source}}},x.parameters={...x.parameters,docs:{...x.parameters?.docs,source:{originalSource:`{
+  render: () => <Example />,
+  parameters: {
+    viewport: {
+      defaultViewport: 'kura320'
+    }
+  }
+}`,...x.parameters?.docs?.source}}},S=[`Default`,`LinkOnly`,`Mobile`]}))();export{y as Default,b as LinkOnly,x as Mobile,S as __namedExportsOrder,v as default};

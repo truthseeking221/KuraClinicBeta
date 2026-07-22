@@ -60,20 +60,31 @@
   flex: 0 0 auto;
   align-items: center;
   justify-content: center;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-indicator);
-  background: var(--card);
-  color: var(--primary-foreground);
+  border: 1px solid var(--color-border-checkbox-default);
+  border-radius: var(--radius-2xs);
+  background: var(--color-background-primary-default);
+  color: var(--color-foreground-full);
+  box-shadow: var(--shadow-xs);
   transition:
     background-color var(--duration-fast) var(--ease-standard),
     border-color var(--duration-fast) var(--ease-standard),
     transform var(--duration-fast) var(--ease-standard);
 }
 
+.control:hover:not([data-disabled='true']) .indicator {
+  border-color: var(--color-border-button-active);
+}
+
 .control[data-state='checked'] .indicator,
 .control[data-state='indeterminate'] .indicator {
-  border-color: var(--primary);
-  background: var(--primary);
+  border-color: transparent;
+  background-image: var(--gradient-button-primary-default);
+  box-shadow: var(--shadow-checkbox-selected);
+}
+
+.control:hover:not([data-disabled='true'])[data-state='checked'] .indicator,
+.control:hover:not([data-disabled='true'])[data-state='indeterminate'] .indicator {
+  background-image: var(--gradient-button-primary-hover);
 }
 
 .control[data-tone='ai'][data-state='checked'] .indicator,
