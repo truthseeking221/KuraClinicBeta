@@ -16,6 +16,8 @@ import type { ReactNode } from 'react';
 
 import type { ClinicMode, ClinicShift } from '../../components/shared/app-shell';
 import type { LicenceState } from '../../features/licence/logic';
+import type { DemoOnboardingScenarioId } from '../../features/auth/demo-data';
+import type { Locale } from '../../components/foundations/i18n';
 import { ME } from '../../features/settings/demo-data';
 import {
   DEMO_LAST_ACTIVE_BRANCH,
@@ -24,8 +26,14 @@ import {
 
 export type DemoSession = {
   signedIn: boolean;
+  /** Cohort contract for route fixtures; the current app demo always starts here. */
+  demoProfile: 'new-doctor' | 'established-doctor';
+  /** Storybook-owned phone fixture that selected this app-wide demo state. */
+  demoScenarioId: DemoOnboardingScenarioId;
   userName: string;
   userEmail: string;
+  /** Verified phone for phone-first onboarding; shown instead of a fabricated email. */
+  userContact?: string;
   /** Canonical seven-state professional-licence lifecycle. */
   licence: LicenceState;
   workspaceId: string;
@@ -34,20 +42,29 @@ export type DemoSession = {
   customWorkspaceName?: string;
   mode: ClinicMode;
   shift: ClinicShift;
+  /**
+   * Interface language. One value serves the shell account menu and the
+   * Settings language row, so the two controls can never disagree.
+   */
+  locale: Locale;
 };
 
 export const DEMO_DEFAULT_SESSION: DemoSession = {
   signedIn: false,
+  demoProfile: 'new-doctor',
+  demoScenarioId: 'new-sign-up',
   userName: ME.name,
   userEmail: ME.email,
-  licence: 'verified',
+  licence: 'none',
   workspaceId: DEMO_LAST_ACTIVE_WORKSPACE,
   branchId: DEMO_LAST_ACTIVE_BRANCH,
   mode: 'clinical',
   shift: 'morning',
+  locale: 'en',
 };
 
-const STORAGE_KEY = 'kura.demo.session.v1';
+// v5 makes the onboarding phone select the app-wide Storybook scenario pack.
+const STORAGE_KEY = 'kura.demo.session.v5';
 
 /* localStorage-backed store. Snapshot caching keeps getSnapshot referentially
  * stable between writes, which useSyncExternalStore requires. */

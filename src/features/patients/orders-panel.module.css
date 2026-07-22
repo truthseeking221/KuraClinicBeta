@@ -1,25 +1,54 @@
-/*
- * Each order is an independent object (own lifecycle, own lines) — the one
- * justified box level. Lines inside separate by spacing only.
- */
+/* Past orders are read-only evidence rows. The canonical Item family supplies
+ * the row anatomy and ItemSeparator supplies scanning rhythm; no card boundary
+ * is needed when a historical order has no independent action. */
 
-.list {
+.panel,
+.section,
+.list,
+.loading,
+.statusState {
   display: flex;
   flex-direction: column;
+}
+
+.panel {
+  gap: var(--space-6);
+}
+
+.section {
   gap: var(--space-3);
-  list-style: none;
-  margin: 0;
-  padding: 0;
+}
+
+.sectionHeading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.sectionHeading [data-slot='input-field'] {
+  inline-size: min(100%, 18rem);
+}
+
+.sectionTitle {
+  color: var(--color-text-primary);
+  font-size: var(--type-sm);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-snug);
+}
+
+.list {
+  min-width: 0;
 }
 
 .order {
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  background: var(--color-surface);
-  padding: var(--space-4);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
+  min-width: 0;
+}
+
+.order[data-focused='true'],
+.order:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
 }
 
 .head {
@@ -27,6 +56,14 @@
   align-items: center;
   gap: var(--space-3);
   flex-wrap: wrap;
+}
+
+.orderMeta {
+  display: inline-flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  min-width: 0;
 }
 
 .code {
@@ -45,6 +82,11 @@
   align-items: center;
   gap: var(--space-2);
   margin-inline-start: auto;
+}
+
+.orderLines {
+  display: block;
+  width: 100%;
 }
 
 .lines {
@@ -74,4 +116,30 @@
   font-size: var(--type-xs);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+}
+
+.noMatches {
+  color: var(--color-text-secondary);
+  font-size: var(--type-sm);
+}
+
+.loading,
+.statusState {
+  gap: var(--space-4);
+}
+
+@media (max-width: 480px) {
+  .sectionHeading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .sectionHeading [data-slot='input-field'] {
+    inline-size: 100%;
+  }
+
+  .headStatus {
+    inline-size: 100%;
+    margin-inline-start: 0;
+  }
 }

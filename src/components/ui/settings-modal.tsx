@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import type { ComponentType, ReactNode } from 'react';
 
+import { useT } from '../foundations/i18n';
 import { CloseButton } from './close-button';
 import { Dialog, DialogClose, DialogContent, DialogTitle } from './dialog';
 import type { KuraIconProps } from './icons';
@@ -20,43 +21,63 @@ export type SettingsModalProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   sections: readonly SettingsModalSection[];
+  /** Controlled section value. Use this when the host owns settings navigation. */
+  value?: string;
+  onValueChange?: (value: string) => void;
+  /** Initial section for uncontrolled use. */
   defaultSection?: string;
   title?: string;
 };
 
-/** Kura settings shell with a fixed navigation rail and scrollable panel. */
+/**
+ * Kura settings-modal anatomy with canonical tokens, dialog behavior, and
+ * icons. It owns shell navigation only; feature content and authority rules
+ * stay with the consumer.
+ */
 export function SettingsModal({
   defaultSection,
   onOpenChange,
+  onValueChange,
   open,
   sections,
-  title = 'Settings',
+  title,
+  value,
 }: SettingsModalProps) {
+  const t = useT();
+  const resolvedTitle = title ?? t('Settings');
   const firstSection = sections[0]?.id;
-  const [activeId, setActiveId] = useState(defaultSection ?? firstSection);
+  const [uncontrolledActiveId, setUncontrolledActiveId] = useState(
+    defaultSection ?? firstSection,
+  );
+  const activeId = value ?? uncontrolledActiveId;
   const activeSection = sections.find((section) => section.id === activeId) ?? sections[0];
   const groups = useMemo(() => {
     const entries = new Map<string, SettingsModalSection[]>();
     sections.forEach((section) => {
-      const group = section.group ?? title;
+      const group = section.group ?? resolvedTitle;
       entries.set(group, [...(entries.get(group) ?? []), section]);
     });
     return Array.from(entries.entries());
-  }, [sections, title]);
+  }, [resolvedTitle, sections]);
+
+  const selectSection = (nextId: string) => {
+    if (value === undefined) setUncontrolledActiveId(nextId);
+    onValueChange?.(nextId);
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        aria-label={title}
+        aria-label={resolvedTitle}
         className={styles.panel}
-        closeLabel={`Close ${title.toLowerCase()}`}
+        closeLabel={`${t('Close')} ${resolvedTitle.toLowerCase()}`}
         mobilePresentation="full"
         overlayClassName={styles.overlay}
         showCloseButton={false}
         size="full"
       >
         <div className={styles.layout} data-slot="settings-modal-layout">
-          <nav aria-label={`${title} sections`} className={styles.rail}>
+          <nav aria-label={`${resolvedTitle} ${t('sections')}`} className={styles.rail}>
             {groups.map(([group, items]) => (
               <div className={styles.navGroup} key={group}>
                 <span className={styles.groupLabel}>{group}</span>
@@ -70,7 +91,7 @@ export function SettingsModal({
                         className={styles.navItem}
                         data-selected={selected ? 'true' : undefined}
                         key={section.id}
-                        onClick={() => setActiveId(section.id)}
+                        onClick={() => selectSection(section.id)}
                         type="button"
                       >
                         <Icon aria-hidden size={20} />
@@ -84,12 +105,18 @@ export function SettingsModal({
           </nav>
           <section className={styles.main}>
             <header className={styles.header}>
-              <DialogTitle>{activeSection?.label ?? title}</DialogTitle>
+              <DialogTitle>{activeSection?.label ?? resolvedTitle}</DialogTitle>
               <DialogClose asChild>
-                <CloseButton aria-label={`Close ${title.toLowerCase()}`} size="md" />
+                <CloseButton aria-label={`${t('Close')} ${resolvedTitle.toLowerCase()}`} size="md" />
               </DialogClose>
             </header>
-            <div className={styles.body}>{activeSection?.content}</div>
+            <div className={styles.body}>
+              {sections.map((section) => (
+                <div hidden={section.id !== activeSection?.id} key={section.id}>
+                  {section.content}
+                </div>
+              ))}
+            </div>
           </section>
         </div>
       </DialogContent>

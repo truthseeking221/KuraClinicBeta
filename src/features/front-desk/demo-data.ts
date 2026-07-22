@@ -213,6 +213,22 @@ export const IDENTITY_REGISTRY: PatientRecordSummary[] = [
 
 export const DEMO_BOOKING_QR_PAYLOAD = 'kura://booking/GW87430';
 
+// ── Promotions (PROTOTYPE: no upstream promo engine) ───────
+
+import type { Promo } from './types';
+
+/** Codes the desk can redeem in the demo. Lookup is case-insensitive. */
+export const DEMO_PROMOS: Promo[] = [
+  { code: 'WELCOME10', label: 'New patient · 10% off', kind: 'percent', percentOff: 10 },
+  { code: 'CBC50', label: 'CBC half price', kind: 'item', itemId: 'cbc', percentOff: 50 },
+  { code: 'CORP5', label: 'Corporate · $5 off', kind: 'fixed', amountMinor: '500' },
+];
+
+export function findDemoPromo(code: string): Promo | undefined {
+  const needle = code.trim().toUpperCase();
+  return DEMO_PROMOS.find((promo) => promo.code === needle);
+}
+
 // ── Order attribution (ADR-0057) ───────────────────────────
 
 /** Workspace clinicians a receptionist can attribute an order to. */

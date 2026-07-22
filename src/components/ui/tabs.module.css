@@ -179,7 +179,7 @@
   }
 
   .root[data-orientation='vertical'] .trigger {
-    min-height: var(--space-11);
+    min-height: var(--touch-target-min);
     justify-content: center;
     border-radius: var(--radius-control) var(--radius-control) 0 0;
   }

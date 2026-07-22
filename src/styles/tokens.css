@@ -57,12 +57,12 @@
   --color-surface-2: var(--color-neutral-100);
   --color-surface-sunken: var(--color-neutral-200);
   --color-surface-bg: var(--color-white);
-  /* Filled field rest state: between surface-2 and sunken, so the fill stays
-   * quiet on white yet still separates from a gray tray behind it. */
+  /* Filled field rest state: slightly lighter than surface-2, so the fill
+   * stays quiet on white and lifts gently from a gray tray. */
   --color-field-bg: color-mix(
     in srgb,
-    var(--color-neutral-100) 55%,
-    var(--color-neutral-200)
+    var(--color-surface-2) 75%,
+    var(--color-surface)
   );
   --color-background-canvas-subtle: var(--color-neutral-50);
   --color-overlay-scrim: color-mix(in srgb, var(--color-neutral-950) 48%, transparent);
@@ -87,6 +87,13 @@
   --color-action-primary-accent: var(--color-brand-500);
   --color-action-primary-subtle: var(--color-brand-50);
   --color-action-primary-subtle-hover: var(--color-brand-100);
+  /* Canonical primary Button: one solid Brand 500 fill with white content. */
+  --color-button-primary-bg: var(--color-brand-500);
+  --color-button-primary-fg: var(--color-text-on-brand);
+  --color-button-primary-border-hover: var(--color-brand-600);
+  --color-button-primary-border-active: var(--color-brand-700);
+  --color-button-primary-bg-disabled: var(--color-neutral-300);
+  --color-button-primary-fg-disabled: var(--color-text-disabled);
   --color-action-secondary-bg: var(--color-neutral-200);
   --color-action-secondary-bg-hover: var(--color-neutral-300);
   --color-action-secondary-fg: var(--color-neutral-700);
@@ -209,7 +216,7 @@
 
   /* App-shell sidebar roles. Mapped onto existing semantics only — the shell must
    * not mint colors. Active state pairs brand tint with readable brand text. */
-  --sidebar-bg: var(--color-background-canvas-subtle);
+  --sidebar-bg: var(--color-surface);
   --sidebar-fg: var(--color-text-secondary);
   --sidebar-fg-muted: var(--color-text-tertiary);
   --sidebar-hover-bg: var(--color-action-secondary-bg);
@@ -220,13 +227,15 @@
 
   /* Lab reference-range band roles. Mapped onto existing status ramps only —
    * the zone holding the value carries full tint; reference zones stay muted
-   * so the reading is loud and the scale is calm. */
+   * so the reading is loud and the scale is calm. One mix recipe across all
+   * three tones: severity must read through hue, never through a tone that
+   * happens to sit one step darker on its own ramp. */
   --lab-range-optimal: color-mix(in srgb, var(--color-status-success-fg) 22%, var(--color-surface));
-  --lab-range-caution: var(--color-status-warning-bg);
+  --lab-range-caution: color-mix(in srgb, var(--color-status-low-fg) 22%, var(--color-surface));
   --lab-range-out: color-mix(in srgb, var(--color-status-danger-fg) 22%, var(--color-surface));
-  --lab-range-optimal-muted: var(--color-status-success-bg);
-  --lab-range-caution-muted: color-mix(in srgb, var(--color-status-warning-bg) 60%, var(--color-surface));
-  --lab-range-out-muted: var(--color-status-danger-bg);
+  --lab-range-optimal-muted: color-mix(in srgb, var(--color-status-success-fg) 9%, var(--color-surface));
+  --lab-range-caution-muted: color-mix(in srgb, var(--color-status-low-fg) 9%, var(--color-surface));
+  --lab-range-out-muted: color-mix(in srgb, var(--color-status-danger-fg) 9%, var(--color-surface));
   --lab-dot-optimal: var(--color-status-success-fg);
   --lab-dot-caution: var(--color-status-low-fg);
   --lab-dot-out: var(--color-status-danger-fg);
@@ -382,6 +391,57 @@
     --control-h-lg: 48px;
     --row-h: 48px;
   }
+}
+
+/* ── Khmer script typography ───────────────────────────────────
+ * Khmer stacks marks in three vertical zones: superscript vowels above the
+ * baseline, the consonant body, and subscript consonants (coeng) below it. A
+ * cluster therefore needs roughly 40% more vertical room than Latin at the
+ * same size, and it renders optically smaller because its x-height sits inside
+ * that taller stack.
+ *
+ * These overrides retune the type tokens for Khmer instead of patching
+ * components, so every existing `var(--leading-tight)` and `var(--type-xs)`
+ * resolves to a Khmer-safe value automatically. Type roles keep their meaning:
+ * tight stays the tightest role, normal stays the reading role.
+ *
+ * Applied via `lang`, which LocaleProvider sets, so mixed content — an English
+ * drug name inside Khmer guidance — keeps each script on its own metrics. */
+:where([lang='km']),
+:where([lang='km']) * {
+  /* Leading: 1.2 clips coeng descenders outright. Each step gains headroom
+     while preserving the relative rhythm of the three leading roles. */
+  --leading-tight: 1.45;
+  --leading-snug: 1.6;
+  --leading-normal: 1.75;
+
+  /* Size: raise the two smallest steps. 11px Khmer is not legible clinical
+     text — the coeng collapses into the baseline. Larger steps already carry
+     the stack, so the scale stays otherwise intact and layout stays stable. */
+  --type-2xs: 13px;
+  --type-xs: 14px;
+  --type-sm: 14px;
+}
+
+/* Text elements only. Form controls, code, and mono spans are excluded: they
+   carry untranslated Latin data — booking codes, tube barcodes, analyte codes
+   — whose tracking is deliberate and stays. */
+[lang='km']
+  :is(p, span, div, h1, h2, h3, h4, h5, h6, button, a, label, li, td, th, dt, dd, summary, legend, figcaption) {
+  /* Khmer marks belong to the cluster they sit on. Tracking splits a cluster
+     and can change which consonant a vowel sign reads against. */
+  letter-spacing: 0;
+  /* Khmer is caseless. Uppercase is a no-op on Khmer, so it would shout only
+     the Latin clinical terms left inside a translated string. */
+  text-transform: none;
+}
+
+[lang='km'] {
+  /* Khmer does not space words. Break between syllable clusters, never inside
+     one — a split cluster is a different word. */
+  line-break: normal;
+  word-break: normal;
+  overflow-wrap: break-word;
 }
 
 .k-h1 { font-size: var(--type-4xl); font-weight: var(--weight-bold); line-height: var(--leading-tight); letter-spacing: -0.02em; }

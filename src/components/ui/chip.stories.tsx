@@ -4,7 +4,7 @@ import { Chip } from './chip';
 import styles from './kura-stories.module.css';
 
 const meta = {
-  title: 'Design System/Components/Chip',
+  title: 'Design System/Primitives/Chip',
   component: Chip,
   tags: ['autodocs', 'source-kura', 'adapted-kura'],
   parameters: {

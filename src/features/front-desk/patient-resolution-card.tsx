@@ -23,9 +23,10 @@ import {
   UserMultipleIcon,
   UserSearchIcon,
 } from '../../components/ui/icons';
+import { ageOf } from '../../components/shared/subject-header/identity';
+import { useT } from '../../components/foundations/i18n';
 import type {
   BookingSummary,
-  MatchConfidence,
   PatientRecordSummary,
   TrustSignal,
 } from './types';
@@ -79,8 +80,6 @@ export type PatientResolutionCardProps = {
   lastVisitLabel?: string;
   /** Trust facts (verification recency, cross-PSC origin). Worst tone leads. */
   trustSignals?: TrustSignal[];
-  /** Candidate rows: match tier + score from the collision model. */
-  confidence?: MatchConfidence;
   /** "Matched on National ID + Phone" — evidence the desk can verify aloud. */
   matchedOnLabel?: string | null;
   /** When set, booking rows become the check-in action for that booking. */
@@ -141,19 +140,6 @@ function formatDob(iso?: string): string {
   }).format(date);
 }
 
-function ageOf(iso?: string): number | null {
-  if (!iso) return null;
-  const dob = new Date(`${iso}T00:00:00`);
-  if (Number.isNaN(dob.getTime())) return null;
-  const now = new Date();
-  let age = now.getFullYear() - dob.getFullYear();
-  const beforeBirthday =
-    now.getMonth() < dob.getMonth() ||
-    (now.getMonth() === dob.getMonth() && now.getDate() < dob.getDate());
-  if (beforeBirthday) age -= 1;
-  return age >= 0 ? age : null;
-}
-
 function Highlight({ on, children }: { on?: boolean; children: ReactNode }) {
   return on ? <mark className={styles.match}>{children}</mark> : <>{children}</>;
 }
@@ -209,10 +195,11 @@ function BookingsList({
   header?: ReactNode;
   onBookingSelect?: (booking: BookingSummary) => void;
 }) {
+  const t = useT();
   if (bookings.length === 0) return null;
   const resolvedHeader =
     header === undefined
-      ? `${bookings.length} booking${bookings.length === 1 ? '' : 's'}`
+      ? `${bookings.length} ${bookings.length === 1 ? t('booking') : t('bookings')}`
       : header;
   return (
     <div className={styles.bookings}>
@@ -230,7 +217,7 @@ function BookingsList({
               <span className={styles.bookingCreator}>{booking.creatorLabel}</span>
             ) : null}
             <Badge size="sm" variant={booking.status.tone === 'neutral' ? 'neutral' : booking.status.tone}>
-              {booking.status.label}
+              {t(booking.status.label)}
             </Badge>
           </>
         );
@@ -241,7 +228,7 @@ function BookingsList({
               key={booking.code}
               type="button"
               className={styles.bookingRow}
-              aria-label={`Check in against booking ${booking.code}`}
+              aria-label={`${t('Check in against booking')} ${booking.code}`}
               onClick={(event) => {
                 event.stopPropagation();
                 onBookingSelect(booking);
@@ -258,23 +245,14 @@ function BookingsList({
         );
       })}
       {onBookingSelect && bookings.length > 1 ? (
-        <p className={styles.helper}>Choose the booking this visit is for.</p>
+        <p className={styles.helper}>{t('Choose the booking this visit is for.')}</p>
       ) : null}
     </div>
   );
 }
 
-const CONFIDENCE_META: Record<
-  MatchConfidence['tier'],
-  { label: string; variant: BadgeVariant }
-> = {
-  identity: { label: 'ID match', variant: 'success' },
-  strong: { label: 'Strong match', variant: 'info' },
-  possible: { label: 'Possible match', variant: 'warning' },
-  low: { label: 'Low match', variant: 'neutral' },
-};
-
 function TrustLine({ signals }: { signals?: TrustSignal[] }) {
+  const t = useT();
   if (!signals || signals.length === 0) return null;
   return (
     <p className={styles.trustLine}>
@@ -285,7 +263,7 @@ function TrustLine({ signals }: { signals?: TrustSignal[] }) {
               ·
             </span>
           ) : null}
-          {signal.label}
+          {t(signal.label)}
         </span>
       ))}
     </p>
@@ -293,6 +271,7 @@ function TrustLine({ signals }: { signals?: TrustSignal[] }) {
 }
 
 function ActionRow({ actions }: { actions?: PatientResolutionAction[] }) {
+  const t = useT();
   if (!actions || actions.length === 0) return null;
   return (
     <div className={styles.actions}>
@@ -310,7 +289,7 @@ function ActionRow({ actions }: { actions?: PatientResolutionAction[] }) {
           }}
         >
           {action.icon}
-          {action.label}
+          {t(action.label)}
         </Button>
       ))}
     </div>
@@ -332,7 +311,6 @@ export function PatientResolutionCard({
   bookings,
   bookingsHeader,
   className,
-  confidence,
   helperText,
   lastVisitLabel,
   matched,
@@ -349,6 +327,7 @@ export function PatientResolutionCard({
   trustSignals,
   variant,
 }: PatientResolutionCardProps) {
+  const t = useT();
   const headingId = useId();
   const isSelectable = selectable || typeof onSelect === 'function';
 
@@ -364,7 +343,8 @@ export function PatientResolutionCard({
     return (
       <Card
         className={joinClasses(styles.card, className)}
-        data-variant={variant}
+        data-resolution={variant}
+        variant="outline"
         aria-labelledby={headingId}
       >
         <div className={styles.layout}>
@@ -372,17 +352,19 @@ export function PatientResolutionCard({
             <UserAddIcon size={20} aria-hidden />
           </span>
           <div className={styles.body}>
-            <p className={styles.eyebrow}>No existing record</p>
+            <p className={styles.eyebrow}>{t('No existing record')}</p>
             <h3 id={headingId} className={styles.heading}>
               {searchedValue ? (
                 <span className={joinClasses(styles.mono, styles.searchedValue)}>{searchedValue}</span>
               ) : (
-                'Add new patient'
+                t('Add new patient')
               )}
             </h3>
             <p className={styles.helper}>
               {helperText ??
-                `Continue to create a new patient. ${searchedKind ?? 'This search value'} carries over to the next step.`}
+                `${t('Continue to create a new patient.')} ${
+                  searchedKind ? t(searchedKind) : t('This search value')
+                } ${t('carries over to the next step.')}`}
             </p>
             <ActionRow actions={actions} />
           </div>
@@ -397,7 +379,8 @@ export function PatientResolutionCard({
   return (
     <Card
       className={joinClasses(styles.card, isSelectable && styles.selectable, className)}
-      data-variant={variant}
+      data-resolution={variant}
+      variant="outline"
       data-selected={selected || undefined}
       role={isSelectable ? 'radio' : undefined}
       aria-checked={isSelectable ? selected : undefined}
@@ -419,7 +402,9 @@ export function PatientResolutionCard({
         <div className={styles.body}>
           <div className={styles.headerRow}>
             <div className={styles.identity}>
-              {!isSelectable && meta.eyebrow ? <p className={styles.eyebrow}>{meta.eyebrow}</p> : null}
+              {!isSelectable && meta.eyebrow ? (
+                <p className={styles.eyebrow}>{t(meta.eyebrow)}</p>
+              ) : null}
               <div className={styles.nameLine}>
                 <h3 id={headingId} className={styles.heading}>
                   <Highlight on={matched?.name}>{resolved.name}</Highlight>
@@ -427,18 +412,18 @@ export function PatientResolutionCard({
                 {resolved.sexAtBirth ? (
                   variant === 'captured' ? (
                     <span className={styles.demographic}>
-                      <span className={styles.srOnly}>Sex at birth: </span>
-                      {resolved.sexAtBirth}
+                      <span className={styles.srOnly}>{t('Sex at birth')}{': '}</span>
+                      {t(resolved.sexAtBirth)}
                     </span>
                   ) : (
                     <Badge size="sm" variant="neutral">
-                      {resolved.sexAtBirth}
+                      {t(resolved.sexAtBirth)}
                     </Badge>
                   )
                 ) : null}
                 {resolved.minor ? (
                   <Badge size="sm" variant="warning">
-                    Minor
+                    {t('Minor')}
                   </Badge>
                 ) : null}
               </div>
@@ -448,17 +433,11 @@ export function PatientResolutionCard({
                 </p>
               ) : null}
             </div>
-            {confidence || status || isSelectable ? (
+            {status || isSelectable ? (
               <div className={styles.headerright}>
-                {confidence ? (
-                  <Badge size="sm" variant={CONFIDENCE_META[confidence.tier].variant}>
-                    {CONFIDENCE_META[confidence.tier].label}
-                    <span className={styles.mono}> {confidence.score}</span>
-                  </Badge>
-                ) : null}
                 {status ? (
                   <Badge size="sm" variant={status.variant}>
-                    {status.label}
+                    {t(status.label)}
                   </Badge>
                 ) : null}
                 {isSelectable ? (

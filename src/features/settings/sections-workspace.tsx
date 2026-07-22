@@ -3,6 +3,14 @@
 import { useState } from 'react';
 
 import {
+  LOCALES,
+  LOCALE_LABELS,
+  useLocale,
+  useT,
+} from '../../components/foundations/i18n';
+import type { Locale } from '../../components/foundations/i18n';
+
+import {
   Alert,
   AlertAction,
   AlertDescription,
@@ -43,6 +51,7 @@ import type {
 import {
   MEMBER_ROLES,
   PREFS_VALUE_TEXT,
+  VERIFICATION_META,
   inviteError,
   loadPrefs,
   savePrefs,
@@ -50,7 +59,7 @@ import {
 import {
   CABINET,
   DEFAULT_COURIER_PICKUP,
-  LICENSE_RENEWAL_TEXT,
+  LICENSE_RENEWAL_DAYS,
   ME,
   MEMBERS,
   PENDING_INVITES,
@@ -72,22 +81,47 @@ export type OverviewSectionProps = {
   verification: VerificationStatus;
   onNavigate: (section: SettingsSectionId) => void;
   onVerify?: () => void;
+  firstUse?: boolean;
+  identity?: { contact: string; name: string };
+  workspaceName?: string;
 };
 
 /** At-a-glance workspace status with jump links into each detail section. */
-export function OverviewSection({ verification, onNavigate, onVerify }: OverviewSectionProps) {
+export function OverviewSection({
+  firstUse = false,
+  identity,
+  verification,
+  onNavigate,
+  onVerify,
+  workspaceName,
+}: OverviewSectionProps) {
+  const t = useT();
+  const personName = identity?.name ?? ME.name;
+  const initials = personName
+    .split(' ')
+    .map((part) => part[0])
+    .join('')
+    .slice(0, 2);
+
   return (
-    <SettingsSection sub="Priority settings for this workspace." title="Overview">
-      {verification === 'verified' || verification === 'expiring' ? (
+    <SettingsSection
+      sub={t('Priority settings for this workspace.')}
+      title={t('Overview')}
+    >
+      {!firstUse && (verification === 'verified' || verification === 'expiring') ? (
         <Alert role="status" tone="warning">
-          <AlertTitle>Medical license expires in {LICENSE_RENEWAL_TEXT}</AlertTitle>
+          <AlertTitle>
+            {t('Medical license expires in')} {LICENSE_RENEWAL_DAYS} {t('days')}
+          </AlertTitle>
           <AlertDescription>
-            {ME.license} expires {ME.licenseExpiry}. Renew it before lapse to keep
-            this credential available for new order attribution.
+            {ME.license} {t('expires')} {ME.licenseExpiry}.{' '}
+            {t(
+              'Renew it before lapse to keep this credential available for new order attribution.',
+            )}
           </AlertDescription>
           <AlertAction>
             <Button onClick={() => onNavigate('account')} size="sm" variant="secondary">
-              Upload renewed license
+              {t('Upload renewed license')}
             </Button>
           </AlertAction>
         </Alert>
@@ -98,76 +132,90 @@ export function OverviewSection({ verification, onNavigate, onVerify }: Overview
         <SettingsRow
           action={
             <Button onClick={() => onNavigate('account')} size="sm" variant="ghost">
-              Edit account
+              {t('Edit account')}
             </Button>
           }
-          label="Signed in as"
-          sub={ME.email}
+          label={t('Signed in as')}
+          sub={firstUse ? identity?.contact : ME.email}
           value={
             <span className={styles.valueWithMedia}>
               <Avatar aria-hidden="true" size="xs">
-                <AvatarFallback>{ME.initials}</AvatarFallback>
+                <AvatarFallback>{firstUse ? initials : ME.initials}</AvatarFallback>
               </Avatar>
-              {ME.name}
+              {personName}
             </span>
           }
         />
         <SettingsRow
           action={
             <Button onClick={onVerify} size="sm" variant="ghost">
-              Verify license
+              {t('Verify license')}
             </Button>
           }
-          label="Verification"
-          sub="Medical license and identity review"
+          label={t('Verification')}
+          sub={t('Medical license and identity review')}
           value={<VerificationBadge status={verification} />}
         />
         <SettingsRow
           action={
             <Button onClick={() => onNavigate('cabinet')} size="sm" variant="ghost">
-              Edit clinic
+              {t('Edit clinic')}
             </Button>
           }
-          label="Cabinet"
-          sub="Phnom Penh · GMT+7"
-          value={CABINET.name}
+          label={t('Cabinet')}
+          sub={
+            firstUse ? t('Created during onboarding') : t('Phnom Penh · GMT+7')
+          }
+          value={firstUse ? (workspaceName ?? t('My cabinet')) : CABINET.name}
         />
         <SettingsRow
           action={
             <Button onClick={() => onNavigate('members')} size="sm" variant="ghost">
-              Review team
+              {t('Review team')}
             </Button>
           }
-          label="Team"
-          sub="1 invite pending approval"
-          value="5 active members"
+          label={t('Team')}
+          sub={
+            firstUse ? t('No pending invites') : t('1 invite pending approval')
+          }
+          value={firstUse ? t('1 active member') : t('5 active members')}
         />
         <SettingsRow
           action={
             <Button onClick={() => onNavigate('billing')} size="sm" variant="ghost">
-              View payments
+              {t('View payments')}
             </Button>
           }
-          label="Payments"
-          sub="KHQR active · next netting Jul 1"
-          value={
+          label={t('Payments')}
+          sub={
+            firstUse
+              ? t('No workspace payment methods or insurer panels configured')
+              : t('KHQR active · next netting Jul 1')
+          }
+          value={firstUse ? t('Not configured') : (
             <span className={styles.valueWithBadge}>
-              Bank verified
+              {t('Bank verified')}
               <Badge size="sm" variant="success">
                 ABA ···· 4102
               </Badge>
             </span>
-          }
+          )}
         />
         <SettingsRow
           action={
             <Button onClick={() => onNavigate('esign')} size="sm" variant="ghost">
-              View documents
+              {t('View documents')}
             </Button>
           }
-          label="Signed documents"
-          sub="PAdES-B-LT · CamDX root"
-          value="Certificate active until Mar 2027"
+          label={t('Signed documents')}
+          sub={
+            firstUse
+              ? t('No signing certificate or signed documents configured')
+              : 'PAdES-B-LT · CamDX root'
+          }
+          value={
+            firstUse ? t('Not configured') : t('Certificate active until Mar 2027')
+          }
         />
       </SettingsRows>
     </SettingsSection>
@@ -179,21 +227,45 @@ export function OverviewSection({ verification, onNavigate, onVerify }: Overview
 export type AccountSectionProps = {
   verification: VerificationStatus;
   onVerify?: () => void;
+  firstUse?: boolean;
+  identity?: { contact: string; name: string };
 };
 
 /** Identity, medical license, and license verification status. */
-export function AccountSection({ verification, onVerify }: AccountSectionProps) {
+export function AccountSection({
+  firstUse = false,
+  identity,
+  verification,
+  onVerify,
+}: AccountSectionProps) {
+  const t = useT();
   const [renewalFile, setRenewalFile] = useState<string | null>(null);
+  const clinicianName = identity?.name ?? ME.name;
+  const contact = identity?.contact ?? ME.email;
+  const phoneContact = contact.startsWith('+');
 
   return (
     <SettingsSection
       chip={<VerificationBadge status={verification} />}
-      sub="Identity details and professional credential review status."
-      title="Account & verification"
+      sub={t('Identity details and professional credential review status.')}
+      title={t('Account & verification')}
     >
       <SettingsRows>
-        <SettingsRow label="Email" sub="Used for sign-in and statements" value={ME.email} />
-        <SettingsRow label="Clinician name" locked sub={ME.khmerName} value={ME.name} />
+        <SettingsRow
+          label={firstUse && phoneContact ? t('Phone') : t('Email')}
+          sub={
+            firstUse && phoneContact
+              ? t('Verified primary sign-in phone')
+              : t('Used for sign-in and statements')
+          }
+          value={contact}
+        />
+        <SettingsRow
+          label={t('Clinician name')}
+          locked={!firstUse}
+          sub={firstUse ? undefined : ME.khmerName}
+          value={clinicianName}
+        />
         <SettingsRow
           action={
             <FilePickButton
@@ -202,22 +274,32 @@ export function AccountSection({ verification, onVerify }: AccountSectionProps) 
               onSelected={(file) => setRenewalFile(file.name)}
               variant="secondary"
             >
-              Upload license
+              {t('Upload license')}
             </FilePickButton>
           }
-          label="Medical license"
-          locked
-          sub={renewalFile ? `${renewalFile} selected` : `Expires ${ME.licenseExpiry}`}
+          label={t('Medical license')}
+          locked={!firstUse}
+          sub={
+            renewalFile
+              ? `${renewalFile} ${t('selected')}`
+              : firstUse
+                ? verification === 'none'
+                  ? t('No document submitted')
+                  : t(
+                      'Credential identifier and document details are not available',
+                    )
+                : `${t('Expires')} ${ME.licenseExpiry}`
+          }
           value={
             <span className={styles.valueWithBadge}>
-              {ME.license}
+              {firstUse ? t(VERIFICATION_META[verification].label) : ME.license}
               {renewalFile ? (
                 <Badge size="sm" variant="info">
-                  File selected
+                  {t('File selected')}
                 </Badge>
-              ) : (
+              ) : firstUse ? null : (
                 <Badge size="sm" variant="warning">
-                  Renews in {LICENSE_RENEWAL_TEXT}
+                  {t('Renews in')} {LICENSE_RENEWAL_DAYS} {t('days')}
                 </Badge>
               )}
             </span>
@@ -226,28 +308,34 @@ export function AccountSection({ verification, onVerify }: AccountSectionProps) 
         <SettingsRow
           action={
             <Button onClick={onVerify} size="sm" variant="ghost">
-              Verify license
+              {t('Verify license')}
             </Button>
           }
-          label="License verification"
-          sub="A live credential is required only when this member is attributed to a new clinic order"
+          label={t('License verification')}
+          sub={t(
+            'A live credential is required only when this member is attributed to a new clinic order',
+          )}
           value={<VerificationBadge status={verification} />}
         />
         <SettingsRow
-          label="Review authority"
-          sub="Reviewer verdicts are recorded separately from the credential lifecycle"
-          value="Kura professional review"
+          label={t('Review authority')}
+          sub={t(
+            'Reviewer verdicts are recorded separately from the credential lifecycle',
+          )}
+          value={t('Kura professional review')}
         />
-        <SettingsRow
-          label="Signature & certificate"
-          sub="Managed under Signed documents"
-          value={
-            <span className={styles.valueWithMedia}>
-              <IdentityVerifiedIcon aria-hidden="true" className={styles.valueIcon} />
-              Ready to sign
-            </span>
-          }
-        />
+        {!firstUse ? (
+          <SettingsRow
+            label={t('Signature & certificate')}
+            sub={t('Managed under Signed documents')}
+            value={
+              <span className={styles.valueWithMedia}>
+                <IdentityVerifiedIcon aria-hidden="true" className={styles.valueIcon} />
+                {t('Ready to sign')}
+              </span>
+            }
+          />
+        ) : null}
       </SettingsRows>
       <VerificationBannerAlert onAction={onVerify} status={verification} />
     </SettingsSection>
@@ -256,33 +344,71 @@ export function AccountSection({ verification, onVerify }: AccountSectionProps) 
 
 /* --------------------------------- cabinet ------------------------------- */
 
+export type CabinetSectionProps = {
+  firstUse?: boolean;
+  workspaceName?: string;
+};
+
 /** The clinic entity this workspace operates under. */
-export function CabinetSection() {
+export function CabinetSection({
+  firstUse = false,
+  workspaceName,
+}: CabinetSectionProps) {
+  const t = useT();
+
+  if (firstUse) {
+    return (
+      <SettingsSection
+        sub={t(
+          'The clinic this workspace operates under. Add operational details before enabling dependent services.',
+        )}
+        title={t('Cabinet')}
+      >
+        <SettingsRows>
+          <SettingsRow
+            label={t('Cabinet name')}
+            value={workspaceName ?? t('My cabinet')}
+          />
+          <SettingsRow label={t('Address')} value={t('Not configured')} />
+          <SettingsRow label={t('Specialty')} value={t('Not configured')} />
+          <SettingsRow label={t('Clinic type')} value={t('Not configured')} />
+          <SettingsRow label={t('Country')} value={t('Not configured')} />
+          <SettingsRow label={t('Timezone')} value={t('Not configured')} />
+          <SettingsRow label={t('Currency')} value={t('Not configured')} />
+          <SettingsRow label={t('Courier pickup')} value={t('Not configured')} />
+        </SettingsRows>
+      </SettingsSection>
+    );
+  }
+
   return (
     <SettingsSection
-      sub="The clinic this workspace operates under. Lab routing, billing, and compliance follow these fields."
-      title="Cabinet"
+      sub={t(
+        'The clinic this workspace operates under. Lab routing, billing, and compliance follow these fields.',
+      )}
+      title={t('Cabinet')}
     >
       <SettingsRows>
-        <SettingsRow label="Cabinet name" value={CABINET.name} />
-        <SettingsRow label="Address" value={CABINET.address} />
-        <SettingsRow label="Specialty" value={CABINET.specialty} />
-        <SettingsRow label="Clinic type" value={CABINET.clinicType} />
+        <SettingsRow label={t('Cabinet name')} value={CABINET.name} />
+        <SettingsRow label={t('Address')} value={CABINET.address} />
+        <SettingsRow label={t('Specialty')} value={CABINET.specialty} />
+        <SettingsRow label={t('Clinic type')} value={CABINET.clinicType} />
         <SettingsRow
-          label="Country"
+          label={t('Country')}
           locked
-          sub="Determines insurer panel, currency, and patient channels"
+          sub={t('Determines insurer panel, currency, and patient channels')}
           value={CABINET.country}
         />
-        <SettingsRow label="Timezone" value={CABINET.timezone} />
-        <SettingsRow label="Currency" value={CABINET.currency} />
+        <SettingsRow label={t('Timezone')} value={CABINET.timezone} />
+        <SettingsRow label={t('Currency')} value={CABINET.currency} />
         <CourierPickupRow initialPickup={DEFAULT_COURIER_PICKUP} />
       </SettingsRows>
       <Alert role="status" tone="info">
-        <AlertTitle>Country is locked after registration</AlertTitle>
+        <AlertTitle>{t('Country is locked after registration')}</AlertTitle>
         <AlertDescription>
-          Billing rails, insurer contracts, and lab logistics are provisioned per
-          country. Contact Kura support to migrate a cabinet across borders.
+          {t(
+            'Billing rails, insurer contracts, and lab logistics are provisioned per country. Contact Kura support to migrate a cabinet across borders.',
+          )}
         </AlertDescription>
       </Alert>
     </SettingsSection>
@@ -295,10 +421,25 @@ const ROLE_OPTIONS = MEMBER_ROLES.map((role) => ({ value: role, label: role }));
 
 type InviteConfirm = { kind: 'approve' | 'revoke'; invite: PendingInvite };
 
+export type MembersSectionProps = {
+  firstUse?: boolean;
+  identity?: { name: string };
+};
+
 /** Member roster, guarded role changes, invite approval, and new invites. */
-export function MembersSection() {
-  const [members, setMembers] = useState<Member[]>([...MEMBERS]);
-  const [pending, setPending] = useState<PendingInvite[]>([...PENDING_INVITES]);
+export function MembersSection({
+  firstUse = false,
+  identity,
+}: MembersSectionProps) {
+  const t = useT();
+  const [members, setMembers] = useState<Member[]>(() =>
+    firstUse
+      ? [{ name: identity?.name ?? 'Account owner', role: 'Owner', you: true }]
+      : [...MEMBERS],
+  );
+  const [pending, setPending] = useState<PendingInvite[]>(() =>
+    firstUse ? [] : [...PENDING_INVITES],
+  );
   const [editingName, setEditingName] = useState<string | null>(null);
   const [roleDraft, setRoleDraft] = useState<string>(MEMBER_ROLES[0]);
   const [roleConfirmName, setRoleConfirmName] = useState<string | null>(null);
@@ -307,6 +448,11 @@ export function MembersSection() {
   const [inviteName, setInviteName] = useState('');
   const [inviteRole, setInviteRole] = useState<string>(MEMBER_ROLES[0]);
   const [inviteFieldError, setInviteFieldError] = useState<string | null>(null);
+
+  const roleOptions = ROLE_OPTIONS.map((option) => ({
+    ...option,
+    label: t(option.label),
+  }));
 
   const requestRoleSave = (member: Member) => {
     if (roleDraft === member.role) {
@@ -323,7 +469,7 @@ export function MembersSection() {
         member.name === roleConfirmName ? { ...member, role: roleDraft } : member,
       ),
     );
-    toast.success(`${roleConfirmName}'s role updated`);
+    toast.success(`${t('Role updated for')} ${roleConfirmName}`);
     setRoleConfirmName(null);
     setEditingName(null);
   };
@@ -334,10 +480,12 @@ export function MembersSection() {
     if (kind === 'approve') {
       setPending((current) => current.filter((entry) => entry.name !== invite.name));
       setMembers((current) => [...current, { name: invite.name, role: invite.role }]);
-      toast.success(`${invite.name} approved as ${invite.role}`);
+      toast.success(
+        `${invite.name} ${t('approved as')} ${t(invite.role)}`,
+      );
     } else {
       setPending((current) => current.filter((entry) => entry.name !== invite.name));
-      toast(`Invite to ${invite.name} revoked`);
+      toast(`${t('Invite to')} ${invite.name} ${t('revoked')}`);
     }
     setInviteConfirm(null);
   };
@@ -353,7 +501,7 @@ export function MembersSection() {
       ...current,
       { name, role: inviteRole, sent: 'invited just now' },
     ]);
-    toast.success(`Invite sent to ${name}`);
+    toast.success(`${t('Invite sent to')} ${name}`);
     setInviting(false);
     setInviteName('');
     setInviteRole(MEMBER_ROLES[0]);
@@ -370,11 +518,13 @@ export function MembersSection() {
     <SettingsSection
       chip={
         <Badge size="sm" variant="neutral">
-          {members.length} active
+          {members.length} {t('active')}
         </Badge>
       }
-      sub="Roles scope what each member can see and do. All PHI access is logged."
-      title="Team access"
+      sub={t(
+        'Roles scope what each member can see and do. All PHI access is logged.',
+      )}
+      title={t('Team access')}
     >
       <SettingsRows>
         {members.map((member) => (
@@ -395,28 +545,28 @@ export function MembersSection() {
                 {member.name}
                 {member.you ? (
                   <Badge size="sm" variant="outline">
-                    you
+                    {t('you')}
                   </Badge>
                 ) : null}
               </ItemTitle>
-              <ItemDescription>{member.role}</ItemDescription>
+              <ItemDescription>{t(member.role)}</ItemDescription>
             </ItemContent>
             <ItemActions className={styles.rowActions}>
               {editingName === member.name ? (
                 <div className={styles.roleEdit}>
                   <Select
-                    aria-label={`Role for ${member.name}`}
+                    aria-label={`${t('Role for')} ${member.name}`}
                     onValueChange={(value) => {
                       if (value) setRoleDraft(value);
                     }}
-                    options={ROLE_OPTIONS}
+                    options={roleOptions}
                     value={roleDraft}
                   />
                   <Button onClick={() => requestRoleSave(member)} size="sm" variant="primary">
-                    Save
+                    {t('Save')}
                   </Button>
                   <Button onClick={() => setEditingName(null)} size="sm" variant="ghost">
-                    Cancel
+                    {t('Cancel')}
                   </Button>
                 </div>
               ) : (
@@ -431,7 +581,7 @@ export function MembersSection() {
                   size="sm"
                   variant="ghost"
                 >
-                  Edit role
+                  {t('Edit role')}
                 </Button>
               )}
             </ItemActions>
@@ -454,11 +604,11 @@ export function MembersSection() {
               <ItemTitle className={styles.rowLabel}>
                 {invite.name}
                 <Badge size="sm" variant="warning">
-                  Pending
+                  {t('Pending')}
                 </Badge>
               </ItemTitle>
               <ItemDescription>
-                {invite.role} · {invite.sent}
+                {t(invite.role)} · {t(invite.sent)}
               </ItemDescription>
             </ItemContent>
             <ItemActions className={styles.rowActions}>
@@ -467,31 +617,32 @@ export function MembersSection() {
                 size="sm"
                 variant="secondary"
               >
-                Approve
+                {t('Approve')}
               </Button>
               <Button
                 onClick={() => setInviteConfirm({ kind: 'revoke', invite })}
                 size="sm"
                 variant="ghost"
               >
-                Revoke
+                {t('Revoke')}
               </Button>
             </ItemActions>
           </Item>
         ))}
       </SettingsRows>
       <Alert role="status" tone="info">
-        <AlertTitle>You are the sole owner</AlertTitle>
+        <AlertTitle>{t('You are the sole owner')}</AlertTitle>
         <AlertDescription>
-          Transfer ownership to another verified doctor before leaving this cabinet.
-          A cabinet cannot operate without an owner of record.
+          {t(
+            'Transfer ownership to another verified doctor before leaving this cabinet. A cabinet cannot operate without an owner of record.',
+          )}
         </AlertDescription>
       </Alert>
       {inviting ? (
         <div className={styles.inviteForm}>
           <Input
-            error={inviteFieldError}
-            label="Member name"
+            error={inviteFieldError ? t(inviteFieldError) : inviteFieldError}
+            label={t('Member name')}
             onChange={(event) => {
               setInviteName(event.target.value);
               if (inviteFieldError) setInviteFieldError(null);
@@ -506,31 +657,31 @@ export function MembersSection() {
                 cancelInvite();
               }
             }}
-            placeholder="Full name"
+            placeholder={t('Full name')}
             size="sm"
             value={inviteName}
           />
           <Select
-            label="Role"
+            label={t('Role')}
             onValueChange={(value) => {
               if (value) setInviteRole(value);
             }}
-            options={ROLE_OPTIONS}
+            options={roleOptions}
             value={inviteRole}
           />
           <div className={styles.editControls}>
             <Button onClick={sendInvite} size="sm" variant="primary">
-              Send invite
+              {t('Send invite')}
             </Button>
             <Button onClick={cancelInvite} size="sm" variant="ghost">
-              Cancel
+              {t('Cancel')}
             </Button>
           </div>
         </div>
       ) : (
         <div>
           <Button onClick={() => setInviting(true)} size="sm" variant="secondary">
-            Invite member
+            {t('Invite member')}
           </Button>
         </div>
       )}
@@ -542,15 +693,19 @@ export function MembersSection() {
       >
         <AlertDialogContent size="sm">
           <AlertDialogHeader>
-            <AlertDialogTitle>Confirm role change?</AlertDialogTitle>
+            <AlertDialogTitle>{t('Confirm role change?')}</AlertDialogTitle>
             <AlertDialogDescription>
-              {roleConfirmName} becomes {roleDraft}. Roles scope what this member can
-              see and do; the change is logged.
+              {roleConfirmName} {t('becomes')} {t(roleDraft)}.{' '}
+              {t(
+                'Roles scope what this member can see and do; the change is logged.',
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Back</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmRoleChange}>Confirm</AlertDialogAction>
+            <AlertDialogCancel>{t('Back')}</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmRoleChange}>
+              {t('Confirm')}
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -563,21 +718,23 @@ export function MembersSection() {
         <AlertDialogContent size="sm">
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {inviteConfirm?.kind === 'approve' ? 'Approve invite?' : 'Revoke invite?'}
+              {inviteConfirm?.kind === 'approve'
+                ? t('Approve invite?')
+                : t('Revoke invite?')}
             </AlertDialogTitle>
             <AlertDialogDescription>
               {inviteConfirm?.kind === 'approve'
-                ? `${inviteConfirm.invite.name} joins this workspace as ${inviteConfirm.invite.role}.`
-                : `${inviteConfirm?.invite.name} loses access to this invite. You can invite them again later.`}
+                ? `${inviteConfirm.invite.name} ${t('joins this workspace as')} ${t(inviteConfirm.invite.role)}.`
+                : `${inviteConfirm?.invite.name} ${t('loses access to this invite. You can invite them again later.')}`}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Back</AlertDialogCancel>
+            <AlertDialogCancel>{t('Back')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmInviteAction}
               variant={inviteConfirm?.kind === 'revoke' ? 'destructive' : 'primary'}
             >
-              {inviteConfirm?.kind === 'approve' ? 'Approve' : 'Revoke'}
+              {inviteConfirm?.kind === 'approve' ? t('Approve') : t('Revoke')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -590,6 +747,10 @@ export function MembersSection() {
 
 /** Per-device display defaults; the only persisted section (localStorage). */
 export function PreferencesSection() {
+  const t = useT();
+  // Language is session state, not a per-device display default: the shell
+  // account menu changes the same value, so both controls read one source.
+  const { locale, setLocale } = useLocale();
   // Lazy init reads this device's saved preferences; loadPrefs is SSR-safe.
   const [prefs, setPrefs] = useState<Prefs>(() => loadPrefs());
 
@@ -599,62 +760,64 @@ export function PreferencesSection() {
       savePrefs(next);
       return next;
     });
-    toast.success('Preferences saved on this device');
+    toast.success(t('Preferences saved on this device'));
   };
 
   return (
     <SettingsSection
-      sub="Display defaults saved on this device. They never change the medical record."
-      title="Preferences"
+      sub={t(
+        'Display defaults saved on this device. They never change the medical record.',
+      )}
+      title={t('Preferences')}
     >
       <SettingsRows>
         <SettingsRow
           action={
             <SegmentedToggle
-              label="Lab units"
+              label={t('Lab units')}
               onValueChange={(value) => set('units', value as Prefs['units'])}
               options={[
-                { value: 'conventional', label: 'Conventional' },
+                { value: 'conventional', label: t('Conventional') },
                 { value: 'si', label: 'SI' },
               ]}
               value={prefs.units}
             />
           }
-          label="Lab units"
-          sub="Applies to lab history and printouts"
-          value={PREFS_VALUE_TEXT.units(prefs)}
+          label={t('Lab units')}
+          sub={t('Applies to lab history and printouts')}
+          value={t(PREFS_VALUE_TEXT.units(prefs))}
         />
         <SettingsRow
           action={
             <SegmentedToggle
-              label="Theme"
+              label={t('Theme')}
               onValueChange={(value) => set('theme', value as Prefs['theme'])}
               options={[
-                { value: 'light', label: 'Light' },
-                { value: 'dark', label: 'Dark' },
-                { value: 'system', label: 'System' },
+                { value: 'light', label: t('Light') },
+                { value: 'dark', label: t('Dark') },
+                { value: 'system', label: t('System') },
               ]}
               value={prefs.theme}
             />
           }
-          label="Theme"
-          value={PREFS_VALUE_TEXT.theme(prefs)}
+          label={t('Theme')}
+          value={t(PREFS_VALUE_TEXT.theme(prefs))}
         />
         <SettingsRow
           action={
             <SegmentedToggle
-              label="Language"
-              onValueChange={(value) => set('language', value as Prefs['language'])}
-              options={[
-                { value: 'en', label: 'English' },
-                { value: 'km', label: 'Khmer' },
-              ]}
-              value={prefs.language}
+              label={t('Language')}
+              onValueChange={(value) => setLocale(value as Locale)}
+              options={LOCALES.map((option) => ({
+                value: option,
+                label: LOCALE_LABELS[option],
+              }))}
+              value={locale}
             />
           }
-          label="Language"
-          sub="Clinical terms, drug names, and lab codes stay in English."
-          value={PREFS_VALUE_TEXT.language(prefs)}
+          label={t('Language')}
+          sub={t('Clinical terms, drug names, and lab codes stay in English.')}
+          value={LOCALE_LABELS[locale]}
         />
         <SettingsRow
           action={
@@ -662,11 +825,13 @@ export function PreferencesSection() {
               checked={prefs.inlineRef}
               onCheckedChange={(checked) => set('inlineRef', checked)}
             >
-              <span className={styles.srOnly}>Show reference ranges inline</span>
+              <span className={styles.srOnly}>
+                {t('Show reference ranges inline')}
+              </span>
             </Switch>
           }
-          label="Reference ranges"
-          value={PREFS_VALUE_TEXT.inlineRef(prefs)}
+          label={t('Reference ranges')}
+          value={t(PREFS_VALUE_TEXT.inlineRef(prefs))}
         />
         <SettingsRow
           action={
@@ -674,12 +839,14 @@ export function PreferencesSection() {
               checked={prefs.collapseNormal}
               onCheckedChange={(checked) => set('collapseNormal', checked)}
             >
-              <span className={styles.srOnly}>Collapse normal results by default</span>
+              <span className={styles.srOnly}>
+                {t('Collapse normal results by default')}
+              </span>
             </Switch>
           }
-          label="Normal results"
-          sub="Abnormal results always stay expanded."
-          value={PREFS_VALUE_TEXT.collapseNormal(prefs)}
+          label={t('Normal results')}
+          sub={t('Abnormal results always stay expanded.')}
+          value={t(PREFS_VALUE_TEXT.collapseNormal(prefs))}
         />
         <SettingsRow
           action={
@@ -687,14 +854,14 @@ export function PreferencesSection() {
               checked={prefs.clock24}
               onCheckedChange={(checked) => set('clock24', checked)}
             >
-              <span className={styles.srOnly}>Use 24-hour time</span>
+              <span className={styles.srOnly}>{t('Use 24-hour time')}</span>
             </Switch>
           }
-          label="Time"
-          value={PREFS_VALUE_TEXT.clock24(prefs)}
+          label={t('Time')}
+          value={t(PREFS_VALUE_TEXT.clock24(prefs))}
         />
       </SettingsRows>
-      <p className={styles.sectionFootnote}>Saved on this device.</p>
+      <p className={styles.sectionFootnote}>{t('Saved on this device.')}</p>
     </SettingsSection>
   );
 }

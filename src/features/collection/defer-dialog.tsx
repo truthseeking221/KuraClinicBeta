@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import type { RefObject } from 'react';
 
+import { useT } from '../../components/foundations/i18n';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -46,6 +47,7 @@ export function DeferDialog({ onClose, onConfirm, restoreFocusRef, sample }: Def
 }
 
 function DeferDialogBody({ onClose, onConfirm, restoreFocusRef, sample }: DeferDialogProps) {
+  const t = useT();
   const [draft, setDraft] = useState<{
     note: string;
     reason: string;
@@ -59,7 +61,7 @@ function DeferDialogBody({ onClose, onConfirm, restoreFocusRef, sample }: DeferD
   return (
     <AlertDialogContent returnFocusRef={restoreFocusRef}>
       <AlertDialogHeader>
-        <AlertDialogTitle>Defer this draw?</AlertDialogTitle>
+        <AlertDialogTitle>{t('Defer this draw?')}</AlertDialogTitle>
         <AlertDialogDescription>
           {sample ? (
             <>
@@ -68,7 +70,7 @@ function DeferDialogBody({ onClose, onConfirm, restoreFocusRef, sample }: DeferD
                 <span className={styles.mono}>{sample.id}</span> · {tube?.stopperLabel} ·{' '}
                 <span className={styles.tests}>{sample.tests.join(', ')}</span>
               </span>
-              The tube stays on the worklist for the next attempt.
+              {t('The tube stays on the worklist for the next attempt.')}
             </>
           ) : null}
         </AlertDialogDescription>
@@ -76,34 +78,34 @@ function DeferDialogBody({ onClose, onConfirm, restoreFocusRef, sample }: DeferD
 
       <div className={styles.form}>
         <Select
-          helpText="Choose a reason before saving the deferral."
-          label="Reason"
+          helpText={t('Choose a reason before saving the deferral.')}
+          label={t('Reason')}
           onChange={(event) =>
             setDraft({ note: draftForSample.note, reason: event.target.value, sampleId })
           }
-          options={DEFER_REASONS.map((option) => ({ value: option, label: option }))}
-          placeholder="Select a reason"
+          options={DEFER_REASONS.map((option) => ({ value: option, label: t(option) }))}
+          placeholder={t('Select a reason')}
           required
           value={draftForSample.reason}
         />
         <Textarea
-          label="Note for the next attempt (optional)"
+          label={t('Note for the next attempt (optional)')}
           onChange={(event) =>
             setDraft({ note: event.target.value, reason: draftForSample.reason, sampleId })
           }
-          placeholder="Add context for the next attempt…"
+          placeholder={t('Add context for the next attempt…')}
           value={draftForSample.note}
         />
       </div>
 
       <AlertDialogFooter>
-        <AlertDialogCancel onClick={onClose}>Cancel</AlertDialogCancel>
+        <AlertDialogCancel onClick={onClose}>{t('Cancel')}</AlertDialogCancel>
         <AlertDialogAction
           disabled={!draftForSample.reason}
           onClick={() => onConfirm(draftForSample.reason, draftForSample.note)}
           variant="primary"
         >
-          Defer draw
+          {t('Defer draw')}
         </AlertDialogAction>
       </AlertDialogFooter>
     </AlertDialogContent>

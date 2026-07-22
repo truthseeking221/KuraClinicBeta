@@ -18,53 +18,162 @@
   display: none;
 }
 
+/* ── First use: welcome, one next step, then capability context ── */
+
+.firstUse {
+  display: flex;
+  width: 100%;
+  max-width: 44rem;
+  flex-direction: column;
+  gap: var(--space-6);
+  margin-inline: auto;
+}
+
+.welcomeHeader,
+.welcomeCopy,
+.licenceCopy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+
+.welcomeHeader {
+  gap: var(--space-4);
+}
+
+.welcomeCopy {
+  gap: var(--space-2);
+}
+
+.welcomeTitle,
+.bookingDescription,
+.licenceTitle,
+.licenceDescription,
+.demoTitle,
+.demoDescription,
+.bookingNote {
+  margin: 0;
+}
+
+.welcomeTitle {
+  color: var(--color-text-primary);
+  font-size: var(--type-3xl);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-tight);
+  text-wrap: balance;
+}
+
+.licenceTitle,
+.demoTitle {
+  color: var(--color-text-primary);
+  font-size: var(--type-lg);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-snug);
+}
+
+.bookingDescription,
+.licenceDescription,
+.demoDescription {
+  max-width: 36rem;
+  color: var(--color-text-secondary);
+  font-size: var(--type-base);
+  line-height: var(--leading-normal);
+}
+
+.bookingActions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+}
+
+.bookingNote {
+  color: var(--color-text-tertiary);
+  font-size: var(--type-sm);
+  line-height: var(--leading-normal);
+}
+
+/* The two setup offers share one shape: a divider, the explanation, and the
+   action that acts on it. No card — they are sections in one reading flow. */
+.demoPatient,
+.licenceSetup {
+  display: grid;
+  grid-template-columns: 5rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-4);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--color-border);
+}
+
+.firstUseIllustration {
+  display: block;
+  width: 5rem;
+  height: 5rem;
+  object-fit: contain;
+}
+
+.demoCopy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.licenceCopy {
+  gap: var(--space-2);
+}
+
+.licenceHeading {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
 /* ── Header: a status line, not a hero ────────────────────── */
 
 .header {
   display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-  padding-bottom: var(--space-2);
+  align-items: flex-end;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--space-3);
 }
 
-.date,
+.headerText {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.greeting,
 .scope,
 .quietState {
   margin: 0;
 }
 
-.date {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  color: var(--color-text-brand);
-  font-size: var(--type-xs);
-  font-weight: var(--weight-semibold);
-  letter-spacing: 0.02em;
-}
-
-/* A single brand grain marks "today" — the one decorative pixel on the page. */
-.date::before {
-  content: '';
-  width: 6px;
-  height: 6px;
-  border-radius: var(--radius-full, 999px);
-  background: var(--color-action-primary-accent);
-}
-
 .greeting {
-  margin: 0;
   color: var(--color-text-primary);
-  font-size: var(--type-2xl);
-  font-weight: var(--weight-bold);
+  font-size: var(--type-xl);
+  font-weight: var(--weight-semibold);
   line-height: var(--leading-tight);
-  letter-spacing: -0.01em;
   text-wrap: balance;
 }
 
 .scope {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1-5);
   color: var(--color-text-secondary);
   font-size: var(--type-sm);
+  line-height: var(--leading-normal);
+}
+
+/* The separator belongs to the scope, never to the end of the date line. */
+.scopeLabel::before {
+  content: "·";
+  margin-inline-end: var(--space-1-5);
 }
 
 .staleRow {
@@ -72,265 +181,202 @@
   align-items: center;
   flex-wrap: wrap;
   gap: var(--space-2);
-  margin-top: var(--space-1);
-  color: var(--color-text-tertiary);
-  font-size: var(--type-xs);
+  color: var(--color-text-secondary);
+  font-size: var(--type-sm);
 }
 
-/* ── Briefing grid ────────────────────────────────────────── */
-
-.briefing {
-  display: grid;
-  grid-template-columns: minmax(0, 1.5fr) minmax(20rem, 0.9fr);
-  align-items: start;
-  gap: var(--space-5);
-}
-
-.mainRail,
-.rail {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-5);
-  min-width: 0;
-}
+/* ── Sections ─────────────────────────────────────────────── */
 
 .section {
   display: flex;
+  min-width: 0;
   flex-direction: column;
   gap: var(--space-3);
-  min-width: 0;
 }
 
-/* Three regions, three materials: the attention list is the only white card,
- * the day runs as a bare timeline, and operational context sits sunken. */
-.attentionCard {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-}
-
-.sectionHeader {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.sectionTitle,
-.sectionDescription {
-  margin: 0;
-}
-
+/* Chrome stays quiet so the counts can be loud. */
 .sectionTitle {
-  color: var(--color-text-primary);
-  font-size: var(--type-base);
-  font-weight: var(--weight-semibold);
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--type-sm);
+  font-weight: var(--weight-medium);
   line-height: var(--leading-snug);
 }
 
-.sectionDescription,
 .quietState {
-  color: var(--color-text-tertiary);
-  font-size: var(--type-xs);
+  color: var(--color-text-secondary);
+  font-size: var(--type-sm);
   line-height: var(--leading-normal);
 }
 
-.quietState {
-  padding: var(--space-2) 0;
-}
+/* ── Priority work ────────────────────────────────────────────
+ * The results preview is the page's only tray: it holds a list with its own
+ * state and its own action, and the boundary protects a safety-sensitive scan.
+ * Every other signal is a row on the white page.
+ */
 
-/* Sunken footnote panel — context, one visual level below the canvas. */
-.quietPanel {
+.priority {
   display: flex;
   flex-direction: column;
+  gap: var(--space-4);
   min-width: 0;
-  padding: var(--space-2) var(--space-4) var(--space-3);
-  background: var(--color-surface-sunken);
-  border-radius: var(--radius-lg);
 }
 
-.quietPanelTitle {
+/* One row grammar, reused by priority signals, today's context, and the day. */
+.rowList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
   margin: 0;
-  padding: var(--space-2) var(--space-1) 0;
-  color: var(--color-text-tertiary);
-  font-size: var(--type-xs);
-  font-weight: var(--weight-semibold);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-
-/* ── Next today: the day as a time spine ──────────────────── */
-
-.spine {
-  position: relative;
   padding: 0;
+  list-style: none;
 }
 
-.spineRow {
-  position: relative;
+/* ── Briefing: the day beside the operational context ─────── */
+
+.briefing {
+  display: grid;
+  align-items: start;
+  gap: var(--space-6);
 }
 
-/* Vertical thread connecting the day; drawn per row so it never overshoots. */
-.spineRow::before {
-  content: '';
-  position: absolute;
-  left: 3px;
-  top: 0;
-  bottom: 0;
-  width: 1px;
-  background: var(--color-border);
+.briefing[data-columns="two"] {
+  grid-template-columns: minmax(0, 1.5fr) minmax(17rem, 0.9fr);
 }
 
-.spineRow:first-child::before {
-  top: 50%;
+.briefing[data-columns="one"] {
+  grid-template-columns: minmax(0, 1fr);
 }
 
-.spineRow:last-child::before {
-  bottom: 50%;
+.rail {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--space-6);
 }
 
-.spineRow:only-child::before {
-  display: none;
+/* ── Next ─────────────────────────────────────────────────── */
+
+.dayList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
-/* The stop on the thread. */
-.spineRow::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 50%;
-  width: 7px;
-  height: 7px;
-  border-radius: var(--radius-full, 999px);
-  transform: translateY(-50%);
-  background: var(--color-surface);
-  border: 1.5px solid var(--color-border-strong, var(--color-border));
-}
-
-.spineRow[data-next]::after {
-  background: var(--color-action-primary-accent);
-  border-color: var(--color-action-primary-accent);
-  box-shadow: 0 0 0 3px var(--color-selection-bg);
-}
-
-.spine :global([data-slot='item']) {
+.dayRow {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   column-gap: var(--space-3);
-  padding-block: var(--space-2);
-  padding-inline: var(--space-5) var(--space-2);
-  border-radius: var(--radius-md);
+  margin-inline: calc(var(--space-2) * -1);
+  padding: var(--space-2-5) var(--space-2);
+  border-radius: var(--radius-control-compact);
+  color: inherit;
+  text-decoration: none;
   transition: background-color var(--motion-color);
 }
 
-.spine :global([data-slot='item-actions']) {
-  grid-column: 3;
-  grid-row: 1;
-  justify-content: flex-end;
+a.dayRow:hover {
+  background: var(--color-background-secondary-hover);
 }
 
-.spine :global([data-slot='item-media']) {
-  grid-column: 1;
-  grid-row: 1;
-}
-
-.spine :global([data-slot='item-content']) {
-  grid-column: 2;
-  grid-row: 1;
-}
-
-.spine a:global([data-slot='item']):hover {
-  background: var(--color-surface-sunken);
-}
-
-.spine a:global([data-slot='item']):focus-visible {
+a.dayRow:focus-visible {
   outline: 2px solid var(--color-border-focus);
   outline-offset: -2px;
 }
 
-.nextTime {
-  display: inline-flex;
-  justify-content: flex-end;
-  min-width: 2.75rem;
-  color: var(--color-text-tertiary);
-  font-family: var(--font-family-mono);
-  font-size: var(--type-xs);
+.dayTime {
+  color: var(--color-text-secondary);
+  font-size: var(--type-sm);
   font-variant-numeric: tabular-nums;
+  font-weight: var(--weight-medium);
   white-space: nowrap;
 }
 
-.spineRow[data-next] .nextTime {
-  color: var(--color-text-brand);
-  font-weight: var(--weight-semibold);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .spine :global([data-slot='item']) {
-    transition: none;
-  }
-}
-
-/* ── Overview + closed today ──────────────────────────────── */
-
-.overviewList {
+.dayText {
   display: flex;
+  min-width: 0;
   flex-direction: column;
+  gap: 2px;
 }
 
-.overviewList > :global([data-slot='item-separator']) {
-  display: none;
+.dayLabel {
+  color: var(--color-text-primary);
+  font-size: var(--type-base);
+  line-height: var(--leading-snug);
 }
 
-.overviewList > [role='listitem'] + [role='listitem'] {
-  border-top: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent);
+/* The imminent stop leads through weight and text colour, never a surface. */
+.dayList > li:first-child .dayLabel {
+  font-weight: var(--weight-medium);
 }
+
+.dayList > li:first-child .dayTime {
+  color: var(--color-text-primary);
+}
+
+.dayMeta {
+  color: var(--color-text-secondary);
+  font-size: var(--type-sm);
+  line-height: var(--leading-normal);
+}
+
+.dayChevron {
+  color: var(--color-text-tertiary);
+  transition: transform var(--motion-control);
+}
+
+a.dayRow:hover .dayChevron {
+  transform: translateX(2px);
+}
+
+/* ── Closed today ─────────────────────────────────────────── */
 
 .closedList {
   display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-3);
+  flex-direction: column;
+  gap: var(--space-2);
   margin: 0;
 }
 
-.closedItem {
+.closedRow {
   display: flex;
   align-items: baseline;
-  gap: var(--space-2);
-  padding: var(--space-2) var(--space-4);
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-full, 999px);
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.closedLabel {
+  color: var(--color-text-secondary);
+  font-size: var(--type-sm);
 }
 
 .closedValue {
   margin: 0;
-  order: -1;
   color: var(--color-text-primary);
-  font-size: var(--type-lg);
-  font-weight: var(--weight-semibold);
+  font-size: var(--type-base);
+  font-weight: var(--weight-medium);
   font-variant-numeric: tabular-nums;
 }
 
-.closedLabel {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1);
-  color: var(--color-text-tertiary);
-  font-size: var(--type-xs);
-}
+@media (prefers-reduced-motion: reduce) {
+  .dayRow,
+  .dayChevron {
+    transition: none;
+  }
 
-.closedLabel svg {
-  color: var(--color-status-success-fg);
+  a.dayRow:hover .dayChevron {
+    transform: none;
+  }
 }
 
 /* ── Responsive ───────────────────────────────────────────── */
 
 @media (max-width: 900px) {
-  .briefing {
+  .briefing[data-columns="two"] {
     grid-template-columns: minmax(0, 1fr);
   }
 }
@@ -341,24 +387,64 @@
     padding: var(--space-6);
   }
 
+  .firstUse {
+    gap: var(--space-6);
+  }
+
+  .demoPatient,
+  .licenceSetup {
+    grid-template-columns: 3.5rem minmax(0, 1fr);
+    align-items: start;
+    column-gap: var(--space-3);
+    row-gap: var(--space-4);
+  }
+
+  .firstUseIllustration {
+    width: 3.5rem;
+    height: 3.5rem;
+  }
+
+  .demoPatient > :global([data-slot="button"]),
+  .licenceSetup > :global([data-slot="button"]) {
+    grid-column: 2;
+    justify-self: start;
+  }
+
+  /* Date and scope stack rather than wrapping around a dangling separator. */
+  .scope {
+    display: block;
+  }
+
+  .scopeLabel::before {
+    content: none;
+  }
+
+  .scopeLabel {
+    display: block;
+  }
 }
 
 @media (max-width: 480px) {
   .workspace {
-    gap: var(--space-4);
+    gap: var(--space-5);
     padding: var(--space-4);
   }
 
   .briefing {
-    gap: var(--space-4);
+    gap: var(--space-5);
   }
 
-  .greeting {
-    font-size: var(--type-xl);
+  .welcomeTitle {
+    font-size: var(--type-2xl);
   }
 
-  .closedList {
+  .bookingActions {
+    align-items: stretch;
+    flex-direction: column;
     gap: var(--space-2);
   }
 
+  .greeting {
+    font-size: var(--type-lg);
+  }
 }

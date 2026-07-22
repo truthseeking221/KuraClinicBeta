@@ -155,13 +155,19 @@ export const VitalsMissingWarning: Story = {
   },
 };
 
-/** Clot clock: SST collected 18 minutes ago on a 30-minute limit shows a warn countdown. */
+/**
+ * Clot clock. The SST was drawn 18 minutes into a 30-minute limit, so the
+ * station is viewed 4 minutes later to sit inside the 10-minute warning band —
+ * the point at which the tone changes is the thing worth proving.
+ */
 export const ClotClockRunning: Story = {
   args: Default.args,
-  render: () => <WorksheetPlayground patient={DEMO_QUEUE[2]} />,
+  render: () => (
+    <WorksheetPlayground initialNow={DEMO_NOW + 4 * 60 * 1000} patient={DEMO_QUEUE[2]} />
+  ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByText('11:59')).toBeVisible();
+    await expect(canvas.getByText('08:00')).toBeVisible();
   },
 };
 
@@ -259,7 +265,7 @@ export const VitalsCapture: Story = {
         </div>
       );
     }
-    return <VitalsForm onSubmit={() => setDone(true)} patient={patient} />;
+    return <VitalsForm onSubmit={() => setDone(true)} patientId={patient.id} />;
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
@@ -283,9 +289,9 @@ export const VitalsCapture: Story = {
   },
 };
 
-// ── Full station flow inside the shell ─────────────────────
+// ── Full collection flow inside the shared shell ───────────
 
-/** The collection mode end-to-end: station shell → scan → worksheet. */
+/** The collection mode end-to-end: persistent shell → scan → worksheet. */
 export const CollectionModeInShell: Story = {
   args: Default.args,
   parameters: { layout: 'fullscreen' },
@@ -300,7 +306,7 @@ export const CollectionModeInShell: Story = {
         availableModes={['front-desk', 'collection']}
         mode="collection"
         onNavigate={() => {}}
-        posture="station"
+        posture="sidebar"
         station={{ id: 'PSC-01', role: 'phlebotomy', shift: 'morning' }}
         user={{ name: DEMO_OPERATOR, email: 'neang@mekong.clinic', licenceVerified: false }}
         workspace={{ id: 'ws-mekong', name: 'Mekong Clinic' }}
@@ -337,7 +343,11 @@ export const CollectionModeInShell: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByText('Station PSC-01')).toBeVisible();
+    await expect(canvas.getByRole('navigation', { name: 'Primary' })).toBeVisible();
+    await expect(canvas.getByRole('button', { name: 'Scan' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    );
 
     const input = canvas.getByLabelText('Patient ID');
     await userEvent.type(input, 'P104481{Enter}');

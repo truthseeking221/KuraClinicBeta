@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 
+import { useT } from '../foundations/i18n';
 import { Button } from './button';
 import { CheckIcon, CopyIcon, XIcon } from './icons';
 import type { ButtonProps } from './button';
@@ -23,15 +24,18 @@ export type CopyButtonProps = Omit<
 
 export function CopyButton({
   children,
-  errorLabel = 'Copy failed',
+  errorLabel,
   onCopyResult,
   resetAfter = 1800,
-  successLabel = 'Copied',
+  successLabel,
   value,
   variant = 'ghost',
   size = 'sm',
   ...props
 }: CopyButtonProps) {
+  const t = useT();
+  const resolvedErrorLabel = errorLabel ?? t('Copy failed');
+  const resolvedSuccessLabel = successLabel ?? t('Copied');
   const [state, setState] = useState<CopyButtonState>('idle');
 
   useEffect(() => {
@@ -63,7 +67,12 @@ export function CopyButton({
     }
   }
 
-  const label = state === 'success' ? successLabel : state === 'error' ? errorLabel : children ?? 'Copy';
+  const label =
+    state === 'success'
+      ? resolvedSuccessLabel
+      : state === 'error'
+        ? resolvedErrorLabel
+        : children ?? t('Copy');
   const icon =
     state === 'success' ? (
       <CheckIcon aria-hidden="true" />

@@ -1,5 +1,6 @@
 'use client';
 
+import { useT } from '../../components/foundations/i18n';
 import {
   Badge,
   Button,
@@ -46,22 +47,23 @@ export function SampleTable({
   onReset,
   samples,
 }: SampleTableProps) {
+  const t = useT();
   const ordered = sortByDrawOrder(samples);
 
   return (
     <Table density="compact">
       <TableHeader>
         <TableRow>
-          <TableHead aria-label="Draw order">#</TableHead>
-          <TableHead>Tube</TableHead>
-          <TableHead>Sample ID</TableHead>
-          <TableHead>Tests</TableHead>
-          <TableHead numeric>Vol</TableHead>
-          <TableHead>Priority</TableHead>
-          <TableHead>Inversion</TableHead>
-          <TableHead>Clot time</TableHead>
-          <TableHead>Status</TableHead>
-          <TableHead aria-label="Actions" />
+          <TableHead aria-label={t('Draw order')}>#</TableHead>
+          <TableHead>{t('Tube')}</TableHead>
+          <TableHead>{t('Sample ID')}</TableHead>
+          <TableHead>{t('Tests')}</TableHead>
+          <TableHead numeric>{t('Vol')}</TableHead>
+          <TableHead>{t('Priority')}</TableHead>
+          <TableHead>{t('Inversion')}</TableHead>
+          <TableHead>{t('Clot time')}</TableHead>
+          <TableHead>{t('Status')}</TableHead>
+          <TableHead aria-label={t('Actions')} />
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -102,7 +104,7 @@ export function SampleTable({
                 {(tube?.inversions ?? 0) === 0 ? (
                   '—'
                 ) : sample.status !== 'collected' ? (
-                  <span className={styles.hint}>×{tube?.inversions} after draw</span>
+                  <span className={styles.hint}>×{tube?.inversions} {t('after draw')}</span>
                 ) : sample.inverted ? (
                   <Badge variant="success">✓ ×{tube?.inversions}</Badge>
                 ) : (
@@ -114,7 +116,7 @@ export function SampleTable({
                     size="xs"
                     variant="outline"
                   >
-                    Invert ×{tube?.inversions}
+                    {t('Invert')} ×{tube?.inversions}
                   </Button>
                 )}
               </TableCell>
@@ -129,7 +131,7 @@ export function SampleTable({
                           : 'success'
                     }
                   >
-                    {remaining <= 0 ? 'Exceeded' : formatCountdown(remaining)}
+                    {remaining <= 0 ? t('Exceeded') : formatCountdown(remaining)}
                   </Badge>
                 ) : tube?.timeLimitMin && sample.status !== 'collected' ? (
                   <span className={styles.hint}>{tube.timeLimitMin}m</span>
@@ -147,13 +149,13 @@ export function SampleTable({
                         : 'neutral'
                   }
                 >
-                  {STATUS_LABEL[sample.status]}
+                  {t(STATUS_LABEL[sample.status])}
                   {sample.status === 'collected' && sample.collectedAt
                     ? ` · ${sample.collectedAt}`
                     : ''}
                 </Badge>
                 {sample.status === 'deferred' && sample.deferReason ? (
-                  <span className={styles.deferReason}>{sample.deferReason}</span>
+                  <span className={styles.deferReason}>{t(sample.deferReason)}</span>
                 ) : null}
               </TableCell>
               <TableCell onClick={(event) => event.stopPropagation()}>
@@ -165,23 +167,25 @@ export function SampleTable({
                         onClick={() => onCollect(sample.id)}
                         size="xs"
                         title={
-                          collectEnabled ? undefined : 'Complete the safety checklist first'
+                          collectEnabled
+                            ? undefined
+                            : t('Complete the safety checklist first')
                         }
                         variant="primary"
                       >
-                        Collect
+                        {t('Collect')}
                       </Button>
                       <Button
                         onClick={(event) => onDefer(sample.id, event.currentTarget)}
                         size="xs"
                         variant="ghost"
                       >
-                        Defer
+                        {t('Defer')}
                       </Button>
                     </>
                   ) : (
                     <Button onClick={() => onReset(sample.id)} size="xs" variant="ghost">
-                      Reset
+                      {t('Reset')}
                     </Button>
                   )}
                 </span>

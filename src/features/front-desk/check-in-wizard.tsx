@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 
 import {
@@ -15,6 +15,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertIcon,
   AlertTitle,
   Badge,
   Button,
@@ -23,14 +24,19 @@ import {
   CardHeader,
   CardTitle,
   Checkbox,
+  CheckIcon,
   ChevronRightIcon,
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
+  DateInput,
   Input,
   Kbd,
   LockKeyIcon,
   MoneyText,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
   QrCodeIcon,
   RefreshIcon,
   Select,
@@ -47,6 +53,8 @@ import {
   StepperTrigger,
 } from '../../components/ui';
 import { LabTestPicker } from '../lab-catalog';
+import { SubjectHeader } from '../../components/shared/subject-header';
+import { useT } from '../../components/foundations/i18n';
 
 import { CartRail } from './cart-rail';
 import { ContactChannels } from './contact-channels';
@@ -67,6 +75,7 @@ import {
   DEMO_PRESCRIBERS,
   DEMO_RECEIPT_ID,
   IDENTITY_REGISTRY,
+  findDemoPromo,
 } from './demo-data';
 import { IdentitySearch } from './identity-search';
 import { PatientResolutionCard } from './patient-resolution-card';
@@ -79,6 +88,7 @@ import {
   orderBlockers,
   canNavigateToStep,
   cartTotals,
+  checkInStatus,
   collisionOverridePinValid,
   confirmedPayment,
   consentBlockers,
@@ -101,6 +111,9 @@ import {
   mockEligibility,
   paymentAfterPaidEdit,
   paymentDueAmountMinor,
+  promoLines,
+  intakeStatus,
+  resolvedRecordPatch,
   resolveIdentity,
   trustSignalsFor,
   wizardGate,
@@ -112,6 +125,7 @@ import {
   subtractMinorFloor,
   type FxRateQuote,
 } from './money';
+import { INTAKE_SKIP_REASONS } from './types';
 import type {
   BookingSummary,
   CartItem,
@@ -119,6 +133,7 @@ import type {
   FrontDeskPatient,
   InsurancePolicy,
   IntakeFields,
+  IntakeSkipReasonCode,
   LineConsent,
   PatientRecordSummary,
   Prescriber,
@@ -137,7 +152,7 @@ const STEP_DEFS: Array<{ id: StepId; title: string }> = [
 
 /** Shown next to a blocked Continue so the disabled state explains itself. */
 const STEP_REQUIREMENTS: Record<Exclude<StepId, 6>, string> = {
-  1: 'Find the patient or create a new record to continue.',
+  1: 'Select a patient or create a new record to continue.',
   2: 'Date of birth, sex, and a contact channel are required.',
   3: 'Attach a policy or choose self-pay to continue.',
   4: 'Add at least one order to continue.',
@@ -158,6 +173,9 @@ export type CheckInWizardProps = {
   onCheckIn: () => void;
   /** Live USD→KHR rate supplied by the clinic config endpoint. */
   fxRate?: FxRateQuote;
+  /** Server pricing availability — the rail blocks collection while not ready. */
+  pricingStatus?: 'ready' | 'loading' | 'error';
+  onRetryPricing?: () => void;
 };
 
 /**
@@ -173,7 +191,10 @@ export function CheckInWizard({
   patient,
   prescribers = DEMO_PRESCRIBERS,
   fxRate,
+  pricingStatus = 'ready',
+  onRetryPricing,
 }: CheckInWizardProps) {
+  const t = useT();
   const gate = wizardGate(patient);
   const [step, setStep] = useState<StepId>(() => inferStep(gate));
   const [paidEditRequest, setPaidEditRequest] = useState<null | ((mode: 'void' | 'supplemental') => void)>(
@@ -213,8 +234,24 @@ export function CheckInWizard({
 
   const [cheatsheetOpen, setCheatsheetOpen] = useState(false);
 
+  // The contextual dock exists only on mobile. Keeping it out of the desktop
+  // tree prevents duplicate payment and completion announcements.
+  const [mobileViewport, setMobileViewport] = useState(false);
+  useEffect(() => {
+    const query = window.matchMedia('(max-width: 599px)');
+    const sync = () => setMobileViewport(query.matches);
+    sync();
+    query.addEventListener('change', sync);
+    return () => query.removeEventListener('change', sync);
+  }, []);
+
   // Reception runs hands-on-keyboard: F1–F6 jump steps, ? opens the map.
-  // Suppressed while typing or while any dialog is open.
+  // Suppressed while typing or while any dialog is open. The listener binds
+  // once; the ref keeps the handler reading current step/gate state.
+  const goToRef = useRef(goTo);
+  useEffect(() => {
+    goToRef.current = goTo;
+  });
   useEffect(() => {
     function onKeyDown(event: globalThis.KeyboardEvent) {
       const target = event.target as HTMLElement | null;
@@ -238,12 +275,12 @@ export function CheckInWizard({
       const match = /^F([1-6])$/.exec(event.key);
       if (match) {
         event.preventDefault();
-        goTo(Number(match[1]) as StepId);
+        goToRef.current(Number(match[1]) as StepId);
       }
     }
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  });
+  }, []);
 
   /**
    * The order rail earns its place only once orders exist: steps 1–3 stay
@@ -251,16 +288,29 @@ export function CheckInWizard({
    * rail visible when navigating back so paid context is never hidden.
    */
   const showCartRail = step >= 4 || patient.cart.items.length > 0;
+  const mobileDockAvailable =
+    mobileViewport && (patient.cart.items.length > 0 || gate.step3Done);
+  const headerStatus = checkInStatus(patient, gate);
 
   return (
-    <div className={styles.wizard}>
-      {patient.arrivedLabel ? (
-        <p className={styles.subjectMeta}>
-          <span className={styles.subjectQueue}>Q-{String(patient.queueNumber).padStart(3, '0')}</span>
-          <span>Arrived {patient.arrivedLabel}</span>
-        </p>
-      ) : null}
-      <Stepper onValueChange={(value) => goTo(value as StepId)} value={step}>
+    <div className={styles.wizard} data-slot="check-in-wizard" data-step={step}>
+      <SubjectHeader
+        status={headerStatus ? { ...headerStatus, label: t(headerStatus.label) } : undefined}
+        subject={{
+          name: patient.name,
+          nameKhmer: patient.nameKhmer || undefined,
+          reference: `Q-${String(patient.queueNumber).padStart(3, '0')}`,
+          dob: patient.dob || undefined,
+          sexAtBirth: patient.sexAtBirth || undefined,
+          arrivedLabel: patient.arrivedLabel
+            ? `${t('Arrived')} ${patient.arrivedLabel}`
+            : undefined,
+          meta: patient.boundBookingCode
+            ? [`${t('Booking')} ${patient.boundBookingCode}`]
+            : undefined,
+        }}
+      />
+      <Stepper className={styles.stepper} onValueChange={(value) => goTo(value as StepId)} value={step}>
         <StepperNav>
           {STEP_DEFS.map((def, index) => (
             <StepperItem
@@ -271,7 +321,7 @@ export function CheckInWizard({
             >
               <StepperTrigger>
                 <StepperIndicator>{def.id}</StepperIndicator>
-                <StepperTitle>{def.title}</StepperTitle>
+                <StepperTitle>{t(def.title)}</StepperTitle>
               </StepperTrigger>
               {index < STEP_DEFS.length - 1 ? <StepperSeparator /> : null}
             </StepperItem>
@@ -279,8 +329,13 @@ export function CheckInWizard({
         </StepperNav>
       </Stepper>
 
-      <div className={styles.workspace} data-cart-rail={showCartRail ? 'visible' : 'hidden'}>
-        <div className={styles.stepPanel}>
+      <div
+        className={styles.workspace}
+        data-cart-rail={showCartRail ? 'visible' : 'hidden'}
+        data-slot="check-in-workspace"
+        data-step={step}
+      >
+        <div className={styles.stepPanel} data-slot="check-in-step-panel">
           {step === 1 ? (
             <StepIdentity
               branchId={branchId}
@@ -310,12 +365,14 @@ export function CheckInWizard({
               onUpdate={update}
               patient={patient}
               prescribers={prescribers}
+              pricingStatus={pricingStatus}
             />
           ) : null}
 
           <ContinueFooter
             collisionsBlock={(step === 1 || step === 2) && collisions.length > 0}
             gate={gate}
+            mobileDockAvailable={mobileDockAvailable}
             onBack={() => setStep((step - 1) as StepId)}
             onContinue={() => setStep((step + 1) as StepId)}
             onFinish={onCheckIn}
@@ -326,6 +383,8 @@ export function CheckInWizard({
         {showCartRail ? (
           <CartRail
             fxRate={fxRate}
+            pricingStatus={pricingStatus}
+            onRetryPricing={onRetryPricing}
             onAcceptReprice={() => update({ cart: acceptReprice(patient.cart) })}
             onRetryCodeIssuance={() => update({ cart: { ...patient.cart, placeFailure: null } })}
             onRemoveItem={(id) =>
@@ -341,6 +400,15 @@ export function CheckInWizard({
           />
         ) : null}
       </div>
+
+      {mobileDockAvailable ? (
+        <MobileDock
+          gate={gate}
+          onFinish={onCheckIn}
+          onResume={() => setStep(inferStep(gate))}
+          patient={patient}
+        />
+      ) : null}
 
       <PaidEditDialog
         onCancel={() => setPaidEditRequest(null)}
@@ -358,10 +426,11 @@ export function CheckInWizard({
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Keyboard shortcuts</AlertDialogTitle>
+            <AlertDialogTitle>{t('Keyboard shortcuts')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Reception runs hands-on-keyboard. Locked steps stay locked — a shortcut never
-              bypasses the gate.
+              {t(
+                'Reception runs hands-on-keyboard. Locked steps stay locked — a shortcut never bypasses the gate.',
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <dl className={styles.shortcutList}>
@@ -369,20 +438,118 @@ export function CheckInWizard({
               <dt>
                 <Kbd>F1</Kbd>–<Kbd>F6</Kbd>
               </dt>
-              <dd>Jump to a wizard step</dd>
+              <dd>{t('Jump to a wizard step')}</dd>
             </div>
             <div>
               <dt>
                 <Kbd>?</Kbd>
               </dt>
-              <dd>Open this list</dd>
+              <dd>{t('Open this list')}</dd>
             </div>
           </dl>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setCheatsheetOpen(false)}>Close</AlertDialogCancel>
+            <AlertDialogCancel onClick={() => setCheatsheetOpen(false)}>
+              {t('Close')}
+            </AlertDialogCancel>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+    </div>
+  );
+}
+
+// ── Mobile dock ────────────────────────────────────────────
+
+/**
+ * Sticky mobile action bar from order selection onward. Before then the step
+ * itself owns the only available action. The CTA always resumes at the first
+ * not-done step — the same landing rule as a reopened patient, never a gate
+ * bypass.
+ */
+function MobileDock({
+  gate,
+  onFinish,
+  onResume,
+  patient,
+}: {
+  gate: ReturnType<typeof wizardGate>;
+  onFinish: () => void;
+  onResume: () => void;
+  patient: FrontDeskPatient;
+}) {
+  const t = useT();
+  const totals = cartTotals(patient.cart);
+  const dueMinor = paymentDueAmountMinor(patient.cart, totals);
+  const payment = patient.cart.payment;
+  const waiting = payment.status === 'waiting' || payment.status === 'split-cash';
+  const nextStep = inferStep(gate);
+
+  let info: ReactNode;
+  let action: ReactNode;
+  if (waiting) {
+    info = (
+      <>
+        <span className={styles.dockLabel}>{t('Waiting for Bakong')}</span>
+        <MoneyText className={styles.dockDue} currency="USD" minor={dueMinor} />
+      </>
+    );
+    action = (
+      <Button onClick={onResume} size="sm" variant="outline">
+        {t('View QR')}
+      </Button>
+    );
+  } else if (gate.step6Done) {
+    info = (
+      <span className={styles.dockLabel}>
+        {gate.paid
+          ? `${t('Paid')} · ${payment.receiptId ?? ''}`
+          : payment.status === 'no-charge'
+            ? t('No charge')
+            : t('Pay later recorded')}
+      </span>
+    );
+    action = (
+      <Button onClick={onFinish} size="sm" variant="primary">
+        {t('Finish check-in')}
+      </Button>
+    );
+  } else if (gate.step5Done) {
+    info = (
+      <>
+        <span className={styles.dockLabel}>{t('Patient due')}</span>
+        <MoneyText className={styles.dockDue} currency="USD" minor={dueMinor} />
+      </>
+    );
+    action = (
+      <Button onClick={onResume} size="sm" variant="primary">
+        {t('Collect payment')}
+      </Button>
+    );
+  } else if (patient.cart.items.length === 0) {
+    info = <span className={styles.dockLabel}>{t('No orders yet')}</span>;
+    action = (
+      <Button onClick={onResume} size="sm" variant="secondary">
+        {nextStep === 4 ? t('Add orders') : t('Continue')}
+      </Button>
+    );
+  } else {
+    const nextTitle = STEP_DEFS.find((def) => def.id === nextStep)?.title;
+    info = (
+      <span className={styles.dockLabel}>
+        {t('Step')} {nextStep} {t('of 6')} · {nextTitle ? t(nextTitle) : null}
+      </span>
+    );
+    action = (
+      <Button onClick={onResume} size="sm" variant="secondary">
+        {t('Continue')}
+      </Button>
+    );
+  }
+
+  return (
+    <div aria-label={t('Check-in progress')} className={styles.dock} role="region">
+      <div className={styles.dockInfo}>{info}</div>
+      {action}
     </div>
   );
 }
@@ -392,6 +559,7 @@ export function CheckInWizard({
 function ContinueFooter({
   collisionsBlock,
   gate,
+  mobileDockAvailable,
   onBack,
   onContinue,
   onFinish,
@@ -399,34 +567,43 @@ function ContinueFooter({
 }: {
   collisionsBlock: boolean;
   gate: ReturnType<typeof wizardGate>;
+  mobileDockAvailable: boolean;
   onBack: () => void;
   onContinue: () => void;
   onFinish: () => void;
   step: StepId;
 }) {
+  const t = useT();
   const stepDone = gate[`step${step}Done` as keyof typeof gate] === true;
   const blocked = !stepDone || collisionsBlock;
   const reason = collisionsBlock
-    ? 'Resolve the possible duplicates above to continue.'
+    ? t('Resolve the possible duplicates above to continue.')
     : !stepDone
       ? step === 6
-        ? 'Record payment before finishing this reception flow.'
-        : STEP_REQUIREMENTS[step]
+        ? t('Record payment before finishing this reception flow.')
+        : t(STEP_REQUIREMENTS[step])
       : null;
-  const actionLabel = step === 6 ? 'Finish' : step === 1 ? 'Review details' : 'Continue';
+  const actionLabel =
+    step === 6 ? t('Finish') : step === 1 ? t('Review details') : t('Continue');
 
   return (
-    <footer className={styles.stepFooter}>
-      {step > 1 ? (
-        <Button onClick={onBack} variant="outline">
-          Back
-        </Button>
-      ) : (
-        <span />
-      )}
-      <div className={styles.continueGroup}>
-        {blocked && reason ? <p className={styles.hint}>{reason}</p> : null}
+    <footer
+      aria-label={t('Check-in actions')}
+      className={styles.stepFooter}
+      data-mobile-dock={mobileDockAvailable ? 'true' : undefined}
+      role="region"
+    >
+      <div className={styles.stepFooterInner}>
+        {step > 1 ? (
+          <Button className={styles.footerBack} onClick={onBack} variant="outline">
+            {t('Back')}
+          </Button>
+        ) : (
+          <span className={styles.footerBack} />
+        )}
+        {blocked && reason ? <p className={styles.footerReason}>{reason}</p> : <span />}
         <Button
+          className={styles.footerPrimary}
           disabled={blocked}
           onClick={step === 6 ? onFinish : onContinue}
           variant="primary"
@@ -440,19 +617,7 @@ function ContinueFooter({
 
 // ── Step 1 · Identity ──────────────────────────────────────
 
-/** Copy the resolved record onto the wizard patient as a patch. */
-function recordPatch(record: PatientRecordSummary): Partial<FrontDeskPatient> {
-  return {
-    name: record.name,
-    nameKhmer: record.nameKhmer ?? '',
-    dob: record.dob ?? '',
-    sexAtBirth: record.sexAtBirth,
-    idNumber: record.nid ?? '',
-    phoneNumber: (record.phone ?? '').replace(/\D/g, ''),
-    identity: { source: 'existing', lockedFields: ['name', 'dob', 'sexAtBirth'] },
-    collisionAcked: [],
-  };
-}
+const recordPatch = resolvedRecordPatch;
 
 function StepIdentity({
   branchId,
@@ -469,6 +634,7 @@ function StepIdentity({
   patient: FrontDeskPatient;
   registry: PatientRecordSummary[];
 }) {
+  const t = useT();
   const [query, setQuery] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [guardianConfirmed, setGuardianConfirmed] = useState(false);
@@ -496,25 +662,26 @@ function StepIdentity({
   if (captured) {
     const sourceLabel =
       patient.identity.source === 'qr'
-        ? 'QR scan'
+        ? t('Booking QR')
         : patient.identity.source === 'existing'
-          ? 'Existing Kura record'
-          : 'Manual entry';
-    const hasCaptureFacts =
-      patient.identity.lockedFields.length > 0 || Boolean(patient.boundBookingCode);
+          ? t('Existing Kura record')
+          : t('Manual entry');
+    // The bound booking rides in the identity strip, which is visible on every
+    // step — repeating it inside this card would say it twice on one screen.
+    const hasCaptureFacts = patient.identity.lockedFields.length > 0;
     return (
-      <section aria-label="Identity" className={styles.step}>
-        <h2 className={styles.stepTitle}>Identity captured</h2>
+      <section aria-label={t('Identity')} className={styles.step}>
+        <h2 className={styles.stepTitle}>{t('Patient selected')}</h2>
         <p className={styles.stepSubtitle}>
           {patient.identity.lockedFields.length > 0
-            ? 'Review details next. Locked fields must be unlocked before editing.'
-            : 'Review and edit details on the next step.'}
+            ? t('Review details next. Unlock fields before editing.')
+            : t('Review and edit details on the next step.')}
         </p>
         <PatientResolutionCard
           variant="captured"
           record={{
             id: patient.id,
-            name: patient.name || 'New patient',
+            name: patient.name || t('New patient'),
             dob: patient.dob || undefined,
             sexAtBirth: patient.sexAtBirth,
             nid: patient.idNumber || undefined,
@@ -522,21 +689,12 @@ function StepIdentity({
             assurance: 'unverified',
             registeredHere: true,
           }}
-          provenance={`Source: ${sourceLabel}${patient.identity.capturedAtLabel ? ` · Captured ${patient.identity.capturedAtLabel}` : ''}`}
+          provenance={`${t('Source')}: ${sourceLabel}${patient.identity.capturedAtLabel ? ` · ${t('Captured')} ${patient.identity.capturedAtLabel}` : ''}`}
           helperText={
             hasCaptureFacts ? (
-              <>
-                {patient.identity.lockedFields.length > 0 ? (
-                  <Badge size="sm" variant="neutral">
-                    {patient.identity.lockedFields.length} fields locked
-                  </Badge>
-                ) : null}{' '}
-                {patient.boundBookingCode ? (
-                  <Badge size="sm" variant="info">
-                    Booking {patient.boundBookingCode}
-                  </Badge>
-                ) : null}
-              </>
+              <Badge size="sm" variant="neutral">
+                {patient.identity.lockedFields.length} {t('fields locked')}
+              </Badge>
             ) : undefined
           }
           actions={
@@ -544,7 +702,7 @@ function StepIdentity({
               ? undefined
               : [
                   {
-                    label: 'Capture again',
+                    label: 'Choose a different patient',
                     variant: 'ghost',
                     icon: <RefreshIcon size={14} aria-hidden />,
                     onClick: () => setRecaptureAsked(true),
@@ -554,14 +712,15 @@ function StepIdentity({
         />
         {recaptureAsked ? (
           <Alert tone="warning">
-            <AlertTitle>Capture identity again?</AlertTitle>
+            <AlertTitle>{t('Choose a different patient?')}</AlertTitle>
             <AlertDescription>
-              Search, scan, or enter the identity again. Current data stays until a new method
-              overwrites it.
+              {t(
+                'Search again. Current details stay until you select or create another patient.',
+              )}
             </AlertDescription>
             <AlertAction>
               <Button onClick={() => setRecaptureAsked(false)} size="sm" variant="outline">
-                Keep current
+                {t('Keep current')}
               </Button>
               <Button
                 onClick={() => {
@@ -577,7 +736,7 @@ function StepIdentity({
                 size="sm"
                 variant="primary"
               >
-                Start again
+                {t('Search again')}
               </Button>
             </AlertAction>
           </Alert>
@@ -617,9 +776,13 @@ function StepIdentity({
       : [];
 
   return (
-    <section aria-label="Identity" className={styles.step}>
-      <h2 className={styles.stepTitle}>Capture identity</h2>
-      <p className={styles.stepSubtitle}>Search for an existing patient before continuing.</p>
+    <section
+      aria-label={t('Identity')}
+      className={styles.step}
+      data-identity-search-empty={query.length === 0 ? 'true' : undefined}
+    >
+      <h2 className={styles.stepTitle}>{t('Find or create a patient')}</h2>
+      <p className={styles.stepSubtitle}>{t('Search by phone, booking code, or name.')}</p>
 
       <IdentitySearch
         autoFocus
@@ -640,7 +803,7 @@ function StepIdentity({
             record={resolution.record}
             bookingsHeader={
               resolution.record.bookings?.length
-                ? `Today · ${resolution.record.bookings.length} bookings`
+                ? `${t('Today')} · ${resolution.record.bookings.length} ${t('bookings')}`
                 : undefined
             }
             lastVisitLabel={resolution.record.lastVisitLabel}
@@ -658,8 +821,8 @@ function StepIdentity({
               variant={resolution.record.bookings?.length ? 'outline' : 'primary'}
             >
               {resolution.record.bookings?.length
-                ? `Continue without a booking`
-                : `Continue with ${resolution.record.name}`}
+                ? t('Continue without a booking')
+                : `${t('Continue with')} ${resolution.record.name}`}
               <ChevronRightIcon size={14} aria-hidden />
             </Button>
           </IdentityActionArea>
@@ -673,11 +836,13 @@ function StepIdentity({
             record={resolution.record}
             status={{ label: 'First visit at this PSC', variant: 'warning' }}
             trustSignals={trustSignalsFor(resolution.record)}
-            helperText="The Kura record imports here on check-in; nothing is re-typed."
+            helperText={t(
+              'Use this Kura record at this PSC. No details need to be entered again.',
+            )}
           />
           <IdentityActionArea>
             <Button onClick={() => captureRecord(resolution.record)} variant="primary">
-              Import {resolution.record.name}
+              {t('Import')} {resolution.record.name}
               <ChevronRightIcon size={14} aria-hidden />
             </Button>
           </IdentityActionArea>
@@ -696,7 +861,7 @@ function StepIdentity({
               onClick={() => captureRecord(resolution.record, resolution.booking)}
               variant="primary"
             >
-              Check in booking {resolution.booking.code}
+              {t('Check in booking')} {resolution.booking.code}
               <ChevronRightIcon size={14} aria-hidden />
             </Button>
           </IdentityActionArea>
@@ -713,18 +878,18 @@ function StepIdentity({
               label: bookingBlockMeta(resolution.reason).title,
               variant: 'warning',
             }}
-            helperText={bookingBlockMeta(resolution.reason).description}
+            helperText={t(bookingBlockMeta(resolution.reason).description)}
           />
           <IdentityActionArea>
             {/* Recovery, never a dead end: the record still identifies the
                 patient, but a blocked code is never silently redeemed. */}
             {resolution.reason === 'redeemed' ? (
               <Button onClick={() => captureRecord(resolution.record)} variant="outline">
-                Continue as walk-in anyway
+                {t('Continue as a walk-in')}
               </Button>
             ) : (
               <Button onClick={() => captureRecord(resolution.record)} variant="primary">
-                Continue with {resolution.record.name} as walk-in
+                {t('Continue with')} {resolution.record.name} {t('as walk-in')}
                 <ChevronRightIcon size={14} aria-hidden />
               </Button>
             )}
@@ -735,12 +900,16 @@ function StepIdentity({
       {resolution?.kind === 'shared-phone' ? (
         <>
           <div className={styles.identityGroupIntro}>
-            <h3 className={styles.identityGroupTitle}>Who is here today?</h3>
+            <h3 className={styles.identityGroupTitle}>{t('Who is here today?')}</h3>
             <p className={styles.identityGroupHint}>
-              {resolution.records.length} patients are linked to this phone number.
+              {resolution.records.length} {t('patients are linked to this phone number.')}
             </p>
           </div>
-          <div aria-label="Choose who is here today" className={styles.identityCards} role="radiogroup">
+          <div
+            aria-label={t('Choose who is here today')}
+            className={styles.identityCards}
+            role="radiogroup"
+          >
             {resolution.records.map((record) => {
               const isSelected = selectedId === record.id;
               const needsGuardian = isSelected && record.minor;
@@ -765,11 +934,11 @@ function StepIdentity({
                     needsGuardian
                       ? guardianConfirmed
                         ? {
-                            label: `Guardian confirmed · ${record.guardianName ?? 'present'}`,
+                            label: `${t('Guardian confirmed')} · ${record.guardianName ?? t('present')}`,
                             variant: 'success',
                           }
                         : {
-                            label: `Guardian required · On file: ${record.guardianName ?? 'unknown'}`,
+                            label: `${t('Guardian required')} · ${t('On file')}: ${record.guardianName ?? t('unknown')}`,
                             variant: 'warning',
                           }
                       : undefined
@@ -795,22 +964,22 @@ function StepIdentity({
             onClick={() => captureNewPatient('phone', query)}
             variant="outline"
           >
-            None of these, create new patient
+            {t('None of these? Create a new patient')}
             <ChevronRightIcon size={14} aria-hidden />
           </Button>
           <IdentityActionArea
             helper={
               selectedId === null
-                ? 'Choose a patient to continue.'
+                ? t('Choose a patient to continue.')
                 : guardianBlocked
-                  ? 'Confirm the guardian is present to continue with a minor.'
+                  ? t('Confirm the guardian is present to continue with a minor.')
                   : undefined
             }
           >
             {selectedRecord && !guardianBlocked ? (
               (selectedRecord.bookings?.length ?? 0) > 1 ? (
                 <Button onClick={() => captureRecord(selectedRecord)} variant="outline">
-                  Continue without a booking
+                  {t('Continue without a booking')}
                 </Button>
               ) : (
                 <Button
@@ -818,8 +987,8 @@ function StepIdentity({
                   variant="primary"
                 >
                   {selectedRecord.bookings?.length
-                    ? `Check in ${selectedRecord.name} · ${selectedRecord.bookings[0].code}`
-                    : `Continue with ${selectedRecord.name}`}
+                    ? `${t('Check in')} ${selectedRecord.name} · ${selectedRecord.bookings[0].code}`
+                    : `${t('Continue with')} ${selectedRecord.name}`}
                   <ChevronRightIcon size={14} aria-hidden />
                 </Button>
               )
@@ -830,7 +999,7 @@ function StepIdentity({
 
       {resolution?.kind === 'candidates' ? (
         <>
-          <p className={styles.identityKicker}>Possible matches</p>
+          <p className={styles.identityKicker}>{t('Possible matches')}</p>
           <div className={styles.identityCards}>
             {visibleCandidates.map((record) => (
               <PatientResolutionCard
@@ -866,7 +1035,7 @@ function StepIdentity({
             onClick={() => captureNewPatient('name', query)}
             variant="outline"
           >
-            None of these, create new patient
+            {t('None of these? Create a new patient')}
             <ChevronRightIcon size={14} aria-hidden />
           </Button>
         </>
@@ -886,7 +1055,7 @@ function StepIdentity({
             searchedValue={resolution.query}
             helperText={
               resolution.queryKind === 'code'
-                ? 'No booking carries this code. Check the code or search by phone instead.'
+                ? t('No booking carries this code. Check the code or search by phone instead.')
                 : undefined
             }
           />
@@ -896,7 +1065,7 @@ function StepIdentity({
                 onClick={() => captureNewPatient(resolution.queryKind, resolution.query)}
                 variant="primary"
               >
-                Continue as new patient
+                {t('Create a new patient')}
                 <ChevronRightIcon size={14} aria-hidden />
               </Button>
             </IdentityActionArea>
@@ -960,6 +1129,7 @@ function CollisionAlert({
   onAcknowledge: (patientId: string) => void;
   onLoadExisting?: (existing: FrontDeskPatient) => void;
 }) {
+  const t = useT();
   const [pin, setPin] = useState('');
   const [recordOpen, setRecordOpen] = useState(false);
   const needsPin = collision.signals.includes('idMatch');
@@ -968,32 +1138,37 @@ function CollisionAlert({
   return (
     <Alert tone="warning">
       <AlertTitle>
-        {collision.strength} — {collision.patient.name}
+        {t(collision.strength)} — {collision.patient.name}
       </AlertTitle>
       <AlertDescription>
-        {evidence ? `${evidence} · ` : ''}score {collision.score}. Duplicate records create a
-        duplicate-risk audit entry.
+        {evidence ? `${t(evidence)} · ` : ''}
+        {t('score')} {collision.score}.{' '}
+        {t('Duplicate records create a duplicate-risk audit entry.')}
       </AlertDescription>
       {recordOpen ? (
         <dl className={styles.collisionRecord}>
           <div>
-            <dt>Queue</dt>
+            <dt>{t('Queue')}</dt>
             <dd className={styles.mono}>Q-{String(collision.patient.queueNumber).padStart(3, '0')}</dd>
           </div>
           <div>
-            <dt>Date of birth</dt>
-            <dd>{collision.patient.dob || 'Unknown'}</dd>
+            <dt>{t('Date of birth')}</dt>
+            <dd>{collision.patient.dob || t('Unknown')}</dd>
           </div>
           <div>
-            <dt>Sex at birth</dt>
-            <dd>{collision.patient.sexAtBirth || 'Unknown'}</dd>
+            <dt>{t('Sex at birth')}</dt>
+            <dd>
+              {collision.patient.sexAtBirth
+                ? t(collision.patient.sexAtBirth)
+                : t('Unknown')}
+            </dd>
           </div>
           <div>
-            <dt>Phone</dt>
+            <dt>{t('Phone')}</dt>
             <dd className={styles.mono}>
               {collision.patient.phoneNumber
                 ? `${collision.patient.countryCode} ${collision.patient.phoneNumber}`
-                : 'None'}
+                : t('None')}
             </dd>
           </div>
         </dl>
@@ -1002,25 +1177,25 @@ function CollisionAlert({
         <div className={styles.collisionPin}>
           <LockKeyIcon aria-hidden size={14} />
           <Input
-            aria-label="Supervisor PIN"
+            aria-label={t('Supervisor PIN')}
             inputMode="numeric"
             onChange={(event) => setPin(event.target.value)}
-            placeholder="Supervisor PIN"
+            placeholder={t('Supervisor PIN')}
             type="password"
             value={pin}
           />
           <span className={styles.collisionPinHint}>
-            Same national ID. Keeping both records is logged with time and staff.
+            {t('Same national ID. Keeping both records is logged with time and staff.')}
           </span>
         </div>
       ) : null}
       <AlertAction>
         <Button onClick={() => setRecordOpen((open) => !open)} size="sm" variant="ghost">
-          {recordOpen ? 'Hide record' : 'View record'}
+          {recordOpen ? t('Hide record') : t('View record')}
         </Button>
         {onLoadExisting ? (
           <Button onClick={() => onLoadExisting(collision.patient)} size="sm" variant="outline">
-            Use existing record
+            {t('Use existing record')}
           </Button>
         ) : null}
         <Button
@@ -1029,7 +1204,7 @@ function CollisionAlert({
           size="sm"
           variant="outline"
         >
-          Different person — continue
+          {t('Different person — continue')}
         </Button>
       </AlertAction>
     </Alert>
@@ -1058,6 +1233,22 @@ function LockedOrEditableInput({
   lang?: string;
 }) {
   const locked = lockedFields.includes(field);
+
+  if (field === 'dob') {
+    return (
+      <DateInput
+        disabled={locked}
+        label={label}
+        lang={lang}
+        onValueChange={onChange}
+        placeholder={placeholder}
+        required={required}
+        suffix={locked ? <LockKeyIcon size={14} aria-hidden /> : undefined}
+        value={value}
+      />
+    );
+  }
+
   return (
     <Input
       disabled={locked}
@@ -1081,6 +1272,7 @@ function StepReview({
   onUpdate: (patch: Partial<FrontDeskPatient>) => void;
   patient: FrontDeskPatient;
 }) {
+  const t = useT();
   const lockedFields = patient.identity.lockedFields;
   const hasLocks = lockedFields.length > 0;
   const [unlockAsked, setUnlockAsked] = useState(false);
@@ -1090,8 +1282,8 @@ function StepReview({
   }
 
   return (
-    <section aria-label="Review and confirm" className={styles.step}>
-      <h2 className={styles.stepTitle}>Review &amp; confirm</h2>
+    <section aria-label={t('Review and confirm')} className={styles.step}>
+      <h2 className={styles.stepTitle}>{t('Review & confirm')}</h2>
 
       {/* A blocking duplicate is about the identity below it and gates Continue —
           it leads the step instead of trailing the optional disclosures. */}
@@ -1118,14 +1310,15 @@ function StepReview({
 
       {unlockAsked ? (
         <Alert tone="warning">
-          <AlertTitle>Unlock captured fields?</AlertTitle>
+          <AlertTitle>{t('Unlock captured fields?')}</AlertTitle>
           <AlertDescription>
-            These values were read from the record. Editing may introduce errors and the change
-            is logged.
+            {t(
+              'These values were read from the record. Editing may introduce errors and the change is logged.',
+            )}
           </AlertDescription>
           <AlertAction>
             <Button onClick={() => setUnlockAsked(false)} size="sm" variant="outline">
-              Keep locked
+              {t('Keep locked')}
             </Button>
             <Button
               onClick={() => {
@@ -1135,7 +1328,7 @@ function StepReview({
               size="sm"
               variant="destructive"
             >
-              Unlock
+              {t('Unlock')}
             </Button>
           </AlertAction>
         </Alert>
@@ -1145,9 +1338,11 @@ function StepReview({
           groups by heading and spacing, never by a card boundary. */}
       <div className={styles.formSection}>
         <div className={styles.sectionHeader}>
-          <h3 className={styles.subTitle}>Identity</h3>
+          <h3 className={styles.subTitle}>{t('Identity')}</h3>
           <span className={styles.sectionProvenance}>
-            {patient.identity.source === 'existing' ? 'From Kura record' : 'Entered at the desk'}
+            {patient.identity.source === 'existing'
+              ? t('From Kura record')
+              : t('Entered at the desk')}
           </span>
           {hasLocks && !unlockAsked ? (
             <Button
@@ -1157,22 +1352,22 @@ function StepReview({
               variant="ghost"
             >
               <LockKeyIcon size={13} aria-hidden />
-              Unlock fields
+              {t('Unlock fields')}
             </Button>
           ) : null}
         </div>
-        <div className={styles.fieldGrid3}>
+        <div className={styles.fieldGrid}>
           <LockedOrEditableInput
             field="name"
-            label="Full name (Latin)"
+            label={t('Full name (Latin)')}
             lockedFields={lockedFields}
             onChange={(next) => onUpdate({ name: next, collisionAcked: [] })}
-            placeholder="As shown on the ID document"
+            placeholder={t('As shown on the ID document')}
             required
             value={patient.name}
           />
           <Input
-            label="Full name (Khmer)"
+            label={t('Full name (Khmer)')}
             lang="km"
             onChange={(event) => onUpdate({ nameKhmer: event.target.value })}
             placeholder="សុខ ស្រីម៉ៅ"
@@ -1180,7 +1375,7 @@ function StepReview({
           />
           <LockedOrEditableInput
             field="dob"
-            label="Date of birth"
+            label={t('Date of birth')}
             lockedFields={lockedFields}
             onChange={(next) => onUpdate({ dob: next, collisionAcked: [] })}
             placeholder="YYYY-MM-DD"
@@ -1190,14 +1385,14 @@ function StepReview({
           {lockedFields.includes('sexAtBirth') ? (
             <Input
               disabled
-              label="Sex at birth"
+              label={t('Sex at birth')}
               required
               suffix={<LockKeyIcon size={14} aria-hidden />}
-              value={patient.sexAtBirth}
+              value={t(patient.sexAtBirth)}
             />
           ) : (
             <SegmentedToggle
-              label="Sex at birth"
+              label={t('Sex at birth')}
               labelVisible
               onValueChange={(value) =>
                 onUpdate({
@@ -1206,14 +1401,14 @@ function StepReview({
                 })
               }
               options={[
-                { value: 'Female', label: 'Female' },
-                { value: 'Male', label: 'Male' },
+                { value: 'Female', label: t('Female') },
+                { value: 'Male', label: t('Male') },
               ]}
               value={patient.sexAtBirth}
             />
           )}
           <Input
-            label="National ID number"
+            label={t('National ID number')}
             onChange={(event) => onUpdate({ idNumber: event.target.value, collisionAcked: [] })}
             placeholder="012345678"
             value={patient.idNumber}
@@ -1226,50 +1421,44 @@ function StepReview({
       <ContactChannels onUpdate={onUpdate} patient={patient} />
 
       <div className={styles.disclosures}>
-        <Collapsible>
-          <CollapsibleTrigger className={styles.collapsibleTrigger}>
-            <span className={styles.disclosureLabel}>
-              <span className={styles.subTitle}>Address</span>
-              <span className={styles.optionalTag}>Optional</span>
-            </span>
+        <Collapsible inset="none">
+          <CollapsibleTrigger headingLevel={3} meta={t('Optional')}>
+            {t('Address')}
           </CollapsibleTrigger>
           <CollapsibleContent>
-            <div className={styles.fieldGrid3}>
+            <div className={styles.fieldGrid}>
               <Input
-                label="Province"
+                label={t('Province')}
                 onChange={(event) => updateAddress({ province: event.target.value })}
-                placeholder="Phnom Penh"
+                placeholder={t('Phnom Penh')}
                 value={patient.address.province}
               />
               <Input
-                label="District"
+                label={t('District')}
                 onChange={(event) => updateAddress({ district: event.target.value })}
-                placeholder="Chamkarmon"
+                placeholder={t('Chamkarmon')}
                 value={patient.address.district}
               />
               <Input
-                label="Commune"
+                label={t('Commune')}
                 onChange={(event) => updateAddress({ commune: event.target.value })}
-                placeholder="Tonle Bassac"
+                placeholder={t('Tonle Bassac')}
                 value={patient.address.commune}
               />
               <Input
-                className={styles.fieldSpan3}
-                label="Street / house"
+                className={styles.fieldSpanAll}
+                label={t('Street / house')}
                 onChange={(event) => updateAddress({ street: event.target.value })}
-                placeholder="House, street, landmark"
+                placeholder={t('House, street, landmark')}
                 value={patient.address.street}
               />
             </div>
           </CollapsibleContent>
         </Collapsible>
 
-        <Collapsible>
-          <CollapsibleTrigger className={styles.collapsibleTrigger}>
-            <span className={styles.disclosureLabel}>
-              <span className={styles.subTitle}>Refund account</span>
-              <span className={styles.optionalTag}>Optional</span>
-            </span>
+        <Collapsible inset="none">
+          <CollapsibleTrigger headingLevel={3} meta={t('Optional')}>
+            {t('Refund account')}
           </CollapsibleTrigger>
           <CollapsibleContent>
             {patient.refundAccount ? (
@@ -1277,31 +1466,32 @@ function StepReview({
                 <QrCodeIcon size={16} aria-hidden />
                 <span className={styles.refundValue}>{patient.refundAccount}</span>
                 <Badge size="sm" variant="success">
-                  Bakong KHQR saved
+                  {t('Bakong KHQR saved')}
                 </Badge>
                 <Button
                   onClick={() => onUpdate({ refundAccount: null })}
                   size="sm"
                   variant="ghost"
                 >
-                  Remove
+                  {t('Remove')}
                 </Button>
               </div>
             ) : (
+              /* Nothing saved is a state, not an object — the hint and its one
+                 action sit on the page, with no box drawn around them. */
               <div className={styles.refundEmpty}>
-                <div className={styles.refundEmptyText}>
-                  <p className={styles.refundTitle}>No refund account saved</p>
-                  <p className={styles.hint}>
-                    Add Bakong KHQR only if this patient may need a refund.
-                  </p>
-                </div>
+                <p className={styles.hint}>
+                  {t(
+                    'No account saved. Add Bakong KHQR only if this patient may need a refund.',
+                  )}
+                </p>
                 <Button
                   onClick={() => onUpdate({ refundAccount: 'kh-qr://demo-bakong-account' })}
                   size="sm"
                   variant="outline"
                 >
                   <QrCodeIcon size={13} aria-hidden />
-                  Scan KHQR
+                  {t('Scan KHQR')}
                 </Button>
               </div>
             )}
@@ -1315,23 +1505,30 @@ function StepReview({
 // ── Step 3 · Insurance ─────────────────────────────────────
 
 function InsuranceDataPoints({ policy }: { policy: InsurancePolicy }) {
+  const t = useT();
   if (policy.eligibility?.kind !== 'eligible') return null;
   const eligibility = policy.eligibility;
+  const coverageScopeLabel =
+    policy.coverageScope === 'both'
+      ? t('In + outpatient')
+      : policy.coverageScope === 'inpatient'
+        ? t('Inpatient')
+        : t('Outpatient');
   const points: Array<{ label: string; value: ReactNode }> = [
-    { label: 'Member ID', value: policy.memberId ?? policy.policyNumber },
-    { label: 'Group', value: eligibility.group ?? '—' },
+    { label: t('Member ID'), value: policy.memberId ?? policy.policyNumber },
+    { label: t('Group'), value: eligibility.group ?? '—' },
     {
-      label: 'Coverage',
-      value: `${policy.coverageScope === 'both' ? 'In + outpatient' : policy.coverageScope === 'inpatient' ? 'Inpatient' : 'Outpatient'} · ${eligibility.coveragePct}%`,
+      label: t('Coverage'),
+      value: `${coverageScopeLabel} · ${eligibility.coveragePct}%`,
     },
-    { label: 'Co-pay', value: <MoneyText currency="USD" minor={eligibility.copayMinor} /> },
-    { label: 'Active until', value: eligibility.activeUntil },
+    { label: t('Co-pay'), value: <MoneyText currency="USD" minor={eligibility.copayMinor} /> },
+    { label: t('Active until'), value: eligibility.activeUntil },
     {
-      label: 'Pre-auth',
-      value: eligibility.preAuth === 'required' ? 'Required' : 'Not required',
+      label: t('Pre-auth'),
+      value: eligibility.preAuth === 'required' ? t('Required') : t('Not required'),
     },
-    { label: 'Tier', value: eligibility.tier },
-    { label: 'Effective', value: eligibility.effectiveFrom ?? '—' },
+    { label: t('Tier'), value: eligibility.tier },
+    { label: t('Effective'), value: eligibility.effectiveFrom ?? '—' },
   ];
   return (
     <dl className={styles.dataPoints}>
@@ -1363,6 +1560,7 @@ function StepInsurance({
   onUpdate: (patch: Partial<FrontDeskPatient>) => void;
   patient: FrontDeskPatient;
 }) {
+  const t = useT();
   const [adding, setAdding] = useState(false);
   const [draft, setDraft] = useState<PolicyDraft>({
     provider: PROVIDERS[0],
@@ -1410,19 +1608,19 @@ function StepInsurance({
   }
 
   return (
-    <section aria-label="Insurance" className={styles.step}>
+    <section aria-label={t('Insurance')} className={styles.step}>
       <div className={styles.stepHeaderRow}>
         <div>
-          <h2 className={styles.stepTitle}>Insurance</h2>
+          <h2 className={styles.stepTitle}>{t('Insurance')}</h2>
           <p className={styles.stepSubtitle}>
             {hasPolicies
-              ? 'Verify the policy and eligibility before pricing the cart.'
-              : 'Add a policy to bill insurance, or continue as direct pay.'}
+              ? t('Verify the policy and eligibility before pricing the cart.')
+              : t('Add a policy to bill insurance, or continue as direct pay.')}
           </p>
         </div>
         {hasPolicies && !adding ? (
           <Button onClick={() => setAdding(true)} size="sm" variant="outline">
-            Add policy
+            {t('Add policy')}
           </Button>
         ) : null}
       </div>
@@ -1432,13 +1630,13 @@ function StepInsurance({
           <span className={styles.insuranceEmptyIcon}>
             <ShieldIcon size={20} aria-hidden />
           </span>
-          <h3 className={styles.subTitle}>No insurance on file</h3>
+          <h3 className={styles.subTitle}>{t('No insurance on file')}</h3>
           <p className={styles.hint}>
-            Add a policy now to bill insurance, or continue as direct pay.
+            {t('Add a policy now to bill insurance, or continue as direct pay.')}
           </p>
           <div className={styles.insuranceEmptyActions}>
             <Button onClick={() => setAdding(true)} variant="outline">
-              Add policy
+              {t('Add policy')}
             </Button>
             <Button
               onClick={() => {
@@ -1454,10 +1652,10 @@ function StepInsurance({
               }}
               variant="outline"
             >
-              Scan card
+              {t('Scan card')}
             </Button>
             <Button onClick={() => onUpdate({ insuranceAcked: true })} variant="primary">
-              Continue without insurance
+              {t('Continue without insurance')}
             </Button>
           </div>
         </Card>
@@ -1465,14 +1663,14 @@ function StepInsurance({
 
       {patient.insuranceAcked && !hasPolicies && !adding ? (
         <Alert tone="neutral">
-          <AlertTitle>Direct pay</AlertTitle>
-          <AlertDescription>The patient pays the full amount directly.</AlertDescription>
+          <AlertTitle>{t('Direct pay')}</AlertTitle>
+          <AlertDescription>{t('The patient pays the full amount directly.')}</AlertDescription>
           <AlertAction>
             <Button onClick={() => onUpdate({ insuranceAcked: false })} size="sm" variant="ghost">
-              Undo
+              {t('Undo')}
             </Button>
             <Button onClick={() => setAdding(true)} size="sm" variant="outline">
-              Add policy instead
+              {t('Add policy instead')}
             </Button>
           </AlertAction>
         </Alert>
@@ -1491,13 +1689,13 @@ function StepInsurance({
                   size="sm"
                   variant={policy.eligibility?.kind === 'eligible' ? 'success' : 'warning'}
                 >
-                  {policy.eligibility?.kind === 'eligible' ? 'Eligible' : 'Unverified'}
+                  {policy.eligibility?.kind === 'eligible' ? t('Eligible') : t('Unverified')}
                 </Badge>
               </div>
               <p className={styles.hint}>
                 {policy.eligibility?.kind === 'eligible'
-                  ? (policy.eligibility.verifiedAtLabel ?? 'Verified')
-                  : 'Added without a live eligibility check.'}
+                  ? t(policy.eligibility.verifiedAtLabel ?? 'Verified')
+                  : t('Added without a live eligibility check.')}
               </p>
             </div>
             <Button
@@ -1514,7 +1712,7 @@ function StepInsurance({
               variant="ghost"
             >
               <RefreshIcon size={12} aria-hidden />
-              Re-verify
+              {t('Re-verify')}
             </Button>
           </div>
           <InsuranceDataPoints policy={policy} />
@@ -1524,12 +1722,14 @@ function StepInsurance({
       {eligiblePolicy?.eligibility?.kind === 'eligible' ? (
         <Alert tone="success">
           <AlertTitle>
-            <MoneyText currency="USD" minor={eligiblePolicy.eligibility.copayMinor} /> co-pay
-            applies
+            <MoneyText currency="USD" minor={eligiblePolicy.eligibility.copayMinor} />{' '}
+            {t('co-pay applies')}
           </AlertTitle>
           <AlertDescription>
-            Insurance covers {eligiblePolicy.eligibility.coveragePct}% of eligible in-cart tests.
-            The direct-pay portion is calculated automatically and shown in the order rail.
+            {t('Insurance covers')} {eligiblePolicy.eligibility.coveragePct}%{' '}
+            {t(
+              'of eligible in-cart tests. The direct-pay portion is calculated automatically and shown in the order rail.',
+            )}
           </AlertDescription>
         </Alert>
       ) : null}
@@ -1537,11 +1737,11 @@ function StepInsurance({
       {adding ? (
         <Card className={styles.sectionCard}>
           <div className={styles.sectionCardHeader}>
-            <h3 className={styles.subTitle}>New policy</h3>
+            <h3 className={styles.subTitle}>{t('New policy')}</h3>
           </div>
           <div className={styles.fieldGrid}>
             <Select
-              label="Provider"
+              label={t('Provider')}
               onChange={(event) => patchDraft({ provider: event.target.value })}
               options={PROVIDERS.map((provider) => ({ value: provider, label: provider }))}
               required
@@ -1549,39 +1749,39 @@ function StepInsurance({
             />
             <Input
               className={styles.monoField}
-              label="Policy number"
+              label={t('Policy number')}
               onChange={(event) => patchDraft({ policyNumber: event.target.value })}
               placeholder="FRT-887200119"
               required
               value={draft.policyNumber}
             />
             <Input
-              label="Member name"
+              label={t('Member name')}
               onChange={(event) => patchDraft({ memberName: event.target.value })}
               value={draft.memberName}
             />
             <Input
               className={styles.monoField}
-              label="Member ID"
+              label={t('Member ID')}
               onChange={(event) => patchDraft({ memberId: event.target.value })}
               placeholder="887200119"
               value={draft.memberId}
             />
             <Input
-              label="Expiry"
+              label={t('Expiry')}
               onChange={(event) => patchDraft({ expiry: event.target.value })}
               placeholder="YYYY-MM"
               value={draft.expiry}
             />
             <Select
-              label="Coverage"
+              label={t('Coverage')}
               onChange={(event) =>
                 patchDraft({ coverageScope: event.target.value as PolicyDraft['coverageScope'] })
               }
               options={[
-                { value: 'outpatient', label: 'Outpatient' },
-                { value: 'inpatient', label: 'Inpatient' },
-                { value: 'both', label: 'Both' },
+                { value: 'outpatient', label: t('Outpatient') },
+                { value: 'inpatient', label: t('Inpatient') },
+                { value: 'both', label: t('Both') },
               ]}
               value={draft.coverageScope}
             />
@@ -1595,28 +1795,28 @@ function StepInsurance({
               }}
               variant="ghost"
             >
-              Cancel
+              {t('Cancel')}
             </Button>
             <Button
               disabled={draft.policyNumber.trim() === '' || checking}
               onClick={checkEligibility}
               variant="secondary"
             >
-              Check eligibility
+              {t('Check eligibility')}
             </Button>
           </div>
         </Card>
       ) : null}
 
       {checking ? (
-        <Card className={styles.sectionCard} data-tone="brand">
+        <Card className={styles.sectionCard} data-tone="brand" variant="outline">
           <div className={styles.checkingRow} role="status">
             <SpinnerGapIcon size={18} aria-hidden className={styles.checkingSpinner} />
             <div>
               <p className={styles.checkingTitle}>
-                Checking eligibility with {draft.provider}…
+                {t('Checking eligibility with')} {draft.provider}…
               </p>
-              <p className={styles.hint}>This usually takes a few seconds.</p>
+              <p className={styles.hint}>{t('This usually takes a few seconds.')}</p>
             </div>
           </div>
         </Card>
@@ -1634,30 +1834,30 @@ function StepInsurance({
         >
           <AlertTitle>
             {pending.eligibility?.kind === 'eligible'
-              ? `Eligible — ${pending.eligibility.coveragePct}% of eligible services`
+              ? `${t('Eligible')} — ${pending.eligibility.coveragePct}% ${t('of eligible services')}`
               : pending.eligibility?.kind === 'unreachable'
-                ? 'Insurer unreachable'
-                : 'Not eligible'}
+                ? t('Insurer unreachable')
+                : t('Not eligible')}
           </AlertTitle>
           <AlertDescription>
             {pending.provider} · {pending.policyNumber}
             {pending.eligibility?.kind === 'eligible' ? (
               <>
                 {' '}
-                · Tier {pending.eligibility.tier} · co-pay{' '}
-                <MoneyText currency="USD" minor={pending.eligibility.copayMinor} /> · active until{' '}
-                {pending.eligibility.activeUntil}
+                · {t('Tier')} {pending.eligibility.tier} · {t('co-pay')}{' '}
+                <MoneyText currency="USD" minor={pending.eligibility.copayMinor} /> ·{' '}
+                {t('active until')} {pending.eligibility.activeUntil}
               </>
             ) : null}
           </AlertDescription>
           <AlertAction>
             {pending.eligibility?.kind !== 'ineligible' ? (
               <Button onClick={() => attach(pending)} size="sm" variant="primary">
-                {pending.eligibility?.kind === 'eligible' ? 'Save policy' : 'Add anyway'}
+                {pending.eligibility?.kind === 'eligible' ? t('Save policy') : t('Add anyway')}
               </Button>
             ) : (
               <Button onClick={() => setPending(null)} size="sm" variant="outline">
-                Retry
+                {t('Retry')}
               </Button>
             )}
           </AlertAction>
@@ -1680,6 +1880,7 @@ function StepOrders({
   patient: FrontDeskPatient;
   prescribers: Prescriber[];
 }) {
+  const t = useT();
   const inCart = new Set(patient.cart.items.map((item) => item.id));
   const eligible = eligiblePrescribers(prescribers);
   const blocker = attributionBlocker(patient.cart, prescribers);
@@ -1690,6 +1891,7 @@ function StepOrders({
   /** Imaging entry waiting on the pregnancy screen before it may be added. */
   const [pregnancyGateEntry, setPregnancyGateEntry] = useState<CatalogEntry | null>(null);
   const [verbalForId, setVerbalForId] = useState<string | null>(null);
+  const [additionalOrdersOpen, setAdditionalOrdersOpen] = useState(false);
   const verbalFor = patient.cart.items.find((item) => item.id === verbalForId) ?? null;
 
   function addEntry(
@@ -1757,29 +1959,76 @@ function StepOrders({
   }
 
   return (
-    <section aria-label="Orders" className={styles.step}>
-      <h2 className={styles.stepTitle}>Add orders</h2>
+    <section aria-label={t('Orders')} className={styles.step}>
+      <div className={styles.stepHeader}>
+        <h2 className={styles.stepTitle}>{t('Add orders')}</h2>
+        <Popover onOpenChange={setAdditionalOrdersOpen} open={additionalOrdersOpen}>
+          <PopoverTrigger
+            render={
+              <Button size="sm" variant="outline">
+                {t('Additional order types')}
+              </Button>
+            }
+          />
+          <PopoverContent
+            aria-label={t('Choose an additional order type')}
+            className={styles.additionalOrdersPopover}
+            initialFocus={false}
+            role="dialog"
+          >
+            <ul className={styles.additionalOrderList}>
+              {OTHER_ORDER_ENTRIES.map((entry) => (
+                <li className={styles.additionalOrderRow} key={entry.id}>
+                  <Checkbox
+                    aria-label={entry.name}
+                    checked={inCart.has(entry.id)}
+                    onCheckedChange={(checked) => {
+                      setEntrySelected(entry, checked);
+                      setAdditionalOrdersOpen(false);
+                    }}
+                  >
+                    <span className={styles.lineTextWide}>
+                      <span className={styles.lineName}>{entry.name}</span>
+                      <span className={styles.lineMeta}>
+                        {t(entry.category)}
+                        {entry.fasting ? ` · ${t('Fasting')}` : ''}
+                      </span>
+                    </span>
+                  </Checkbox>
+                  <MoneyText
+                    className={styles.additionalOrderPrice}
+                    currency={entry.currencyCode}
+                    minor={entry.priceMinor}
+                  />
+                </li>
+              ))}
+            </ul>
+          </PopoverContent>
+        </Popover>
+      </div>
 
       {/* Order attribution (ADR-0057): the server refuses placement without an
           eligible prescriber — the desk resolves it here, not at payment. */}
       {patient.cart.items.length > 0 ? (
         blocker?.kind === 'no-eligible-prescriber' ? (
           <Alert tone="danger">
-            <AlertTitle>No clinician can be attributed</AlertTitle>
+            <AlertTitle>{t('No clinician can be attributed')}</AlertTitle>
             <AlertDescription>
-              Every clinician in this workspace has an expired licence. The order cannot be
-              placed until a licensed clinician is available — ask the practice owner to renew
-              a licence or add a clinician.
+              {t(
+                'No clinician in this workspace has a live licence. The order cannot be placed until an eligible clinician is available.',
+              )}
             </AlertDescription>
           </Alert>
         ) : (
           <div className={styles.attribution}>
             <Select
-              label="Ordering clinician"
-              helpText="Placed by the desk on behalf of this clinician. Clinicians with an expired licence cannot be attributed."
+              label={t('Ordering clinician')}
+              helpText={t(
+                'Placed by the desk on behalf of this clinician. Only a live licence can be attributed.',
+              )}
               error={
                 blocker?.kind === 'prescriber-ineligible'
-                  ? `${blocker.prescriber.name} has an expired licence — choose another clinician.`
+                  ? `${blocker.prescriber.name} ${t('does not have a live licence — choose another clinician.')}`
                   : undefined
               }
               onValueChange={(value) =>
@@ -1791,11 +2040,11 @@ function StepOrders({
                 value: prescriber.userId,
                 label:
                   prescriber.licence === 'verified'
-                    ? `${prescriber.name} · ${prescriber.specialty ?? 'Clinician'}`
-                    : `${prescriber.name} · licence expired`,
+                    ? `${prescriber.name} · ${prescriber.specialty ?? t('Clinician')}`
+                    : `${prescriber.name} · ${t('licence not live')}`,
                 disabled: !eligible.some((p) => p.userId === prescriber.userId),
               }))}
-              placeholder="Choose the ordering clinician"
+              placeholder={t('Choose the ordering clinician')}
               value={patient.cart.attributedPrescriberId ?? ''}
             />
           </div>
@@ -1806,8 +2055,8 @@ function StepOrders({
         <Alert tone="warning">
           <AlertTitle>
             {compositionBlockers.length === 1
-              ? 'Resolve 1 order blocker'
-              : `Resolve ${compositionBlockers.length} order blockers`}
+              ? t('Resolve 1 order blocker')
+              : `${t('Resolve')} ${compositionBlockers.length} ${t('order blockers')}`}
           </AlertTitle>
           <AlertDescription>
             <ul className={styles.blockerList}>
@@ -1823,7 +2072,7 @@ function StepOrders({
 
       {consentLines.length > 0 ? (
         <div className={styles.consentPanel}>
-          <h3 className={styles.subTitle}>Consent</h3>
+          <h3 className={styles.subTitle}>{t('Consent')}</h3>
           <ul className={styles.consentList}>
             {consentLines.map((item) => {
               const requirement = consentRequirement(item, ORDER_CATALOG);
@@ -1834,49 +2083,53 @@ function StepOrders({
                     <span className={styles.lineName}>{item.name}</span>
                     <span className={styles.lineMeta}>
                       {requirement === 'imaging'
-                        ? 'Imaging consent before the scan'
-                        : 'Sensitive test — explicit consent required'}
+                        ? t('Imaging consent before the scan')
+                        : t('Sensitive test — explicit consent required')}
                       {item.consent?.state === 'verbal'
-                        ? ` · Verbal · ${item.consent.byLabel} · ${item.consent.atLabel}`
+                        ? ` · ${t('Verbal')} · ${item.consent.byLabel} · ${t(item.consent.atLabel)}`
                         : null}
                       {item.pregnancyScreen?.overrideBy
-                        ? ` · Clinician override · ${item.pregnancyScreen.overrideBy}`
+                        ? ` · ${t('Clinician override')} · ${item.pregnancyScreen.overrideBy}`
                         : null}
                     </span>
                   </div>
                   {state === 'needed' ? (
                     <>
-                      <Badge variant="warning">Consent needed</Badge>
+                      <Badge variant="warning">{t('Consent needed')}</Badge>
                       <Button
                         onClick={() => patchConsent(item.id, { state: 'sent', atLabel: 'just now' })}
                         size="sm"
                         variant="secondary"
                       >
-                        Send sign-off
+                        {t('Send sign-off')}
                       </Button>
                       <Button onClick={() => setVerbalForId(item.id)} size="sm" variant="outline">
-                        Verbal consent
+                        {t('Verbal consent')}
                       </Button>
                     </>
                   ) : null}
                   {state === 'sent' ? (
                     <>
-                      <Badge variant="info">Sent · awaiting signature</Badge>
+                      <Badge variant="info">{t('Sent · awaiting signature')}</Badge>
                       {/* Demo stand-in for the patient signing on their phone. */}
                       <Button
                         onClick={() => patchConsent(item.id, { state: 'signed', atLabel: 'just now' })}
                         size="sm"
                         variant="outline"
                       >
-                        Simulate patient signature
+                        {t('Simulate patient signature')}
                       </Button>
                       <Button onClick={() => setVerbalForId(item.id)} size="sm" variant="ghost">
-                        Verbal consent
+                        {t('Verbal consent')}
                       </Button>
                     </>
                   ) : null}
-                  {state === 'signed' ? <Badge variant="success">Signed on phone</Badge> : null}
-                  {state === 'verbal' ? <Badge variant="success">Verbal · recorded</Badge> : null}
+                  {state === 'signed' ? (
+                    <Badge variant="success">{t('Signed on phone')}</Badge>
+                  ) : null}
+                  {state === 'verbal' ? (
+                    <Badge variant="success">{t('Verbal · recorded')}</Badge>
+                  ) : null}
                 </li>
               );
             })}
@@ -1901,41 +2154,6 @@ function StepOrders({
           setVerbalForId(null);
         }}
       />
-      <Collapsible className={styles.otherOrders}>
-        <CollapsibleTrigger className={styles.otherOrdersTrigger}>
-          <span className={styles.otherOrdersTitle}>
-            Other orders
-            <Badge size="sm">{OTHER_ORDER_ENTRIES.length}</Badge>
-          </span>
-        </CollapsibleTrigger>
-        <CollapsibleContent>
-          <ul className={styles.otherOrderList}>
-            {OTHER_ORDER_ENTRIES.map((entry) => (
-              <li className={styles.otherOrderRow} key={entry.id}>
-                <Checkbox
-                  aria-label={entry.name}
-                  checked={inCart.has(entry.id)}
-                  onCheckedChange={(checked) => setEntrySelected(entry, checked)}
-                >
-                  <span className={styles.lineTextWide}>
-                    <span className={styles.lineName}>{entry.name}</span>
-                    <span className={styles.lineMeta}>
-                      {entry.category}
-                      {entry.fasting ? ' · Fasting' : ''}
-                    </span>
-                  </span>
-                </Checkbox>
-                <MoneyText
-                  className={styles.otherOrderPrice}
-                  currency={entry.currencyCode}
-                  minor={entry.priceMinor}
-                />
-              </li>
-            ))}
-          </ul>
-        </CollapsibleContent>
-      </Collapsible>
-
       <LabTestPicker
         categories={ORDER_PICKER_CATEGORIES}
         onSelectedTestIdsChange={(_selectedIds, change) => {
@@ -1967,6 +2185,7 @@ function StepPreConsult({
   onUpdate: (patch: Partial<FrontDeskPatient>) => void;
   patient: FrontDeskPatient;
 }) {
+  const t = useT();
   const sections = intakeSections(
     patient.intake,
     patient.visitReason,
@@ -1978,6 +2197,11 @@ function StepPreConsult({
   const verifiedChannel = patient.otpVerified || patient.telegramVerified;
   const [fillingKey, setFillingKey] = useState<keyof IntakeFields | null>(null);
   const [fillDraft, setFillDraft] = useState('');
+  const status = intakeStatus(patient, patient.cart.items);
+  const [skipAsked, setSkipAsked] = useState(false);
+  const [skipReason, setSkipReason] = useState<IntakeSkipReasonCode>('patient-declined');
+  const [skipNote, setSkipNote] = useState('');
+  const [rescheduling, setRescheduling] = useState(false);
 
   const tatHours = maxTatHours(patient.cart.items, ORDER_CATALOG);
   const tatOffset = tatDayOffset(tatHours);
@@ -1996,6 +2220,7 @@ function StepPreConsult({
       },
     });
     setPendingEarlySlot(null);
+    setRescheduling(false);
   }
 
   function stampIntake(key: keyof IntakeFields, value: string) {
@@ -2006,18 +2231,75 @@ function StepPreConsult({
   }
 
   return (
-    <section aria-label="Pre-consult" className={styles.step}>
-      <h2 className={styles.stepTitle}>Intake review</h2>
-      <p className={styles.hint}>
-        {filled}/{sections.length} sections complete. The intake never blocks check-in — the
-        patient may finish it on their phone.
-      </p>
+    <section aria-label={t('Pre-consult')} className={styles.step}>
+      <div className={styles.intakeHeader}>
+        <div className={styles.intakeHeaderText}>
+          <h2 className={styles.stepTitle}>{t('Intake')}</h2>
+          <p className={styles.hint}>
+            {`${filled} ${t('of')} ${sections.length} ${t('answered')}${
+              status === 'complete' ? '' : ` · ${t('check-in is not blocked')}`
+            }`}
+          </p>
+        </div>
+        {patient.intakeSkipped || patient.intakeSentAtLabel ? null : (
+          <div className={styles.intakeHeaderActions}>
+            <div className={styles.intakeHeaderButtons}>
+              <Button
+                disabled={!verifiedChannel}
+                onClick={() => onUpdate({ intakeSentAtLabel: 'just now' })}
+                size="sm"
+                variant="secondary"
+              >
+                {t('Send link')}
+              </Button>
+              {!skipAsked && status !== 'complete' ? (
+                <Button onClick={() => setSkipAsked(true)} size="sm" variant="ghost">
+                  {t('Skip')}
+                </Button>
+              ) : null}
+            </div>
+            {/* A disabled control names its reason beside itself, never across the page. */}
+            {verifiedChannel ? null : (
+              <p className={styles.intakeHeaderReason}>
+                {t('Verify a phone or Telegram in Step 2.')}
+              </p>
+            )}
+          </div>
+        )}
+      </div>
 
-      {patient.intakeSentAtLabel ? (
-        <Alert tone="info">
-          <AlertTitle>Intake link sent · {patient.intakeSentAtLabel}</AlertTitle>
+      {patient.intakeSkipped ? (
+        <Alert tone="warning">
+          <AlertTitle>
+            {t('Intake skipped')} ·{' '}
+            {t(
+              INTAKE_SKIP_REASONS.find((reason) => reason.code === patient.intakeSkipped?.code)
+                ?.label ?? patient.intakeSkipped.code,
+            )}
+          </AlertTitle>
           <AlertDescription>
-            The patient completes it on their phone; answers land here as they arrive.
+            {patient.intakeSkipped.note
+              ? `${patient.intakeSkipped.note} — ${t('answers')}`
+              : t('Answers')}{' '}
+            {t('can still arrive from the patient link later.')}
+          </AlertDescription>
+          <AlertAction>
+            <Button
+              onClick={() => onUpdate({ intakeSkipped: null })}
+              size="sm"
+              variant="outline"
+            >
+              {t('Resume intake')}
+            </Button>
+          </AlertAction>
+        </Alert>
+      ) : patient.intakeSentAtLabel ? (
+        <Alert tone="info">
+          <AlertTitle>
+            {t('Intake link sent')} · {t(patient.intakeSentAtLabel)}
+          </AlertTitle>
+          <AlertDescription>
+            {t('The patient completes it on their phone; answers land here as they arrive.')}
           </AlertDescription>
           <AlertAction>
             <Button
@@ -2025,123 +2307,175 @@ function StepPreConsult({
               size="sm"
               variant="outline"
             >
-              Resend link
+              {t('Resend link')}
             </Button>
           </AlertAction>
         </Alert>
-      ) : (
-        <div className={styles.intakeSendRow}>
+      ) : null}
+
+      {skipAsked && !patient.intakeSkipped ? (
+        <div className={styles.inlineForm}>
+          <Select
+            label={t('Why is the intake skipped?')}
+            onChange={(event) => setSkipReason(event.target.value as IntakeSkipReasonCode)}
+            options={INTAKE_SKIP_REASONS.map((reason) => ({
+              value: reason.code,
+              label: t(reason.label),
+            }))}
+            value={skipReason}
+          />
+          {skipReason === 'other' ? (
+            <Input
+              aria-label={t('Skip reason note')}
+              onChange={(event) => setSkipNote(event.target.value)}
+              placeholder={t('What happened')}
+              value={skipNote}
+            />
+          ) : null}
           <Button
-            disabled={!verifiedChannel}
-            onClick={() => onUpdate({ intakeSentAtLabel: 'just now' })}
+            disabled={skipReason === 'other' && skipNote.trim() === ''}
+            onClick={() => {
+              onUpdate({
+                intakeSkipped: {
+                  code: skipReason,
+                  note: skipReason === 'other' ? skipNote.trim() : undefined,
+                },
+              });
+              setSkipAsked(false);
+            }}
             size="sm"
             variant="secondary"
-            title={
-              verifiedChannel
-                ? undefined
-                : 'Verify the patient phone or Telegram first — the link needs a channel.'
-            }
           >
-            Send intake link
+            {t('Record skip')}
           </Button>
-          {!verifiedChannel ? (
-            <span className={styles.hint}>Needs a verified channel (Step 2).</span>
-          ) : null}
+          <Button onClick={() => setSkipAsked(false)} size="sm" variant="ghost">
+            {t('Cancel')}
+          </Button>
         </div>
-      )}
+      ) : null}
 
       <ul className={styles.intakeList}>
         {sections.map((section) => {
-          const author = patient.intakeAuthors?.[section.key as keyof IntakeFields];
-          return (
-            <li className={styles.intakeRow} key={section.key}>
-              <div className={styles.lineTextWide}>
-                <span className={styles.lineName}>{section.label}</span>
-                {section.preview ? (
-                  <span className={styles.lineMeta}>{section.preview}</span>
-                ) : null}
-              </div>
-              {author ? (
-                <Badge size="sm" variant="neutral">
-                  {author === 'nurse' ? 'Desk' : author === 'patient' ? 'Patient' : 'Auto'}
-                </Badge>
-              ) : null}
-              <Badge variant={section.filled ? 'success' : 'neutral'}>
-                {section.filled ? 'Complete' : 'Pending'}
-              </Badge>
-              {!section.filled ? (
+          const author = patient.intakeAuthors?.[section.fieldKey];
+          const source =
+            author === 'nurse' ? 'desk' : author === 'patient' ? 'patient' : author ? 'auto' : null;
+          // Only the derived "no answer applies" previews are UI copy; a real
+          // answer is what the patient said and is never run through t().
+          const preview =
+            section.preview === 'Not applicable' || section.preview === 'No sensitive tests'
+              ? t(section.preview)
+              : section.preview;
+          const meta = [preview, source ? `${t('recorded by')} ${t(source)}` : null]
+            .filter(Boolean)
+            .join(' · ');
+
+          if (fillingKey === section.fieldKey) {
+            return (
+              <li className={styles.inlineForm} key={section.key}>
+                <Input
+                  aria-label={`${t(section.label)} — ${t('what the patient tells the desk')}`}
+                  onChange={(event) => setFillDraft(event.target.value)}
+                  placeholder={t(section.label)}
+                  value={fillDraft}
+                />
                 <Button
+                  disabled={fillDraft.trim() === ''}
                   onClick={() => {
-                    setFillingKey(section.key as keyof IntakeFields);
-                    setFillDraft('');
+                    stampIntake(section.fieldKey, fillDraft.trim());
+                    setFillingKey(null);
                   }}
                   size="sm"
-                  variant="ghost"
+                  variant="secondary"
                 >
-                  Fill on behalf
+                  {t('Save')}
                 </Button>
-              ) : null}
+                <Button onClick={() => setFillingKey(null)} size="sm" variant="ghost">
+                  {t('Cancel')}
+                </Button>
+              </li>
+            );
+          }
+
+          return (
+            <li key={section.key}>
+              <button
+                className={styles.intakeRow}
+                data-filled={section.filled || undefined}
+                onClick={() => {
+                  setFillingKey(section.fieldKey);
+                  setFillDraft(patient.intake[section.fieldKey]);
+                }}
+                type="button"
+              >
+                <span aria-hidden className={styles.intakeMark}>
+                  {section.filled ? <CheckIcon size={12} /> : null}
+                </span>
+                <span className={styles.lineTextWide}>
+                  <span className={styles.lineName}>{t(section.label)}</span>
+                  {meta ? <span className={styles.lineMeta}>{meta}</span> : null}
+                </span>
+                <span className={styles.srOnly}>
+                  {section.filled ? t('Answered') : t('Not answered')}
+                </span>
+                <span className={styles.intakeRowAction}>
+                  {section.filled ? t('Edit') : t('Add')}
+                </span>
+              </button>
             </li>
           );
         })}
       </ul>
 
-      {fillingKey ? (
-        <div className={styles.intakeFill}>
-          <Input
-            aria-label="Intake answer"
-            onChange={(event) => setFillDraft(event.target.value)}
-            placeholder="What the patient tells the desk"
-            value={fillDraft}
-          />
-          <Button
-            disabled={fillDraft.trim() === ''}
-            onClick={() => {
-              stampIntake(fillingKey, fillDraft.trim());
-              setFillingKey(null);
-            }}
-            size="sm"
-            variant="secondary"
-          >
-            Save · recorded by desk
-          </Button>
-          <Button onClick={() => setFillingKey(null)} size="sm" variant="ghost">
-            Cancel
-          </Button>
-        </div>
-      ) : null}
-
       {teleInCart || patient.teleconsult.status === 'waived' ? (
         <div className={styles.channel}>
-          <h3 className={styles.subTitle}>Teleconsultation</h3>
-          {patient.teleconsult.status === 'booked' ? (
+          <h3 className={styles.subTitle}>{t('Teleconsultation')}</h3>
+          {patient.teleconsult.status === 'booked' && !rescheduling ? (
             <Alert tone="success">
               <AlertTitle>
-                Booked · {patient.teleconsult.slot} · {patient.teleconsult.specialty}
-                {patient.teleconsult.earlyOverride ? ' · before results' : ''}
+                {t('Booked')} · {patient.teleconsult.slot} ·{' '}
+                {patient.teleconsult.specialty ? t(patient.teleconsult.specialty) : null}
+                {patient.teleconsult.earlyOverride ? ` · ${t('before results')}` : ''}
               </AlertTitle>
               <AlertAction>
+                <Button onClick={() => setRescheduling(true)} size="sm" variant="outline">
+                  {t('Change time')}
+                </Button>
                 <Button
                   onClick={() => onUpdate({ teleconsult: { status: 'notBooked' } })}
                   size="sm"
                   variant="ghost"
                 >
-                  Remove booking
+                  {t('Remove booking')}
                 </Button>
               </AlertAction>
             </Alert>
           ) : patient.teleconsult.status === 'waived' ? (
             <Alert tone="neutral">
-              <AlertTitle>Skipped — results go out without a consult</AlertTitle>
+              <AlertTitle>{t('Skipped — results go out without a consult')}</AlertTitle>
             </Alert>
           ) : (
             <>
+              {rescheduling ? (
+                <Alert tone="info">
+                  <AlertTitle>
+                    {t('Rebooking — currently')} {patient.teleconsult.slot}
+                  </AlertTitle>
+                  <AlertDescription>
+                    {t('Picking a new time replaces the current booking.')}
+                  </AlertDescription>
+                  <AlertAction>
+                    <Button onClick={() => setRescheduling(false)} size="sm" variant="outline">
+                      {t('Keep current time')}
+                    </Button>
+                  </AlertAction>
+                </Alert>
+              ) : null}
               <p className={styles.hint}>
                 {tatHours > 0
-                  ? `Estimated results in ~${tatHours}h — the first post-result day is preselected.`
-                  : 'No TAT-bound tests in cart — book any slot.'}
+                  ? `${t('Estimated results in')} ~${tatHours}h — ${t('the first post-result day is preselected.')}`
+                  : t('No TAT-bound tests in cart — book any slot.')}
               </p>
-              <div className={styles.slotRow} role="group" aria-label="Consult day">
+              <div className={styles.slotRow} role="group" aria-label={t('Consult day')}>
                 {TELE_DAYS.map((day, index) => (
                   <Button
                     key={day}
@@ -2153,13 +2487,18 @@ function StepPreConsult({
                     size="sm"
                     variant={index === dayIndex ? 'secondary' : 'ghost'}
                   >
-                    {day}
-                    {index < tatOffset ? ' ·⚠' : ''}
+                    {t(day)}
+                    {index < tatOffset ? (
+                      <>
+                        <AlertIcon aria-hidden className={styles.dayWarnIcon} size={12} />
+                        <span className={styles.srOnly}>{t('results may not be ready')}</span>
+                      </>
+                    ) : null}
                   </Button>
                 ))}
               </div>
               {beforeTat ? (
-                <p className={styles.hint}>Results may not be ready on this day.</p>
+                <p className={styles.hint}>{t('Results may not be ready on this day.')}</p>
               ) : null}
               <div className={styles.slotRow}>
                 {TELE_TIMES.map((time) => (
@@ -2185,15 +2524,17 @@ function StepPreConsult({
                   size="sm"
                   variant="ghost"
                 >
-                  Skip consult
+                  {t('Skip consult')}
                 </Button>
               </div>
               {pendingEarlySlot ? (
                 <Alert tone="warning">
-                  <AlertTitle>Results may not be ready for this slot</AlertTitle>
+                  <AlertTitle>{t('Results may not be ready for this slot')}</AlertTitle>
                   <AlertDescription>
-                    Booking {TELE_DAYS[dayIndex]} · {pendingEarlySlot} lands before the estimated
-                    turnaround. The consult may happen without results.
+                    {t('Booking')} {t(TELE_DAYS[dayIndex])} · {pendingEarlySlot}{' '}
+                    {t(
+                      'lands before the estimated turnaround. The consult may happen without results.',
+                    )}
                   </AlertDescription>
                   <AlertAction>
                     <Button
@@ -2201,22 +2542,23 @@ function StepPreConsult({
                       size="sm"
                       variant="outline"
                     >
-                      Pick another slot
+                      {t('Pick another slot')}
                     </Button>
                     <Button
                       onClick={() => bookSlot(pendingEarlySlot, true)}
                       size="sm"
                       variant="primary"
                     >
-                      Book anyway
+                      {t('Book anyway')}
                     </Button>
                   </AlertAction>
                 </Alert>
               ) : null}
               <p className={styles.hint}>
-                Specialty {patient.teleconsult.specialty ?? autoSpecialty} · matched from the
-                ordered tests. Slots follow estimated result availability; the patient is notified
-                if the lab is delayed.
+                {t('Specialty')} {t(patient.teleconsult.specialty ?? autoSpecialty)}{' '}
+                {t(
+                  '· matched from the ordered tests. Slots follow estimated result availability; the patient is notified if the lab is delayed.',
+                )}
               </p>
             </>
           )}
@@ -2233,17 +2575,22 @@ function StepPayment({
   onUpdate,
   patient,
   prescribers,
+  pricingStatus = 'ready',
 }: {
   fxRate?: FxRateQuote;
   onUpdate: (patch: Partial<FrontDeskPatient>) => void;
   patient: FrontDeskPatient;
   prescribers: Prescriber[];
+  pricingStatus?: 'ready' | 'loading' | 'error';
 }) {
+  const t = useT();
   const totals = cartTotals(patient.cart);
   const dueMinor = paymentDueAmountMinor(patient.cart, totals);
   const payment = patient.cart.payment;
   const [tendered, setTendered] = useState('');
   const [splitCash, setSplitCash] = useState('');
+  const [promoCode, setPromoCode] = useState('');
+  const [promoError, setPromoError] = useState<string | null>(null);
   const splitCashMinor = parseUsdMajor(splitCash);
   const noCharge = patient.cart.items.length > 0 && dueMinor === '0';
   const attribution = attributionBlocker(patient.cart, prescribers);
@@ -2253,8 +2600,44 @@ function StepPayment({
   const claimPolicy = patient.insurance.find(
     (policy) => policy.eligibility?.kind === 'eligible',
   );
+  const pricingUnavailable = pricingStatus !== 'ready';
   const placementBlocked =
-    attribution !== null || staleQuote || composition.length > 0 || unresolvedConsent.length > 0;
+    attribution !== null ||
+    staleQuote ||
+    pricingUnavailable ||
+    composition.length > 0 ||
+    unresolvedConsent.length > 0;
+  const appliedPromoLines = promoLines(patient.cart);
+
+  function applyPromoCode() {
+    const promo = findDemoPromo(promoCode);
+    if (!promo) {
+      setPromoError(t('Code not recognised.'));
+      return;
+    }
+    if ((patient.cart.promos ?? []).some((applied) => applied.code === promo.code)) {
+      setPromoError(t('Code already applied.'));
+      return;
+    }
+    if (promo.kind === 'item' && !patient.cart.items.some((item) => item.id === promo.itemId)) {
+      setPromoError(
+        `${promo.code} ${t('applies to an item that is not in this order.')}`,
+      );
+      return;
+    }
+    onUpdate({ cart: { ...patient.cart, promos: [...(patient.cart.promos ?? []), promo] } });
+    setPromoCode('');
+    setPromoError(null);
+  }
+
+  function removePromo(code: string) {
+    onUpdate({
+      cart: {
+        ...patient.cart,
+        promos: (patient.cart.promos ?? []).filter((applied) => applied.code !== code),
+      },
+    });
+  }
 
   function setPayment(next: typeof payment) {
     onUpdate({ cart: { ...patient.cart, payment: next } });
@@ -2262,34 +2645,36 @@ function StepPayment({
 
   if (payment.status === 'confirmed') {
     return (
-      <section aria-label="Payment" className={styles.step}>
-        <h2 className={styles.stepTitle}>Payment</h2>
+      <section aria-label={t('Payment')} className={styles.step}>
+        <h2 className={styles.stepTitle}>{t('Payment')}</h2>
         <Alert tone="success">
-          <AlertTitle>Paid · {payment.receiptId}</AlertTitle>
+          <AlertTitle>{t('Paid')} · {payment.receiptId}</AlertTitle>
           <AlertDescription>
             <MoneyText currency="USD" minor={payment.amountMinor} /> ·{' '}
             {payment.method === 'cash'
               ? (
                   <>
-                    cash — change{' '}
+                    {t('cash')} — {t('change')}{' '}
                     <MoneyText currency="USD" minor={payment.changeMinor} />
                   </>
                 )
               : payment.method === 'khqr'
                 ? 'KHQR (Bakong)'
-                : 'cash + KHQR'}{' '}
+                : t('cash + KHQR')}{' '}
             · {payment.confirmedAt} · {payment.cashier}
           </AlertDescription>
         </Alert>
         <PaymentReceipt
-          branchLabel={`Branch ${DEMO_BRANCH_ID.toUpperCase()}`}
+          branchLabel={`${t('Branch')} ${DEMO_BRANCH_ID.toUpperCase()}`}
           items={patient.cart.items}
           onPrint={() => {}}
-          patientName={patient.name || 'Walk-in patient'}
+          patientName={patient.name || t('Walk-in patient')}
           payment={payment}
         />
         <p className={styles.hint}>
-          The amount is derived by the server from the priced order, never entered by the desk.
+          {t(
+            'The amount is derived by the server from the priced order, never entered by the desk.',
+          )}
         </p>
       </section>
     );
@@ -2297,13 +2682,14 @@ function StepPayment({
 
   if (payment.status === 'no-charge') {
     return (
-      <section aria-label="Payment" className={styles.step}>
-        <h2 className={styles.stepTitle}>Payment</h2>
+      <section aria-label={t('Payment')} className={styles.step}>
+        <h2 className={styles.stepTitle}>{t('Payment')}</h2>
         <Alert tone="success">
-          <AlertTitle>No payment required</AlertTitle>
+          <AlertTitle>{t('No payment required')}</AlertTitle>
           <AlertDescription>
-            The server-priced order has a zero balance. No cash capture or
-            payment receipt was created.
+            {t(
+              'The server-priced order has a zero balance. No cash capture or payment receipt was created.',
+            )}
           </AlertDescription>
         </Alert>
       </section>
@@ -2318,29 +2704,67 @@ function StepPayment({
   const khrMinor = fxRate ? convertUsdMinorToKhr(dueMinor, fxRate) : null;
 
   return (
-    <section aria-label="Payment" className={styles.step}>
-      <h2 className={styles.stepTitle}>Payment</h2>
+    <section aria-label={t('Payment')} className={styles.step}>
+      <h2 className={styles.stepTitle}>{t('Payment')}</h2>
 
       {placementBlocked ? (
         <Alert tone="warning">
-          <AlertTitle>Resolve blockers before collecting payment</AlertTitle>
+          <AlertTitle>{t('Resolve blockers before collecting payment')}</AlertTitle>
           <AlertDescription>
             {attribution?.kind === 'no-eligible-prescriber'
-              ? 'No licensed clinician can be attributed to this order.'
+              ? t('No licensed clinician can be attributed to this order.')
               : attribution
-                ? 'Choose the ordering clinician on the Orders step.'
+                ? t('Choose the ordering clinician on the Orders step.')
                 : staleQuote
-                  ? 'Prices changed since this quote — accept the new total in the order cart first.'
-                  : composition.length > 0
-                    ? orderBlockerMessage(composition[0])
-                    : unresolvedConsent.length > 0
-                      ? `${unresolvedConsent[0].name} still needs consent — resolve it on the Orders step.`
-                      : ''}
+                  ? t(
+                      'Prices changed since this quote — accept the new total in the order cart first.',
+                    )
+                  : pricingUnavailable
+                    ? pricingStatus === 'loading'
+                      ? t('The server price is still loading — do not collect payment yet.')
+                      : t(
+                          'The order total could not be refreshed — retry pricing in the order cart before collecting.',
+                        )
+                    : composition.length > 0
+                      ? orderBlockerMessage(composition[0])
+                      : unresolvedConsent.length > 0
+                        ? `${unresolvedConsent[0].name} ${t('still needs consent — resolve it on the Orders step.')}`
+                        : ''}
           </AlertDescription>
         </Alert>
       ) : null}
+      {appliedPromoLines.length > 0 ? (
+        <dl className={styles.dueBreakdown}>
+          <div>
+            <dt>{t('Subtotal')}</dt>
+            <dd>
+              <MoneyText currency="USD" minor={totals.subtotalMinor} />
+            </dd>
+          </div>
+          {appliedPromoLines.map((line) => (
+            <div key={line.code}>
+              <dt>
+                {line.label} · {line.code}
+              </dt>
+              <dd className={styles.discount}>
+                −<MoneyText currency="USD" minor={line.amountMinor} />
+                {payment.status === 'idle' ? (
+                  <Button
+                    aria-label={`${t('Remove promo')} ${line.code}`}
+                    onClick={() => removePromo(line.code)}
+                    size="sm"
+                    variant="ghost"
+                  >
+                    {t('Remove')}
+                  </Button>
+                ) : null}
+              </dd>
+            </div>
+          ))}
+        </dl>
+      ) : null}
       <p className={styles.due}>
-        Patient due{' '}
+        {t('Patient due')}{' '}
         <MoneyText as="strong" currency="USD" minor={dueMinor} />
         {khrMinor ? (
           <MoneyText className={styles.khr} currency="KHR" minor={khrMinor} />
@@ -2349,9 +2773,9 @@ function StepPayment({
 
       {noCharge ? (
         <Alert tone="neutral">
-          <AlertTitle>Nothing to collect</AlertTitle>
+          <AlertTitle>{t('Nothing to collect')}</AlertTitle>
           <AlertDescription>
-            The server-priced order has a zero balance.
+            {t('The server-priced order has a zero balance.')}
           </AlertDescription>
           <AlertAction>
             <Button
@@ -2369,7 +2793,7 @@ function StepPayment({
               size="sm"
               variant="primary"
             >
-              Continue without payment
+              {t('Continue without payment')}
             </Button>
           </AlertAction>
         </Alert>
@@ -2394,11 +2818,11 @@ function StepPayment({
         <>
           <Alert tone="success">
             <AlertTitle>
-              Cash collected ·{' '}
+              {t('Cash collected')} ·{' '}
               <MoneyText currency="USD" minor={payment.cashPortionMinor ?? '0'} />
             </AlertTitle>
             <AlertDescription>
-              KHQR covers the remainder. The split completes only when Bakong confirms.
+              {t('KHQR covers the remainder. The split completes only when Bakong confirms.')}
             </AlertDescription>
           </Alert>
           <KhqrPanel
@@ -2435,22 +2859,51 @@ function StepPayment({
         </>
       ) : (
         <>
+          <div className={styles.promoRow}>
+            <Input
+              aria-label={t('Promo code')}
+              label={t('Promo code')}
+              onChange={(event) => {
+                setPromoCode(event.target.value);
+                setPromoError(null);
+              }}
+              placeholder={t('e.g. WELCOME10')}
+              value={promoCode}
+              variant="surface"
+              error={promoError ?? undefined}
+            />
+            <Button
+              disabled={promoCode.trim() === ''}
+              onClick={applyPromoCode}
+              variant="outline"
+            >
+              {t('Apply')}
+            </Button>
+          </div>
+          {appliedPromoLines.length > 0 ? (
+            <p className={styles.hint}>
+              {t(
+                'Promo discounts are desk-side only — the platform prices the order without promos.',
+              )}
+            </p>
+          ) : null}
           <div className={styles.payGrid}>
             <Card as="section" size="sm">
               <CardHeader>
-                <CardTitle>Cash</CardTitle>
+                <CardTitle>{t('Cash')}</CardTitle>
               </CardHeader>
               <CardContent className={styles.payBody}>
                 <Input
                   inputMode="decimal"
-                  label="Tendered (USD)"
+                  label={t('Tendered (USD)')}
                   onChange={(event) => setTendered(event.target.value)}
                   placeholder="0.00"
                   value={tendered}
+                  variant="surface"
                 />
                 {cashOk ? (
                   <p className={styles.hint}>
-                    Change{' '}
+                    {t('Change due')}{' '}
                     <MoneyText
                       currency="USD"
                       minor={subtractMinorFloor(tenderedMinor, dueMinor)}
@@ -2472,7 +2925,7 @@ function StepPayment({
                   }
                   variant="primary"
                 >
-                  Confirm cash
+                  {t('Confirm cash')}
                 </Button>
               </CardContent>
             </Card>
@@ -2484,11 +2937,11 @@ function StepPayment({
                 <p className={styles.hint}>
                   {khrMinor ? (
                     <>
-                      Generates a QR for{' '}
+                      {t('Generates a QR for')}{' '}
                       <MoneyText currency="KHR" minor={khrMinor} />.
                     </>
                   ) : (
-                    'KHR is unavailable until the live FX rate loads.'
+                    t('KHR is unavailable until the live FX rate loads.')
                   )}
                 </p>
                 <Button
@@ -2497,31 +2950,38 @@ function StepPayment({
                   onClick={() => setPayment({ ...payment, status: 'waiting', method: 'khqr' })}
                   variant="secondary"
                 >
-                  Generate QR
+                  {t('Generate QR')}
                 </Button>
               </CardContent>
             </Card>
           </div>
           <Card as="section" size="sm">
             <CardHeader>
-              <CardTitle>Cash + KHQR split</CardTitle>
+              <CardTitle>{t('Cash + KHQR split')}</CardTitle>
             </CardHeader>
             <CardContent className={styles.payBody}>
               <p className={styles.hint}>
-                Collect part in cash first; a KHQR intent covers the remainder. The split
-                completes only when Bakong confirms.
+                {khrMinor
+                  ? t(
+                      'Collect part in cash first; a KHQR intent covers the remainder. The split completes only when Bakong confirms.',
+                    )
+                  : t(
+                      'Unavailable until the live FX rate loads — the KHQR remainder needs a KHR amount.',
+                    )}
               </p>
               <div className={styles.phoneRow}>
                 <Input
                   inputMode="decimal"
-                  label="Cash portion (USD)"
+                  label={t('Cash portion (USD)')}
                   onChange={(event) => setSplitCash(event.target.value)}
                   placeholder="0.00"
                   value={splitCash}
+                  variant="surface"
                 />
                 <Button
                   disabled={
                     placementBlocked ||
+                    !khrMinor ||
                     splitCashMinor === null ||
                     !splitCashPortionValid(splitCashMinor, dueMinor)
                   }
@@ -2536,12 +2996,12 @@ function StepPayment({
                   }
                   variant="secondary"
                 >
-                  Collect cash · show QR
+                  {t('Collect cash · show QR')}
                 </Button>
               </div>
               {splitCashMinor !== null && splitCashPortionValid(splitCashMinor, dueMinor) ? (
                 <p className={styles.hint}>
-                  KHQR remainder{' '}
+                  {t('KHQR remainder')}{' '}
                   <MoneyText
                     currency="USD"
                     minor={splitRemainderMinor(dueMinor, splitCashMinor)}
@@ -2556,14 +3016,14 @@ function StepPayment({
                 onClick={() => setPayment({ ...payment, status: 'pending-claim', method: null })}
                 variant="ghost"
               >
-                Route to insurer claim
+                {t('Route to insurer claim')}
               </Button>
             ) : null}
             <Button
               onClick={() => setPayment({ ...payment, status: 'deferred', method: null })}
               variant="ghost"
             >
-              Pay later
+              {t('Pay later')}
             </Button>
           </div>
         </>
@@ -2571,10 +3031,14 @@ function StepPayment({
 
       {payment.status === 'pending-claim' ? (
         <Alert tone="warning">
-          <AlertTitle>Insurance claim pending{claimPolicy ? ` · ${claimPolicy.provider}` : ''}</AlertTitle>
+          <AlertTitle>
+            {t('Insurance claim pending')}
+            {claimPolicy ? ` · ${claimPolicy.provider}` : ''}
+          </AlertTitle>
           <AlertDescription>
-            The balance routes to the insurer; collect only the copay at the desk. PROTOTYPE:
-            the platform captures cash only — no claim is actually filed.
+            {t(
+              'The balance routes to the insurer; collect only the copay at the desk. PROTOTYPE: the platform captures cash only — no claim is actually filed.',
+            )}
           </AlertDescription>
           <AlertAction>
             <Button
@@ -2582,7 +3046,7 @@ function StepPayment({
               size="sm"
               variant="ghost"
             >
-              Undo
+              {t('Undo')}
             </Button>
           </AlertAction>
         </Alert>
@@ -2590,9 +3054,9 @@ function StepPayment({
 
       {payment.status === 'deferred' ? (
         <Alert tone="warning">
-          <AlertTitle>Pay later</AlertTitle>
+          <AlertTitle>{t('Pay later')}</AlertTitle>
           <AlertDescription>
-            The balance stays open on the visit. Check-in can proceed.
+            {t('The balance stays open on the visit. Check-in can proceed.')}
           </AlertDescription>
           <AlertAction>
             <Button
@@ -2600,7 +3064,7 @@ function StepPayment({
               size="sm"
               variant="ghost"
             >
-              Undo
+              {t('Undo')}
             </Button>
           </AlertAction>
         </Alert>
@@ -2622,37 +3086,39 @@ function PaidEditDialog({
   open: boolean;
   receiptId: string | null;
 }) {
+  const t = useT();
   const [voidPin, setVoidPin] = useState('');
   return (
     <AlertDialog onOpenChange={(next) => (!next ? onCancel() : undefined)} open={open}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>This order is already paid</AlertDialogTitle>
+          <AlertDialogTitle>{t('This order is already paid')}</AlertDialogTitle>
           <AlertDialogDescription>
-            Receipt {receiptId} covers the current items. Changing the order needs one of two
-            paths — receipts are never silently rewritten. Voiding takes a supervisor PIN and is
-            logged.
+            {t('Receipt')} {receiptId}{' '}
+            {t(
+              'covers the current items. Changing the order needs one of two paths — receipts are never silently rewritten. Voiding takes a supervisor PIN and is logged.',
+            )}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <Input
-          aria-label="Supervisor PIN for void"
+          aria-label={t('Supervisor PIN for void')}
           inputMode="numeric"
           onChange={(event) => setVoidPin(event.target.value)}
-          placeholder="Supervisor PIN — required to void"
+          placeholder={t('Supervisor PIN — required to void')}
           type="password"
           value={voidPin}
         />
         <AlertDialogFooter>
-          <AlertDialogCancel onClick={onCancel}>Cancel</AlertDialogCancel>
+          <AlertDialogCancel onClick={onCancel}>{t('Cancel')}</AlertDialogCancel>
           <AlertDialogAction
             disabled={!collisionOverridePinValid(voidPin)}
             onClick={() => onResolve('void')}
             variant="destructive"
           >
-            Void &amp; recollect
+            {t('Void & recollect')}
           </AlertDialogAction>
           <AlertDialogAction onClick={() => onResolve('supplemental')} variant="primary">
-            Collect difference
+            {t('Collect difference')}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
@@ -2695,6 +3161,7 @@ function PregnancyGateBody({
   onCancel: () => void;
   onProceed: (screen: NonNullable<CartItem['pregnancyScreen']>) => void;
 }) {
+  const t = useT();
   const [answer, setAnswer] = useState<'possibly' | 'declined' | null>(null);
   const [overrideBy, setOverrideBy] = useState('');
 
@@ -2702,27 +3169,28 @@ function PregnancyGateBody({
     return (
       <>
         <AlertDialogHeader>
-          <AlertDialogTitle>Pregnancy check — {entry.name}</AlertDialogTitle>
+          <AlertDialogTitle>{t('Pregnancy check')} — {entry.name}</AlertDialogTitle>
           <AlertDialogDescription>
-            Could the patient be pregnant? Imaging during early pregnancy may pose risk to the
-            fetus.
+            {t(
+              'Could the patient be pregnant? Imaging during early pregnancy may pose risk to the fetus.',
+            )}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel onClick={onCancel}>Cancel order</AlertDialogCancel>
+          <AlertDialogCancel onClick={onCancel}>{t('Cancel order')}</AlertDialogCancel>
           {/* Plain buttons: choosing an answer stages the override, it must
               not dismiss the dialog the way an AlertDialogAction does. */}
           <Button onClick={() => setAnswer('declined')} variant="outline">
-            Declined to answer
+            {t('Declined to answer')}
           </Button>
           <Button onClick={() => setAnswer('possibly')} variant="outline">
-            Possibly pregnant
+            {t('Possibly pregnant')}
           </Button>
           <AlertDialogAction
             onClick={() => onProceed({ answer: 'not-pregnant' })}
             variant="primary"
           >
-            Not pregnant — add order
+            {t('Not pregnant — add order')}
           </AlertDialogAction>
         </AlertDialogFooter>
       </>
@@ -2732,26 +3200,27 @@ function PregnancyGateBody({
   return (
     <>
       <AlertDialogHeader>
-        <AlertDialogTitle>Clinician override required</AlertDialogTitle>
+        <AlertDialogTitle>{t('Clinician override required')}</AlertDialogTitle>
         <AlertDialogDescription>
-          Consider postponing, shielding, or non-ionising imaging. To proceed, the ordering
-          clinician signs this override — it is recorded against this visit only.
+          {t(
+            'Consider postponing, shielding, or non-ionising imaging. To proceed, the ordering clinician signs this override — it is recorded against this visit only.',
+          )}
         </AlertDialogDescription>
       </AlertDialogHeader>
       <Input
-        aria-label="Clinician override · sign-off name"
+        aria-label={t('Clinician override · sign-off name')}
         onChange={(event) => setOverrideBy(event.target.value)}
         placeholder="Dr. …"
         value={overrideBy}
       />
       <AlertDialogFooter>
-        <AlertDialogCancel onClick={onCancel}>Cancel order</AlertDialogCancel>
+        <AlertDialogCancel onClick={onCancel}>{t('Cancel order')}</AlertDialogCancel>
         <AlertDialogAction
           disabled={overrideBy.trim() === ''}
           onClick={() => onProceed({ answer, overrideBy: overrideBy.trim() })}
           variant="primary"
         >
-          Record &amp; add
+          {t('Record & add')}
         </AlertDialogAction>
       </AlertDialogFooter>
     </>
@@ -2797,6 +3266,7 @@ function VerbalConsentBody({
   onRecord: (consent: LineConsent) => void;
   requirement: ConsentRequirement;
 }) {
+  const t = useT();
   const [recordedBy, setRecordedBy] = useState('');
   const [witnessPin, setWitnessPin] = useState('');
   const valid = verbalConsentValid({ requirement, recordedBy, witnessPin });
@@ -2804,34 +3274,37 @@ function VerbalConsentBody({
   return (
     <>
       <AlertDialogHeader>
-        <AlertDialogTitle>Verbal consent — {item.name}</AlertDialogTitle>
+        <AlertDialogTitle>{t('Verbal consent')} — {item.name}</AlertDialogTitle>
         <AlertDialogDescription>
-          Use only when the patient has no phone or refuses the digital consent flow. Recorded
-          with time and staff name
-          {requirement === 'sensitive' ? '; sensitive tests also need a supervisor witness' : ''}
+          {t(
+            'Use only when the patient has no phone or refuses the digital consent flow. Recorded with time and staff name',
+          )}
+          {requirement === 'sensitive'
+            ? t('; sensitive tests also need a supervisor witness')
+            : ''}
           .
         </AlertDialogDescription>
       </AlertDialogHeader>
       <div className={styles.verbalFields}>
         <Input
-          aria-label="Recorded by"
+          aria-label={t('Recorded by')}
           onChange={(event) => setRecordedBy(event.target.value)}
-          placeholder="Recorded by (staff name)"
+          placeholder={t('Recorded by (staff name)')}
           value={recordedBy}
         />
         {requirement === 'sensitive' ? (
           <Input
-            aria-label="Supervisor witness PIN"
+            aria-label={t('Supervisor witness PIN')}
             inputMode="numeric"
             onChange={(event) => setWitnessPin(event.target.value)}
-            placeholder="Supervisor witness PIN"
+            placeholder={t('Supervisor witness PIN')}
             type="password"
             value={witnessPin}
           />
         ) : null}
       </div>
       <AlertDialogFooter>
-        <AlertDialogCancel onClick={onCancel}>Cancel</AlertDialogCancel>
+        <AlertDialogCancel onClick={onCancel}>{t('Cancel')}</AlertDialogCancel>
         <AlertDialogAction
           disabled={!valid}
           onClick={() =>
@@ -2844,7 +3317,7 @@ function VerbalConsentBody({
           }
           variant="primary"
         >
-          Record consent
+          {t('Record consent')}
         </AlertDialogAction>
       </AlertDialogFooter>
     </>
@@ -2874,22 +3347,24 @@ function KhqrPanel({
   onStateChange: (state: 'waiting' | 'expired' | 'cancelled') => void;
   state: 'waiting' | 'expired' | 'cancelled';
 }) {
+  const t = useT();
   const [manualAsked, setManualAsked] = useState(false);
 
   if (state === 'expired') {
     return (
       <Alert tone="warning">
-        <AlertTitle>QR expired</AlertTitle>
+        <AlertTitle>{t('QR expired')}</AlertTitle>
         <AlertDescription>
-          The KHQR intent lapsed before payment. Generate a new QR to retry — an expired intent
-          is never collectable.
+          {t(
+            'The KHQR intent lapsed before payment. Generate a new QR to retry — an expired intent is never collectable.',
+          )}
         </AlertDescription>
         <AlertAction>
           <Button onClick={() => onStateChange('waiting')} size="sm" variant="primary">
-            Regenerate QR
+            {t('Regenerate QR')}
           </Button>
           <Button onClick={onCancel} size="sm" variant="ghost">
-            Back to methods
+            {t('Back to methods')}
           </Button>
         </AlertAction>
       </Alert>
@@ -2899,13 +3374,13 @@ function KhqrPanel({
   if (state === 'cancelled') {
     return (
       <Alert tone="neutral">
-        <AlertTitle>QR cancelled</AlertTitle>
+        <AlertTitle>{t('QR cancelled')}</AlertTitle>
         <AlertAction>
           <Button onClick={() => onStateChange('waiting')} size="sm" variant="outline">
-            Generate new QR
+            {t('Generate new QR')}
           </Button>
           <Button onClick={onCancel} size="sm" variant="ghost">
-            Back to methods
+            {t('Back to methods')}
           </Button>
         </AlertAction>
       </Alert>
@@ -2916,7 +3391,7 @@ function KhqrPanel({
     <>
       <Alert tone="info">
         <AlertTitle>
-          KHQR waiting for Bakong ·{' '}
+          {t('KHQR waiting for Bakong')} ·{' '}
           <MoneyText currency="USD" minor={amountUsdMinor} />
           {amountKhrMinor ? (
             <>
@@ -2926,21 +3401,22 @@ function KhqrPanel({
           ) : null}
         </AlertTitle>
         <AlertDescription>
-          The QR is on the patient display. Confirmation arrives from the Bakong webhook; the
-          intent expires after 10 minutes.
+          {t(
+            'The QR is on the patient display. Confirmation arrives from the Bakong webhook; the intent expires after 10 minutes.',
+          )}
         </AlertDescription>
         <AlertAction>
           <Button onClick={onConfirm} size="sm" variant="primary">
-            Simulate webhook confirm
+            {t('Simulate webhook confirm')}
           </Button>
           <Button onClick={() => setManualAsked(true)} size="sm" variant="outline">
-            Mark received
+            {t('Mark received')}
           </Button>
           <Button onClick={() => onStateChange('expired')} size="sm" variant="ghost">
-            Simulate expiry
+            {t('Simulate expiry')}
           </Button>
           <Button onClick={() => onStateChange('cancelled')} size="sm" variant="ghost">
-            Cancel QR
+            {t('Cancel QR')}
           </Button>
         </AlertAction>
       </Alert>
@@ -2951,16 +3427,19 @@ function KhqrPanel({
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              Confirm manual receipt of{' '}
+              {t('Confirm manual receipt of')}{' '}
               <MoneyText currency="USD" minor={amountUsdMinor} />?
             </AlertDialogTitle>
             <AlertDialogDescription>
-              Manual fallback only — confirm after seeing the Bakong receipt on the patient&apos;s
-              banking app. A client-side success screen is not enough.
+              {t(
+                "Manual fallback only — confirm after seeing the Bakong receipt on the patient's banking app. A client-side success screen is not enough.",
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setManualAsked(false)}>Back</AlertDialogCancel>
+            <AlertDialogCancel onClick={() => setManualAsked(false)}>
+              {t('Back')}
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
                 setManualAsked(false);
@@ -2968,7 +3447,7 @@ function KhqrPanel({
               }}
               variant="primary"
             >
-              Yes, mark received
+              {t('Yes, mark received')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

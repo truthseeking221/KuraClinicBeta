@@ -21,6 +21,7 @@ import type {
   ReactNode,
 } from 'react';
 
+import { useT } from '../foundations/i18n';
 import { Button } from './button';
 import { Checkbox } from './checkbox';
 import {
@@ -109,17 +110,20 @@ export function useDataGrid<TData extends object>() {
 export function DataGrid<TData extends object>({
   children,
   className,
-  emptyState = 'No records match the current view.',
+  emptyState,
   errorState,
   getRowLabel,
   isLoading = false,
   layout,
-  loadingMessage = 'Loading records',
+  loadingMessage,
   loadingRows = 5,
   onRowClick,
   recordCount,
   table,
 }: DataGridProps<TData>) {
+  const t = useT();
+  const resolvedEmptyState = emptyState ?? t('No records match the current view.');
+  const resolvedLoadingMessage = loadingMessage ?? t('Loading records');
   const resolvedLayout = useMemo<DataGridLayout>(
     () => ({
       borders: 'rows',
@@ -136,27 +140,27 @@ export function DataGrid<TData extends object>({
 
   const value = useMemo(
     () => ({
-      emptyState,
+      emptyState: resolvedEmptyState,
       errorState,
       getRowLabel,
       isLoading,
       layout: resolvedLayout,
-      loadingMessage,
+      loadingMessage: resolvedLoadingMessage,
       loadingRows,
       onRowClick,
       recordCount,
       table,
     }),
     [
-      emptyState,
       errorState,
       getRowLabel,
       isLoading,
-      loadingMessage,
       loadingRows,
       onRowClick,
       recordCount,
+      resolvedEmptyState,
       resolvedLayout,
+      resolvedLoadingMessage,
       table,
     ],
   );
@@ -253,11 +257,13 @@ export type DataGridTableProps = Omit<ComponentPropsWithoutRef<'table'>, 'childr
 };
 
 export function DataGridTable<TData extends object>({
-  'aria-label': ariaLabel = 'Data grid',
+  'aria-label': ariaLabel,
   className,
   scrollHeight,
   ...props
 }: DataGridTableProps) {
+  const t = useT();
+  const resolvedAriaLabel = ariaLabel ?? t('Data grid');
   const {
     emptyState,
     errorState,
@@ -287,11 +293,11 @@ export function DataGridTable<TData extends object>({
       data-scroll-height={scrollHeight}
       className={styles.scroller}
       tabIndex={0}
-      aria-label={`${ariaLabel} scroll area`}
+      aria-label={`${resolvedAriaLabel} ${t('scroll area')}`}
     >
       <table
         {...props}
-        aria-label={ariaLabel}
+        aria-label={resolvedAriaLabel}
         aria-busy={isLoading || undefined}
         data-slot="data-grid-table"
         data-sticky-header={layout?.stickyHeader ? 'true' : undefined}
@@ -322,7 +328,7 @@ export function DataGridTable<TData extends object>({
                     {layout?.resizable && header.column.getCanResize() ? (
                       <button
                         type="button"
-                        aria-label={`Resize ${getDataGridColumnLabel(header.column)} column`}
+                        aria-label={`${t('Resize')} ${getDataGridColumnLabel(header.column)} ${t('column')}`}
                         className={styles.resizeHandle}
                         data-resizing={header.column.getIsResizing() ? 'true' : undefined}
                         onDoubleClick={() => header.column.resetSize()}
@@ -459,6 +465,7 @@ export function DataGridColumnHeader<TData, TValue>({
   column,
   title,
 }: DataGridColumnHeaderProps<TData, TValue>) {
+  const t = useT();
   const label = title ?? getDataGridColumnLabel(column);
   if (!column.getCanSort()) {
     return <span className={styles.columnTitle}>{label}</span>;
@@ -470,7 +477,11 @@ export function DataGridColumnHeader<TData, TValue>({
       type="button"
       className={styles.sortButton}
       aria-label={`${getDataGridColumnLabel(column)}: ${
-        sorted === 'asc' ? 'sorted ascending' : sorted === 'desc' ? 'sorted descending' : 'not sorted'
+        sorted === 'asc'
+          ? t('sorted ascending')
+          : sorted === 'desc'
+            ? t('sorted descending')
+            : t('not sorted')
       }`}
       onClick={column.getToggleSortingHandler()}
     >
@@ -496,11 +507,15 @@ export type DataGridPaginationProps = {
 
 export function DataGridPagination<TData extends object>({
   className,
-  nextPageLabel = 'Go to next page',
+  nextPageLabel,
   pageSizes = [10, 25, 50, 100],
-  previousPageLabel = 'Go to previous page',
-  rowsPerPageLabel = 'Rows per page',
+  previousPageLabel,
+  rowsPerPageLabel,
 }: DataGridPaginationProps) {
+  const t = useT();
+  const resolvedNextPageLabel = nextPageLabel ?? t('Go to next page');
+  const resolvedPreviousPageLabel = previousPageLabel ?? t('Go to previous page');
+  const resolvedRowsPerPageLabel = rowsPerPageLabel ?? t('Rows per page');
   const { recordCount, table } = useDataGrid<TData>();
   const { pageIndex, pageSize } = table.getState().pagination;
   const from = recordCount === 0 ? 0 : pageIndex * pageSize + 1;
@@ -512,9 +527,9 @@ export function DataGridPagination<TData extends object>({
       className={joinClasses(styles.pagination, className)}
     >
       <label className={styles.pageSize}>
-        <span>{rowsPerPageLabel}</span>
+        <span>{resolvedRowsPerPageLabel}</span>
         <Select
-          aria-label={rowsPerPageLabel}
+          aria-label={resolvedRowsPerPageLabel}
           options={pageSizes.map((size) => ({ label: String(size), value: String(size) }))}
           value={String(pageSize)}
           onChange={(event) => table.setPageSize(Number(event.currentTarget.value))}
@@ -522,11 +537,11 @@ export function DataGridPagination<TData extends object>({
       </label>
       <div className={styles.pageNavigation}>
         <span aria-live="polite" className={styles.pageInfo}>
-          {from}–{to} of {recordCount}
+          {from}–{to} {t('of')} {recordCount}
         </span>
         <div className={styles.pageButtons}>
           <Button
-            aria-label={previousPageLabel}
+            aria-label={resolvedPreviousPageLabel}
             disabled={!table.getCanPreviousPage()}
             size="icon-sm"
             variant="ghost"
@@ -535,7 +550,7 @@ export function DataGridPagination<TData extends object>({
             <ChevronLeftIcon aria-hidden="true" />
           </Button>
           <Button
-            aria-label={nextPageLabel}
+            aria-label={resolvedNextPageLabel}
             disabled={!table.getCanNextPage()}
             size="icon-sm"
             variant="ghost"
@@ -554,8 +569,10 @@ export type DataGridColumnVisibilityProps = {
 };
 
 export function DataGridColumnVisibility<TData extends object>({
-  label = 'Columns',
+  label,
 }: DataGridColumnVisibilityProps) {
+  const t = useT();
+  const resolvedLabel = label ?? t('Columns');
   const { table } = useDataGrid<TData>();
   const columns = table.getAllLeafColumns().filter((column) => column.getCanHide());
 
@@ -563,11 +580,11 @@ export function DataGridColumnVisibility<TData extends object>({
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button leadingIcon={<ViewIcon aria-hidden="true" />} variant="outline" disclosure>
-          {label}
+          {resolvedLabel}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuLabel>Visible columns</DropdownMenuLabel>
+        <DropdownMenuLabel>{t('Visible columns')}</DropdownMenuLabel>
         <DropdownMenuSeparator />
         {columns.map((column) => (
           <DropdownMenuCheckboxItem
@@ -589,12 +606,14 @@ export type DataGridSelectAllProps<TData extends object> = {
 };
 
 export function DataGridSelectAll<TData extends object>({
-  label = 'Select all visible rows',
+  label,
   table,
 }: DataGridSelectAllProps<TData>) {
+  const t = useT();
+
   return (
     <Checkbox
-      aria-label={label}
+      aria-label={label ?? t('Select all visible rows')}
       checked={table.getIsAllPageRowsSelected()}
       indeterminate={table.getIsSomePageRowsSelected()}
       onCheckedChange={(checked) => table.toggleAllPageRowsSelected(checked)}
@@ -632,16 +651,20 @@ export type DataGridLoadMoreProps = {
 
 export function DataGridLoadMore({
   allRowsLoaded = false,
-  allRowsLoadedMessage = 'All records loaded.',
-  children = 'Load more records',
+  allRowsLoadedMessage,
+  children,
   disabled = false,
   loading = false,
   onLoadMore,
 }: DataGridLoadMoreProps) {
+  const t = useT();
+
   return (
     <div className={styles.loadMore} data-slot="data-grid-load-more">
       {allRowsLoaded ? (
-        <span className={styles.loadMoreStatus}>{allRowsLoadedMessage}</span>
+        <span className={styles.loadMoreStatus}>
+          {allRowsLoadedMessage ?? t('All records loaded.')}
+        </span>
       ) : (
         <Button
           disabled={disabled}
@@ -649,7 +672,7 @@ export function DataGridLoadMore({
           variant="outline"
           onClick={onLoadMore}
         >
-          {children}
+          {children ?? t('Load more records')}
         </Button>
       )}
     </div>

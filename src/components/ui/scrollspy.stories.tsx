@@ -26,7 +26,7 @@ function SectionContent() {
 }
 
 const meta = {
-  title: 'Design System/Primitives/Scrollspy',
+  title: 'Design System/Components/Scrollspy',
   component: Scrollspy,
   args: { targetRef: { current: null } },
   tags: ['autodocs', 'source-reui', 'adapted-kura'],

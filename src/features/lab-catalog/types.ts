@@ -16,6 +16,28 @@ export type LabCatalogCategory = {
   count: number;
 };
 
+export type LabCatalogTestPreviewRow = {
+  label: string;
+  value: string;
+};
+
+/**
+ * Optional operational and price detail shown through progressive disclosure.
+ * Money stays in universal exponent-2 minor units, matching the catalog wire contract.
+ */
+export type LabCatalogTestPreview = {
+  description?: string;
+  preparation?: string;
+  specimen: string;
+  turnaround: string;
+  referenceRange?: string;
+  analytical?: readonly LabCatalogTestPreviewRow[];
+  handling?: readonly LabCatalogTestPreviewRow[];
+  priceMinor: string;
+  currencyCode: 'USD' | 'KHR';
+  earningMinor?: string;
+};
+
 export type LabCatalogTest = {
   testCatalogId: string;
   code: string;
@@ -29,6 +51,7 @@ export type LabCatalogTest = {
   componentCount?: number;
   availability?: LabCatalogAvailability;
   unavailableReason?: string;
+  preview?: LabCatalogTestPreview;
 };
 
 export type LabCatalogPickerState =

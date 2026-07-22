@@ -6,7 +6,7 @@ import { Button, Checkbox, Collapsible, CollapsibleContent, CollapsibleTrigger }
 import { ClipboardListIcon, MedicalFileIcon } from './icons';
 
 const meta = {
-  title: 'Design System/Primitives/Collapsible',
+  title: 'Design System/Components/Collapsible',
   component: Collapsible,
   tags: ['autodocs', 'source-reui', 'adapted-kura'],
   parameters: {
@@ -158,6 +158,98 @@ export const Settings: Story = {
       </CollapsibleContent>
     </Collapsible>
   ),
+};
+
+/**
+ * Secondary text belongs in `meta`, beside the label it qualifies. Without the
+ * slot, every consumer rebuilds the trigger label and its typography drifts.
+ */
+export const WithMeta: Story = {
+  render: () => (
+    <div className="flex w-full max-w-2xl flex-col gap-2">
+      <Collapsible>
+        <CollapsibleTrigger meta="Optional">Address</CollapsibleTrigger>
+        <CollapsibleContent>
+          <p>Province, district, commune, and street are collected only when the patient offers them.</p>
+        </CollapsibleContent>
+      </Collapsible>
+      <Collapsible>
+        <CollapsibleTrigger meta="2 of 6 pending">Haematology</CollapsibleTrigger>
+        <CollapsibleContent>
+          <p>Four analytes are released; two are still with the laboratory.</p>
+        </CollapsibleContent>
+      </Collapsible>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const trigger = canvas.getByRole('button', { name: /address optional/i });
+
+    await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+    await userEvent.click(trigger);
+    await expect(canvas.getByText(/province, district, commune/i)).toBeVisible();
+  },
+};
+
+/** A leading chevron suits stacked section lists where the label carries the scan line. */
+export const LeadingChevron: Story = {
+  render: () => (
+    <Collapsible className="w-full max-w-2xl" defaultOpen>
+      <CollapsibleTrigger chevronPosition="leading" meta="8 tests">
+        Biochemistry
+      </CollapsibleTrigger>
+      <CollapsibleContent>
+        <p>Category contents stay flush with the trigger label when the chevron leads.</p>
+      </CollapsibleContent>
+    </Collapsible>
+  ),
+};
+
+/**
+ * `inset="none"` removes the horizontal padding from the trigger and the
+ * content together, so a disclosure shares the left edge of the form it sits in.
+ */
+export const FlushInset: Story = {
+  render: () => (
+    <Collapsible className="w-full max-w-2xl" defaultOpen inset="none">
+      <CollapsibleTrigger meta="Optional">Refund account</CollapsibleTrigger>
+      <CollapsibleContent>
+        <p>The label and this paragraph share one left edge.</p>
+      </CollapsibleContent>
+    </Collapsible>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const trigger = canvas.getByRole('button', { name: /refund account optional/i });
+    const content = canvasElement.querySelector('[data-slot="collapsible-content"]');
+
+    await expect(trigger).toHaveAttribute('data-inset', 'none');
+    await expect(content).toHaveAttribute('data-inset', 'none');
+  },
+};
+
+/**
+ * When the disclosure titles a group of content, `headingLevel` keeps it in the
+ * document outline without adding a second visible label.
+ */
+export const HeadingSemantics: Story = {
+  render: () => (
+    <Collapsible className="w-full max-w-2xl">
+      <CollapsibleTrigger headingLevel={3} meta="Optional">
+        Refund account
+      </CollapsibleTrigger>
+      <CollapsibleContent>
+        <p>Add a Bakong KHQR account only if this patient may need a refund.</p>
+      </CollapsibleContent>
+    </Collapsible>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    await expect(canvas.getByRole('heading', { level: 3, name: /refund account/i })).toBeVisible();
+    await userEvent.click(canvas.getByRole('button', { name: /refund account optional/i }));
+    await expect(canvas.getByText(/bakong khqr account/i)).toBeVisible();
+  },
 };
 
 export const Nested: Story = {

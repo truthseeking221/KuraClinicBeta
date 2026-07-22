@@ -61,11 +61,11 @@ describe('temporary patient gate', () => {
   it('reports every missing field on the control that is missing (spec §8/§9)', () => {
     expect(draftPatientErrors(EMPTY_DRAFT)).toEqual({
       name: 'Enter the full name.',
-      dobOrAge: 'Enter a date of birth or age.',
+      dobOrAge: 'Enter a date of birth or estimated age.',
       sex: 'Select a sex.',
     });
     expect(draftPatientErrors({ name: 'Pierre', dobOrAge: '', sex: 'Female' })).toEqual({
-      dobOrAge: 'Enter a date of birth or age.',
+      dobOrAge: 'Enter a date of birth or estimated age.',
     });
     expect(draftPatientErrors({ name: 'Pierre', dobOrAge: '32', sex: null })).toEqual({
       sex: 'Select a sex.',
@@ -79,7 +79,7 @@ describe('temporary patient gate', () => {
       'PROV-0001',
     );
     expect(context.heading).toBe('For Pierre');
-    expect(context.meta).toBe('PROV-0001 · New patient · Phone checked');
+    expect(context.meta).toBe('PROV-0001 · Provisional patient · Phone checked');
     expect(context.status).toBe('PSC will confirm identity');
   });
 });

@@ -2,7 +2,13 @@ import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import { expect, fn, userEvent, within } from 'storybook/test';
 
 import { PatientsRegistry } from './patients-registry';
-import { DEMO_PATIENTS, DEMO_TRIAGE, LONG_NAME_PATIENT } from './demo-data';
+import {
+  DEMO_PATIENTS,
+  DEMO_TOUR_PATIENT_IDS,
+  DEMO_TOUR_PATIENTS,
+  DEMO_TRIAGE,
+  LONG_NAME_PATIENT,
+} from './demo-data';
 import { PATIENTS_STORYBOOK_KURA } from './storybook-metadata';
 
 const meta = {
@@ -21,6 +27,7 @@ const meta = {
   },
   args: {
     patients: DEMO_PATIENTS,
+    onAddPatient: fn(),
     onOpenPatient: fn(),
   },
 } satisfies Meta<typeof PatientsRegistry>;
@@ -75,6 +82,33 @@ export const TerminalAndSealedRecords: Story = {
 
 export const Empty: Story = {
   args: { patients: [] },
+};
+
+export const SeededDemoPatient: Story = {
+  args: {
+    demoPatientIds: DEMO_TOUR_PATIENT_IDS,
+    patients: DEMO_TOUR_PATIENTS,
+  },
+  tags: ['play-fn'],
+  play: async ({ args, canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText('Sokha Chann')).toBeVisible();
+    await expect(canvas.getByText('Demo patient')).toBeVisible();
+    await expect(canvas.queryByRole('radio', { name: 'All 1' })).not.toBeInTheDocument();
+    await expect(canvas.queryByRole('radio', { name: 'Verified 1' })).not.toBeInTheDocument();
+    await userEvent.click(canvas.getByRole('row', { name: /Open Sokha Chann/ }));
+    await expect(args.onOpenPatient).toHaveBeenCalledWith(DEMO_TOUR_PATIENT_IDS[0]);
+  },
+};
+
+export const StartsAddPatientFlow: Story = {
+  args: { patients: [] },
+  tags: ['play-fn'],
+  play: async ({ args, canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(canvas.getByRole('button', { name: 'Add patient' }));
+    await expect(args.onAddPatient).toHaveBeenCalledOnce();
+  },
 };
 
 export const Loading: Story = {

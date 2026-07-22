@@ -27,7 +27,7 @@ export const PATIENTS_STORYBOOK_KURA = {
       'No free-text or name search input. Names are unsearchable by schema; patient resolution happens through the reception doors (exact phone, booking code) owned by front-desk and phone-gate.',
       'No client-side sorting. The server orders by workspace recency and accepts no sort parameter; re-sorting a fetched page would misrepresent the registry.',
       'No care-focus, last-event, or condition columns: no problems, encounters, or activity model exists in the platform.',
-      'The chart action rail launches governed flows and reports result-arrival progress; it never completes clinical work in place. Batch ETAs, flag counts, and completion notifications have no backend model yet.',
+      'The chart action rail launches governed flows and reports result-arrival progress. The patient-order flow is a Storybook-owned adapter: authoritative placement remains at its supplied action boundary, while the chart record refreshes only after that boundary returns a placed order. Batch ETAs, flag counts, and completion notifications have no backend model yet.',
     ],
   },
   source: 'kura-platform contract + FINAL DCM legacy review (2026-07-20)',
@@ -40,5 +40,44 @@ export const PATIENTS_STORYBOOK_KURA = {
     icons: 'kura-canonical',
     motion: 'data-grid-owned',
     responsive: 'horizontal-scroll-table',
+  },
+} as const;
+
+export const PRESCRIBE_STORYBOOK_KURA = {
+  readiness: READINESS.prescribing,
+  contract: {
+    status: 'target-contract',
+    backendMapping: 'No prescription or medication-reconciliation contract exists',
+    backendRef: 'Kura-med/kura-platform@c55fd36 (freshest inspected local checkout)',
+    consulted: [
+      'libs/contracts/proto/patient.proto',
+      'apps/bff/clinic-bff/src/app/patient/patient.controller.ts',
+      'apps/clinic/clinic-patients-mf/src/app/patients-page.tsx',
+    ],
+    note:
+      'The workspace models a local, unsigned medication draft only. It does not persist, sign, send, dispense, or imply a prescription. AI proposals expose their evidence and missing checks and always require deliberate clinician addition.',
+  },
+  intake: {
+    decision: 'FEATURE-OWN',
+    owner: 'src/features/patients/prescribe-rail.tsx',
+    level: 'clinical composite',
+    evidence:
+      'Existing Kura Button, IconButton, Input, SegmentedToggle, Badge, and canonical icons cover the interaction and visual primitives. The feature owns whole-regimen reconciliation, draft state, AI provenance, and the target-contract safety boundary.',
+    exclusions: [
+      'No signed, sent, dispensed, active, or clinically closed prescription state.',
+      'No autonomous medication application or hidden AI provenance.',
+      'No claim of persistence beyond the current prototype session.',
+    ],
+  },
+  source: 'Kura target contract + FINAL DCM legacy review (2026-07-21)',
+  binding: {
+    colors: 'kura-semantic including AI provenance',
+    typography: 'kura',
+    spacing: 'kura',
+    radius: 'kura',
+    elevation: 'none',
+    icons: 'kura-canonical',
+    motion: 'kura tokens',
+    responsive: 'contained right rail; 320px reflow preserves the review decision and footer state',
   },
 } as const;

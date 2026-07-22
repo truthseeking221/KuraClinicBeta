@@ -323,7 +323,6 @@ export function inviteError(
 
 export type Prefs = {
   units: 'conventional' | 'si';
-  language: 'en' | 'km';
   theme: 'light' | 'dark' | 'system';
   inlineRef: boolean;
   collapseNormal: boolean;
@@ -332,7 +331,6 @@ export type Prefs = {
 
 export const DEFAULT_PREFS: Prefs = {
   units: 'conventional',
-  language: 'en',
   theme: 'light',
   inlineRef: true,
   collapseNormal: false,
@@ -368,7 +366,6 @@ export const PREFS_VALUE_TEXT = {
     prefs.units === 'conventional' ? 'Conventional (mg/dL)' : 'SI (mmol/L)',
   theme: (prefs: Prefs) =>
     prefs.theme === 'light' ? 'Light' : prefs.theme === 'dark' ? 'Dark' : 'Match system',
-  language: (prefs: Prefs) => (prefs.language === 'en' ? 'English' : 'Khmer'),
   inlineRef: (prefs: Prefs) =>
     prefs.inlineRef ? 'Shown inline' : 'Hidden until opened',
   collapseNormal: (prefs: Prefs) =>

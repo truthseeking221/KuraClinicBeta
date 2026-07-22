@@ -3,7 +3,7 @@ import { expect, fn, userEvent, waitFor, within } from "storybook/test";
 
 import { OnboardingWizard } from "./onboarding-wizard";
 import { DEMO_OTP } from "./demo-data";
-import { READINESS } from '../../components/foundations/readiness-data';
+import { READINESS } from "../../components/foundations/readiness-data";
 
 const VERIFIED_PHONE = "+85598111222";
 
@@ -96,12 +96,12 @@ async function reachLicence(
   );
   await expect(
     await canvas.findByRole("heading", {
-      name: "Do you have a medical licence?",
+      name: "Do you hold a medical licence?",
     }),
   ).toBeVisible();
 }
 
-/** Full self-serve path with an already-verified door phone and upload-later declaration. */
+/** Full self-serve path requires a document for a medical-licence declaration. */
 export const SelfServe: Story = {
   args: {
     entry: {
@@ -114,11 +114,16 @@ export const SelfServe: Story = {
     const canvas = within(canvasElement);
     await expect(canvas.getByRole("img", { name: "Kura" })).toBeVisible();
     await reachLicence(canvasElement);
-    const licenceYes = canvas.getByRole("radio", { name: /Yes — I have/ });
+    const licenceYes = canvas.getByRole("radio", { name: /Yes, I hold/ });
     await userEvent.click(licenceYes);
     await expect(licenceYes).toBeChecked();
     await pickProfession(canvasElement, "Doctor");
-    await userEvent.click(canvas.getByRole("radio", { name: "Upload later" }));
+    await userEvent.upload(
+      canvas.getByLabelText("Medical licence document"),
+      new File(["licence"], "medical-licence.pdf", {
+        type: "application/pdf",
+      }),
+    );
     await userEvent.click(canvas.getByRole("button", { name: "Finish setup" }));
 
     await waitFor(() =>
@@ -126,9 +131,10 @@ export const SelfServe: Story = {
         clinicName: "Bopha Kim's cabinet",
         mlDeclaration: {
           answer: "yes",
-          licenceFiles: [],
+          licenceFiles: [
+            expect.objectContaining({ name: "medical-licence.pdf" }),
+          ],
           profession: "doctor",
-          uploadChoice: "later",
         },
         name: "Bopha Kim",
         phone: VERIFIED_PHONE,
@@ -138,8 +144,8 @@ export const SelfServe: Story = {
   },
 };
 
-/** Email/Google path: phone verification is a hard gate before Clinic. */
-export const EmailOrGooglePhoneGate: Story = {
+/** Email path: phone verification is a hard gate before Clinic. */
+export const EmailPhoneGate: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await openPhoneVerification(canvasElement);
@@ -155,8 +161,8 @@ export const EmailOrGooglePhoneGate: Story = {
   },
 };
 
-/** Google-provided name is prefilled but remains editable before the cabinet default is formed. */
-export const GoogleNamePrefill: Story = {
+/** A provider name is prefilled but remains editable before the cabinet default is formed. */
+export const NamePrefill: Story = {
   args: {
     entry: {
       initialName: "Bopha Kim",
@@ -209,7 +215,7 @@ export const PhoneValidation: Story = {
   },
 };
 
-/** Canonical OTP intermediate: six digits, throttled resend, and number recovery. */
+/** OTP keeps the resend state with the code and number recovery with the destination. */
 export const PhoneVerification: Story = {
   args: { entry: { isInvitee: true, phoneVerified: false } },
   play: async ({ canvasElement }) => {
@@ -219,9 +225,8 @@ export const PhoneVerification: Story = {
       canvas.getByRole("textbox", { name: "SMS code" }),
       DEMO_OTP,
     );
-    await expect(
-      canvas.getByRole("button", { name: /Resend in 30s/ }),
-    ).toBeDisabled();
+    await expect(canvas.getByRole("status")).toHaveTextContent("Resend in 30s");
+    await expect(canvas.getByText("Expires in 10 minutes")).toBeVisible();
     await expect(
       canvas.getByRole("button", { name: "Change number" }),
     ).toBeVisible();
@@ -254,7 +259,7 @@ export const InvalidOtpRecovery: Story = {
     await openPhoneVerification(canvasElement);
     await enterOtp(canvasElement, "000000");
     await expect(await canvas.findByRole("alert")).toHaveTextContent(
-      "Incorrect or expired",
+      /incorrect or expired/i,
     );
     await userEvent.clear(canvas.getByRole("textbox", { name: "SMS code" }));
     await enterOtp(canvasElement);
@@ -296,7 +301,7 @@ export const PhoneAlreadyInUse: Story = {
     await openPhoneVerification(canvasElement, "99000001");
     await enterOtp(canvasElement);
     await expect(
-      await canvas.findByText("This phone cannot be used"),
+      await canvas.findByText("This phone is unavailable"),
     ).toBeVisible();
     await expect(canvas.getByText(/support@kura.med/)).toBeVisible();
     await expect(
@@ -312,7 +317,7 @@ export const PhoneOnUnavailableAccount: Story = {
     await openPhoneVerification(canvasElement, "99000009");
     await enterOtp(canvasElement);
     await expect(
-      await canvas.findByText("This phone cannot be used"),
+      await canvas.findByText("This phone is unavailable"),
     ).toBeVisible();
     await userEvent.click(
       canvas.getByRole("button", { name: "Use a different phone" }),
@@ -380,7 +385,7 @@ export const ExistingInviteeReady: Story = {
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getByRole("status")).toHaveTextContent(
-      "Opening the workspace",
+      "Opening your workspace",
     );
     await waitFor(() =>
       expect(args.onDone).toHaveBeenCalledWith({
@@ -458,7 +463,7 @@ export const ClinicValidation: Story = {
       canvas.getByRole("button", { name: "Create clinic" }),
     );
     await expect(await canvas.findByRole("alert")).toHaveTextContent(
-      "Name your clinic",
+      "Clinic name is required.",
     );
     await expect(args.onDone).not.toHaveBeenCalled();
   },
@@ -477,7 +482,7 @@ export const LicenceNo: Story = {
     const canvas = within(canvasElement);
     await reachLicence(canvasElement);
     await userEvent.click(
-      canvas.getByRole("radio", { name: /No — not at this time/ }),
+      canvas.getByRole("radio", { name: /No, I do not hold one/ }),
     );
     await userEvent.click(canvas.getByRole("button", { name: "Finish setup" }));
     await waitFor(() =>
@@ -487,7 +492,6 @@ export const LicenceNo: Story = {
             answer: "no",
             licenceFiles: [],
             profession: null,
-            uploadChoice: null,
           },
         }),
       ),
@@ -540,7 +544,7 @@ export const LicenceSkip: Story = {
   },
 };
 
-/** YES validates profession, upload timing, and the required file for Upload now. */
+/** YES validates profession and the required licence document. */
 export const LicenceValidation: Story = {
   args: {
     entry: {
@@ -552,7 +556,7 @@ export const LicenceValidation: Story = {
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
     await reachLicence(canvasElement);
-    await userEvent.click(canvas.getByRole("radio", { name: /Yes — I have/ }));
+    await userEvent.click(canvas.getByRole("radio", { name: /Yes, I hold/ }));
     await canvas.findByLabelText(/Profession/, {}, { timeout: 3000 });
     await userEvent.click(canvas.getByRole("button", { name: "Finish setup" }));
     const professionError = await canvas.findByRole("alert");
@@ -573,13 +577,7 @@ export const LicenceValidation: Story = {
     await userEvent.click(listbox.getByRole("option", { name: "Doctor" }));
     await userEvent.click(canvas.getByRole("button", { name: "Finish setup" }));
     await expect(await canvas.findByRole("alert")).toHaveTextContent(
-      "upload your licence",
-    );
-
-    await userEvent.click(canvas.getByRole("radio", { name: "Upload now" }));
-    await userEvent.click(canvas.getByRole("button", { name: "Finish setup" }));
-    await expect(await canvas.findByRole("alert")).toHaveTextContent(
-      "Attach your licence",
+      "Upload a licence document",
     );
     await expect(args.onDone).not.toHaveBeenCalled();
   },
@@ -592,7 +590,7 @@ export const LicenceValidationMobile320: Story = {
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
     await reachLicence(canvasElement);
-    await userEvent.click(canvas.getByRole("radio", { name: /Yes — I have/ }));
+    await userEvent.click(canvas.getByRole("radio", { name: /Yes, I hold/ }));
     await canvas.findByLabelText(/Profession/, {}, { timeout: 3000 });
     await userEvent.click(canvas.getByRole("button", { name: "Finish setup" }));
 
@@ -608,8 +606,8 @@ export const LicenceValidationMobile320: Story = {
   },
 };
 
-/** Upload now accepts a canonical FileUpload attachment and returns it in the result. */
-export const LicenceUploadNow: Story = {
+/** A licence declaration returns the canonical FileUpload attachment in the result. */
+export const LicenceUpload: Story = {
   args: {
     entry: {
       isInvitee: false,
@@ -620,9 +618,8 @@ export const LicenceUploadNow: Story = {
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
     await reachLicence(canvasElement);
-    await userEvent.click(canvas.getByRole("radio", { name: /Yes — I have/ }));
+    await userEvent.click(canvas.getByRole("radio", { name: /Yes, I hold/ }));
     await pickProfession(canvasElement, "Dentist");
-    await userEvent.click(canvas.getByRole("radio", { name: "Upload now" }));
     await userEvent.upload(
       canvas.getByLabelText("Medical licence document"),
       new File(["licence"], "dental-licence.pdf", { type: "application/pdf" }),
@@ -634,7 +631,6 @@ export const LicenceUploadNow: Story = {
       expect(result?.mlDeclaration?.answer).toBe("yes");
       if (result?.mlDeclaration?.answer === "yes") {
         expect(result.mlDeclaration.profession).toBe("dentist");
-        expect(result.mlDeclaration.uploadChoice).toBe("now");
         expect(result.mlDeclaration.licenceFiles[0]?.name).toBe(
           "dental-licence.pdf",
         );
@@ -658,16 +654,15 @@ export const Mobile320: Story = {
     const canvas = within(canvasElement);
     await userEvent.click(canvas.getByRole("button", { name: "Continue" }));
     await userEvent.click(canvas.getByRole("button", { name: "Skip for now" }));
-    await userEvent.click(canvas.getByRole("radio", { name: /Yes — I have/ }));
+    await userEvent.click(canvas.getByRole("radio", { name: /Yes, I hold/ }));
     await pickProfession(canvasElement, "Other");
-    await userEvent.click(canvas.getByRole("radio", { name: "Upload now" }));
     await expect(
       canvas.getByLabelText("Medical licence document"),
     ).toBeVisible();
   },
 };
 
-/** The OTP action cluster stays together and touchable at 320px. */
+/** At 320px, the OTP status and primary verification action retain their hierarchy. */
 export const PhoneVerificationMobile320: Story = {
   args: { entry: { isInvitee: true, phoneVerified: false } },
   parameters: { viewport: { defaultViewport: "kura320" } },
@@ -681,6 +676,7 @@ export const PhoneVerificationMobile320: Story = {
     await expect(
       canvas.getByRole("button", { name: "Change number" }),
     ).toBeVisible();
+    await expect(canvas.getByText("Expires in 10 minutes")).toBeVisible();
     await expect(canvas.getByRole("button", { name: "Verify" })).toBeEnabled();
   },
 };

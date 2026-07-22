@@ -4,6 +4,7 @@ import { OTPInput, REGEXP_ONLY_DIGITS } from 'input-otp';
 import { Fragment, useId } from 'react';
 import type { ReactNode } from 'react';
 
+import { useT } from '../foundations/i18n';
 import { MinusIcon } from './icons';
 import styles from './otp-input.module.css';
 
@@ -19,6 +20,8 @@ export type OtpInputProps = {
   onComplete?: (value: string) => void;
   /** Visible field label. When omitted, the input receives a generic accessible name. */
   label?: ReactNode;
+  /** Accessible name for label-free compositions. Ignored when `label` is present. */
+  accessibleLabel?: string;
   helpText?: ReactNode;
   /** Error text; also flags the digits invalid. */
   error?: ReactNode;
@@ -81,6 +84,7 @@ function groupSlots<T>(slots: T[], size: number) {
  * behaviour stay equivalent to a standard input.
  */
 export function OtpInput({
+  accessibleLabel,
   autoFocus = false,
   className,
   disabled = false,
@@ -95,6 +99,7 @@ export function OtpInput({
   onValueChange,
   value,
 }: OtpInputProps) {
+  const t = useT();
   const autoId = useId();
   const inputId = id ?? `otp-input-${autoId}`;
   const helpId = helpText ? `${inputId}-help` : undefined;
@@ -118,7 +123,7 @@ export function OtpInput({
       <OTPInput
         aria-describedby={describedBy}
         aria-invalid={error ? true : undefined}
-        aria-label={label ? undefined : 'One-time verification code'}
+        aria-label={label ? undefined : accessibleLabel ?? t('One-time verification code')}
         autoFocus={autoFocus}
         autoComplete="one-time-code"
         containerClassName={styles.slots}

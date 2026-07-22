@@ -1,5 +1,6 @@
 import { SENSITIVE_TEST_PATTERN, type CatalogEntry } from './catalog';
 import { addMinor, multiplyMinor, subtractMinorFloor } from './money';
+import { isLiveLicence } from '../licence/logic';
 import type {
   BookingBlockReason,
   BookingSummary,
@@ -16,8 +17,9 @@ import type {
   FrontDeskPatient,
   IntakeFields,
   LineConsent,
-  MatchConfidence,
   Prescriber,
+  Promo,
+  VisitPaymentFact,
   StepId,
   StepStatus,
   TrustSignal,
@@ -53,7 +55,10 @@ export function wizardGate(patient: FrontDeskPatient): WizardGate {
     patient.cart.payment.status === 'pending-claim';
   const noCharge = patient.cart.payment.status === 'no-charge';
 
-  const step1Done = hasName && hasIdentitySource;
+  // Name lives on Step 2's required field, not Step 1. Gating Step 1 on
+  // hasName too deadlocked any phone- or code-only capture (no name typed
+  // yet): no way back to the one screen that can enter it.
+  const step1Done = hasIdentitySource;
   const step2Done = step1Done && hasName && hasDob && hasSex && hasContact;
   const step3Done = step2Done && (patient.insuranceAcked || patient.insurance.length > 0);
   const step4Done = step3Done && itemCount > 0;
@@ -87,6 +92,29 @@ export function wizardGate(patient: FrontDeskPatient): WizardGate {
     payLater,
     isReadyToCheckIn: step6Done,
   };
+}
+
+/**
+ * The one derived state the identity strip shows, or null when the visit is
+ * simply mid-flow. A badge that says "in progress" on a six-step wizard adds
+ * nothing the stepper does not already show, and repeating a step title in
+ * the header is duplication — so this speaks only when it carries a fact:
+ * no identity yet, a recorded unverified channel, or everything resolved.
+ */
+export function checkInStatus(
+  patient: FrontDeskPatient,
+  gate: WizardGate,
+): { label: string; variant: 'success' | 'warning' | 'info' } | undefined {
+  if (patient.identity.source === null) {
+    return { label: 'Awaiting identity', variant: 'info' };
+  }
+  if (gate.isReadyToCheckIn) {
+    return { label: 'Ready to check in', variant: 'success' };
+  }
+  if (patient.unverifiedReason !== null) {
+    return { label: 'Contact unverified', variant: 'warning' };
+  }
+  return undefined;
 }
 
 export function canNavigateToStep(stepId: StepId, currentStep: StepId, gate: WizardGate): boolean {
@@ -192,19 +220,6 @@ export function findCollisionCandidates(
     .sort((a, b) => b.score - a.score);
 }
 
-/**
- * Confidence tier for an ambiguous candidate, derived from the same signals
- * as the collision score. Sex is a modifier in the score, never a tier gate.
- */
-export function matchConfidence(signals: CollisionSignal[], score: number): MatchConfidence {
-  const has = (signal: CollisionSignal) => signals.includes(signal);
-  const clamped = Math.max(0, Math.min(100, score));
-  if (has('idMatch')) return { tier: 'identity', score: clamped };
-  if (has('phoneMatch') && has('nameDobMatch')) return { tier: 'strong', score: clamped };
-  if (has('nameDobMatch')) return { tier: 'possible', score: clamped };
-  return { tier: 'low', score: clamped };
-}
-
 const MATCH_SIGNAL_LABEL: Record<CollisionSignal, string | null> = {
   idMatch: 'National ID',
   nameDobMatch: 'Name + DOB',
@@ -302,17 +317,65 @@ export function mockEligibility(policyNumber: string): EligibilityResult {
 
 export type CartTotals = {
   subtotalMinor: string;
+  /** Total promo discount already reflected in `patientDueMinor`. */
+  discountMinor: string;
   patientDueMinor: string;
   currencyCode: 'USD';
 };
+
+export type PromoLine = { code: string; label: string; amountMinor: string };
+
+/**
+ * Promo discounts in the legacy money order — item promos first, then fixed
+ * amounts, then percentages — each computed against the running remainder so
+ * a percentage never discounts money an earlier promo already removed.
+ * PROTOTYPE SURFACE: kura-platform has no promo engine.
+ */
+export function promoLines(cart: Cart): PromoLine[] {
+  const promos = cart.promos ?? [];
+  if (promos.length === 0) return [];
+  const subtotal = BigInt(
+    addMinor(cart.items.map((item) => multiplyMinor(item.priceMinor, item.qty))),
+  );
+  const rank: Record<Promo['kind'], number> = { item: 0, fixed: 1, percent: 2 };
+  const ordered = [...promos].sort((a, b) => rank[a.kind] - rank[b.kind]);
+
+  let remainder = subtotal;
+  const lines: PromoLine[] = [];
+  for (const promo of ordered) {
+    let discount = 0n;
+    if (promo.kind === 'item') {
+      const line = cart.items.find((item) => item.id === promo.itemId);
+      if (line) {
+        const lineTotal = BigInt(multiplyMinor(line.priceMinor, line.qty));
+        discount = (lineTotal * BigInt(clampPct(promo.percentOff))) / 100n;
+      }
+    } else if (promo.kind === 'fixed') {
+      discount = BigInt(promo.amountMinor);
+    } else {
+      discount = (remainder * BigInt(clampPct(promo.percentOff))) / 100n;
+    }
+    if (discount > remainder) discount = remainder;
+    if (discount < 0n) discount = 0n;
+    remainder -= discount;
+    lines.push({ code: promo.code, label: promo.label, amountMinor: discount.toString() });
+  }
+  return lines;
+}
+
+function clampPct(pct: number): number {
+  return Math.max(0, Math.min(100, Math.floor(pct)));
+}
 
 export function cartTotals(cart: Cart): CartTotals {
   const subtotalMinor = addMinor(
     cart.items.map((item) => multiplyMinor(item.priceMinor, item.qty)),
   );
+  const discountMinor = addMinor(promoLines(cart).map((line) => line.amountMinor));
   return {
     subtotalMinor,
-    patientDueMinor: subtotalMinor,
+    discountMinor,
+    patientDueMinor: subtractMinorFloor(subtotalMinor, discountMinor),
     currencyCode: 'USD',
   };
 }
@@ -393,6 +456,8 @@ export function paymentAfterPaidEdit(
 
 export type IntakeSection = {
   key: string;
+  /** The IntakeFields entry this section writes to — never derived from `key`. */
+  fieldKey: keyof IntakeFields;
   label: string;
   filled: boolean;
   preview: string;
@@ -414,43 +479,78 @@ export function intakeSections(
   return [
     {
       key: 'today',
+      fieldKey: 'chiefComplaint',
       label: "Today's visit",
       filled: visitReason.length > 0 && fields.chiefComplaint.trim() !== '',
       preview: [visitReason.join(' · '), fields.chiefComplaint].filter(Boolean).join(' · '),
     },
-    { key: 'prep', label: 'Pre-test prep', filled: fields.preTestPrep.trim() !== '', preview: fields.preTestPrep },
+    { key: 'prep', fieldKey: 'preTestPrep', label: 'Pre-test prep', filled: fields.preTestPrep.trim() !== '', preview: fields.preTestPrep },
     {
       key: 'medications',
+      fieldKey: 'medications',
       label: 'Medications & supplements',
       filled: fields.medications.trim() !== '',
       preview: fields.medications,
     },
     {
       key: 'womensHealth',
+      fieldKey: 'womensHealth',
       label: "Women's health",
       filled: womenFilled,
       preview: femaleRequired ? fields.womensHealth : 'Not applicable',
     },
     {
       key: 'recentEvents',
+      fieldKey: 'recentEvents',
       label: 'Recent health events',
       filled: fields.recentEvents.trim() !== '',
       preview: fields.recentEvents,
     },
-    { key: 'lifestyle', label: 'Lifestyle snapshot', filled: fields.lifestyle.trim() !== '', preview: fields.lifestyle },
+    { key: 'lifestyle', fieldKey: 'lifestyle', label: 'Lifestyle snapshot', filled: fields.lifestyle.trim() !== '', preview: fields.lifestyle },
     {
       key: 'sampleComfort',
+      fieldKey: 'sampleComfort',
       label: 'Sample comfort',
       filled: fields.sampleComfort.trim() !== '',
       preview: fields.sampleComfort,
     },
     {
       key: 'sensitiveConsent',
+      fieldKey: 'sensitiveConsent',
       label: 'Consent & sensitive tests',
       filled: sensitiveFilled,
       preview: sensitiveItems.length === 0 ? 'No sensitive tests' : fields.sensitiveConsent,
     },
   ];
+}
+
+export type IntakeStatus = 'not-started' | 'waiting' | 'in-progress' | 'complete' | 'skipped';
+
+/**
+ * One derived intake fact for the desk: skipped wins (a recorded decision),
+ * complete means every applicable section answered, any answer means the
+ * patient or desk started, a sent link alone means waiting.
+ */
+export function intakeStatus(
+  patient: Pick<
+    FrontDeskPatient,
+    'intake' | 'visitReason' | 'sexAtBirth' | 'intakeSentAtLabel' | 'intakeSkipped'
+  >,
+  cartItems: CartItem[],
+): IntakeStatus {
+  if (patient.intakeSkipped) return 'skipped';
+  const sections = intakeSections(
+    patient.intake,
+    patient.visitReason,
+    cartItems,
+    patient.sexAtBirth,
+  );
+  if (sections.every((section) => section.filled)) return 'complete';
+  const answered =
+    patient.visitReason.length > 0 ||
+    Object.values(patient.intake).some((value) => value.trim() !== '');
+  if (answered) return 'in-progress';
+  return patient.intakeSentAtLabel ? 'waiting' : 'not-started';
 }
 
 // ── Step-1 identity resolution ─────────────────────────────
@@ -641,6 +741,68 @@ export function deskNextAction(
   return null;
 }
 
+/** The desk's payment fact for a finished check-in, from the cart's payment state. */
+export function visitPaymentFact(payment: CartPayment): VisitPaymentFact {
+  switch (payment.status) {
+    case 'confirmed':
+    // Zero balance: nothing outstanding, same desk fact as collected.
+    case 'no-charge':
+      return 'collected';
+    case 'waiting':
+    case 'split-cash':
+      return 'waiting';
+    case 'deferred':
+    case 'pending-claim':
+      return 'deferred';
+    default:
+      return 'pending';
+  }
+}
+
+/**
+ * The desk-queue row a completed check-in produces: identity resolved,
+ * payment carried as its own fact. Check-in is a terminal reception outcome —
+ * the visit continues on the queue, never inside the wizard.
+ */
+export function checkedInVisit(patient: FrontDeskPatient, waitMinutes = 0): DeskVisit {
+  return {
+    id: `visit-${patient.id}`,
+    queueNumber: patient.queueNumber,
+    patientName: patient.name,
+    nameKhmer: patient.nameKhmer || undefined,
+    arrivedLabel: patient.arrivedLabel?.split(' · ')[0] ?? 'Just now',
+    waitMinutes,
+    stage: 'identity-resolved',
+    // Channel verification is the desk's assurance proxy for a wizard patient.
+    assurance: patient.otpVerified || patient.telegramVerified ? 'verified' : 'unverified',
+    payment: visitPaymentFact(patient.cart.payment),
+  };
+}
+
+/**
+ * The desk-queue row for a check-in that is still open. Leaving the wizard
+ * must never lose the capture: the visit stays on the queue as `arrived` with
+ * the step it resumes at, so the desk can take another patient and come back.
+ *
+ * Returns null while the slot is still blank — an untouched form is not a
+ * visit, and a queue full of empty rows would hide the real ones.
+ */
+export function inProgressVisit(patient: FrontDeskPatient, waitMinutes = 0): DeskVisit | null {
+  const gate = wizardGate(patient);
+  const touched = patient.identity.source !== null || patient.name.trim() !== '';
+  if (!touched || gate.isReadyToCheckIn) return null;
+  return {
+    ...checkedInVisit(patient, waitMinutes),
+    stage: 'arrived',
+    resumeStep: inferStep(gate),
+  };
+}
+
+/** Next free queue number — the legacy desk spawns a blank slot right after check-in. */
+export function nextQueueNumber(taken: number[]): number {
+  return taken.length === 0 ? 1 : Math.max(...taken) + 1;
+}
+
 /** Longest-waiting first inside each stage; unfinished check-ins stay on top. */
 export function orderDeskVisits(visits: DeskVisit[]): DeskVisit[] {
   const stageRank: Record<VisitStage, number> = {
@@ -659,7 +821,10 @@ export function orderDeskVisits(visits: DeskVisit[]): DeskVisit[] {
 /** Prescribers a receptionist may attribute an order to: members with a live licence. */
 export function eligiblePrescribers(prescribers: Prescriber[]): Prescriber[] {
   return prescribers.filter(
-    (prescriber) => prescriber.workspaceMember && prescriber.licence === 'verified',
+    (prescriber) =>
+      prescriber.workspaceMember &&
+      prescriber.licence !== 'expired' &&
+      isLiveLicence(prescriber.licence),
   );
 }
 
@@ -915,19 +1080,18 @@ export function acceptReprice(cart: Cart): Cart {
   };
 }
 
-/** Copy the resolved record onto the wizard patient (identity captured). */
-export function applyResolvedRecord(
-  patient: FrontDeskPatient,
-  record: PatientRecordSummary,
-): FrontDeskPatient {
+/**
+ * Copy a resolved registry record onto the wizard patient as a patch:
+ * identity fields lock, prior duplicate acknowledgements re-arm.
+ */
+export function resolvedRecordPatch(record: PatientRecordSummary): Partial<FrontDeskPatient> {
   return {
-    ...patient,
     name: record.name,
     nameKhmer: record.nameKhmer ?? '',
     dob: record.dob ?? '',
     sexAtBirth: record.sexAtBirth,
     idNumber: record.nid ?? '',
-    phoneNumber: record.phone ?? patient.phoneNumber,
+    phoneNumber: (record.phone ?? '').replace(/\D/g, ''),
     identity: { source: 'existing', lockedFields: ['name', 'dob', 'sexAtBirth'] },
     collisionAcked: [],
   };

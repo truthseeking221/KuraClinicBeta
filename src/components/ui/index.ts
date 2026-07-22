@@ -286,6 +286,8 @@ export type {
   DateSelectorProps,
   DateSelectorValue,
 } from "./date-selector";
+export { DateInput, formatDateInputValue } from "./date-input";
+export type { DateInputProps } from "./date-input";
 export { DateRangePicker } from './date-range-picker';
 export type { DateRangePickerProps } from './date-range-picker';
 export { SettingsModal } from './settings-modal';
@@ -417,7 +419,7 @@ export type {
   IconButtonVariant,
 } from "./icon-button";
 export { Input } from "./input";
-export type { InputProps, InputSize } from "./input";
+export type { InputProps, InputSize, InputVariant } from "./input";
 export {
   Item,
   ItemActions,

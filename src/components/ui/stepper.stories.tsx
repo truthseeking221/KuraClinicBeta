@@ -20,7 +20,7 @@ import {
 import storyStyles from './component-family.stories.module.css';
 
 const meta = {
-  title: 'Design System/Primitives/Stepper',
+  title: 'Design System/Components/Stepper',
   component: Stepper,
   tags: ['autodocs', 'source-reui', 'adapted-kura'],
   parameters: {

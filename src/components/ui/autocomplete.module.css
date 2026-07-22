@@ -76,6 +76,11 @@
 
 .controls > :global([data-slot='icon-button']) {
   color: var(--muted-foreground);
+  box-shadow: none;
+}
+
+.controls > :global([data-slot='icon-button']:focus-visible) {
+  box-shadow: var(--elevation-focus);
 }
 
 .loadingIcon {

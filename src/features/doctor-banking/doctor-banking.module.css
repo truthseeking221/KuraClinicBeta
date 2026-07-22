@@ -84,6 +84,22 @@
   gap: var(--space-2);
 }
 
+.licenceState {
+  min-height: calc(var(--row-h) * 8);
+}
+
+.licenceIllustration {
+  inline-size: calc(var(--space-32) + var(--space-8));
+  block-size: calc(var(--space-32) + var(--space-8));
+}
+
+.licenceIllustrationImage {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: contain;
+}
+
 .balanceCard {
   display: flex;
   align-items: center;
@@ -543,4 +559,3 @@
     min-height: 12rem;
   }
 }
-

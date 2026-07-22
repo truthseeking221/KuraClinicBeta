@@ -1,0 +1,18 @@
+.frame {
+  height: 100vh;
+  margin-inline-start: auto;
+  border-inline-start: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.width400 {
+  width: 25rem;
+}
+
+.width520 {
+  width: 32.5rem;
+}
+
+.width560 {
+  width: 35rem;
+}

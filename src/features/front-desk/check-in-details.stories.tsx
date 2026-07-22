@@ -39,6 +39,34 @@ function DetailsPlayground({ initial }: { initial: FrontDeskPatient }) {
   );
 }
 
+function actionBarGeometry(canvasElement: HTMLElement) {
+  const canvas = within(canvasElement);
+  const bar = canvas.getByRole('region', { name: 'Check-in actions' });
+  const viewport = canvasElement.ownerDocument.defaultView;
+  if (!viewport) throw new Error('Story viewport is unavailable.');
+  return { bar, viewport };
+}
+
+async function verifyPersistentActionBar(canvasElement: HTMLElement) {
+  const canvas = within(canvasElement);
+  const { bar, viewport } = actionBarGeometry(canvasElement);
+
+  await expect(Math.ceil(bar.getBoundingClientRect().bottom)).toBeLessThanOrEqual(
+    viewport.innerHeight,
+  );
+
+  await userEvent.click(canvas.getByRole('button', { name: /Address/ }));
+  const street = await canvas.findByLabelText('Street / house');
+  street.scrollIntoView({ block: 'end' });
+
+  await waitFor(async () => {
+    const barRect = bar.getBoundingClientRect();
+    const fieldRect = street.getBoundingClientRect();
+    await expect(Math.ceil(barRect.bottom)).toBeLessThanOrEqual(viewport.innerHeight);
+    await expect(Math.ceil(fieldRect.bottom)).toBeLessThanOrEqual(Math.floor(barRect.top));
+  });
+}
+
 const meta = {
   title: 'Clinic/Front Desk/Check-In Wizard/Steps 2–3 Patient & Insurance',
   component: CheckInWizard,
@@ -130,7 +158,9 @@ export const ReviewOptionalSections: Story = {
     await userEvent.type(canvas.getByLabelText('Province'), 'Phnom Penh');
 
     await userEvent.click(canvas.getByRole('button', { name: /Refund account/ }));
-    await expect(await canvas.findByText('No refund account saved')).toBeVisible();
+    // The empty state is one flat line, not a dashed box: nothing saved is a
+    // state, and the disclosure heading already names the section.
+    await expect(await canvas.findByText(/No account saved\./)).toBeVisible();
     await userEvent.click(canvas.getByRole('button', { name: 'Scan KHQR' }));
     await expect(await canvas.findByText('Bakong KHQR saved')).toBeVisible();
   },
@@ -147,8 +177,8 @@ export const ReviewContactGate: Story = {
       canvas.getByText('Date of birth, sex, and a contact channel are required.'),
     ).toBeVisible();
 
-    // Channel-first: picking how to reach the patient is a value choice.
-    await userEvent.click(canvas.getByRole('radio', { name: 'SMS' }));
+    // SMS is the default channel, so the phone field is already on screen —
+    // the desk never picks a method before it can do any work.
     await userEvent.click(canvas.getByRole('button', { name: 'Send SMS code' }));
     await userEvent.type(canvas.getByLabelText('SMS code'), '123456');
     await userEvent.click(canvas.getByRole('button', { name: 'Verify' }));
@@ -157,13 +187,28 @@ export const ReviewContactGate: Story = {
   },
 };
 
+export const PersistentActionBar: Story = {
+  name: 'Step 2 — Actions remain visible while scrolling',
+  args: baseArgs,
+  render: () => <DetailsPlayground initial={capturedPatient()} />,
+  play: async ({ canvasElement }) => verifyPersistentActionBar(canvasElement),
+};
+
+export const PersistentActionBarMobile320: Story = {
+  name: 'Step 2 — Actions remain visible at 320 px',
+  args: baseArgs,
+  globals: { viewport: { value: 'kura320' } },
+  render: () => <DetailsPlayground initial={capturedPatient()} />,
+  play: async ({ canvasElement }) => verifyPersistentActionBar(canvasElement),
+};
+
 export const TelegramChannel: Story = {
   name: 'Step 2 — Telegram via the patient display',
   args: baseArgs,
   render: () => <DetailsPlayground initial={capturedPatient()} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await userEvent.click(canvas.getByRole('radio', { name: 'Telegram' }));
+    await userEvent.click(canvas.getByRole('button', { name: 'Use Telegram instead' }));
     await expect(
       await canvas.findByText('Telegram QR pushed to the patient display'),
     ).toBeVisible();

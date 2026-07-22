@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
-import { expect, userEvent, within } from 'storybook/test';
+import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { Fragment, useState } from 'react';
 
 import {
@@ -20,6 +20,7 @@ import {
   ComboboxSeparator,
   ComboboxStatus,
   ComboboxValue,
+  SearchIcon,
   useComboboxAnchor,
 } from './index';
 
@@ -167,15 +168,51 @@ export const Default: Story = {
     await userEvent.click(input);
 
     const body = within(canvasElement.ownerDocument.body);
-    const firstOption = body.getByRole('option', { name: /Nguyễn Minh Khôi/i });
-    await expect(firstOption).toBeVisible();
+    const firstOption = await body.findByRole('option', { name: /Nguyễn Minh Khôi/i });
+    await waitFor(() => expect(firstOption).toBeVisible());
     const control = canvasElement.querySelector<HTMLElement>("[data-slot='combobox-input-control']");
     const popup = firstOption.closest<HTMLElement>("[data-slot='combobox-content']");
-    await expect(Math.round(popup?.getBoundingClientRect().width ?? 0)).toBe(
+    await waitFor(() => expect(Math.round(popup?.getBoundingClientRect().width ?? 0)).toBe(
       Math.round(control?.getBoundingClientRect().width ?? 0),
-    );
+    ));
     await userEvent.keyboard('{ArrowDown}{Enter}');
     await expect(input).toHaveValue('BS. Nguyễn Minh Khôi');
+  },
+};
+
+export const LeadingIcon: Story = {
+  render: () => (
+    <div className="w-full max-w-sm">
+      <Combobox<CareMember>
+        items={careMembers}
+        itemToStringLabel={(member) => member.label}
+        itemToStringValue={(member) => member.id}
+      >
+        <ComboboxLabel>Search care team</ComboboxLabel>
+        <ComboboxInput
+          leadingIcon={<SearchIcon aria-hidden="true" />}
+          placeholder="Search care team"
+          showTrigger={false}
+        />
+        <ComboboxContent>
+          <ComboboxEmpty>No authorised clinicians match this search.</ComboboxEmpty>
+          <ComboboxList>
+            {(member: CareMember) => (
+              <ComboboxItem key={member.id} value={member}>
+                <CareMemberItem member={member} />
+              </ComboboxItem>
+            )}
+          </ComboboxList>
+        </ComboboxContent>
+      </Combobox>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      canvas.getByRole('combobox', { name: 'Search care team' }),
+    ).toBeVisible();
+    await expect(canvasElement.querySelector('[data-slot="combobox-input-control"] svg')).toBeVisible();
   },
 };
 

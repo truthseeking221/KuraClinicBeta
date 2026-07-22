@@ -20,7 +20,8 @@ const meta = {
           'Clinic/Auth/Workspace Gate',
           'Clinic/Flows/Doctor Onboarding Readiness',
         ],
-        terminal: 'Clinic shell with scoped access and explicit professional-attribution readiness',
+        terminal:
+          'Clinic shell with scoped access and explicit professional-attribution readiness',
       },
       journeys: [
         'clinic-first-sign-in',
@@ -50,30 +51,49 @@ export const NewDoctorJourney: Story = {
 
     // Door: unknown phone routes to the wizard.
     await userEvent.type(canvas.getByLabelText(/Phone number/), '98111222');
-    await userEvent.click(canvas.getByRole('button', { name: 'Send SMS code' }));
-    await userEvent.type(canvas.getByRole('textbox', { name: 'SMS code' }), DEMO_OTP);
-    await userEvent.click(canvas.getByRole('button', { name: 'Verify & continue' }));
+    await userEvent.click(
+      canvas.getByRole('button', { name: 'Send SMS code' }),
+    );
+    await userEvent.type(
+      canvas.getByRole('textbox', { name: 'SMS code' }),
+      DEMO_OTP,
+    );
+    await userEvent.click(
+      canvas.getByRole('button', { name: 'Verify and continue' }),
+    );
 
     // Wizard: name → clinic (phone already verified by the door) → licence.
-    await userEvent.type(await canvas.findByLabelText(/Full name/), 'Bopha Kim');
+    await userEvent.type(
+      await canvas.findByLabelText(/Full name/),
+      'Bopha Kim',
+    );
     await userEvent.click(canvas.getByRole('button', { name: 'Continue' }));
     await expect(await canvas.findByLabelText(/Clinic name/)).toHaveValue(
       "Bopha Kim's cabinet",
     );
-    await userEvent.click(canvas.getByRole('button', { name: 'Create clinic' }));
-    await userEvent.click(canvas.getByRole('radio', { name: /Yes — I have/ }));
+    await userEvent.click(
+      canvas.getByRole('button', { name: 'Create clinic' }),
+    );
+    await userEvent.click(canvas.getByRole('radio', { name: /Yes, I hold/ }));
     await userEvent.click(await canvas.findByLabelText(/Profession/));
     await userEvent.click(
-      await within(canvasElement.ownerDocument.body).findByRole('option', { name: 'Doctor' }),
+      await within(canvasElement.ownerDocument.body).findByRole('option', {
+        name: 'Doctor',
+      }),
     );
-    await userEvent.click(canvas.getByRole('radio', { name: 'Upload later' }));
+    await userEvent.upload(
+      canvas.getByLabelText('Medical licence document'),
+      new File(['licence'], 'medical-licence.pdf', { type: 'application/pdf' }),
+    );
     await userEvent.click(canvas.getByRole('button', { name: 'Finish setup' }));
 
     // Gate auto-enters the single branch-less cabinet → shell.
     await expect(
       await canvas.findByText("Welcome to Bopha Kim's cabinet"),
     ).toBeVisible();
-    await expect(canvas.getByText(/Your scoped workspace is ready/)).toBeVisible();
+    await expect(
+      canvas.getByText(/Order access depends on your permissions/),
+    ).toBeVisible();
     await expect(canvas.getByText('Verify your medical licence')).toBeVisible();
   },
 };
@@ -84,19 +104,39 @@ export const NewNonLicensedJourney: Story = {
     const canvas = within(canvasElement);
 
     await userEvent.type(canvas.getByLabelText(/Phone number/), '98111222');
-    await userEvent.click(canvas.getByRole('button', { name: 'Send SMS code' }));
-    await userEvent.type(canvas.getByRole('textbox', { name: 'SMS code' }), DEMO_OTP);
-    await userEvent.click(canvas.getByRole('button', { name: 'Verify & continue' }));
+    await userEvent.click(
+      canvas.getByRole('button', { name: 'Send SMS code' }),
+    );
+    await userEvent.type(
+      canvas.getByRole('textbox', { name: 'SMS code' }),
+      DEMO_OTP,
+    );
+    await userEvent.click(
+      canvas.getByRole('button', { name: 'Verify and continue' }),
+    );
 
-    await userEvent.type(await canvas.findByLabelText(/Full name/), 'Linh Nguyen');
+    await userEvent.type(
+      await canvas.findByLabelText(/Full name/),
+      'Linh Nguyen',
+    );
     await userEvent.click(canvas.getByRole('button', { name: 'Continue' }));
-    await userEvent.click(await canvas.findByRole('button', { name: 'Create clinic' }));
-    await userEvent.click(canvas.getByRole('radio', { name: /No — not at this time/ }));
+    await userEvent.click(
+      await canvas.findByRole('button', { name: 'Create clinic' }),
+    );
+    await userEvent.click(
+      canvas.getByRole('radio', { name: /No, I do not hold one/ }),
+    );
     await userEvent.click(canvas.getByRole('button', { name: 'Finish setup' }));
 
-    await expect(await canvas.findByText("Welcome to Linh Nguyen's cabinet")).toBeVisible();
-    await expect(canvas.getByText(/Your scoped workspace is ready/)).toBeVisible();
-    await expect(canvas.queryByText('Verify your medical licence')).not.toBeInTheDocument();
+    await expect(
+      await canvas.findByText("Welcome to Linh Nguyen's cabinet"),
+    ).toBeVisible();
+    await expect(
+      canvas.getByText(/Order access depends on your permissions/),
+    ).toBeVisible();
+    await expect(
+      canvas.queryByText('Verify your medical licence'),
+    ).not.toBeInTheDocument();
   },
 };
 
@@ -109,12 +149,21 @@ export const NewInviteeJourney: Story = {
     await userEvent.click(canvas.getByRole('button', { name: 'Continue' }));
     await userEvent.type(canvas.getByLabelText(/Phone number/), '98111333');
     await userEvent.click(canvas.getByRole('button', { name: 'Send code' }));
-    await userEvent.type(canvas.getByRole('textbox', { name: 'SMS code' }), DEMO_OTP);
+    await userEvent.type(
+      canvas.getByRole('textbox', { name: 'SMS code' }),
+      DEMO_OTP,
+    );
     await userEvent.click(canvas.getByRole('button', { name: 'Verify' }));
 
-    await expect(await canvas.findByText('Welcome to Sunrise Clinic')).toBeVisible();
-    await expect(canvas.getByText('Tell us about your medical licence')).toBeVisible();
-    await expect(canvas.getByRole('button', { name: 'Answer licence question' })).toBeVisible();
+    await expect(
+      await canvas.findByText('Welcome to Sunrise Clinic'),
+    ).toBeVisible();
+    await expect(
+      canvas.getByText('Medical licence question remaining'),
+    ).toBeVisible();
+    await expect(
+      canvas.getByRole('button', { name: 'Answer question' }),
+    ).toBeVisible();
   },
 };
 
@@ -127,17 +176,30 @@ export const ReturningMemberJourney: Story = {
     const canvas = within(canvasElement);
 
     await userEvent.type(canvas.getByLabelText(/Phone number/), '12777088');
-    await userEvent.click(canvas.getByRole('button', { name: 'Send SMS code' }));
-    await userEvent.type(canvas.getByRole('textbox', { name: 'SMS code' }), DEMO_OTP);
-    await userEvent.click(canvas.getByRole('button', { name: 'Verify & continue' }));
+    await userEvent.click(
+      canvas.getByRole('button', { name: 'Send SMS code' }),
+    );
+    await userEvent.type(
+      canvas.getByRole('textbox', { name: 'SMS code' }),
+      DEMO_OTP,
+    );
+    await userEvent.click(
+      canvas.getByRole('button', { name: 'Verify and continue' }),
+    );
 
     // Gate lists both workspaces with last-active flagged.
     await expect(await canvas.findByText('Last active')).toBeVisible();
-    await userEvent.click(canvas.getByRole('button', { name: /Sunrise Clinic/ }));
+    await userEvent.click(
+      canvas.getByRole('button', { name: /Sunrise Clinic/ }),
+    );
 
     // Branch choice, then the shell.
-    await userEvent.click(await canvas.findByRole('radio', { name: /North Wing/ }));
-    await userEvent.click(canvas.getByRole('button', { name: 'Enter workspace' }));
+    await userEvent.click(
+      await canvas.findByRole('radio', { name: /North Wing/ }),
+    );
+    await userEvent.click(
+      canvas.getByRole('button', { name: 'Enter workspace' }),
+    );
     await waitFor(async () => {
       await expect(canvas.getByText('Welcome to Sunrise Clinic')).toBeVisible();
     });
@@ -153,15 +215,29 @@ export const WrongCodeRecovery: Story = {
     const canvas = within(canvasElement);
 
     await userEvent.type(canvas.getByLabelText(/Phone number/), '98111222');
-    await userEvent.click(canvas.getByRole('button', { name: 'Send SMS code' }));
-    await userEvent.type(canvas.getByRole('textbox', { name: 'SMS code' }), '000000');
-    await userEvent.click(canvas.getByRole('button', { name: 'Verify & continue' }));
-    await expect(await canvas.findByRole('alert')).toHaveTextContent(/Incorrect or expired/);
+    await userEvent.click(
+      canvas.getByRole('button', { name: 'Send SMS code' }),
+    );
+    await userEvent.type(
+      canvas.getByRole('textbox', { name: 'SMS code' }),
+      '000000',
+    );
+    await userEvent.click(
+      canvas.getByRole('button', { name: 'Verify and continue' }),
+    );
+    await expect(await canvas.findByRole('alert')).toHaveTextContent(
+      /incorrect or expired/i,
+    );
 
     // Same screen, corrected code proceeds.
     await userEvent.clear(canvas.getByRole('textbox', { name: 'SMS code' }));
-    await userEvent.type(canvas.getByRole('textbox', { name: 'SMS code' }), DEMO_OTP);
-    await userEvent.click(canvas.getByRole('button', { name: 'Verify & continue' }));
+    await userEvent.type(
+      canvas.getByRole('textbox', { name: 'SMS code' }),
+      DEMO_OTP,
+    );
+    await userEvent.click(
+      canvas.getByRole('button', { name: 'Verify and continue' }),
+    );
     await expect(await canvas.findByLabelText(/Full name/)).toBeVisible();
   },
 };

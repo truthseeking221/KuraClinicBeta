@@ -1,22 +1,16 @@
-import type { ReactNode } from 'react';
+"use client";
 
-import {
-  Badge,
-  Button,
-  Timeline,
-  TimelineContent,
-  TimelineHeader,
-  TimelineIndicator,
-  TimelineItem,
-  TimelineSeparator,
-  TimelineTitle,
-} from '../../components/ui';
+import type { ReactNode } from "react";
 
-import styles from './care-loop.module.css';
+import { Badge, Button, Progress } from "../../components/ui";
+import { useT } from "../../components/foundations/i18n";
+
+import styles from "./care-loop.module.css";
 
 export type CareLoopStage = {
   label: string;
   actor: string;
+  description?: string;
 };
 
 export type CareLoopPatientSummary = {
@@ -24,6 +18,24 @@ export type CareLoopPatientSummary = {
   pid: string;
   detail: string;
 };
+
+type CareLoopProgress =
+  | {
+      currentStep: number;
+      stages: CareLoopStage[];
+    }
+  | {
+      currentStep?: never;
+      stages?: never;
+    };
+
+type CareLoopFrameProps = {
+  actor?: string;
+  children: ReactNode;
+  onRestart: () => void;
+  patient?: CareLoopPatientSummary;
+  title: string;
+} & CareLoopProgress;
 
 export function CareLoopFrame({
   actor,
@@ -33,53 +45,62 @@ export function CareLoopFrame({
   patient,
   stages,
   title,
-}: {
-  actor: string;
-  children: ReactNode;
-  currentStep: number;
-  onRestart: () => void;
-  patient?: CareLoopPatientSummary;
-  stages: CareLoopStage[];
-  title: string;
-}) {
+}: CareLoopFrameProps) {
+  const t = useT();
+  const activeStage = stages?.[Math.max(0, (currentStep ?? 1) - 1)];
+  const nextStage = stages?.[currentStep ?? 0];
+
   return (
     <main className={styles.page}>
       <header className={styles.pageHeader}>
         <div className={styles.headingRow}>
           <div>
-            <p className={styles.eyebrow}>First patient care loop</p>
-            <h1 className={styles.pageTitle}>{title}</h1>
+            <h1 className={styles.pageTitle}>{t(title)}</h1>
           </div>
           <div className={styles.headerActions}>
-            <Badge appearance="outline" size="sm">
-              {actor}
-            </Badge>
+            {actor ? (
+              <Badge appearance="outline" size="sm">
+                {t(actor)}
+              </Badge>
+            ) : null}
             <Button onClick={onRestart} size="sm" variant="ghost">
-              Restart
+              {t("Restart")}
             </Button>
           </div>
         </div>
 
         {patient ? (
-          <div aria-label="Current patient" className={styles.patientBar}>
+          <div aria-label={t("Current patient")} className={styles.patientBar}>
             <strong>{patient.name}</strong>
-            <span>{patient.pid}</span>
+            <span>{t(patient.pid)}</span>
             <span>{patient.detail}</span>
           </div>
         ) : null}
 
-        <Timeline aria-label="Journey progress" orientation="horizontal" value={currentStep}>
-          {stages.map((stage, index) => (
-            <TimelineItem key={stage.label} step={index + 1}>
-              <TimelineIndicator />
-              <TimelineHeader>
-                <TimelineTitle>{stage.label}</TimelineTitle>
-              </TimelineHeader>
-              <TimelineContent>{stage.actor}</TimelineContent>
-              <TimelineSeparator />
-            </TimelineItem>
-          ))}
-        </Timeline>
+        {stages && activeStage ? (
+          <div
+            aria-label={t("Journey progress")}
+            className={styles.journeyProgress}
+            role="group"
+          >
+            <div className={styles.journeyProgressHeading}>
+              <strong>{t(activeStage.label)}</strong>
+              <span>
+                {t("Step")} {currentStep} {t("of")} {stages.length}
+              </span>
+            </div>
+            <Progress
+              aria-label={`${t("Step")} ${currentStep} ${t("of")} ${stages.length}: ${t(activeStage.label)}`}
+              max={stages.length}
+              size="sm"
+              value={currentStep}
+            />
+            <p>
+              {t(activeStage.description ?? activeStage.actor)}
+              {nextStage ? ` · ${t("Next")}: ${t(nextStage.label)}` : ""}
+            </p>
+          </div>
+        ) : null}
       </header>
 
       <div className={styles.content}>{children}</div>

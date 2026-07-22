@@ -74,6 +74,7 @@
   --icon-button-fg: var(--foreground);
   --icon-button-border: transparent;
   --icon-button-hover-bg: var(--color-background-secondary-hover);
+  box-shadow: none;
 }
 
 .toneCritical {

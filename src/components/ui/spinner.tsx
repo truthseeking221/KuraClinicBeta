@@ -1,5 +1,8 @@
+'use client';
+
 import type { ComponentPropsWithoutRef, ReactNode } from 'react';
 
+import { useT } from '../foundations/i18n';
 import { LoadingIcon } from './icons';
 import styles from './spinner.module.css';
 
@@ -19,12 +22,14 @@ function joinClasses(...classes: Array<string | undefined | false>) {
 
 export function Spinner({
   className,
-  label = 'Loading',
+  label,
   role = 'status',
   showLabel = false,
   size = 'md',
   ...props
 }: SpinnerProps) {
+  const t = useT();
+
   return (
     <span
       {...props}
@@ -35,7 +40,7 @@ export function Spinner({
       role={role}
     >
       <LoadingIcon aria-hidden="true" className={styles.icon} />
-      <span className={showLabel ? styles.label : styles.srOnly}>{label}</span>
+      <span className={showLabel ? styles.label : styles.srOnly}>{label ?? t('Loading')}</span>
     </span>
   );
 }

@@ -18,7 +18,7 @@ import {
 } from './index';
 
 const meta = {
-  title: 'Design System/Patterns/CheckboxGroup',
+  title: 'Design System/Patterns/Checkbox Group',
   component: CheckboxGroup,
   tags: ['autodocs', 'source-kura', 'adapted-kura'],
   parameters: {

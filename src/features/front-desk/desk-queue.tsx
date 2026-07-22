@@ -1,5 +1,7 @@
 'use client';
 
+import { Fragment } from 'react';
+
 import {
   Alert,
   AlertAction,
@@ -7,6 +9,15 @@ import {
   AlertTitle,
   Badge,
   Button,
+  Card,
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemDescription,
+  ItemGroup,
+  ItemMedia,
+  ItemSeparator,
+  ItemTitle,
   RefreshIcon,
   Skeleton,
   UserAddIcon,
@@ -18,6 +29,7 @@ import {
   EmptyStateHeader,
   EmptyStateTitle,
 } from '../../components/shared';
+import { useT } from '../../components/foundations/i18n';
 
 import { deskNextAction, orderDeskVisits, waitTone } from './logic';
 import type { DeskQueueState, DeskVisit, VisitPaymentFact, VisitStage } from './types';
@@ -70,19 +82,21 @@ export function DeskQueue({
   state = 'ready',
   visits,
 }: DeskQueueProps) {
+  const t = useT();
   const ordered = orderDeskVisits(visits);
   const active = ordered.filter((visit) => visit.stage !== 'completed');
   const completedCount = visits.length - active.length;
 
   if (state === 'denied') {
     return (
-      <section aria-label="Arrivals" className={styles.queue}>
+      <section aria-label={t('Arrivals')} className={styles.queue}>
         <EmptyState align="center" surface="muted">
           <EmptyStateHeader>
-            <EmptyStateTitle>No access to the desk queue</EmptyStateTitle>
+            <EmptyStateTitle>{t('No access to the desk queue')}</EmptyStateTitle>
             <EmptyStateDescription>
-              Your account has no front-desk capability in this workspace. Ask the practice
-              owner to grant reception access.
+              {t(
+                'Your account has no front-desk capability in this workspace. Ask the practice owner to grant reception access.',
+              )}
             </EmptyStateDescription>
           </EmptyStateHeader>
         </EmptyState>
@@ -91,55 +105,58 @@ export function DeskQueue({
   }
 
   return (
-    <section aria-label="Arrivals" className={styles.queue}>
+    <section aria-label={t('Arrivals')} className={styles.queue}>
       <header className={styles.header}>
         <div className={styles.headerText}>
-          <h2 className={styles.title}>Arrivals</h2>
+          <h2 className={styles.title}>{t('Arrivals')}</h2>
           <p className={styles.subtitle}>
             {state === 'loading'
-              ? 'Loading today’s visits…'
-              : `${active.length} in progress · ${completedCount} completed today`}
+              ? t('Loading today’s visits…')
+              : `${active.length} ${t('in progress')} · ${completedCount} ${t('completed today')}`}
           </p>
         </div>
         {onNewWalkIn ? (
           <Button onClick={onNewWalkIn} variant="primary">
             <UserAddIcon aria-hidden="true" size={16} />
-            New walk-in
+            {t('New walk-in')}
           </Button>
         ) : null}
       </header>
 
       {state === 'offline' ? (
         <Alert tone="warning">
-          <AlertTitle>You are offline</AlertTitle>
+          <AlertTitle>{t('You are offline')}</AlertTitle>
           <AlertDescription>
-            Showing the last synced queue{asOf ? ` from ${asOf}` : ''}. Check-ins and payments
-            cannot be recorded until the connection returns.
+            {asOf
+              ? `${t('Showing the last synced queue from')} ${asOf}.`
+              : t('Showing the last synced queue.')}{' '}
+            {t('Check-ins and payments cannot be recorded until the connection returns.')}
           </AlertDescription>
         </Alert>
       ) : null}
 
       {state === 'stale' ? (
         <div className={styles.staleRow}>
-          <span>Updated {asOf ?? 'earlier'}</span>
+          <span>{t('Updated')} {asOf ?? t('earlier')}</span>
           <Button onClick={() => onRefresh?.()} size="sm" variant="ghost">
             <RefreshIcon aria-hidden="true" size={14} />
-            Refresh
+            {t('Refresh')}
           </Button>
         </div>
       ) : null}
 
       {state === 'error' ? (
         <Alert tone="danger">
-          <AlertTitle>The queue could not be loaded</AlertTitle>
+          <AlertTitle>{t('The queue could not be loaded')}</AlertTitle>
           <AlertDescription>
-            Today’s visits are unavailable. Walk-ins can still be checked in — the queue
-            re-syncs when the connection recovers.
+            {t(
+              'Today’s visits are unavailable. Walk-ins can still be checked in — the queue re-syncs when the connection recovers.',
+            )}
           </AlertDescription>
           {onRetry ? (
             <AlertAction>
               <Button onClick={onRetry} size="sm" variant="outline">
-                Retry
+                {t('Retry')}
               </Button>
             </AlertAction>
           ) : null}
@@ -147,31 +164,38 @@ export function DeskQueue({
       ) : null}
 
       {state === 'loading' ? (
-        <ul aria-label="Loading visits" className={styles.list}>
-          {[0, 1, 2].map((row) => (
-            <li className={styles.rowStatic} key={row}>
-              <Skeleton className={styles.skeletonQueue} shape="text" />
-              <div className={styles.rowBody}>
-                <Skeleton className={styles.skeletonName} shape="text" />
-                <Skeleton className={styles.skeletonMeta} shape="text" />
-              </div>
-            </li>
-          ))}
-        </ul>
+        <Card className={styles.listSurface} variant="outline">
+          <ItemGroup aria-label={t('Loading visits')} role="list">
+            {[0, 1, 2].map((row, index) => (
+              <Fragment key={row}>
+                {index > 0 ? <ItemSeparator aria-hidden="true" /> : null}
+                <Item role="listitem" size="sm">
+                  <ItemMedia>
+                    <Skeleton className={styles.skeletonQueue} shape="text" />
+                  </ItemMedia>
+                  <ItemContent>
+                    <Skeleton className={styles.skeletonName} shape="text" />
+                    <Skeleton className={styles.skeletonMeta} shape="text" />
+                  </ItemContent>
+                </Item>
+              </Fragment>
+            ))}
+          </ItemGroup>
+        </Card>
       ) : null}
 
       {state !== 'loading' && state !== 'error' && ordered.length === 0 ? (
         <EmptyState align="center" surface="muted">
           <EmptyStateHeader>
-            <EmptyStateTitle>No arrivals yet</EmptyStateTitle>
+            <EmptyStateTitle>{t('No arrivals yet')}</EmptyStateTitle>
             <EmptyStateDescription>
-              Visits appear here when a booking is checked in or a walk-in starts.
+              {t('Visits appear here when a booking is checked in or a walk-in starts.')}
             </EmptyStateDescription>
           </EmptyStateHeader>
           {onNewWalkIn ? (
             <EmptyStateContent>
               <Button onClick={onNewWalkIn} variant="primary">
-                Start a walk-in
+                {t('Start a walk-in')}
               </Button>
             </EmptyStateContent>
           ) : null}
@@ -179,73 +203,86 @@ export function DeskQueue({
       ) : null}
 
       {state !== 'loading' && ordered.length > 0 ? (
-        <ul aria-label="Today's visits" className={styles.list}>
-          {ordered.map((visit) => {
-            const action = deskNextAction(visit);
-            const tone = waitTone(visit.waitMinutes);
-            const stage = STAGE_META[visit.stage];
-            const payment = PAYMENT_META[visit.payment];
-            const observed = visit.stage === 'draw-complete' || visit.stage === 'completed';
+        <Card className={styles.listSurface} variant="outline">
+          <ItemGroup aria-label={t("Today's visits")} role="list">
+            {ordered.map((visit, index) => {
+              const action = deskNextAction(visit);
+              const tone = waitTone(visit.waitMinutes);
+              const stage = STAGE_META[visit.stage];
+              const payment = PAYMENT_META[visit.payment];
+              const observed = visit.stage === 'draw-complete' || visit.stage === 'completed';
 
-            return (
-              <li
-                className={observed ? styles.rowObserved : styles.rowStatic}
-                data-stage={visit.stage}
-                key={visit.id}
-              >
-                <span className={styles.queueNumber}>#{visit.queueNumber}</span>
-                <div className={styles.rowBody}>
-                  <div className={styles.nameLine}>
-                    <span className={styles.name}>{visit.patientName}</span>
-                    {visit.nameKhmer ? (
-                      <span className={styles.nameKhmer} lang="km">
-                        {visit.nameKhmer}
-                      </span>
-                    ) : null}
-                  </div>
-                  <div className={styles.factLine}>
-                    <span
-                      className={styles.wait}
-                      data-tone={tone === 'normal' ? undefined : tone}
-                    >
-                      Arrived {visit.arrivedLabel} · waiting {visit.waitMinutes}m
-                      {tone === 'escalate' ? ' — escalate' : ''}
-                    </span>
-                  </div>
-                </div>
-                <div className={styles.facts}>
-                  <Badge size="sm" variant={stage.variant}>
-                    {stage.label}
-                  </Badge>
-                  <Badge size="sm" variant={visit.assurance === 'verified' ? 'success' : 'neutral'}>
-                    {visit.assurance === 'verified' ? 'ID verified' : 'ID unverified'}
-                  </Badge>
-                  <Badge size="sm" variant={payment.variant}>
-                    {payment.label}
-                  </Badge>
-                </div>
-                {action ? (
-                  <Button
-                    className={styles.rowAction}
-                    onClick={() =>
-                      action.kind === 'resume'
-                        ? onResumeVisit?.(visit.id)
-                        : onQueueForDraw?.(visit.id)
-                    }
+              return (
+                <Fragment key={visit.id}>
+                  {index > 0 ? <ItemSeparator aria-hidden="true" /> : null}
+                  <Item
+                    className={observed ? styles.rowObserved : undefined}
+                    data-stage={visit.stage}
+                    role="listitem"
                     size="sm"
-                    variant={action.kind === 'queue-draw' ? 'primary' : 'outline'}
                   >
-                    {action.label}
-                  </Button>
-                ) : (
-                  <span className={styles.observedNote}>
-                    {visit.stage === 'completed' ? 'Done' : 'With phlebotomy'}
-                  </span>
-                )}
-              </li>
-            );
-          })}
-        </ul>
+                    <ItemMedia>
+                      <span className={styles.queueNumber}>#{visit.queueNumber}</span>
+                    </ItemMedia>
+                    <ItemContent>
+                      <ItemTitle className={styles.nameLine}>
+                        <span className={styles.name}>{visit.patientName}</span>
+                        {visit.nameKhmer ? (
+                          <span className={styles.nameKhmer} lang="km">
+                            {visit.nameKhmer}
+                          </span>
+                        ) : null}
+                      </ItemTitle>
+                      <ItemDescription
+                        className={styles.wait}
+                        data-tone={tone === 'normal' ? undefined : tone}
+                      >
+                        {t('Arrived')} {visit.arrivedLabel} · {t('waiting')} {visit.waitMinutes}m
+                        {tone === 'escalate' ? ` — ${t('escalate')}` : ''}
+                      </ItemDescription>
+                    </ItemContent>
+                    <ItemActions className={styles.rowActions}>
+                      <span className={styles.facts}>
+                        <Badge size="sm" variant={stage.variant}>
+                          {t(stage.label)}
+                        </Badge>
+                        <Badge
+                          size="sm"
+                          variant={visit.assurance === 'verified' ? 'success' : 'neutral'}
+                        >
+                          {visit.assurance === 'verified' ? t('ID verified') : t('ID unverified')}
+                        </Badge>
+                        <Badge size="sm" variant={payment.variant}>
+                          {t(payment.label)}
+                        </Badge>
+                      </span>
+                      {action ? (
+                        <Button
+                          className={styles.rowAction}
+                          onClick={() =>
+                            action.kind === 'resume'
+                              ? onResumeVisit?.(visit.id)
+                              : onQueueForDraw?.(visit.id)
+                          }
+                          size="sm"
+                          variant={action.kind === 'queue-draw' ? 'primary' : 'outline'}
+                        >
+                          {action.kind === 'resume'
+                            ? `${t('Resume check-in')} · ${t('Step')} ${visit.resumeStep ?? 1}`
+                            : t(action.label)}
+                        </Button>
+                      ) : (
+                        <span className={styles.observedNote}>
+                          {visit.stage === 'completed' ? t('Done') : t('With phlebotomy')}
+                        </span>
+                      )}
+                    </ItemActions>
+                  </Item>
+                </Fragment>
+              );
+            })}
+          </ItemGroup>
+        </Card>
       ) : null}
     </section>
   );

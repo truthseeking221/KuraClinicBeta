@@ -3,8 +3,10 @@
 import type { ComponentPropsWithoutRef, ReactNode } from 'react';
 import { useState } from 'react';
 
+import { useT } from '../foundations/i18n';
 import { Button } from './button';
-import { CloseIcon, ShieldIcon } from './icons';
+import { CloseButton } from './close-button';
+import { ShieldIcon } from './icons';
 import styles from './announcement.module.css';
 
 export type AnnouncementProps = Omit<ComponentPropsWithoutRef<'aside'>, 'children' | 'title'> & {
@@ -38,13 +40,15 @@ export function Announcement({
   className,
   description,
   dismissible = false,
-  dismissLabel = 'Dismiss announcement',
+  dismissLabel,
   icon = <ShieldIcon aria-hidden="true" />,
   onAction,
   onDismiss,
   title,
   ...props
 }: AnnouncementProps) {
+  const t = useT();
+  const resolvedDismissLabel = dismissLabel ?? t('Dismiss announcement');
   const [isVisible, setIsVisible] = useState(true);
 
   if (!isVisible) {
@@ -67,14 +71,12 @@ export function Announcement({
           <span className={styles.icon} aria-hidden="true">{icon}</span>
         ) : null}
         {dismissible ? (
-          <button
+          <CloseButton
             className={styles.dismiss}
-            type="button"
-            aria-label={dismissLabel}
+            aria-label={resolvedDismissLabel}
             onClick={dismiss}
-          >
-            <CloseIcon aria-hidden="true" />
-          </button>
+            size="md"
+          />
         ) : null}
         <div className={styles.text}>
           <p className={styles.title}>{title}</p>

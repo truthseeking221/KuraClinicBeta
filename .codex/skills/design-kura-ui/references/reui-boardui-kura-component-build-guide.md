@@ -45,6 +45,9 @@ it is, Kura decides everything else.
 ## 2. The BoardUI finish checklist (what "clean" means, in numbers)
 
 ### Surface & borders — the border diet
+**Read [the Kura surface direction](kura-surface-direction.md) in full before
+placing any container.** It is the complete law; the lines below are the
+summary you still have to satisfy.
 - Surface sandwich (BoardUI): white page canvas (--color-surface-bg) → flat
 gray tray cards (--card = --color-surface-2, no border, no shadow, 16px
 radius) → white tiles nested inside a tray (--color-surface +
@@ -72,6 +75,11 @@ aesthetics there.
 ### Typography — weight-swap hierarchy
 - Hierarchy by weight (400 ↔ 500/600) before size. One working screen ≤ 3 font
 sizes.
+- A type role bundles size + line-height + weight + tracking as one decision —
+never compose them ad hoc per element.
+- Letter-spacing exists only at caption sizes (12px and below, slight positive
+tracking for legibility). Everything larger runs at 0 — no tracked headings,
+no tracked labels.
 - Section labels: --type-sm / medium / --color-text-secondary. No uppercase 
 letter-spaced micro-labels. 
 - Screen titles inside cards: --type-md–--type-lg semibold, not 20px+.
@@ -91,6 +99,14 @@ Chrome gets zero color.
 - transition: all banned. Named properties only. 300ms ceiling.
 - Animate data, not chrome: value fades, status cross-fades, row arrivals.
 Decoration gets nothing.
+- Layered clocks: when movement and fade animate together, the fade runs on a
+SHORTER clock than the movement (BoardUI row entrance: 400ms grow/slide,
+240ms fade+blur) — the element is fully visible before it finishes settling.
+- Row arrival/departure animates the grid track (0fr ↔ 1fr) so neighbours move
+continuously, with the content sliding from under the adjacent surface —
+never a bare height snap.
+- Gradient state changes cross-fade through a layered `::before` (opacity),
+never by swapping `background-image` on hover — it cannot interpolate.
 - Every @keyframes gets a prefers-reduced-motion guard (root already zeroes
 durations).
 - Native <dialog>: if you override display, restore :not([open]) { display: 

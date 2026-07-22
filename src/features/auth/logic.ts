@@ -54,11 +54,9 @@ export type DoorRoute = 'wizard' | 'workspace';
 export const DOOR_COPY = {
   invalidPhone: 'Enter a valid phone number.',
   invalidEmail: 'Enter a valid email address.',
-  throttled: 'Too many attempts — try again in a few minutes.',
-  connection: 'Something went wrong — try again.',
-  invalidCode: 'Incorrect or expired code — try again.',
-  googleUnavailable:
-    "Google sign-in isn't available right now — try phone or email instead.",
+  throttled: 'Too many attempts. Try again in a few minutes.',
+  connection: 'We could not send a code. Try again.',
+  invalidCode: 'That code is incorrect or expired. Try again.',
 } as const;
 
 export type AccountRecord = {
@@ -98,9 +96,11 @@ export type WizardStepStatus = 'active' | 'done' | 'locked' | 'skipped';
 export type PhoneSubStep = 'entry' | 'verify' | 'blocked';
 export type MlAnswer = 'yes' | 'no';
 export type Profession = 'doctor' | 'dentist' | 'nurse' | 'midwife' | 'other';
-export type LicenceUploadChoice = 'now' | 'later';
 
-export const WIZARD_PROFESSIONS: ReadonlyArray<{ value: Profession; label: string }> = [
+export const WIZARD_PROFESSIONS: ReadonlyArray<{
+  value: Profession;
+  label: string;
+}> = [
   { value: 'doctor', label: 'Doctor' },
   { value: 'dentist', label: 'Dentist' },
   { value: 'nurse', label: 'Nurse' },
@@ -118,12 +118,11 @@ export const WIZARD_STEP_LABELS: Record<WizardStepKey, string> = {
 export const WIZARD_COPY = {
   nameRequired: 'Enter your name to continue.',
   invalidPhone: 'Enter a valid phone number.',
-  invalidCode: 'Incorrect or expired code — try again.',
-  clinicNameRequired: 'Name your clinic to continue.',
-  mlAnswerRequired: "Answer the licence question, or choose 'Skip for now'.",
+  invalidCode: 'That code is incorrect or expired. Try again.',
+  clinicNameRequired: 'Clinic name is required.',
+  mlAnswerRequired: 'Answer the licence question or choose Skip for now.',
   mlProfessionRequired: 'Select your profession to continue.',
-  mlUploadChoiceRequired: 'Choose whether to upload your licence now or later.',
-  mlFileRequired: "Attach your licence document, or choose 'Upload later'.",
+  mlFileRequired: 'Upload a licence document to continue.',
 } as const;
 
 type WizardEntryBase = {
@@ -131,7 +130,7 @@ type WizardEntryBase = {
   isInvitee: boolean;
   /** Existing account name. Invitees skip Name when this is present. */
   existingName?: string;
-  /** Editable provider prefill, for example the name returned by Google. */
+  /** Editable account-provider prefill. */
   initialName?: string;
 };
 
@@ -199,7 +198,8 @@ export function nextLandingIndex(
   return targetIndex;
 }
 
-export type PhoneVerifyOutcome = 'ATTACHED' | 'PHONE_IN_USE_CONFLICT' | 'ACCOUNT_BLOCKED';
+export type PhoneVerifyOutcome =
+  'ATTACHED' | 'PHONE_IN_USE_CONFLICT' | 'ACCOUNT_BLOCKED';
 
 export type PhoneRegistry = {
   /** Phones already owned by another account. Never self-merged. */
@@ -223,14 +223,12 @@ export function verifyWizardPhone(
 export function validateMl(
   answer: MlAnswer | null,
   profession: Profession | null,
-  uploadChoice: LicenceUploadChoice | null,
   fileCount: number,
 ): string | null {
   if (answer === null) return WIZARD_COPY.mlAnswerRequired;
   if (answer === 'no') return null;
   if (!profession) return WIZARD_COPY.mlProfessionRequired;
-  if (!uploadChoice) return WIZARD_COPY.mlUploadChoiceRequired;
-  if (uploadChoice === 'now' && fileCount === 0) return WIZARD_COPY.mlFileRequired;
+  if (fileCount === 0) return WIZARD_COPY.mlFileRequired;
   return null;
 }
 
@@ -261,13 +259,18 @@ export function resolveGateEntry(
   lastActiveId: string | null,
 ): GateEntry {
   if (workspaces.length === 0) return { kind: 'create' };
-  if (workspaces.length === 1) return { kind: 'auto', workspace: workspaces[0] };
-  const known = workspaces.some((workspace) => workspace.workspaceId === lastActiveId);
+  if (workspaces.length === 1)
+    return { kind: 'auto', workspace: workspaces[0] };
+  const known = workspaces.some(
+    (workspace) => workspace.workspaceId === lastActiveId,
+  );
   return { kind: 'list', lastActiveId: known ? lastActiveId : null };
 }
 
 /** Entering a workspace: branch picker only when branches are enabled. */
-export function nextAfterWorkspace(workspace: GateWorkspace): 'branches' | 'enter' {
+export function nextAfterWorkspace(
+  workspace: GateWorkspace,
+): 'branches' | 'enter' {
   return workspace.branchesEnabled ? 'branches' : 'enter';
 }
 
@@ -279,5 +282,9 @@ export function initialBranchId(
   if (branches.some((branch) => branch.branchId === lastActiveBranchId)) {
     return lastActiveBranchId;
   }
-  return branches.find((branch) => branch.isDefault)?.branchId ?? branches[0]?.branchId ?? null;
+  return (
+    branches.find((branch) => branch.isDefault)?.branchId ??
+    branches[0]?.branchId ??
+    null
+  );
 }

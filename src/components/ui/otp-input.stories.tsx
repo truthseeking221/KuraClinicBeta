@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { OtpInput } from './otp-input';
 
 const meta = {
-  title: 'Design System/Patterns/OtpInput',
+  title: 'Design System/Patterns/OTP Input',
   component: OtpInput,
   tags: ['autodocs', 'source-reui', 'adapted-kura'],
   parameters: {
@@ -78,6 +78,16 @@ function Playground({
 export const Default: Story = {
   args: { value: '', onValueChange: () => {}, label: 'SMS code' },
   render: () => <Playground />,
+};
+
+/** A dialog title can name the task; preserve the field name for assistive technology. */
+export const AccessibleNameOnly: Story = {
+  args: { value: '', onValueChange: fn(), accessibleLabel: 'SMS code' },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByRole('textbox', { name: 'SMS code' })).toBeVisible();
+    await expect(canvas.queryByText('SMS code')).not.toBeInTheDocument();
+  },
 };
 
 /** Auth forms can stretch both groups to the available field width. */

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
 
+import { useT } from '../../components/foundations/i18n';
 import { Alert, AlertAction, AlertDescription, AlertTitle, Badge, Button, Checkbox, Input } from '../../components/ui';
 
 import { DeferDialog } from './defer-dialog';
@@ -57,6 +58,7 @@ export function DrawWorksheet({
   patient,
   samples,
 }: DrawWorksheetProps) {
+  const t = useT();
   const [checks, setChecks] = useState<SafetyChecks>(EMPTY_CHECKS);
   const [arm, setArm] = useState<'L' | 'R'>('L');
   const [site, setSite] = useState('Antecubital fossa');
@@ -90,7 +92,7 @@ export function DrawWorksheet({
   function handleCollect(id: string) {
     onUpdateSamples(collectSample(samples, id, { now, collectedBy: operatorName }));
     setFocusedSampleId(id);
-    onNotify?.('success', `Collected ${id}`);
+    onNotify?.('success', `${t('Collected')} ${id}`);
   }
 
   function handleScanKey(event: KeyboardEvent<HTMLInputElement>) {
@@ -101,15 +103,18 @@ export function DrawWorksheet({
 
     const result = resolveTubeScan(samples, raw);
     if (result.kind === 'unknown') {
-      onNotify?.('danger', `No sample matches ${raw}`);
+      onNotify?.('danger', `${t('No sample matches')} ${raw}`);
       setFocusedSampleId(null);
     } else if (result.kind === 'inspect') {
       setFocusedSampleId(result.sample.id);
-      onNotify?.('info', `${result.sample.id} already handled — focused in the worksheet`);
+      onNotify?.(
+        'info',
+        `${result.sample.id} ${t('already handled — focused in the worksheet')}`,
+      );
     } else if (!gate.checklistBlocking) {
       handleCollect(result.sample.id);
     } else {
-      onNotify?.('warn', 'Complete the safety checklist before collecting.');
+      onNotify?.('warn', t('Complete the safety checklist before collecting.'));
     }
     setScanValue('');
   }
@@ -118,16 +123,16 @@ export function DrawWorksheet({
     <div className={styles.worksheet}>
       {showVitalsWarning ? (
         <Alert tone="warning">
-          <AlertTitle>Vital signs not yet recorded</AlertTitle>
+          <AlertTitle>{t('Vital signs not yet recorded')}</AlertTitle>
           <AlertDescription>
-            You can continue, or send the patient to the vital signs booth first.
+            {t('You can continue, or send the patient to the vital signs booth first.')}
           </AlertDescription>
           <AlertAction>
             <Button onClick={() => setVitalsWarningDismissed(true)} size="sm" variant="outline">
-              Continue anyway
+              {t('Continue anyway')}
             </Button>
             <Button onClick={onMarkVitalsDone} size="sm" variant="ghost">
-              Mark done at another booth
+              {t('Mark done at another booth')}
             </Button>
           </AlertAction>
         </Alert>
@@ -148,10 +153,10 @@ export function DrawWorksheet({
         <div className={styles.main}>
           <div className={styles.toolbar}>
             <Input
-              aria-label="Scan tube barcode"
+              aria-label={t('Scan tube barcode')}
               onChange={(event) => setScanValue(event.target.value)}
               onKeyDown={handleScanKey}
-              placeholder="Scan tube barcode — collects, or focuses if already done"
+              placeholder={t('Scan tube barcode — collects, or focuses if already done')}
               ref={scanRef}
               value={scanValue}
             />
@@ -159,12 +164,17 @@ export function DrawWorksheet({
               disabled={!gate.anyOpen || gate.checklistBlocking}
               onClick={() => {
                 onUpdateSamples(collectAllOpen(samples, { now, collectedBy: operatorName }));
-                onNotify?.('info', 'All open samples marked collected — confirm inversions next');
+                onNotify?.(
+                  'info',
+                  t('All open samples marked collected — confirm inversions next'),
+                );
               }}
-              title={gate.checklistBlocking ? 'Complete the safety checklist first' : undefined}
+              title={
+                gate.checklistBlocking ? t('Complete the safety checklist first') : undefined
+              }
               variant="outline"
             >
-              Mark all collected
+              {t('Mark all collected')}
             </Button>
           </div>
 
@@ -180,23 +190,24 @@ export function DrawWorksheet({
             onFocusSample={setFocusedSampleId}
             onMarkInverted={(id) => {
               onUpdateSamples(markInverted(samples, id));
-              onNotify?.('success', `Inversion confirmed for ${id}`);
+              onNotify?.('success', `${t('Inversion confirmed for')} ${id}`);
             }}
             onReset={(id) => {
               onUpdateSamples(resetSample(samples, id));
-              onNotify?.('info', `Reset ${id} — back to awaiting collection`);
+              onNotify?.('info', `${t('Reset')} ${id} — ${t('back to awaiting collection')}`);
             }}
             samples={samples}
           />
 
           {gate.allCollected && gate.inversionsBlocking > 0 ? (
             <Alert tone="warning">
-              <AlertTitle>Override inversion confirmation</AlertTitle>
+              <AlertTitle>{t('Override inversion confirmation')}</AlertTitle>
               <AlertDescription>
                 <Checkbox checked={invertOverride} onCheckedChange={setInvertOverride}>
-                  {gate.inversionsBlocking} tube{gate.inversionsBlocking > 1 ? 's' : ''} not yet
-                  confirmed inverted — skipping inversions can clot the sample. Only override if
-                  already done on the bench.
+                  {gate.inversionsBlocking} {t(gate.inversionsBlocking > 1 ? 'tubes' : 'tube')}{' '}
+                  {t(
+                    'not yet confirmed inverted — skipping inversions can clot the sample. Only override if already done on the bench.',
+                  )}
                 </Checkbox>
               </AlertDescription>
             </Alert>
@@ -204,25 +215,25 @@ export function DrawWorksheet({
 
           <footer className={styles.footer}>
             <Badge variant={gate.allCollected ? 'success' : 'neutral'}>
-              {gate.collectedCount}/{gate.totalCount} collected
+              {gate.collectedCount}/{gate.totalCount} {t('collected')}
             </Badge>
             <div className={styles.footerActions}>
               <Button onClick={onSaveDraft} variant="ghost">
-                Save draft
+                {t('Save draft')}
               </Button>
               <Button
                 disabled={!gate.canSubmit}
                 onClick={onSubmit}
                 title={
                   gate.checklistBlocking
-                    ? 'Complete the safety checklist first'
+                    ? t('Complete the safety checklist first')
                     : !gate.allCollected
-                      ? 'Collect or resolve every tube first'
+                      ? t('Collect or resolve every tube first')
                       : undefined
                 }
                 variant="primary"
               >
-                Submit collection &amp; next patient
+                {t('Submit collection & next patient')}
               </Button>
             </div>
           </footer>
@@ -234,7 +245,7 @@ export function DrawWorksheet({
         onConfirm={(reason, note) => {
           if (deferTargetId) {
             onUpdateSamples(deferSample(samples, deferTargetId, reason, note));
-            onNotify?.('warn', `Deferred ${deferTargetId} — ${reason}`);
+            onNotify?.('warn', `${t('Deferred')} ${deferTargetId} — ${t(reason)}`);
           }
           setDeferTargetId(null);
         }}

@@ -20,8 +20,21 @@ const meta = {
   parameters: {
     layout: 'fullscreen',
     kura: {
-      source: { vendor: 'Kura', registryItem: 'settings-modal', visualReference: 'Kura settings-modal' },
-      intake: { decision: 'CREATE', owner: 'src/components/ui', evidence: 'The Kura rail-and-panel settings shell is a reusable modal composition beyond the base Dialog owner.' },
+      source: {
+        vendor: 'Reference',
+        registryItem: 'settings-modal',
+        visualReference: 'Settings modal reference',
+      },
+      intake: {
+        decision: 'ADAPT + EXTEND',
+        owner: 'src/components/ui',
+        evidence:
+          'The reference settings modal was inspected in full. Kura reuses its fixed rail, independently scrolling panel, and mobile full-screen composition while retaining the canonical Dialog, tokens, icon exports, and controlled navigation API.',
+        exclusions: [
+          'Reference icons and application fixtures — Kura icons and consuming feature data remain authoritative',
+          'Reference portal, focus, and animation implementation — Kura Dialog keeps the accessibility and motion contract',
+        ],
+      },
       binding: { colors: 'kura-semantic', typography: 'kura', spacing: 'kura', radius: 'kura', icons: 'kura-canonical', responsive: 'full-screen mobile rail' },
     },
   },

@@ -12,6 +12,7 @@ import {
   MoneyText,
   PrintIcon,
 } from '../../components/ui';
+import { useT } from '../../components/foundations/i18n';
 
 import type { CartItem, CartPayment } from './types';
 import styles from './payment-receipt.module.css';
@@ -47,24 +48,25 @@ export function PaymentReceipt({
   payment,
   voided = false,
 }: PaymentReceiptProps) {
+  const t = useT();
   return (
-    <Card aria-label={`Receipt ${payment.receiptId ?? ''}`} as="article" className={styles.receipt} size="sm" variant="outline">
+    <Card aria-label={`${t('Receipt')} ${payment.receiptId ?? ''}`} as="article" className={styles.receipt} size="sm" variant="outline">
       <CardHeader>
         <CardTitle as="h3" className={styles.title}>
-          Receipt {payment.receiptId}
+          {t('Receipt')} {payment.receiptId}
         </CardTitle>
         <CardAction>
           {voided ? (
             <Badge size="sm" variant="neutral">
-              Voided
+              {t('Voided')}
             </Badge>
           ) : payment.supplementalDue ? (
             <Badge size="sm" variant="warning">
-              Supplemental due
+              {t('Supplemental due')}
             </Badge>
           ) : (
             <Badge size="sm" variant="success">
-              Paid
+              {t('Paid')}
             </Badge>
           )}
         </CardAction>
@@ -86,42 +88,45 @@ export function PaymentReceipt({
         </ul>
 
         <div className={styles.totalRow}>
-          <span>Total paid</span>
+          <span>{t('Total paid')}</span>
           <MoneyText className={styles.total} currency="USD" minor={payment.amountMinor ?? '0'} />
         </div>
 
         <dl className={styles.meta}>
           <div className={styles.metaRow}>
-            <dt>Method</dt>
-            <dd>{METHOD_LABEL[payment.method ?? ''] ?? '—'}</dd>
+            <dt>{t('Method')}</dt>
+            <dd>
+              {METHOD_LABEL[payment.method ?? ''] ? t(METHOD_LABEL[payment.method ?? '']) : '—'}
+            </dd>
           </div>
           <div className={styles.metaRow}>
-            <dt>Captured</dt>
+            <dt>{t('Captured')}</dt>
             <dd>
               {payment.confirmedAt} · {payment.cashier} · {branchLabel}
             </dd>
           </div>
           {payment.previousReceiptId ? (
             <div className={styles.metaRow}>
-              <dt>Adjusts</dt>
+              <dt>{t('Adjusts')}</dt>
               <dd>
-                Receipt {payment.previousReceiptId} —{' '}
-                <MoneyText currency="USD" minor={payment.previousPaidAmountMinor ?? '0'} /> already
-                paid
+                {t('Receipt')} {payment.previousReceiptId} —{' '}
+                <MoneyText currency="USD" minor={payment.previousPaidAmountMinor ?? '0'} />{' '}
+                {t('already paid')}
               </dd>
             </div>
           ) : null}
           {payment.voidedReceiptId ? (
             <div className={styles.metaRow}>
-              <dt>Replaces</dt>
-              <dd>Voided receipt {payment.voidedReceiptId}</dd>
+              <dt>{t('Replaces')}</dt>
+              <dd>{t('Voided receipt')} {payment.voidedReceiptId}</dd>
             </div>
           ) : null}
         </dl>
 
         <p className={styles.immutable}>
-          Receipts are immutable evidence. A correction issues a new receipt — it never edits
-          this one.
+          {t(
+            'Receipts are immutable evidence. A correction issues a new receipt — it never edits this one.',
+          )}
         </p>
       </CardContent>
 
@@ -129,7 +134,7 @@ export function PaymentReceipt({
         <CardFooter className={styles.footer}>
           <Button onClick={onPrint} size="sm" variant="outline">
             <PrintIcon aria-hidden="true" size={14} />
-            Print receipt
+            {t('Print receipt')}
           </Button>
         </CardFooter>
       ) : null}

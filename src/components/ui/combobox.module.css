@@ -38,6 +38,19 @@
   border-color: var(--destructive);
 }
 
+.leadingIcon {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted-foreground);
+}
+
+.leadingIcon > svg {
+  width: var(--space-4);
+  height: var(--space-4);
+}
+
 .input,
 .chipsInput {
   min-width: 0;

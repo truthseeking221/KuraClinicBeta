@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation';
 
 import { toast } from '../../../../components/ui';
 import { DeskQueue } from '../../../../features/front-desk/desk-queue';
-import { DESK_VISITS_LONG_WAIT } from '../../../../features/front-desk/demo-data';
 import { useFrontDeskStore } from '../../../_demo/front-desk-store';
 
 export default function QueuePage() {
@@ -22,7 +21,7 @@ export default function QueuePage() {
       onQueueForDraw={(visitId) => toast.success(`Visit ${visitId} queued for draw`)}
       onRefresh={() => router.refresh()}
       onResumeVisit={() => router.push('/front-desk/arrivals/check-in')}
-      visits={[...DESK_VISITS_LONG_WAIT]}
+      visits={[]}
     />
   );
 }

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ComponentPropsWithoutRef, KeyboardEvent, ReactNode } from 'react';
 
+import { useT } from '../foundations/i18n';
 import { Button } from './button';
 import { IconButton } from './icon-button';
 import { ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon, SpinnerGapIcon } from './icons';
@@ -305,6 +306,7 @@ function CalendarMonth({
   onDayFocus: (date: Date) => void;
   setDayRef: (key: string, node: HTMLButtonElement | null) => void;
 }) {
+  const t = useT();
   const cells = getMonthCells(month, weekStartsOn, showOutsideDays);
   const weeks = Array.from({ length: Math.ceil(cells.length / 7) }, (_, index) => cells.slice(index * 7, index * 7 + 7));
   const weekdays = Array.from({ length: 7 }, (_, index) => {
@@ -318,7 +320,7 @@ function CalendarMonth({
       <div className={styles.weekdays} role="row">
         {showWeekNumber ? (
           <div className={joinClasses(styles.weekday, styles.weekNumberColumn)} role="columnheader">
-            Week
+            {t('Week')}
           </div>
         ) : null}
         {weekdays.map((weekday) => (
@@ -346,10 +348,10 @@ function CalendarMonth({
                 const modifiers = getDayModifiers(date, month);
                 const customClassName = typeof getDayClassName === 'function' ? getDayClassName(date, modifiers) : getDayClassName;
                 const labelParts = [getDateLabel(date, locale)];
-                if (modifiers.selected) labelParts.push('selected');
-                if (modifiers.today) labelParts.push('today');
-                if (modifiers.disabled) labelParts.push('unavailable');
-                if (modifiers.rangeMiddle) labelParts.push('within selected range');
+                if (modifiers.selected) labelParts.push(t('selected'));
+                if (modifiers.today) labelParts.push(t('today'));
+                if (modifiers.disabled) labelParts.push(t('unavailable'));
+                if (modifiers.rangeMiddle) labelParts.push(t('within selected range'));
 
                 return (
                   <div
@@ -418,14 +420,17 @@ export function Calendar({
   toYear,
   today: todayProp,
   showTodayButton = false,
-  todayLabel = 'Today',
+  todayLabel,
   readOnly = false,
   loading = false,
   renderDay,
   getDayClassName,
-  'aria-label': ariaLabel = 'Calendar',
+  'aria-label': ariaLabel,
   ...props
 }: CalendarProps) {
+  const t = useT();
+  const resolvedTodayLabel = todayLabel ?? t('Today');
+  const resolvedAriaLabel = ariaLabel ?? t('Calendar');
   const today = useMemo(() => startOfDay(todayProp ?? new Date()), [todayProp]);
   const monthCount = Math.max(1, Math.min(3, numberOfMonths));
   const initialMonth = startOfMonth(month ?? defaultMonth ?? firstDateFromSelection(defaultSelected) ?? today);
@@ -628,7 +633,7 @@ export function Calendar({
       data-navigation={navigation}
       data-month-count={monthCount}
       data-read-only={readOnly ? 'true' : undefined}
-      aria-label={ariaLabel}
+      aria-label={resolvedAriaLabel}
       aria-busy={loading || undefined}
       aria-readonly={readOnly || undefined}
     >
@@ -640,8 +645,8 @@ export function Calendar({
             <>
               {captionLayout === 'dropdown' ? (
                 <label className={styles.selectLabel}>
-                  <span className={styles.visuallyHidden}>Month</span>
-                  <select value={firstVisibleMonth.getMonth()} onChange={handleMonthSelect} aria-label="Month">
+                  <span className={styles.visuallyHidden}>{t('Month')}</span>
+                  <select value={firstVisibleMonth.getMonth()} onChange={handleMonthSelect} aria-label={t('Month')}>
                     {monthOptions.map((monthIndex) => (
                       <option key={monthIndex} value={monthIndex}>
                         {new Intl.DateTimeFormat(locale, { month: 'long' }).format(new Date(2026, monthIndex, 1))}
@@ -656,8 +661,8 @@ export function Calendar({
                 </span>
               )}
               <label className={styles.selectLabel}>
-                <span className={styles.visuallyHidden}>Year</span>
-                <select value={firstVisibleMonth.getFullYear()} onChange={handleYearSelect} aria-label="Year">
+                <span className={styles.visuallyHidden}>{t('Year')}</span>
+                <select value={firstVisibleMonth.getFullYear()} onChange={handleYearSelect} aria-label={t('Year')}>
                   {yearOptions.map((year) => (
                     <option key={year} value={year}>
                       {year}
@@ -671,7 +676,7 @@ export function Calendar({
         </div>
         <div className={styles.navigation}>
           <IconButton
-            aria-label="Previous month"
+            aria-label={t('Previous month')}
             variant="tertiary"
             className={styles.navigationButton}
             disabled={!hasPreviousMonth || loading}
@@ -680,7 +685,7 @@ export function Calendar({
             <ChevronLeftIcon aria-hidden="true" />
           </IconButton>
           <IconButton
-            aria-label="Next month"
+            aria-label={t('Next month')}
             variant="tertiary"
             className={styles.navigationButton}
             disabled={!hasNextMonth || loading}
@@ -694,7 +699,7 @@ export function Calendar({
       {loading ? (
         <div className={styles.loadingState} role="status" aria-live="polite">
           <SpinnerGapIcon className={styles.loadingIcon} aria-hidden="true" />
-          <span>Loading dates</span>
+          <span>{t('Loading dates')}</span>
         </div>
       ) : (
         <div className={styles.months}>
@@ -738,7 +743,7 @@ export function Calendar({
               focusRequestRef.current = true;
             }}
           >
-            {todayLabel}
+            {resolvedTodayLabel}
           </Button>
         </div>
       ) : null}

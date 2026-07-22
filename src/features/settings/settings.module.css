@@ -182,6 +182,8 @@
 
 .rows > .row {
   padding-inline: var(--space-5);
+  /* The card owns the group corners; flat rows keep dividers continuous. */
+  border-radius: 0;
 }
 
 .row {
@@ -191,8 +193,8 @@
 /* Label | value | action columns (adapted from ReUI settings-7). Rows that lead
  * with media (members, sessions) keep the Item default grid instead. Item
  * pins content/actions to columns 2/3, so this row shape re-pins them. */
-.settingGrid {
-  grid-template-columns: minmax(8rem, 12rem) minmax(0, 1fr) auto;
+.row.settingGrid {
+  grid-template-columns: 10rem minmax(0, 1fr) auto;
   align-items: start;
   column-gap: var(--space-4);
 }
@@ -521,7 +523,7 @@
 
 @container (max-width: 52rem) {
   /* Stack label, value, then action; the primary action stays reachable. */
-  .settingGrid {
+  .row.settingGrid {
     grid-template-columns: minmax(0, 1fr);
     row-gap: var(--space-1-5);
   }
@@ -535,7 +537,30 @@
   }
 
   .settingGrid > .rowActions {
-    justify-self: start;
+    justify-self: stretch;
+    justify-content: flex-start;
+  }
+}
+
+/* SettingsModal owns a separate responsive shell, so its full-screen mobile
+ * presentation needs the same row reflow without relying on the page container. */
+@media (max-width: 40rem) {
+  .row.settingGrid {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: var(--space-1-5);
+  }
+
+  .settingGrid > [data-slot='item-content'],
+  .settingGrid > .rowValueCell,
+  .settingGrid > .editCell,
+  .settingGrid > [data-slot='item-actions'] {
+    grid-column: 1;
+    grid-row: auto;
+  }
+
+  .settingGrid > .rowActions {
+    justify-self: stretch;
+    justify-content: flex-start;
   }
 }
 

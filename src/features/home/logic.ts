@@ -39,6 +39,13 @@ export function isAllClear(signals: HomeSignal[]): boolean {
 export type LicenceBanner = {
   tone: 'warning' | 'danger' | 'info';
   title: string;
+  /**
+   * The same title split into its literal sentence and the date that follows
+   * it. `title` stays the joined English form; a surface that translates its
+   * copy renders `text` through the dictionary and appends `date` unchanged,
+   * because a date must never be keyed into a translation table.
+   */
+  titleParts?: { text: string; date: string };
   description: string;
   actionLabel?: string;
 };
@@ -64,45 +71,51 @@ export function licenceBanner(status: LicenceStatus): LicenceBanner | null {
     case 'none':
       return {
         tone: 'warning',
-        title: 'Verify your medical licence',
-        description: 'Verify now to place orders on your own attribution.',
-        actionLabel: 'Verify now',
+        title: 'Verify medical licence',
+        description: 'Place orders under your own attribution.',
+        actionLabel: 'Verify',
       };
     case 'pending_review':
       return {
         tone: 'info',
-        title: 'Your licence is being verified',
-        description: "You'll be able to order on your own attribution once verified.",
+        title: 'Licence verification pending',
+        description: 'Place orders under your own attribution once verified.',
         actionLabel: 'View submission',
       };
     case 'rejected':
       return {
         tone: 'danger',
-        title: 'Licence verification needs attention',
-        description: 'Review the rejection reason and upload a corrected document.',
-        actionLabel: 'Verify now',
+        title: 'Licence rejected',
+        description: 'Review the reason, then upload a corrected document.',
+        actionLabel: 'Update licence',
       };
     case 'expiring':
       return {
         tone: 'warning',
         title: expiryDate ? `Your licence expires on ${expiryDate}` : 'Your licence is expiring',
-        description: 'Renew now to keep ordering on your own attribution without interruption.',
-        actionLabel: 'Renew now',
+        titleParts: expiryDate
+          ? { text: 'Your licence expires on', date: expiryDate }
+          : undefined,
+        description: 'Renew to keep placing orders under your own attribution.',
+        actionLabel: 'Renew',
       };
     case 'in_grace':
       return {
         tone: 'danger',
         title: lapseDeadline
-          ? `Your licence has lapsed — grace period ends ${lapseDeadline}`
-          : 'Your licence has lapsed — grace period active',
-        description: 'Renew now before your live credential status ends.',
-        actionLabel: 'Renew now',
+          ? `Licence lapsed. Grace ends ${lapseDeadline}`
+          : 'Licence lapsed. Grace period active',
+        titleParts: lapseDeadline
+          ? { text: 'Licence lapsed. Grace ends', date: lapseDeadline }
+          : undefined,
+        description: 'Renew to keep placing orders under your own attribution.',
+        actionLabel: 'Renew',
       };
     case 'lapsed':
       return {
         tone: 'danger',
-        title: 'Your licence is no longer active',
-        description: 'Ordering on your own attribution is unavailable until your licence is renewed.',
+        title: 'Licence inactive',
+        description: 'You cannot place orders under your own attribution until you renew.',
         actionLabel: 'Renew licence',
       };
     case 'verified':

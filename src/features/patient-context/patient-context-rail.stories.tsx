@@ -20,7 +20,7 @@ const meta = {
       },
     },
   },
-  args: PATIENT_CONTEXT_FIXTURES.established,
+  args: { ...PATIENT_CONTEXT_FIXTURES.established, style: { minHeight: 702.53 } },
 } satisfies Meta<typeof PatientContextRail>;
 
 export default meta;
@@ -29,14 +29,41 @@ type Story = StoryObj<typeof meta>;
 export const Established: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByRole('heading', { name: 'Sok Nimol' })).toBeVisible();
-    await expect(canvas.getByRole('heading', { name: 'Safety' })).toBeVisible();
+    await expect(canvas.getByRole('heading', { name: 'Sreymom Sok' })).toBeVisible();
+    const rail = canvas.getByLabelText('Patient context for Sreymom Sok');
+    await expect(rail).toHaveStyle({ width: '300px' });
+    await expect(canvas.getByRole('heading', { name: 'Sreymom Sok' })).toHaveStyle({
+      fontSize: '18px',
+      fontWeight: '500',
+      lineHeight: '27px',
+    });
+    for (const label of [
+      canvas.getByRole('heading', { name: 'Safety' }),
+      canvas.getByRole('heading', { name: 'Today' }),
+      canvas.getByText('Active problems'),
+      canvas.getByText('Current medications'),
+    ]) {
+      await expect(label).toHaveStyle({
+        fontSize: '12px',
+        fontWeight: '500',
+        textTransform: 'none',
+      });
+    }
+    await expect(canvas.getByRole('heading', { name: 'Reason for visit' })).toHaveStyle({
+      fontSize: '12px',
+      fontWeight: '500',
+      textTransform: 'uppercase',
+    });
     await expect(canvas.getByText('Penicillin allergy')).toBeVisible();
-    await expect(canvas.getByRole('button', { name: /Active problems.*0 recorded/i })).toHaveAttribute('aria-expanded', 'false');
+    const problems = canvas.getByRole('button', { name: /Active problems.*0 recorded/i });
+    expect(Math.round(problems.getBoundingClientRect().height)).toBe(44);
+    await expect(problems).toHaveAttribute('aria-expanded', 'false');
   },
 };
 
-export const NewPatient: Story = { args: PATIENT_CONTEXT_FIXTURES.newPatient };
+export const NewPatient: Story = {
+  args: { ...PATIENT_CONTEXT_FIXTURES.newPatient, style: { minHeight: 440 } },
+};
 
 /** Inside the patient chart the workbar owns identity; the rail must not repeat it. */
 export const IdentityHidden: Story = {
@@ -44,31 +71,31 @@ export const IdentityHidden: Story = {
 };
 
 export const ActiveProblems: Story = {
-  args: { ...PATIENT_CONTEXT_FIXTURES.activeProblems, defaultExpanded: ['problems'] },
+  args: { ...PATIENT_CONTEXT_FIXTURES.activeProblems, defaultExpanded: ['problems'], style: { minHeight: 828 } },
 };
 
 export const CurrentMedications: Story = {
-  args: { ...PATIENT_CONTEXT_FIXTURES.currentMedications, defaultExpanded: ['medications'] },
+  args: { ...PATIENT_CONTEXT_FIXTURES.currentMedications, defaultExpanded: ['medications'], style: { minHeight: 828 } },
 };
 
 export const PendingVerification: Story = {
-  args: { ...PATIENT_CONTEXT_FIXTURES.pendingVerification, defaultExpanded: ['verification'] },
+  args: { ...PATIENT_CONTEXT_FIXTURES.pendingVerification, defaultExpanded: ['verification'], style: { minHeight: 828 } },
 };
 
 export const PastHistory: Story = {
-  args: { ...PATIENT_CONTEXT_FIXTURES.pastHistory, defaultExpanded: ['history'] },
+  args: { ...PATIENT_CONTEXT_FIXTURES.pastHistory, defaultExpanded: ['history'], style: { minHeight: 828 } },
 };
 
 export const AdminDetails: Story = {
-  args: { ...PATIENT_CONTEXT_FIXTURES.adminDetails, defaultExpanded: ['administration'] },
+  args: { ...PATIENT_CONTEXT_FIXTURES.adminDetails, defaultExpanded: ['administration'], style: { minHeight: 828 } },
 };
 
 export const ActiveProblemsEmpty: Story = {
-  args: { ...PATIENT_CONTEXT_FIXTURES.activeProblemsEmpty, defaultExpanded: ['problems'] },
+  args: { ...PATIENT_CONTEXT_FIXTURES.activeProblemsEmpty, defaultExpanded: ['problems'], style: { minHeight: 828 } },
 };
 
 export const CurrentMedicationsEmpty: Story = {
-  args: { ...PATIENT_CONTEXT_FIXTURES.currentMedicationsEmpty, defaultExpanded: ['medications'] },
+  args: { ...PATIENT_CONTEXT_FIXTURES.currentMedicationsEmpty, defaultExpanded: ['medications'], style: { minHeight: 828 } },
 };
 
 export const AllExpanded: Story = {
@@ -82,52 +109,53 @@ export const AllExpanded: Story = {
       PATIENT_CONTEXT_FIXTURES.adminDetails.sections[4],
     ],
     defaultExpanded: ['problems', 'medications', 'verification', 'history', 'administration'],
+    style: { minHeight: 1282.6 },
   },
 };
 
 export const DisclosureInteraction: Story = {
-  args: PATIENT_CONTEXT_FIXTURES.currentMedications,
+  args: PATIENT_CONTEXT_FIXTURES.multipleRecorded,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    const problems = canvas.getByRole('button', { name: /Active problems.*0 recorded/i });
     const medications = canvas.getByRole('button', { name: /Current medications.*3 recorded/i });
+    const history = canvas.getByRole('button', { name: /Past history.*3 recorded/i });
 
-    await userEvent.click(problems);
     await userEvent.click(medications);
-    await expect(problems).toHaveAttribute('aria-expanded', 'true');
+    await userEvent.click(history);
     await expect(medications).toHaveAttribute('aria-expanded', 'true');
+    await expect(history).toHaveAttribute('aria-expanded', 'true');
     await expect(canvas.getByText('Lisinopril 10 mg')).toBeVisible();
   },
 };
 
 export const PointerAffordance: Story = {
-  args: PATIENT_CONTEXT_FIXTURES.established,
+  args: PATIENT_CONTEXT_FIXTURES.currentMedications,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    const problems = canvas.getByRole('button', { name: /Active problems.*0 recorded/i });
-    const chevron = problems.querySelector('[data-slot="accordion-trigger-icon"]');
+    const medications = canvas.getByRole('button', { name: /Current medications.*3 recorded/i });
+    const chevron = medications.querySelector('[data-slot="accordion-trigger-icon"]');
     if (!chevron) throw new Error('Accordion trigger must expose its canonical chevron.');
 
     const defaultChevronColor = window.getComputedStyle(chevron).color;
-    problems.focus();
+    medications.focus();
 
-    await expect(window.getComputedStyle(problems).cursor).toBe('pointer');
-    await expect(window.getComputedStyle(problems).backgroundColor).toBe('rgba(0, 0, 0, 0)');
+    await expect(window.getComputedStyle(medications).cursor).toBe('pointer');
+    await expect(window.getComputedStyle(medications).backgroundColor).toBe('rgba(0, 0, 0, 0)');
     await expect(window.getComputedStyle(chevron).color).not.toBe(defaultChevronColor);
   },
 };
 
 export const KeyboardDisclosure: Story = {
-  args: PATIENT_CONTEXT_FIXTURES.currentMedications,
+  args: PATIENT_CONTEXT_FIXTURES.multipleRecorded,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    const problems = canvas.getByRole('button', { name: /Active problems.*0 recorded/i });
     const medications = canvas.getByRole('button', { name: /Current medications.*3 recorded/i });
+    const history = canvas.getByRole('button', { name: /Past history.*3 recorded/i });
 
-    problems.focus();
-    await userEvent.keyboard('{ArrowDown}{Enter}');
-    await expect(medications).toHaveFocus();
-    await expect(medications).toHaveAttribute('aria-expanded', 'true');
+    medications.focus();
+    await userEvent.keyboard('{ArrowDown}{ArrowDown}{Enter}');
+    await expect(history).toHaveFocus();
+    await expect(history).toHaveAttribute('aria-expanded', 'true');
   },
 };
 
@@ -170,6 +198,14 @@ export const ReadOnly: Story = {
     ...PATIENT_CONTEXT_FIXTURES.currentMedications,
     defaultExpanded: ['medications'],
     readOnly: true,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByLabelText('Patient context for Sok Nimol')).toHaveAttribute(
+      'data-read-only',
+      'true',
+    );
+    await expect(canvas.queryByText('Read-only patient context.')).not.toBeInTheDocument();
   },
 };
 

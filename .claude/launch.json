@@ -8,6 +8,30 @@
       "port": 6006
     },
     {
+      "name": "storybook-verify",
+      "runtimeExecutable": "/Users/macbook/.nvm/versions/node/v22.22.2/bin/npm",
+      "runtimeArgs": ["run", "storybook", "--", "-p", "6008"],
+      "port": 6008
+    },
+    {
+      "name": "storybook-verify-2",
+      "runtimeExecutable": "/Users/macbook/.nvm/versions/node/v22.22.2/bin/npm",
+      "runtimeArgs": ["run", "storybook", "--", "-p", "6010"],
+      "port": 6010
+    },
+    {
+      "name": "storybook-verify-4",
+      "runtimeExecutable": "/Users/macbook/.nvm/versions/node/v22.22.2/bin/npm",
+      "runtimeArgs": ["run", "storybook", "--", "-p", "6014"],
+      "port": 6014
+    },
+    {
+      "name": "storybook-verify-3",
+      "runtimeExecutable": "/Users/macbook/.nvm/versions/node/v22.22.2/bin/npm",
+      "runtimeArgs": ["run", "storybook", "--", "-p", "6012"],
+      "port": 6012
+    },
+    {
       "name": "next",
       "runtimeExecutable": "/Users/macbook/.nvm/versions/node/v22.22.2/bin/npm",
       "runtimeArgs": ["run", "dev"],

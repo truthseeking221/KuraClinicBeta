@@ -92,6 +92,9 @@
 
   html {
     min-width: 320px;
+    /* Kura is light-only: opt UA canvas, form controls, and scrollbars out of
+     * dark rendering so the OS theme cannot tint chrome the tokens don't own. */
+    color-scheme: light;
   }
 
   body {

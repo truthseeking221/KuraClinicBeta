@@ -26,6 +26,7 @@ export type DoctorEarningsWorkspaceProps = {
   onBeginLink?: () => void;
   onCreateKhqr?: () => void;
   onDownload?: (format: 'pdf' | 'xlsx') => void;
+  onOpenLicence?: () => void;
   onRegenerate?: () => void;
   onRegenerateLink?: () => void;
   onRefresh?: () => void;
@@ -44,6 +45,7 @@ export function DoctorEarningsWorkspace({
   onCreateKhqr,
   onDownload,
   onNavigate,
+  onOpenLicence,
   onRefresh,
   onRegenerate,
   onRegenerateLink,
@@ -62,6 +64,7 @@ export function DoctorEarningsWorkspace({
         downloadState={downloadState}
         onBack={returnToOverview}
         onDownload={onDownload}
+        onOpenLicence={onOpenLicence}
         onRetry={onRetry}
         state={state}
       />
@@ -74,6 +77,7 @@ export function DoctorEarningsWorkspace({
         intent={intent}
         onBack={returnToOverview}
         onCreateKhqr={onCreateKhqr}
+        onOpenLicence={onOpenLicence}
         onRefresh={onRefresh}
         onRegenerate={onRegenerate}
         onRetry={onRetry}
@@ -90,6 +94,7 @@ export function DoctorEarningsWorkspace({
         mandate={data.overview.mandate}
         onBack={returnToOverview}
         onBeginLink={onBeginLink}
+        onOpenLicence={onOpenLicence}
         onRegenerateLink={onRegenerateLink}
         onRenew={onRenew}
         onRetry={onRetry}
@@ -103,6 +108,7 @@ export function DoctorEarningsWorkspace({
     <DoctorBalancePage
       data={data}
       onManageAutoPay={() => onNavigate('auto-pay')}
+      onOpenLicence={onOpenLicence}
       onOpenStatements={() => onNavigate('activity')}
       onRetry={onRetry}
       onSettle={() => onNavigate('settle')}

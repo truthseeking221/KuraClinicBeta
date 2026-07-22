@@ -5,7 +5,7 @@ import { Button, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from
 import styles from './intake-components.stories.module.css';
 
 const meta = {
-  title: 'Design System/Primitives/Tooltip',
+  title: 'Design System/Components/Tooltip',
   component: Tooltip,
   tags: ['autodocs', 'source-kura', 'adapted-kura'],
   parameters: {

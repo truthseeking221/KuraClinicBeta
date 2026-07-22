@@ -4,7 +4,7 @@ import { expect, userEvent, within } from 'storybook/test';
 import { IconButton, PlusIcon, XIcon } from './index';
 
 const meta = {
-  title: 'Design System/Primitives/IconButton',
+  title: 'Design System/Primitives/Icon Button',
   component: IconButton,
   tags: ['autodocs', 'source-kura', 'adapted-kura'],
   parameters: {
@@ -85,6 +85,12 @@ export const VariantsAndTones: Story = {
       </IconButton>
     </div>
   ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const [tertiaryButton] = canvas.getAllByRole('button', { name: 'Remove draft' });
+    await expect(tertiaryButton).toHaveAttribute('data-variant', 'tertiary');
+    await expect(tertiaryButton).toHaveStyle({ boxShadow: 'none' });
+  },
 };
 
 export const Sizes: Story = {

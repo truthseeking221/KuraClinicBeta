@@ -40,7 +40,7 @@ export default function ClinicShellLayout({ children }: { children: ReactNode })
   const openSettings = (section: SettingsSectionId = 'overview') => setSettingsSection(section);
 
   useEffect(() => {
-    if (hydrated && !session.signedIn) router.replace('/door');
+    if (hydrated && !session.signedIn) router.replace('/');
   }, [hydrated, session.signedIn, router]);
 
   const workspace = SHELL_WORKSPACES.find((entry) => entry.id === session.workspaceId) ?? {
@@ -54,6 +54,14 @@ export default function ClinicShellLayout({ children }: { children: ReactNode })
     enabledModules: SHELL_MODULES,
     licenceVerified,
   });
+  // First sign-in enters the shell with scoped setup access before the
+  // professional credential is live. The false licence fact remains visible.
+  if (session.demoProfile === 'new-doctor' && !availableModes.includes('clinical')) {
+    availableModes.unshift('clinical');
+  }
+
+  const availableWorkspaces =
+    session.demoProfile === 'new-doctor' ? [workspace] : [...SHELL_WORKSPACES];
 
   if (hydrated && !session.signedIn) return null;
 
@@ -62,6 +70,7 @@ export default function ClinicShellLayout({ children }: { children: ReactNode })
     <AppShell
       activeKey={key}
       availableModes={availableModes}
+      contentInset={pathname.startsWith('/patients/') ? 'none' : 'page'}
       headerActions={<DemoControls />}
       mode={mode}
       onModeChange={(next) => {
@@ -73,27 +82,35 @@ export default function ClinicShellLayout({ children }: { children: ReactNode })
       onShiftChange={(shift) => update({ shift })}
       onSignOut={() => {
         signOut();
-        router.push('/door');
+        router.push('/');
       }}
       onWorkspaceChange={(workspaceId) => update({ workspaceId })}
       onBranchChange={(branchId) => update({ branchId })}
-      posture={mode === 'collection' ? 'station' : 'sidebar'}
+      // A work-area change never replaces the global Clinic App shell.
+      // Station posture is reserved for dedicated booth entry points.
+      posture="sidebar"
       permissions={SHELL_PERMISSIONS}
       scopeLabel={personGlobalScope ? 'All Kura workspaces' : undefined}
       station={stationForMode(mode, session.shift)}
       user={{
         name: session.userName,
-        email: session.userEmail,
+        email: session.userContact ?? session.userEmail,
         licenceVerified,
       }}
       workspace={
         workspace.branches ? { ...workspace, activeBranchId: session.branchId } : workspace
       }
-      workspaces={[...SHELL_WORKSPACES]}
+      workspaces={availableWorkspaces}
     >
       <FrontDeskStoreProvider>{children}</FrontDeskStoreProvider>
     </AppShell>
     <SettingsDialog
+      firstUse={session.demoProfile === 'new-doctor'}
+      identity={{
+        contact: session.userContact ?? session.userEmail,
+        name: session.userName,
+      }}
+      workspaceName={workspace.name}
       onOpenChange={(open) => {
         if (!open) setSettingsSection(null);
       }}

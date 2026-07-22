@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 
+import { useT } from "../../components/foundations/i18n";
 import {
   Alert,
   AlertAction,
@@ -58,6 +59,7 @@ export function WorkspaceGate({
   status = "ready",
   workspaces,
 }: WorkspaceGateProps) {
+  const t = useT();
   const entry = resolveGateEntry(workspaces, lastActiveWorkspaceId);
   const [stage, setStage] = useState<Stage>(() => {
     if (entry.kind === "create") return { kind: "create" };
@@ -100,7 +102,7 @@ export function WorkspaceGate({
   function submitCreate() {
     const trimmed = newName.trim();
     if (!trimmed) {
-      setNameError("Name the workspace to continue.");
+      setNameError(t("Workspace name is required."));
       return;
     }
     setNameError(null);
@@ -109,24 +111,24 @@ export function WorkspaceGate({
 
   return (
     <AuthShell width="md">
-      <Card as="section" aria-label="Choose a workspace">
+      <Card as="section" aria-label={t("Choose a workspace")}>
         <CardContent className={styles.body}>
           {status === "loading" ? (
             <p aria-live="polite" className={styles.pending} role="status">
-              Loading your workspaces…
+              {t("Loading workspaces…")}
             </p>
           ) : null}
 
           {status === "error" ? (
             <Alert tone="danger">
-              <AlertTitle>Couldn&apos;t load your workspaces</AlertTitle>
+              <AlertTitle>{t("Couldn't load workspaces")}</AlertTitle>
               <AlertDescription>
-                Nothing was changed — try again.
+                {t("Nothing changed. Try again.")}
               </AlertDescription>
               {onRetry ? (
                 <AlertAction>
                   <Button onClick={onRetry} size="sm" variant="outline">
-                    Retry
+                    {t("Retry")}
                   </Button>
                 </AlertAction>
               ) : null}
@@ -136,10 +138,9 @@ export function WorkspaceGate({
           {status === "ready" && stage.kind === "list" ? (
             <>
               <header className={styles.header}>
-                <h1 className={styles.title}>Choose a workspace</h1>
+                <h1 className={styles.title}>{t("Choose a workspace")}</h1>
                 <p className={styles.subtitle}>
-                  You belong to {workspaces.length}{" "}
-                  {workspaces.length === 1 ? "workspace" : "workspaces"}.
+                  {t("Select a workspace to continue.")}
                 </p>
               </header>
               <ul className={styles.list}>
@@ -157,39 +158,36 @@ export function WorkspaceGate({
                         <span className={styles.rowName}>{workspace.name}</span>
                         <span className={styles.rowMeta}>
                           {workspace.memberCount}{" "}
-                          {workspace.memberCount === 1 ? "member" : "members"} ·{" "}
-                          {workspace.role}
-                          {workspace.branchesEnabled ? " · Branches" : ""}
+                          {workspace.memberCount === 1
+                            ? t("member")
+                            : t("members")}{" "}
+                          · {t(workspace.role)}
+                          {workspace.branchesEnabled
+                            ? ` · ${t("Branches")}`
+                            : ""}
                         </span>
                       </span>
                       {workspace.workspaceId === lastActiveWorkspaceId ? (
-                        <Badge variant="primary">Last active</Badge>
+                        <Badge variant="primary">{t("Last active")}</Badge>
                       ) : null}
                     </button>
                   </li>
                 ))}
               </ul>
-              <Button
-                className={styles.inlineStart}
-                onClick={() => setStage({ kind: "create" })}
-                variant="ghost"
-              >
-                Create a new workspace
-              </Button>
             </>
           ) : null}
 
           {status === "ready" && stage.kind === "create" ? (
             <>
               <header className={styles.header}>
-                <h1 className={styles.title}>Create your workspace</h1>
+                <h1 className={styles.title}>{t("Create your workspace")}</h1>
                 <p className={styles.subtitle}>
-                  Patients, orders, and your team live inside it.
+                  {t("Patients, orders, and team access stay in this workspace.")}
                 </p>
               </header>
               <Input
                 error={nameError}
-                label="Workspace name"
+                label={t("Workspace name")}
                 onChange={(event) => {
                   setNewName(event.target.value);
                   setNameError(null);
@@ -204,13 +202,13 @@ export function WorkspaceGate({
                     onClick={() => setStage({ kind: "list" })}
                     variant="ghost"
                   >
-                    Back
+                    {t("Back")}
                   </Button>
                 ) : (
                   <span />
                 )}
                 <Button onClick={submitCreate} variant="primary">
-                  Create workspace
+                  {t("Create workspace")}
                 </Button>
               </div>
             </>
@@ -221,24 +219,26 @@ export function WorkspaceGate({
               <header className={styles.header}>
                 <h1 className={styles.title}>{stage.workspace.name}</h1>
                 <p className={styles.subtitle}>
-                  Choose the branch you&apos;re working at.
+                  {t("Choose the branch you're working at.")}
                 </p>
               </header>
               <RadioGroup
-                legend="Branch"
+                legend={t("Branch")}
                 name="gate-branch"
                 onValueChange={setBranchId}
                 value={branchId ?? ""}
               >
                 {branches.map((branch) => (
                   <Radio
-                    helpText={branch.isDefault ? "Default branch" : undefined}
+                    helpText={
+                      branch.isDefault ? t("Default branch") : undefined
+                    }
                     key={branch.branchId}
                     value={branch.branchId}
                   >
                     {branch.name}
                     {branch.branchId === lastActiveBranchId
-                      ? " · last active"
+                      ? ` · ${t("last active")}`
                       : ""}
                   </Radio>
                 ))}
@@ -249,7 +249,7 @@ export function WorkspaceGate({
                     onClick={() => setStage({ kind: "list" })}
                     variant="ghost"
                   >
-                    Back
+                    {t("Back")}
                   </Button>
                 ) : (
                   <span />
@@ -261,7 +261,7 @@ export function WorkspaceGate({
                   }
                   variant="primary"
                 >
-                  Enter workspace
+                  {t("Enter workspace")}
                 </Button>
               </div>
             </>

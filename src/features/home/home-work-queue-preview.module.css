@@ -1,0 +1,139 @@
+.preview {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.title,
+.messageText,
+.message p {
+  margin: 0;
+}
+
+.title {
+  color: var(--color-text-primary);
+  font-size: var(--type-base);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-snug);
+}
+
+.item,
+.loadingItem {
+  margin-inline: calc(var(--space-2) * -1);
+  width: calc(100% + (var(--space-2) * 2));
+  border-radius: var(--radius-control-compact);
+}
+
+.item:hover {
+  background: var(--color-background-secondary-hover);
+}
+
+.description {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-0-5);
+}
+
+.avatar :global([data-slot='avatar-fallback']) {
+  background: var(--color-surface-2);
+  color: var(--color-text-secondary);
+}
+
+.reason {
+  color: var(--color-text-primary);
+}
+
+.unavailable {
+  color: var(--color-text-secondary);
+  font-weight: var(--weight-medium);
+}
+
+.actions {
+  flex-wrap: nowrap;
+}
+
+.chevron {
+  color: var(--color-text-tertiary);
+  transition: transform var(--motion-control);
+}
+
+.item:hover .chevron {
+  transform: translateX(var(--space-0-5));
+}
+
+.message {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding-block: var(--space-2);
+  color: var(--color-text-secondary);
+  font-size: var(--type-sm);
+}
+
+.messageText {
+  padding-block: var(--space-2);
+  color: var(--color-text-secondary);
+  font-size: var(--type-sm);
+  line-height: var(--leading-normal);
+}
+
+.viewAll {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: var(--space-1);
+  color: var(--color-text-secondary);
+  font-size: var(--type-sm);
+  text-decoration: none;
+  transition: color var(--motion-color);
+}
+
+.viewAll:hover {
+  color: var(--color-text-primary);
+}
+
+.viewAll:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+  border-radius: var(--radius-control-compact);
+}
+
+.avatarSkeleton {
+  width: var(--space-8);
+  height: var(--space-8);
+}
+
+.nameSkeleton {
+  width: 42%;
+}
+
+.detailSkeleton {
+  width: 76%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chevron,
+  .viewAll {
+    transition: none;
+  }
+
+  .item:hover .chevron {
+    transform: none;
+  }
+}
+
+@media (max-width: 359px) {
+  .actions {
+    grid-column: 3;
+    justify-content: flex-end;
+  }
+}

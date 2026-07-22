@@ -23,6 +23,8 @@ export type CatalogEntry = Omit<CartItem, 'qty'> & {
 
 /** Compact order catalog for the front-desk flow. */
 export const ORDER_CATALOG: CatalogEntry[] = [
+  { id: 'visit-fee', kind: 'visit', name: 'Clinic visit', priceMinor: '1500', currencyCode: 'USD', category: 'Visit' },
+  { id: 'vitals-panel', kind: 'vitals', name: 'Vital signs', priceMinor: '500', currencyCode: 'USD', category: 'Visit' },
   { id: 'cbc', tatHours: 4, kind: 'lab', name: 'CBC', priceMinor: '600', currencyCode: 'USD', category: 'Hematology' },
   { id: 'hba1c', tatHours: 24, kind: 'lab', name: 'HbA1c', priceMinor: '900', currencyCode: 'USD', category: 'Diabetes', fasting: false },
   { id: 'glucose-f', tatHours: 4, kind: 'lab', name: 'Glucose (fasting)', priceMinor: '400', currencyCode: 'USD', category: 'Diabetes', fasting: true, analytes: ['glucose'] },

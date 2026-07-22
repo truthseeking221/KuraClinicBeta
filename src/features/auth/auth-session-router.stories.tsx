@@ -53,7 +53,7 @@ const meta = {
           'Door already owns anonymous sign-in/sign-up and WorkspaceGate owns authenticated context entry. The missing capability was a session lifecycle boundary that maps Better Auth pending, error, anonymous, and authenticated states without duplicating either UI.',
         exclusions: [
           'Live API calls, cookies, secrets, provider redirects, and database state are excluded from Storybook.',
-          'Password UI is excluded because the approved Kura Door remains OTP-first with Google as a peer method.',
+          'Password UI and third-party OAuth are excluded because the approved Kura Door is OTP-first.',
         ],
       },
       binding: {
@@ -99,7 +99,7 @@ export const Pending: Story = {
   args: { isPending: true },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByRole('status')).toHaveTextContent('Checking your secure session');
+    await expect(canvas.getByRole('status')).toHaveTextContent('Checking your session');
     await expect(canvas.queryByRole('heading', { name: 'Choose a workspace' })).not.toBeInTheDocument();
   },
 };
@@ -127,7 +127,7 @@ export const SessionError: Story = {
   },
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByText("We couldn't verify your session")).toBeVisible();
+    await expect(canvas.getByText("Couldn't verify your session")).toBeVisible();
     await expect(canvas.queryByRole('heading', { name: 'Choose a workspace' })).not.toBeInTheDocument();
     await userEvent.click(canvas.getByRole('button', { name: 'Try again' }));
     await waitFor(() => expect(args.onRetrySession).toHaveBeenCalled());

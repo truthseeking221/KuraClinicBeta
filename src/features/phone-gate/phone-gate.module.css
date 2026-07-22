@@ -43,6 +43,11 @@
   font-size: var(--type-xs);
 }
 
+.phoneLineInlineLabel {
+  color: var(--color-text-secondary);
+  font-weight: var(--weight-normal);
+}
+
 .phoneLineValue {
   display: flex;
   min-width: 0;
@@ -74,6 +79,21 @@
   grid-column: 2;
   align-self: center;
   padding-inline: 0;
+}
+
+/* The OTP destination supports the title; it is not a second field. */
+.phoneLine[data-inline='true'] {
+  align-items: center;
+}
+
+.phoneLine[data-inline='true'] .phoneLineValue {
+  grid-row: 1;
+  flex-wrap: wrap;
+}
+
+.phoneLine[data-inline='true'] > :global([data-slot='button']) {
+  grid-row: 1;
+  grid-column: 2;
 }
 
 /* ── Matched identity (spec §7) ───────────────────────────── */

@@ -1,0 +1,14 @@
+.canvas {
+  display: flex;
+  min-height: 100dvh;
+  align-items: flex-start;
+  justify-content: flex-end;
+  padding: var(--space-6);
+  background: var(--color-surface-bg);
+}
+
+@media (max-width: 30rem) {
+  .canvas {
+    padding: var(--space-2);
+  }
+}

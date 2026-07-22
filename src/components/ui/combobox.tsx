@@ -4,6 +4,7 @@ import { Combobox as ComboboxPrimitive } from '@base-ui/react';
 import { createContext, forwardRef, useContext, useId, useRef } from 'react';
 import type { ComponentPropsWithoutRef, ComponentRef, ReactNode } from 'react';
 
+import { useT } from '../foundations/i18n';
 import { CheckIcon, ChevronDownIcon, XIcon } from './icons';
 import styles from './combobox.module.css';
 
@@ -80,11 +81,13 @@ export type ComboboxTriggerProps = ComponentPropsWithoutRef<typeof ComboboxPrimi
 export const ComboboxTrigger = forwardRef<
   ComponentRef<typeof ComboboxPrimitive.Trigger>,
   ComboboxTriggerProps
->(function ComboboxTrigger({ children, className, 'aria-label': ariaLabel = 'Show options', ...props }, ref) {
+>(function ComboboxTrigger({ children, className, 'aria-label': ariaLabel, ...props }, ref) {
+  const t = useT();
+
   return (
     <ComboboxPrimitive.Trigger
       ref={ref}
-      aria-label={ariaLabel}
+      aria-label={ariaLabel ?? t('Show options')}
       data-slot="combobox-trigger"
       className={mergeClassName(styles.trigger, className)}
       {...props}
@@ -103,11 +106,13 @@ export type ComboboxClearProps = ComponentPropsWithoutRef<typeof ComboboxPrimiti
 export const ComboboxClear = forwardRef<
   ComponentRef<typeof ComboboxPrimitive.Clear>,
   ComboboxClearProps
->(function ComboboxClear({ children, className, 'aria-label': ariaLabel = 'Clear selection', ...props }, ref) {
+>(function ComboboxClear({ children, className, 'aria-label': ariaLabel, ...props }, ref) {
+  const t = useT();
+
   return (
     <ComboboxPrimitive.Clear
       ref={ref}
-      aria-label={ariaLabel}
+      aria-label={ariaLabel ?? t('Clear selection')}
       data-slot="combobox-clear"
       className={mergeClassName(styles.clear, className)}
       {...props}
@@ -118,6 +123,8 @@ export const ComboboxClear = forwardRef<
 });
 
 export type ComboboxInputProps = ComponentPropsWithoutRef<typeof ComboboxPrimitive.Input> & {
+  /** Optional canonical icon that reinforces the input's purpose. */
+  leadingIcon?: ReactNode;
   /** Shows a dedicated, keyboard-accessible disclosure button. */
   showTrigger?: boolean;
   /** Shows a control to remove the current selection and query. */
@@ -136,6 +143,7 @@ export const ComboboxInput = forwardRef<
     className,
     clearLabel,
     disabled = false,
+    leadingIcon,
     showClear = false,
     showTrigger = true,
     triggerLabel,
@@ -146,6 +154,11 @@ export const ComboboxInput = forwardRef<
   const labelId = useContext(ComboboxLabelContext);
   return (
     <ComboboxPrimitive.InputGroup className={styles.control} data-slot="combobox-input-control">
+      {leadingIcon ? (
+        <span aria-hidden="true" className={styles.leadingIcon}>
+          {leadingIcon}
+        </span>
+      ) : null}
       <ComboboxPrimitive.Input
         ref={ref}
         aria-labelledby={labelId ?? undefined}

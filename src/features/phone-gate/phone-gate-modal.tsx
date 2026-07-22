@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { formatPhoneNumber } from 'react-phone-number-input';
 
+import { useT } from '../../components/foundations/i18n';
 import {
   Alert,
   AlertAction,
@@ -137,6 +138,7 @@ export function PhoneGateModal({
   resendCooldownSecs = DEMO_RESEND_COOLDOWN_SECS,
   verificationDelayMs = 300,
 }: PhoneGateModalProps) {
+  const t = useT();
   const [state, setState] = useState<PhoneGateState>(initial?.state ?? 'enterPhone');
   const [phone, setPhone] = useState<PhoneValue | undefined>(initial?.phone);
   const [phoneError, setPhoneError] = useState<string | null>(null);
@@ -178,11 +180,11 @@ export function PhoneGateModal({
 
   function sendCode() {
     if (!phone || !isValidKhLocalPhone(phoneDisplay || phone)) {
-      setPhoneError(PHONE_GATE_COPY.invalidPhone);
+      setPhoneError(t(PHONE_GATE_COPY.invalidPhone));
       return;
     }
     if (rateLimited(phone)) {
-      setPhoneError(PHONE_GATE_COPY.rateLimited);
+      setPhoneError(t(PHONE_GATE_COPY.rateLimited));
       return;
     }
     setPhoneError(null);
@@ -211,7 +213,7 @@ export function PhoneGateModal({
 
   function verifyCode() {
     if (verifyGateOtp(code, expectedCode) === 'invalid') {
-      setCodeError(PHONE_GATE_COPY.invalidCode);
+      setCodeError(t(PHONE_GATE_COPY.invalidCode));
       return;
     }
     setCodeError(null);
@@ -234,7 +236,7 @@ export function PhoneGateModal({
       (candidate) => candidate.patientId === selectedCandidateId,
     );
     if (!patient) {
-      setSelectionError(PHONE_GATE_COPY.noSelection);
+      setSelectionError(t(PHONE_GATE_COPY.noSelection));
       return;
     }
     onOutcome({ kind: 'existing', matchReason: 'shared_phone', patient });
@@ -299,7 +301,7 @@ export function PhoneGateModal({
     >
       <DialogContent
         className={styles.content}
-        closeLabel={PHONE_GATE_COPY.closeLabel}
+        closeLabel={t(PHONE_GATE_COPY.closeLabel)}
         onEscapeKeyDown={(event) => {
           event.preventDefault();
           attemptDismiss();
@@ -309,14 +311,17 @@ export function PhoneGateModal({
         size="sm"
       >
         <DialogHeader>
-          <DialogTitle>{titleFor(state)}</DialogTitle>
-          {description ? <DialogDescription>{description}</DialogDescription> : null}
+          <DialogTitle>{t(titleFor(state))}</DialogTitle>
+          {description ? (
+            <DialogDescription>{t(description)}</DialogDescription>
+          ) : null}
         </DialogHeader>
 
         <DialogBody className={styles.body}>
           {state === 'verifyOtp' || state === 'verifyingOtp' ? (
             <VerifiedPhoneLine
-              label={PHONE_GATE_COPY.sentToLabel}
+              inline
+              label={t(PHONE_GATE_COPY.sentToLabel)}
               onChange={changePhone}
               value={phone ? maskPhoneForOtp(phone) : ''}
             />
@@ -324,7 +329,7 @@ export function PhoneGateModal({
 
           {VERIFIED_STATES.includes(state) ? (
             <VerifiedPhoneLine
-              label={PHONE_GATE_COPY.verifiedLabel}
+              label={t(PHONE_GATE_COPY.verifiedLabel)}
               onChange={changePhone}
               value={phoneDisplay}
               verified
@@ -337,13 +342,14 @@ export function PhoneGateModal({
               countries={['KH']}
               defaultCountry="KH"
               error={phoneError}
-              label="Phone number"
+              label={t('Contact phone number')}
               onChange={(next) => {
                 setPhone(next);
                 setPhoneError(null);
               }}
               placeholder="12 345 678"
               required
+              size="lg"
               value={phone}
             />
           ) : null}
@@ -353,7 +359,7 @@ export function PhoneGateModal({
               autoFocus
               disabled={state === 'verifyingOtp'}
               error={codeError}
-              label="SMS code"
+              accessibleLabel={t('SMS code')}
               onValueChange={(next) => {
                 setCode(next);
                 setCodeError(null);
@@ -390,11 +396,13 @@ export function PhoneGateModal({
 
           {state === 'error' ? (
             <Alert tone="danger">
-              <AlertTitle>{PHONE_GATE_COPY.lookupErrorTitle}</AlertTitle>
-              <AlertDescription>{PHONE_GATE_COPY.lookupError}</AlertDescription>
+              <AlertTitle>{t(PHONE_GATE_COPY.lookupErrorTitle)}</AlertTitle>
+              <AlertDescription>
+                {t(PHONE_GATE_COPY.lookupError)}
+              </AlertDescription>
               <AlertAction>
                 <Button onClick={runLookup} size="sm" variant="primary">
-                  Retry
+                  {t('Retry')}
                 </Button>
               </AlertAction>
             </Alert>
@@ -407,7 +415,7 @@ export function PhoneGateModal({
           <DialogFooter className={styles.footer}>
             {state === 'enterPhone' ? (
               <Button onClick={sendCode} variant="primary">
-                {PHONE_GATE_COPY.sendCode}
+                {t(PHONE_GATE_COPY.sendCode)}
               </Button>
             ) : null}
 
@@ -423,8 +431,8 @@ export function PhoneGateModal({
                   variant="ghost"
                 >
                   {resendLeft > 0
-                    ? `Resend in ${resendLeft}s`
-                    : PHONE_GATE_COPY.resendCode}
+                    ? `${t('Resend in')} ${resendLeft}s`
+                    : t(PHONE_GATE_COPY.resendCode)}
                 </Button>
                 <Button
                   disabled={code.length !== 6}
@@ -433,8 +441,8 @@ export function PhoneGateModal({
                   variant="primary"
                 >
                   {state === 'verifyingOtp'
-                    ? PHONE_GATE_COPY.verifying
-                    : PHONE_GATE_COPY.verifyCode}
+                    ? t(PHONE_GATE_COPY.verifying)
+                    : t(PHONE_GATE_COPY.verifyCode)}
                 </Button>
               </>
             ) : null}
@@ -445,7 +453,7 @@ export function PhoneGateModal({
                   onClick={() => startTemporaryPatient('different_patient')}
                   variant="ghost"
                 >
-                  {PHONE_GATE_COPY.someoneElse}
+                  {t(PHONE_GATE_COPY.someoneElse)}
                 </Button>
                 <Button
                   autoFocus
@@ -459,7 +467,7 @@ export function PhoneGateModal({
                   }}
                   variant="primary"
                 >
-                  {PHONE_GATE_COPY.useThisPatient}
+                  {t(PHONE_GATE_COPY.useThisPatient)}
                 </Button>
               </>
             ) : null}
@@ -470,10 +478,10 @@ export function PhoneGateModal({
                   onClick={() => startTemporaryPatient('shared_phone_override')}
                   variant="ghost"
                 >
-                  {PHONE_GATE_COPY.noneOfThese}
+                  {t(PHONE_GATE_COPY.noneOfThese)}
                 </Button>
                 <Button onClick={attachSelectedCandidate} variant="primary">
-                  {PHONE_GATE_COPY.choosePatient}
+                  {t(PHONE_GATE_COPY.choosePatient)}
                 </Button>
               </>
             ) : null}
@@ -485,8 +493,8 @@ export function PhoneGateModal({
                 variant="primary"
               >
                 {state === 'submitting'
-                  ? PHONE_GATE_COPY.creating
-                  : PHONE_GATE_COPY.createTemporary}
+                  ? t(PHONE_GATE_COPY.creating)
+                  : t(PHONE_GATE_COPY.createTemporary)}
               </Button>
             ) : null}
           </DialogFooter>
@@ -495,14 +503,16 @@ export function PhoneGateModal({
         <AlertDialog onOpenChange={(next) => setConfirmDiscard(next)} open={confirmDiscard}>
           <AlertDialogContent size="sm">
             <AlertDialogHeader>
-              <AlertDialogTitle>Discard what you entered?</AlertDialogTitle>
+              <AlertDialogTitle>
+                {t('Discard what you entered?')}
+              </AlertDialogTitle>
               <AlertDialogDescription>
-                The phone, code, or patient details typed here will be lost.
+                {t('The phone, code, or patient details typed here will be lost.')}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel onClick={() => setConfirmDiscard(false)}>
-                Keep editing
+                {t('Keep editing')}
               </AlertDialogCancel>
               <AlertDialogAction
                 onClick={() => {
@@ -511,7 +521,7 @@ export function PhoneGateModal({
                 }}
                 variant="destructive"
               >
-                Discard &amp; close
+                {t('Discard & close')}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

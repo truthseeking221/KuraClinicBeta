@@ -14,15 +14,14 @@ import {
   PARTIAL_EPISODE_SECTIONS,
   REDRAW_EPISODE_SECTIONS,
   RELEASED_WITH_CANCELLED_SECTIONS,
+  RESULTS_DEMO_SCENARIOS,
   RETURNING_RESULTS,
 } from './demo-data';
 import styles from './results.stories.module.css';
 import { ResultsWorkspace } from './results-workspace';
 import { RESULTS_STORYBOOK_KURA } from './storybook-metadata';
 
-const RETURNING_SECTIONS = [
-  { code: 'monitoring', title: 'Monitored analytes', results: RETURNING_RESULTS },
-];
+const RETURNING_SECTIONS = RESULTS_DEMO_SCENARIOS.longitudinal.sections;
 
 const meta = {
   title: 'Clinic/Clinical/Results/Results Workspace',
@@ -49,6 +48,16 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const DefaultLongitudinalWorkspace: Story = {};
+
+/** Clinic-level first use before the workspace has patients or episodes. */
+export const NewClinicEmpty: Story = {
+  args: { patient: undefined, sections: [], state: 'empty' },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText('No results to review')).toBeVisible();
+    await expect(canvas.queryByText(DEMO_RESULTS_PATIENT.name)).not.toBeInTheDocument();
+  },
+};
 
 export const SearchInteraction: Story = {
   play: async ({ canvasElement }) => {
@@ -113,28 +122,28 @@ export const PartialRelease: Story = {
 
 export const RedrawInProgress: Story = {
   args: {
-    episodeLabel: 'Redraw requested after lab QC dismissal',
+    episodeLabel: 'Booking AB12046 · collected Jul 12, 2026',
     sections: REDRAW_EPISODE_SECTIONS,
   },
 };
 
 export const AddOnReopenedEpisode: Story = {
   args: {
-    episodeLabel: 'Vitamin B12 added after initial completion',
+    episodeLabel: 'Booking AB11987 · collected Jul 8, 2026',
     sections: ADD_ON_EPISODE_SECTIONS,
   },
 };
 
 export const ReleasedWithCancelledLine: Story = {
   args: {
-    episodeLabel: 'Mixed terminal result',
+    episodeLabel: 'Booking AB11902 · collected Jul 5, 2026',
     sections: RELEASED_WITH_CANCELLED_SECTIONS,
   },
 };
 
 export const AllCancelled: Story = {
   args: {
-    episodeLabel: 'Episode cancelled before any release',
+    episodeLabel: 'Booking AB11875 · collected Jul 3, 2026',
     sections: ALL_CANCELLED_SECTIONS,
   },
 };
@@ -163,13 +172,13 @@ function RetryPlayground() {
   const [recovered, setRecovered] = useState(false);
   return recovered ? (
     <ResultsWorkspace
-      episodeLabel="Recovered episode"
+      episodeLabel="Booking AB12331 · collected Jul 15, 2026"
       patient={DEMO_RESULTS_PATIENT}
       sections={RETURNING_SECTIONS}
     />
   ) : (
     <ResultsWorkspace
-      episodeLabel="Unavailable episode"
+      episodeLabel="Booking AB12331 · collected Jul 15, 2026"
       onRetry={() => setRecovered(true)}
       patient={DEMO_RESULTS_PATIENT}
       sections={[]}
@@ -193,7 +202,7 @@ function ConflictPlayground() {
   const [conflict, setConflict] = useState(true);
   return (
     <ResultsWorkspace
-      episodeLabel="Episode changed during review"
+      episodeLabel="Booking AB12345 · collected Jul 14, 2026"
       onRetry={() => setConflict(false)}
       patient={DEMO_RESULTS_PATIENT}
       sections={PARTIAL_EPISODE_SECTIONS}

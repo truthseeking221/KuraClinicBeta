@@ -50,11 +50,18 @@
   pointer-events: none;
 }
 
+.triggerHeading {
+  margin: 0;
+  font: inherit;
+  color: inherit;
+}
+
 .triggerLabel {
   display: inline-flex;
   min-width: 0;
+  flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-inline-icon);
+  gap: var(--space-1) var(--space-inline-icon);
 }
 
 .leadingIcon,
@@ -77,6 +84,14 @@
   min-width: 0;
 }
 
+/* Secondary text stays subordinate to the label it qualifies. */
+.triggerMeta {
+  min-width: 0;
+  color: var(--muted-foreground);
+  font-size: var(--type-sm);
+  font-weight: var(--weight-regular);
+}
+
 .chevron {
   color: var(--muted-foreground);
   transition: transform var(--duration-fast) var(--ease-standard), color var(--duration-fast) var(--ease-standard);
@@ -85,6 +100,26 @@
 .trigger[data-state='open'] .chevron {
   transform: rotate(180deg);
   color: var(--primary);
+}
+
+/* A leading chevron reads as a tree marker: it points at the row when closed
+   and down into the content when open. */
+.trigger[data-chevron='leading'] {
+  justify-content: flex-start;
+}
+
+.trigger[data-chevron='leading'] .chevron {
+  transform: rotate(-90deg);
+}
+
+.trigger[data-chevron='leading'][data-state='open'] .chevron {
+  transform: rotate(0deg);
+}
+
+/* Aligns the disclosure with a surrounding grid instead of insetting it. */
+.trigger[data-inset='none'],
+.content[data-inset='none'] {
+  padding-inline: 0;
 }
 
 .content {

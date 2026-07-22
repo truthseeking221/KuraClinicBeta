@@ -9,19 +9,20 @@ import {
   DEMO_SETTLED,
   DEMO_SUGGESTIONS,
 } from './demo-data';
-import { PATIENTS_STORYBOOK_KURA } from './storybook-metadata';
+import { PRESCRIBE_STORYBOOK_KURA } from './storybook-metadata';
+import styles from './prescribe-rail.stories.module.css';
 
 const meta = {
-  title: 'Clinic/Clinical/Patients/Prescribe Rail',
+  title: 'Clinic/Clinical/Patients/Prescribing/Medication Draft',
   component: PrescribeRail,
   tags: ['autodocs', 'adapted-kura'],
   parameters: {
-    layout: 'padded',
-    kura: PATIENTS_STORYBOOK_KURA,
+    layout: 'fullscreen',
+    kura: PRESCRIBE_STORYBOOK_KURA,
     docs: {
       description: {
         component:
-          'The prescribing moment of the chart action rail: every flagged current medication needs a decision (Keep, Adjust, Pause, Stop) before the review can finish. Coded diagnoses ground the session; Kura suggestions are added deliberately and never apply on their own. Design intent throughout: no prescription or ICD model exists in the platform yet.',
+          'Medication review comes first. Once every current-medication decision is drafted, the rail reveals new-medication work and any AI proposals; it returns an unsigned local draft without implying a prescription.',
       },
     },
   },
@@ -37,7 +38,7 @@ const meta = {
   },
   decorators: [
     (Story) => (
-      <div style={{ maxInlineSize: '320px' }}>
+      <div className={styles.frame}>
         <Story />
       </div>
     ),
@@ -47,36 +48,64 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {};
+/** Review work appears first; new medication work is revealed only once the regimen is resolved. */
+export const Default: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      canvas.getByRole('heading', { name: 'Medication review' }),
+    ).toBeVisible();
+    await expect(
+      canvas.queryByRole('heading', { name: 'New medications' }),
+    ).not.toBeInTheDocument();
+    await expect(
+      canvas.queryByRole('button', { name: 'Add medication' }),
+    ).not.toBeInTheDocument();
+    await expect(
+      canvas.queryByRole('button', { name: 'Finish review' }),
+    ).not.toBeInTheDocument();
+  },
+};
 
-/** The finish gate opens only after every flagged medication has a decision. */
+/** Decisions update in place; the reviewed draft is returned without signing anything. */
 export const ReviewGate: Story = {
   tags: ['play-fn'],
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement);
-    const gate = canvas.getByRole('button', { name: 'Review 2 meds first' });
-    await expect(gate).toBeDisabled();
+    await expect(
+      canvas.queryByRole('button', { name: 'Finish review' }),
+    ).not.toBeInTheDocument();
+    await expect(
+      canvas.queryByRole('button', { name: 'Add medication' }),
+    ).not.toBeInTheDocument();
 
     await userEvent.click(canvas.getByRole('button', { name: /Metformin/ }));
-    await expect(
-      canvas.getByText(/Contraindicated in advanced kidney disease/),
-    ).toBeInTheDocument();
     await userEvent.click(canvas.getByRole('button', { name: 'Stop' }));
+    await expect(canvas.getByText('Draft · stop')).toBeVisible();
+    await expect(canvas.getByText('Metformin')).toBeVisible();
 
     await userEvent.click(canvas.getByRole('button', { name: /Lisinopril/ }));
     await userEvent.click(canvas.getByRole('button', { name: 'Keep' }));
+    await expect(canvas.getByText('Draft · keep current')).toBeVisible();
 
-    const finish = canvas.getByRole('button', { name: 'Finish review' });
-    await expect(finish).toBeEnabled();
-    await userEvent.click(finish);
-    await expect(args.onComplete).toHaveBeenCalled();
-    // Stopped medication lands in Reviewed with its decision visible.
-    await expect(canvas.getByText('Stopped')).toBeInTheDocument();
-    await expect(canvas.getByText('Kept')).toBeInTheDocument();
+    await expect(
+      canvas.getByRole('button', { name: 'Add medication' }),
+    ).toBeEnabled();
+    await userEvent.click(
+      canvas.getByRole('button', { name: 'Finish review' }),
+    );
+    await expect(args.onComplete).toHaveBeenCalledWith(
+      expect.objectContaining({
+        decisions: expect.objectContaining({
+          'med-metformin': expect.objectContaining({ decision: 'stop' }),
+          'med-lisinopril': expect.objectContaining({ decision: 'keep' }),
+        }),
+      }),
+    );
   },
 };
 
-/** Adjust opens the inline dose editor; saving records the new sig. */
+/** Adjust opens the inline dose editor and keeps the medication in place. */
 export const AdjustFlow: Story = {
   tags: ['play-fn'],
   play: async ({ canvasElement }) => {
@@ -85,50 +114,109 @@ export const AdjustFlow: Story = {
     await userEvent.click(canvas.getByRole('button', { name: 'Adjust' }));
     await userEvent.click(canvas.getByRole('radio', { name: '500 mg' }));
     await userEvent.click(canvas.getByRole('radio', { name: 'once daily' }));
-    await userEvent.click(canvas.getByRole('button', { name: 'Save change' }));
-    await expect(canvas.getByText('Adjusted')).toBeInTheDocument();
-    await expect(canvas.getByText('500 mg · once daily')).toBeInTheDocument();
+    await userEvent.click(
+      canvas.getByRole('button', { name: 'Save adjustment' }),
+    );
+    await expect(canvas.getByText('Draft · adjust')).toBeVisible();
+    await expect(canvas.getByText('500 mg · once daily')).toBeVisible();
   },
 };
 
-/** Suggestions are added one by one; the mark confirms without a toast. */
-export const AddSuggestion: Story = {
+/** An AI proposal enters the same visible draft-additions group with provenance intact. */
+export const AddAiSuggestion: Story = {
+  args: { needsReview: [] },
   tags: ['play-fn'],
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    const addButtons = canvas.getAllByRole('button', { name: 'Add' });
-    await userEvent.click(addButtons[0]);
-    await expect(canvas.getByText('Added')).toBeInTheDocument();
+    const aiRegion = canvas.getByRole('region', { name: 'AI suggestions' });
+    await userEvent.click(
+      within(aiRegion).getAllByRole('button', { name: 'Add to draft' })[0],
+    );
+    await expect(canvas.getByText('Draft additions')).toBeVisible();
+    await expect(canvas.getByText('AI suggestion')).toBeVisible();
+    await expect(canvas.getAllByText('Calcium acetate')).toHaveLength(2);
   },
 };
 
-/** Search view: filter the formulary, add, and return. */
+/** A formulary addition remains visible after returning from search. */
 export const SearchMedication: Story = {
+  args: { needsReview: [] },
   tags: ['play-fn'],
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await userEvent.click(canvas.getByRole('button', { name: 'Add medication' }));
+    await userEvent.click(
+      canvas.getByRole('button', { name: 'Add medication' }),
+    );
     const input = canvas.getByRole('searchbox', { name: 'Search medications' });
     await userEvent.type(input, 'ator');
-    await expect(canvas.getByText('Atorvastatin')).toBeInTheDocument();
-    await userEvent.type(input, 'zzz');
-    await expect(canvas.getByText(/No medication matches/)).toBeInTheDocument();
+    await userEvent.click(canvas.getByRole('button', { name: 'Add to draft' }));
+    await userEvent.click(
+      canvas.getByRole('button', { name: 'Back to medication draft' }),
+    );
+    await expect(canvas.getByText('Draft additions')).toBeVisible();
+    await expect(canvas.getByText('Atorvastatin')).toBeVisible();
   },
 };
 
-/** Prescribing without a coded diagnosis is warned, not silently allowed. */
+/** The diagnosis gate explains both disabled actions in their local scopes. */
 export const NoDiagnosisLinked: Story = {
   args: { diagnoses: [], onAddDiagnosis: fn() },
+  tags: ['play-fn'],
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      canvas.queryByRole('button', { name: 'Add medication' }),
+    ).not.toBeInTheDocument();
+    await expect(
+      canvas.queryByRole('button', { name: 'Finish review' }),
+    ).not.toBeInTheDocument();
+    await expect(
+      canvas.getByText('Add a diagnosis before reviewing this medication draft.'),
+    ).toBeVisible();
+  },
 };
 
-export const NothingToReview: Story = {
-  args: { needsReview: [], suggestions: [] },
+/** A restored session draft preserves decisions and additions after leaving the workflow. */
+export const RestoredDraft: Story = {
+  args: {
+    initialDraft: {
+      decisions: {
+        'med-metformin': {
+          decision: 'adjust',
+          dose: '500 mg',
+          frequency: 'once daily',
+        },
+      },
+      additions: [
+        {
+          id: 'srch-atorvastatin',
+          drug: 'Atorvastatin',
+          dose: '20 mg tablet',
+          source: 'formulary',
+        },
+      ],
+    },
+  },
+};
+
+export const EmptyRegimen: Story = {
+  args: { needsReview: [], settled: [], suggestions: [] },
+};
+
+export const LongContent: Story = {
+  args: {
+    patientName: 'Sokha Monirath Chann very long registry display name',
+    diagnoses: [
+      {
+        code: 'E11.65',
+        label:
+          'Type 2 diabetes mellitus with hyperglycaemia and a long clinical label',
+        evidence: 'HbA1c 8.9% · verified 21 May 2026 · repeat result pending',
+      },
+    ],
+  },
 };
 
 export const MobileWidth320: Story = {
   globals: { viewport: { value: 'kura320' } },
-};
-
-export const DarkTheme: Story = {
-  globals: { theme: 'dark' },
 };

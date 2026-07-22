@@ -5,7 +5,7 @@ import { LinkButton } from './link-button';
 import styles from './kura-stories.module.css';
 
 const meta = {
-  title: 'Design System/Components/Link Button',
+  title: 'Design System/Primitives/Link Button',
   component: LinkButton,
   tags: ['autodocs', 'source-kura', 'adapted-kura'],
   parameters: {

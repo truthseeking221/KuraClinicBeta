@@ -59,9 +59,8 @@ export const MockJourneySmokeTest: Story = {
     const body = within(canvasElement.ownerDocument.body);
 
     await expect(canvas.getByText('Mock Storybook prototype')).toBeVisible();
-    await expect(canvas.getByText('Who is checking in?')).toBeVisible();
+    await expect(canvas.getByRole('heading', { name: 'Find or create a patient' })).toBeVisible();
 
-    await userEvent.type(canvas.getByLabelText(/Full name/), 'Bopha Kim');
     await userEvent.click(canvas.getByRole('button', { name: /Front desk/ }));
     await userEvent.click(await body.findByRole('menuitemradio', { name: /Collection/ }));
 
@@ -75,10 +74,14 @@ export const MockJourneySmokeTest: Story = {
 
     await userEvent.click(canvas.getByRole('button', { name: /Collection/ }));
     await userEvent.click(await body.findByRole('menuitemradio', { name: /Front desk/ }));
+    await expect(await canvas.findByRole('heading', { name: 'Find or create a patient' })).toBeVisible();
 
-    await waitFor(async () => {
-      await expect(canvas.getByLabelText(/Full name/)).toHaveValue('Bopha Kim');
-    });
+    // A draw already under way survives a trip to the desk and back. Only
+    // committed work is expected to persist — an unsubmitted search string is
+    // screen state, and the station deliberately re-asks for the patient.
+    await userEvent.click(canvas.getByRole('button', { name: /Front desk/ }));
+    await userEvent.click(await body.findByRole('menuitemradio', { name: /Collection/ }));
+    await expect(await canvas.findByText('Before the draw')).toBeVisible();
   },
 };
 

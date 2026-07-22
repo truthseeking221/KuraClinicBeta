@@ -1,4 +1,5 @@
 import type { LabCatalogCategory, LabCatalogTest } from './types';
+import { legacyPreviewFor } from './legacy-preview-demo-data';
 
 const category = (
   categoryId: string,
@@ -57,6 +58,7 @@ const test = ({
   availability: unavailableReason ? 'unavailable' : 'available',
   unavailableReason,
   requiredPreAnalyticalFields,
+  preview: legacyPreviewFor(id),
 });
 
 export const LAB_CATALOG_TESTS: LabCatalogTest[] = [

@@ -1,0 +1,1 @@
+import{i as e}from"./preload-helper-MclHqJXp.js";var t,n,r=e((()=>{t={userId:`p-sok-nimol`,displayName:`Sok Nimol`,initials:`SN`,sexAtBirth:`M`,sexLabel:`Male`,age:32,dob:`1994-02-18`,mrn:`P-8842`,mrnMasked:`··42`,phone:`+85599111222`,phoneMasked:`+85*****1222`,orderId:`ORD-58291`},n=`${t.age} y · ${t.sexAtBirth} · MRN ${t.mrn}`}));export{n,r,t};

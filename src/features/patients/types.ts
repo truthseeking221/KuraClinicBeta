@@ -114,7 +114,39 @@ export type DiagnosisContext = {
   evidence?: string;
 };
 
+/** The origin of a proposed ICD-10 code. Provenance must never imply verification. */
+export type Icd10ProposalSource = 'ai' | 'clinician';
+
+/** Evidence displayed by the legacy-select diagnosis rail. */
+export type Icd10DiagnosisEvidence = {
+  label: string;
+  value: string;
+  tone?: 'neutral' | 'success' | 'warning' | 'danger';
+};
+
+/**
+ * TARGET CONTRACT — legacy diagnosis-selection rail data. It is deliberately
+ * separate from verification: selecting a proposed code is not a signed or
+ * clinically verified diagnosis.
+ */
+export type Icd10DiagnosisCandidate = {
+  id: string;
+  code: string;
+  label: string;
+  source: Icd10ProposalSource;
+  /** Search-only non-terminal entries stay visible but cannot be selected. */
+  codable?: boolean;
+  evidence?: readonly Icd10DiagnosisEvidence[];
+  reviewMeta?: string;
+};
+
 export type PrescribeDecision = 'keep' | 'adjust' | 'pause' | 'stop';
+
+export type PrescribeDraftDecision = {
+  decision: PrescribeDecision;
+  dose: string;
+  frequency: string;
+};
 
 /** A current medication the doctor must decide on before prescribing. */
 export type PrescribeMedication = {
@@ -137,12 +169,35 @@ export type SettledMedication = {
   status: 'active' | 'paused';
 };
 
-/** A Kura-suggested addition; the doctor adds it deliberately, never auto. */
-export type MedicationSuggestion = {
+/** One formulary result available to the draft search. */
+export type MedicationOption = {
   id: string;
   drug: string;
   dose: string;
+};
+
+/** A Kura AI suggestion; it remains a proposal until a clinician adds it. */
+export type MedicationSuggestion = MedicationOption & {
   reason: string;
+  /** Exact chart evidence available to the suggestion. */
+  evidence: string;
+  /** Safety or operational checks that are not connected to this prototype. */
+  missingData: string;
+};
+
+export type PrescribeDraftAddition = MedicationOption & {
+  source: 'formulary' | 'ai';
+  reason?: string;
+  evidence?: string;
+  missingData?: string;
+};
+
+/** Local target-contract draft. It is not a signed or persisted prescription. */
+export type PrescribeDraft = {
+  /** Caller-owned ICD-10 draft selection. Selection is not verification or signature. */
+  diagnosisIds?: readonly string[];
+  decisions: Readonly<Record<string, PrescribeDraftDecision>>;
+  additions: readonly PrescribeDraftAddition[];
 };
 
 /**

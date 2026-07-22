@@ -14,7 +14,7 @@ import {
 } from './index';
 
 const meta = {
-  title: 'Design System/Primitives/Breadcrumb',
+  title: 'Design System/Components/Breadcrumb',
   component: Breadcrumb,
   tags: ['autodocs', 'source-kura', 'adapted-kura'],
   parameters: {

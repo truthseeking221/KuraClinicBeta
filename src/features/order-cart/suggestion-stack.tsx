@@ -1,5 +1,6 @@
 'use client';
 
+import { useT } from '../../components/foundations/i18n';
 import { Button, MoneyText } from '../../components/ui';
 import type { CartSuggestion, CartSuggestionKind } from './types';
 import styles from './suggestion-stack.module.css';
@@ -26,6 +27,7 @@ export type SuggestionStackProps = {
 };
 
 export function SuggestionStack({ onAccept, onDismiss, suggestions }: SuggestionStackProps) {
+  const t = useT();
   if (suggestions.length === 0) return null;
   return (
     <div className={styles.stack}>
@@ -39,8 +41,8 @@ export function SuggestionStack({ onAccept, onDismiss, suggestions }: Suggestion
             role={meta.role}
           >
             <div className={styles.text}>
-              <p className={styles.title}>{suggestion.title}</p>
-              {suggestion.detail ? <p className={styles.detail}>{suggestion.detail}</p> : null}
+              <p className={styles.title}>{t(suggestion.title)}</p>
+              {suggestion.detail ? <p className={styles.detail}>{t(suggestion.detail)}</p> : null}
             </div>
             {suggestion.deltaMinor ? (
               <span className={styles.delta} data-direction={suggestion.deltaDirection ?? 'save'}>
@@ -54,11 +56,11 @@ export function SuggestionStack({ onAccept, onDismiss, suggestions }: Suggestion
                 size="xs"
                 variant={suggestion.kind === 'redundancy' ? 'outline' : 'secondary'}
               >
-                {suggestion.actionLabel}
+                {t(suggestion.actionLabel)}
               </Button>
               {meta.dismissible && onDismiss ? (
                 <Button onClick={() => onDismiss(suggestion)} size="xs" variant="ghost">
-                  Keep as is
+                  {t('Keep as is')}
                 </Button>
               ) : null}
             </div>

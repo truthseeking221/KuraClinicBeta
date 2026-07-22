@@ -1,9 +1,21 @@
 .shell {
+  --app-shell-sidebar-inline-size: 240px;
+  --app-shell-content-inline-start: 0px;
+  --app-shell-context-row-block-size: var(--space-24);
+
   display: grid;
   grid-template-columns: auto 1fr;
   min-height: 100dvh;
   background: var(--background);
   color: var(--color-text-primary);
+}
+
+.shell[data-posture='sidebar'] {
+  --app-shell-content-inline-start: var(--app-shell-sidebar-inline-size);
+}
+
+.shell[data-sidebar-collapsed='true'] {
+  --app-shell-content-inline-start: var(--space-20);
 }
 
 .shellStation {
@@ -16,68 +28,190 @@
   position: sticky;
   top: 0;
   display: flex;
+  box-sizing: border-box;
   flex-direction: column;
-  width: 240px;
+  gap: var(--space-4);
+  width: var(--app-shell-sidebar-inline-size);
   height: 100dvh;
+  overflow: hidden;
+  padding: var(--space-5) var(--space-3) var(--space-4);
   background: var(--sidebar-bg);
   border-right: 1px solid var(--sidebar-border);
-  transition: width var(--duration-base) var(--ease-standard);
+  transition:
+    width var(--motion-layout),
+    padding var(--motion-layout),
+    gap var(--motion-layout);
 }
 
-/* Rail width = topbar height token: the collapsed rail reads as one square
-   rhythm with the context strip. */
+/* Legacy DCM rail geometry, adapted to Kura spacing and touch tokens. */
 .sidebarCollapsed {
-  width: var(--space-14);
+  align-items: center;
+  gap: var(--space-3);
+  width: var(--space-20);
+  padding: var(--space-4-5) var(--space-2) var(--space-3-5);
 }
 
-/* Locked to the topbar height (56px content + 1px border) so this border and
-   the topbar border form one continuous line across the whole app: context
-   strip above, work zone below. */
 .sidebarHeader {
   display: flex;
-  align-items: center;
-  min-height: var(--space-14);
-  padding: var(--space-1) var(--space-2);
-  border-bottom: 1px solid var(--sidebar-border);
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--space-2);
+  min-width: 0;
+  flex: 0 0 auto;
 }
 
 .sidebarHeader > * {
-  flex: 1;
   min-width: 0;
+}
+
+.sidebarBrand {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  width: 100%;
+  min-height: var(--space-7);
+  padding-inline: var(--space-2);
+}
+
+.brandIdentity {
+  position: relative;
+  display: block;
+  width: var(--space-16);
+  height: var(--space-5);
+}
+
+.brandLogoFull,
+.brandLogoMark {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  display: block;
+  width: auto;
+  height: var(--space-5);
+  transform: translateY(-50%);
+  transition:
+    max-width var(--motion-layout),
+    opacity var(--motion-color),
+    filter var(--motion-color);
+}
+
+.brandLogoMark {
+  max-width: 0;
+  opacity: 0;
+  filter: blur(2px);
+}
+
+.brandLogoFull {
+  max-width: var(--space-16);
+  opacity: 1;
+  filter: blur(0);
+}
+
+.collapseToggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--space-7);
+  height: var(--space-7);
+  flex: 0 0 var(--space-7);
+  padding: 0;
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-control-compact);
+  color: var(--sidebar-fg-muted);
+  cursor: pointer;
+  transition:
+    background-color var(--motion-color),
+    color var(--motion-color),
+    opacity var(--motion-color),
+    transform var(--motion-layout);
+}
+
+.collapseToggle:hover {
+  background: var(--sidebar-hover-bg);
+  color: var(--sidebar-fg);
+}
+
+.collapseToggle:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
+
+.collapseToggleIcon {
+  display: block;
+  transform-origin: center;
+  transition: transform var(--motion-control);
 }
 
 .sidebarFooter {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: stretch;
   gap: var(--space-1);
-  padding: var(--space-2) var(--space-2) var(--space-3);
+  min-width: 0;
+  flex: 0 0 auto;
 }
 
-.sidebarFooter .navItem {
+.sidebarActionRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: var(--space-9);
+}
+
+.sidebarAccount {
+  display: flex;
+  min-width: 0;
+}
+
+.sidebarCustomActions {
+  display: flex;
+  align-items: center;
+  min-width: 0;
   flex: 1;
 }
 
-/* Lives in the topbar so it stays put when the rail collapses; the mobile
-   viewport swaps the sidebar for the sheet, so the toggle goes with it. */
-.collapseToggle {
-  flex-shrink: 0;
+.sidebarSearch {
+  min-width: 0;
+  flex: 0 0 var(--control-h);
+  background: var(--color-surface);
+  box-shadow: inset 0 0 0 1px var(--sidebar-border);
+  color: var(--sidebar-fg);
 }
 
-@media (max-width: 767px) {
-  .collapseToggle {
-    display: none;
-  }
+.sidebarSearch:hover {
+  background: var(--color-surface);
+  box-shadow: inset 0 0 0 1px var(--color-border-strong);
+}
+
+.searchKbd {
+  display: inline-flex;
+  max-width: var(--space-10);
+  margin-left: auto;
+  overflow: hidden;
+  opacity: 1;
+  filter: blur(0);
+  transition:
+    max-width var(--motion-layout),
+    opacity var(--motion-color),
+    filter var(--motion-color),
+    margin var(--motion-layout);
 }
 
 /* ── Workspace switcher ──────────────────────────────────── */
 
+/* Every full-width rail row shares one content inset, so the workspace name,
+   the work area, each nav label, and the account row all start on the same
+   vertical line. --space-2-5 is that line; changing it here moves the rail. */
 .workspaceTrigger {
   display: flex;
   align-items: center;
   gap: var(--space-2);
   width: 100%;
   min-height: var(--control-h);
-  padding: var(--space-1) var(--space-2);
+  padding-inline: var(--space-2-5);
   background: transparent;
   border: none;
   border-radius: var(--radius-control);
@@ -103,8 +237,8 @@
   width: var(--space-7);
   height: var(--space-7);
   flex-shrink: 0;
-  background: var(--primary);
-  color: var(--primary-foreground);
+  background: var(--color-surface-sunken);
+  color: var(--color-text-secondary);
   border-radius: var(--radius-inset);
   font-size: var(--type-sm);
   font-weight: var(--weight-semibold);
@@ -113,8 +247,16 @@
 .workspaceText {
   display: flex;
   flex-direction: column;
+  max-width: var(--space-32);
   min-width: 0;
   flex: 1;
+  overflow: hidden;
+  opacity: 1;
+  filter: blur(0);
+  transition:
+    max-width var(--motion-layout),
+    opacity var(--motion-color),
+    filter var(--motion-color);
 }
 
 .workspaceName {
@@ -135,23 +277,31 @@
 }
 
 .workspaceChevron {
+  max-width: var(--space-4);
+  overflow: hidden;
   flex-shrink: 0;
   color: var(--sidebar-fg-muted);
+  opacity: 1;
+  transition:
+    opacity var(--motion-color),
+    transform var(--motion-layout);
 }
 
 /* ── Mode switcher ───────────────────────────────────────── */
 
-/* Work-zone scope control: a bordered surface gives it control affordance the
-   bare text row lacked. Icon + value + chevron; the "Work area" kicker stays
-   for assistive technology only — the switch menu names the axis. */
+/* Work-zone scope control: label + value name the axis without competing with
+   the navigation. The icon remains only when the rail is collapsed. */
+/* Same treatment as the workspace switcher directly above it: both are
+   context switchers in the chrome, so neither draws a box. The rail carried
+   exactly one bordered control and it read as a form field in a nav. */
 .modeTrigger {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  min-height: var(--space-8);
-  padding-inline: var(--space-2);
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
+  min-height: var(--control-h);
+  padding-inline: var(--space-2-5);
+  background: transparent;
+  border: none;
   border-radius: var(--radius-control);
   cursor: pointer;
   font: inherit;
@@ -165,7 +315,7 @@
 }
 
 .modeTrigger:hover {
-  border-color: var(--color-border-strong);
+  background: var(--sidebar-hover-bg);
 }
 
 .modeTrigger:focus-visible {
@@ -178,28 +328,41 @@
   padding-inline: 0;
 }
 
-.modeKicker {
-  position: absolute;
-  width: 1px;
-  height: 1px;
+.modeCopy {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-0-5);
   overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
+}
+
+.modeKicker {
+  color: var(--sidebar-fg-muted);
+  font-size: var(--type-xs);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-tight);
 }
 
 .modeLabel {
-  flex: 1;
   min-width: 0;
+  overflow: hidden;
   font-weight: var(--weight-semibold);
   color: var(--color-text-primary);
   white-space: nowrap;
-  overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .modeChevron {
+  max-width: var(--space-4);
+  margin-left: auto;
+  overflow: hidden;
   flex-shrink: 0;
   color: var(--sidebar-fg-muted);
+  opacity: 1;
+  transition:
+    opacity var(--motion-color),
+    transform var(--motion-layout);
 }
 
 /* ── Nav ─────────────────────────────────────────────────── */
@@ -208,10 +371,16 @@
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: var(--space-3) var(--space-2);
+  overflow-x: hidden;
+  padding: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: var(--space-3-5);
+  scrollbar-width: none;
+}
+
+.nav::-webkit-scrollbar {
+  display: none;
 }
 
 .navGroup {
@@ -222,12 +391,23 @@
 
 /* Label left edge sits on the nav-item icon edge: one shared rail line. */
 .navGroupLabel {
-  padding-inline: var(--space-2);
-  font-size: var(--type-2xs);
-  font-weight: var(--weight-semibold);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  display: block;
+  max-width: var(--space-32);
+  max-height: var(--space-5);
+  overflow: hidden;
+  padding-inline: var(--space-2-5);
+  font-size: var(--type-xs);
+  font-weight: var(--weight-medium);
   color: var(--sidebar-fg-muted);
+  white-space: nowrap;
+  opacity: 1;
+  filter: blur(0);
+  transition:
+    max-width var(--motion-layout),
+    max-height var(--motion-layout),
+    opacity var(--motion-color),
+    filter var(--motion-color),
+    padding var(--motion-layout);
 }
 
 .navList {
@@ -244,8 +424,10 @@
   align-items: center;
   gap: var(--space-2);
   width: 100%;
-  min-height: var(--space-8);
-  padding: var(--space-1) var(--space-2);
+  height: var(--control-h);
+  min-height: var(--control-h);
+  flex: 0 0 var(--control-h);
+  padding-inline: var(--space-2-5);
   background: transparent;
   border: none;
   border-radius: var(--radius-control);
@@ -258,7 +440,7 @@
 }
 
 .navItem:hover {
-  background: var(--sidebar-hover-bg);
+  background: var(--sidebar-active-bg);
 }
 
 .navItem:focus-visible {
@@ -298,9 +480,17 @@
 
 .navLabel {
   flex: 1;
-  white-space: nowrap;
+  max-width: var(--space-32);
+  min-width: 0;
   overflow: hidden;
+  opacity: 1;
+  filter: blur(0);
+  white-space: nowrap;
   text-overflow: ellipsis;
+  transition:
+    max-width var(--motion-layout),
+    opacity var(--motion-color),
+    filter var(--motion-color);
 }
 
 .navDot {
@@ -313,23 +503,8 @@
   background: var(--destructive);
 }
 
-.sidebarCollapsed .navItem {
-  position: relative;
-  justify-content: center;
-  padding-inline: 0;
-}
-
-.sidebarCollapsed .workspaceTrigger {
-  justify-content: center;
-  padding-inline: 0;
-}
-
-.sidebarCollapsed .sidebarFooter .navItem {
-  flex: none;
-  width: 100%;
-}
-
-/* Hover and state feedback share one tempo across the chrome. */
+/* Hover and state feedback share one tempo across the chrome. Layout changes
+   use the longer token so rapid repeated collapse input can reverse cleanly. */
 .navItem,
 .workspaceTrigger,
 .modeTrigger,
@@ -340,7 +515,196 @@
   transition:
     background-color var(--motion-color),
     border-color var(--motion-color),
-    color var(--motion-color);
+    box-shadow var(--motion-color),
+    color var(--motion-color),
+    width var(--motion-layout),
+    height var(--motion-layout),
+    min-height var(--motion-layout),
+    padding var(--motion-layout),
+    gap var(--motion-layout);
+}
+
+.sidebarCollapsed .sidebarHeader,
+.sidebarCollapsed .nav,
+.sidebarCollapsed .sidebarFooter {
+  width: 100%;
+}
+
+.sidebarCollapsed .sidebarHeader {
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.sidebarCollapsed .sidebarBrand {
+  justify-content: center;
+  min-height: var(--space-7);
+  padding-inline: 0;
+}
+
+.sidebarCollapsed .brandIdentity {
+  width: var(--space-5);
+}
+
+.sidebarCollapsed .brandLogoFull {
+  max-width: 0;
+  opacity: 0;
+  filter: blur(2px);
+}
+
+.sidebarCollapsed .brandLogoMark {
+  max-width: var(--space-6);
+  opacity: 1;
+  filter: blur(0);
+}
+
+.sidebarCollapsed .collapseToggle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  opacity: 0;
+  transform: translate(-50%, -50%);
+}
+
+.sidebarCollapsed .collapseToggleIcon {
+  transform: scaleX(-1);
+}
+
+.sidebarCollapsed .sidebarBrand:hover .brandLogoMark,
+.sidebarCollapsed .sidebarBrand:focus-within .brandLogoMark {
+  opacity: 0;
+  filter: blur(2px);
+}
+
+.sidebarCollapsed .sidebarBrand:hover .collapseToggle,
+.sidebarCollapsed .sidebarBrand:focus-within .collapseToggle {
+  opacity: 1;
+}
+
+.sidebarCollapsed .sidebarSearch,
+.sidebarCollapsed .workspaceTrigger,
+.sidebarCollapsed .modeTrigger {
+  justify-content: center;
+  width: var(--touch-target-min);
+  height: var(--touch-target-min);
+  min-height: var(--touch-target-min);
+  flex-basis: var(--touch-target-min);
+  gap: 0;
+  padding-inline: 0;
+}
+
+.sidebarCollapsed .sidebarSearch,
+.sidebarCollapsed .modeTrigger {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.sidebarCollapsed .sidebarSearch:hover {
+  background: var(--sidebar-hover-bg);
+  box-shadow: none;
+}
+
+.sidebarCollapsed .workspaceText,
+.sidebarCollapsed .sidebarSearch .navLabel {
+  max-width: 0;
+  opacity: 0;
+  filter: blur(2px);
+}
+
+.sidebarCollapsed .workspaceChevron,
+.sidebarCollapsed .modeChevron {
+  max-width: 0;
+  opacity: 0;
+  transform: translateX(calc(-1 * var(--space-1)));
+}
+
+.sidebarCollapsed .searchKbd {
+  max-width: 0;
+  margin-left: 0;
+  opacity: 0;
+  filter: blur(2px);
+}
+
+.sidebarCollapsed .nav {
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.sidebarCollapsed .navGroup,
+.sidebarCollapsed .navList,
+.sidebarCollapsed .navList > li {
+  width: 100%;
+}
+
+.sidebarCollapsed .navGroup {
+  align-items: center;
+  gap: var(--space-1-5);
+}
+
+.sidebarCollapsed .navGroupLabel {
+  max-width: 0;
+  max-height: 0;
+  padding-inline: 0;
+  opacity: 0;
+  filter: blur(2px);
+}
+
+.sidebarCollapsed .navList,
+.sidebarCollapsed .navList > li {
+  display: flex;
+  justify-content: center;
+}
+
+.sidebarCollapsed .navItem {
+  position: relative;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--space-0-5);
+  width: var(--space-16);
+  height: var(--space-14);
+  min-height: var(--space-14);
+  flex-basis: var(--space-14);
+  padding: var(--space-1) var(--space-0-5);
+  text-align: center;
+}
+
+.sidebarCollapsed .navItem .navIcon svg {
+  width: var(--space-5);
+  height: var(--space-5);
+}
+
+.sidebarCollapsed .navGroup .navLabel {
+  width: 100%;
+  max-width: var(--space-16);
+  flex: 0 0 auto;
+  opacity: 1;
+  filter: blur(0);
+  font-size: var(--type-xs);
+  line-height: var(--leading-tight);
+  text-align: center;
+}
+
+.sidebarCollapsed .navItem[data-active='true'] {
+  box-shadow: var(--shadow-nav-selected);
+}
+
+.sidebarCollapsed .sidebarActionRow {
+  flex-direction: column;
+}
+
+.sidebarCollapsed .sidebarAccount {
+  justify-content: center;
+}
+
+.sidebarCollapsed .accountTrigger {
+  width: var(--touch-target-min);
+  height: var(--touch-target-min);
+  flex: 0 0 var(--touch-target-min);
+  border-radius: var(--radius-control);
+}
+
+.sidebarCollapsed .sidebarFooter {
+  align-items: center;
 }
 
 /* ── Main column ─────────────────────────────────────────── */
@@ -373,6 +737,15 @@
   min-width: 0;
 }
 
+/* Desktop navigation-first work keeps all shell utilities in the sidebar.
+   Station work and mobile retain the topbar because it carries live context
+   and the navigation-sheet trigger. */
+@media (min-width: 768px) {
+  .shell[data-posture='sidebar'] .topbar {
+    display: none;
+  }
+}
+
 .banner {
   padding: var(--space-3) var(--space-4) 0;
 }
@@ -381,6 +754,11 @@
   flex: 1;
   min-height: 0;
   padding: var(--space-inset-panel) var(--space-page-gutter);
+}
+
+.content[data-content-inset='none'] {
+  overflow: hidden;
+  padding: 0;
 }
 
 .shellStation .content {
@@ -435,13 +813,82 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 0;
   width: var(--space-9);
   height: var(--space-9);
+  overflow: hidden;
   background: transparent;
   border: none;
   border-radius: var(--radius-full);
   cursor: pointer;
   color: var(--color-text-secondary);
+}
+
+.accountTriggerExpanded {
+  justify-content: flex-start;
+  gap: var(--space-2);
+  width: 100%;
+  height: auto;
+  min-height: var(--touch-target-min);
+  padding: var(--space-1) var(--space-2-5);
+  border-radius: var(--radius-control);
+}
+
+.accountTriggerCopy {
+  display: flex;
+  max-width: 0;
+  min-width: 0;
+  flex: 0 1 auto;
+  flex-direction: column;
+  overflow: hidden;
+  opacity: 0;
+  filter: blur(2px);
+  text-align: left;
+  transition:
+    max-width var(--motion-layout),
+    opacity var(--motion-color),
+    filter var(--motion-color);
+}
+
+.accountTriggerExpanded .accountTriggerCopy {
+  max-width: var(--space-32);
+  flex: 1;
+  opacity: 1;
+  filter: blur(0);
+}
+
+.accountTriggerName,
+.accountTriggerMeta {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.accountTriggerName {
+  color: var(--color-text-primary);
+  font-size: var(--type-sm);
+  font-weight: var(--weight-medium);
+}
+
+.accountTriggerMeta {
+  color: var(--color-text-tertiary);
+  font-size: var(--type-xs);
+}
+
+.accountTriggerChevron {
+  max-width: 0;
+  overflow: hidden;
+  flex-shrink: 0;
+  color: var(--sidebar-fg-muted);
+  opacity: 0;
+  transition:
+    max-width var(--motion-layout),
+    opacity var(--motion-color);
+}
+
+.accountTriggerExpanded .accountTriggerChevron {
+  max-width: var(--space-4);
+  opacity: 1;
 }
 
 .accountTrigger:hover {
@@ -569,6 +1016,8 @@
 
 @media (max-width: 767px) {
   .shell {
+    --app-shell-content-inline-start: 0px;
+
     grid-template-columns: 1fr;
   }
 

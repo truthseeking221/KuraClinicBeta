@@ -1,12 +1,15 @@
 'use client';
 
+import Image from 'next/image';
 import { useMemo, useState } from 'react';
 
+import { useT } from '../../components/foundations/i18n';
 import {
   EmptyState,
   EmptyStateContent,
   EmptyStateDescription,
   EmptyStateHeader,
+  EmptyStateMedia,
   EmptyStateTitle,
 } from '../../components/shared/empty-state';
 import {
@@ -29,6 +32,7 @@ import {
   episodeProgressLabel,
   flagFor,
   formatDate,
+  resultSeries,
   visibleSections,
 } from './logic';
 import { LabFlowsheet } from './lab-flowsheet';
@@ -47,7 +51,8 @@ import type {
 import styles from './results-workspace.module.css';
 
 export type ResultsWorkspaceProps = {
-  patient: ResultsPatient;
+  /** Omitted only for the clinic-level inbox before any patient exists. */
+  patient?: ResultsPatient;
   episodeLabel: string;
   sections: LabResultSection[];
   state?: ResultsDataState;
@@ -80,6 +85,7 @@ export function ResultsWorkspace({
   staleAt,
   state = 'ready',
 }: ResultsWorkspaceProps) {
+  const t = useT();
   const [query, setQuery] = useState(initialQuery);
   const [filter, setFilter] = useState<ResultsFilter>(initialFilter);
   const [historyMode, setHistoryMode] = useState<ResultsHistoryMode>(initialHistoryMode);
@@ -119,12 +125,14 @@ export function ResultsWorkspace({
   return (
     <main className={styles.workspace} data-slot="results-workspace">
       <header className={styles.pageHeader}>
-        <div>
-          <p className={styles.eyebrow}>Doctor results review</p>
-          <h1 className={styles.pageTitle}>Results</h1>
-          <p className={styles.patient}>
-            {patient.name} · {patient.medicalRecordNumber} · born {formatDate(patient.dob)}
-          </p>
+        <div className={styles.pageHeading}>
+          <h1 className={styles.pageTitle}>{t('Results')}</h1>
+          {patient ? (
+            <p className={styles.patient}>
+              {patient.name} · {patient.medicalRecordNumber} · {t('born')}{' '}
+              {formatDate(patient.dob, 'en-US', t)}
+            </p>
+          ) : null}
         </div>
         {progress.total > 0 ? (
           <Badge
@@ -144,25 +152,25 @@ export function ResultsWorkspace({
               ) : undefined
             }
           >
-            {episodeProgressLabel(progress)}
+            {episodeProgressLabel(progress, t)}
           </Badge>
         ) : null}
       </header>
 
       {state === 'loading' ? (
         <Alert tone="info" role="status">
-          <AlertTitle>Loading released results</AlertTitle>
+          <AlertTitle>{t('Loading released results')}</AlertTitle>
           <AlertDescription>
-            The workspace will preserve filters and focus when the episode is ready.
+            {t('The workspace will preserve filters and focus when the episode is ready.')}
           </AlertDescription>
         </Alert>
       ) : null}
 
       {state === 'error' ? (
         <Alert tone="danger" icon={<WarningIcon />}>
-          <AlertTitle>Results could not be loaded</AlertTitle>
+          <AlertTitle>{t('Results could not be loaded')}</AlertTitle>
           <AlertDescription>
-            No clinical value is inferred from this failure. Retry the episode request.
+            {t('No clinical value is inferred from this failure. Retry the episode request.')}
           </AlertDescription>
           {onRetry ? (
             <AlertAction>
@@ -172,7 +180,7 @@ export function ResultsWorkspace({
                 leadingIcon={<RefreshIcon size={16} aria-hidden="true" />}
                 onClick={onRetry}
               >
-                Retry
+                {t('Retry')}
               </Button>
             </AlertAction>
           ) : null}
@@ -181,10 +189,11 @@ export function ResultsWorkspace({
 
       {state === 'conflict' ? (
         <Alert tone="warning" icon={<WarningIcon />}>
-          <AlertTitle>Results changed during review</AlertTitle>
+          <AlertTitle>{t('Results changed during review')}</AlertTitle>
           <AlertDescription>
-            A release, cancellation, redraw, or add-on changed this episode. Refresh before any
-            acknowledgment or closure decision.
+            {t(
+              'A release, cancellation, redraw, or add-on changed this episode. Refresh before any acknowledgment or closure decision.',
+            )}
           </AlertDescription>
           {onRetry ? (
             <AlertAction>
@@ -194,7 +203,7 @@ export function ResultsWorkspace({
                 leadingIcon={<RefreshIcon size={16} aria-hidden="true" />}
                 onClick={onRetry}
               >
-                Refresh episode
+                {t('Refresh episode')}
               </Button>
             </AlertAction>
           ) : null}
@@ -204,9 +213,11 @@ export function ResultsWorkspace({
       {state === 'permission' ? (
         <EmptyState align="center" surface="outlined">
           <EmptyStateHeader>
-            <EmptyStateTitle>Results are restricted</EmptyStateTitle>
+            <EmptyStateTitle>{t('Results are restricted')}</EmptyStateTitle>
             <EmptyStateDescription>
-              Your current clinic role cannot view this patient&apos;s released laboratory results.
+              {t(
+                "Your current clinic role cannot view this patient's released laboratory results.",
+              )}
             </EmptyStateDescription>
           </EmptyStateHeader>
           <EmptyStateContent>
@@ -216,11 +227,28 @@ export function ResultsWorkspace({
       ) : null}
 
       {state === 'empty' ? (
-        <EmptyState align="center" surface="outlined">
+        <EmptyState align="center" className={styles.emptyState} surface="outlined">
           <EmptyStateHeader>
-            <EmptyStateTitle>No result episodes</EmptyStateTitle>
+            <EmptyStateMedia className={styles.emptyIllustration}>
+              <Image
+                alt=""
+                className={styles.emptyIllustrationImage}
+                height={1254}
+                priority
+                sizes="160px"
+                src="/generated/kura-results-empty-review-v1.png"
+                width={1254}
+              />
+            </EmptyStateMedia>
+            <EmptyStateTitle>
+              {t(patient ? 'No result episodes' : 'No results to review')}
+            </EmptyStateTitle>
             <EmptyStateDescription>
-              This patient has no released or pending laboratory episode to review.
+              {t(
+                patient
+                  ? 'This patient has no released or pending laboratory episode to review.'
+                  : 'No patient result episodes are available in this workspace.',
+              )}
             </EmptyStateDescription>
           </EmptyStateHeader>
         </EmptyState>
@@ -228,25 +256,27 @@ export function ResultsWorkspace({
 
       {state === 'offline' ? (
         <Alert tone="warning" icon={<WifiErrorIcon />}>
-          <AlertTitle>Offline — showing cached results</AlertTitle>
+          <AlertTitle>{t('Offline — showing cached results')}</AlertTitle>
           <AlertDescription>
-            Values may be stale. Actions that change clinical state are unavailable.
+            {t('Values may be stale. Actions that change clinical state are unavailable.')}
           </AlertDescription>
         </Alert>
       ) : null}
 
       {staleAt ? (
         <Alert tone="warning" icon={<WarningIcon />}>
-          <AlertTitle>Result snapshot may be stale</AlertTitle>
-          <AlertDescription>Last synchronized {formatDate(staleAt)}.</AlertDescription>
+          <AlertTitle>{t('Result snapshot may be stale')}</AlertTitle>
+          <AlertDescription>
+            {t('Last synchronized')} {formatDate(staleAt, 'en-US', t)}.
+          </AlertDescription>
         </Alert>
       ) : null}
 
       {readOnly ? (
         <Alert tone="info" icon={<LockKeyIcon />}>
-          <AlertTitle>Read-only review</AlertTitle>
+          <AlertTitle>{t('Read-only review')}</AlertTitle>
           <AlertDescription>
-            Search, filters, chart focus, and released history remain available.
+            {t('Search, filters, chart focus, and released history remain available.')}
           </AlertDescription>
         </Alert>
       ) : null}
@@ -270,9 +300,12 @@ export function ResultsWorkspace({
               mode={historyMode === 'latest' ? 'latest' : 'auto'}
               sections={filteredSections}
               showProgress={false}
-              title="Longitudinal lab results"
+              title={t('Longitudinal lab results')}
+              // A history action is offered only where released history exists;
+              // opening it on a single draw promises a series the episode
+              // cannot show.
               renderRowTrailing={(result) =>
-                result.status === 'released' ? (
+                result.status === 'released' && resultSeries(result).length > 1 ? (
                   <LabResultDetailTrigger result={result} />
                 ) : null
               }
@@ -280,15 +313,17 @@ export function ResultsWorkspace({
           ) : (
             <EmptyState align="center" surface="outlined">
               <EmptyStateHeader>
-                <EmptyStateTitle>No results match these controls</EmptyStateTitle>
+                <EmptyStateTitle>{t('No results match these controls')}</EmptyStateTitle>
                 <EmptyStateDescription>
-                  Change the search or result filter. Episode progress remains{' '}
-                  {episodeProgressLabel(progress).toLocaleLowerCase()}.
+                  {t('Change the search or result filter. Episode progress remains {progress}.').replace(
+                    '{progress}',
+                    episodeProgressLabel(progress, t).toLocaleLowerCase(),
+                  )}
                 </EmptyStateDescription>
               </EmptyStateHeader>
               <EmptyStateContent>
                 <Button variant="outline" onClick={reset}>
-                  Clear controls
+                  {t('Clear controls')}
                 </Button>
               </EmptyStateContent>
             </EmptyState>
@@ -296,7 +331,10 @@ export function ResultsWorkspace({
 
           {hasActiveFilter ? (
             <p className={styles.filterStatus} role="status" aria-live="polite">
-              Showing {filteredSections.flatMap((section) => section.results).length} matching analytes.
+              {t('Showing {count} matching analytes.').replace(
+                '{count}',
+                String(filteredSections.flatMap((section) => section.results).length),
+              )}
             </p>
           ) : null}
         </>

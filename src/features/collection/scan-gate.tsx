@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
 
+import { useT } from '../../components/foundations/i18n';
 import { Badge, BarcodeScanIcon, Button, Input, Kbd } from '../../components/ui';
 
 import { PID_PATTERN } from './catalog';
@@ -28,6 +29,7 @@ const ROLE_TITLE: Record<StationRole, string> = {
  * barcode scanners type into the focused field and send Enter.
  */
 export function ScanGate({ onMatch, queue, role }: ScanGateProps) {
+  const t = useT();
   const [value, setValue] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [browseOpen, setBrowseOpen] = useState(false);
@@ -58,7 +60,7 @@ export function ScanGate({ onMatch, queue, role }: ScanGateProps) {
       setValue('');
       onMatch(match);
     } else {
-      setError(`No patient for "${trimmed.toUpperCase()}". Try again.`);
+      setError(`${t('No patient for')} "${trimmed.toUpperCase()}". ${t('Try again')}.`);
       inputRef.current?.select();
     }
   }
@@ -74,20 +76,22 @@ export function ScanGate({ onMatch, queue, role }: ScanGateProps) {
   }
 
   return (
-    <section aria-label={ROLE_TITLE[role]} className={styles.gate} data-role={role}>
+    <section aria-label={t(ROLE_TITLE[role])} className={styles.gate} data-role={role}>
       <div className={styles.glyph} aria-hidden="true">
         <BarcodeScanIcon size={28} />
       </div>
-      <h2 className={styles.title}>Scan patient barcode</h2>
-      <p className={styles.sub}>Hand-scan the printed bill, or type the patient ID.</p>
+      <h2 className={styles.title}>{t('Scan patient barcode')}</h2>
+      <p className={styles.sub}>{t('Hand-scan the printed bill, or type the patient ID.')}</p>
 
       <div className={styles.field}>
         <Input
-          aria-label="Patient ID"
+          aria-label={t('Patient ID')}
           autoCapitalize="characters"
           error={error}
           helpText={
-            formatLooksOff && !error ? 'Format looks off — expected e.g. P123456.' : undefined
+            formatLooksOff && !error
+              ? t('Format looks off — expected e.g. P123456.')
+              : undefined
           }
           onChange={(event) => {
             setValue(event.target.value);
@@ -102,10 +106,10 @@ export function ScanGate({ onMatch, queue, role }: ScanGateProps) {
         />
         <div className={styles.tips}>
           <span>
-            <Kbd>Enter</Kbd> look up
+            <Kbd>Enter</Kbd> {t('look up')}
           </span>
           <span>
-            <Kbd>Esc</Kbd> clear — the scanner sends both for you
+            <Kbd>Esc</Kbd> {t('clear — the scanner sends both for you')}
           </span>
         </div>
       </div>
@@ -116,14 +120,14 @@ export function ScanGate({ onMatch, queue, role }: ScanGateProps) {
           onClick={() => setBrowseOpen((open) => !open)}
           variant="outline"
         >
-          Browse queue · {queue.length}
+          {t('Browse queue')} · {queue.length}
         </Button>
       </div>
 
       {browseOpen ? (
-        <ul aria-label="Waiting patients" className={styles.queueList}>
+        <ul aria-label={t('Waiting patients')} className={styles.queueList}>
           {queue.length === 0 ? (
-            <li className={styles.queueEmpty}>Queue is clear.</li>
+            <li className={styles.queueEmpty}>{t('Queue is clear.')}</li>
           ) : (
             queue.map((patient) => {
               const tone = waitTone(patient.waitingMinutes);
@@ -144,7 +148,7 @@ export function ScanGate({ onMatch, queue, role }: ScanGateProps) {
                       </span>
                     </span>
                     <Badge variant={tone === 'danger' ? 'danger' : tone === 'warn' ? 'warning' : 'neutral'}>
-                      {patient.waitingMinutes} min
+                      {patient.waitingMinutes} {t('min')}
                     </Badge>
                   </button>
                 </li>

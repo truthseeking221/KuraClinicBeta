@@ -1,26 +1,14 @@
 import {
-  AppointmentIcon,
   BarcodeScanIcon,
-  CalendarIcon,
   ChartAnalysisIcon,
-  ChartIcon,
   CheckInIcon,
-  ClipboardListIcon,
-  CourierIcon,
-  FolderIcon,
-  HeartCheckIcon,
   HomeIcon,
-  InventoryIcon,
-  MessageIcon,
   MicroscopeIcon,
   QueueIcon,
   ReceiptIcon,
-  RouteIcon,
   StethoscopeIcon,
-  TaskIcon,
   TestTubesIcon,
   UserMultipleIcon,
-  VideoCallIcon,
   WalletIcon,
 } from '../../ui';
 
@@ -64,48 +52,7 @@ export const MODE_REGISTRY: Record<ClinicMode, ModeDefinition> = {
         key: 'clinical',
         label: 'Clinical',
         items: [
-          { key: 'bookings', label: 'Bookings', icon: <AppointmentIcon size={ICON_SIZE} /> },
           { key: 'catalog', label: 'Catalog', icon: <MicroscopeIcon size={ICON_SIZE} /> },
-        ],
-      },
-      {
-        // Roadmap surfaces stay listed instead of hidden: omission is not a
-        // product decision, and deferred work must never look live. Collapsed
-        // behind one "More" launcher so the daily worklists stay uncluttered.
-        key: 'more',
-        label: 'More',
-        overflow: true,
-        items: [
-          {
-            key: 'care-plans',
-            label: 'Care plans',
-            icon: <HeartCheckIcon size={ICON_SIZE} />,
-            comingSoon: true,
-          },
-          {
-            key: 'telehealth',
-            label: 'Telehealth',
-            icon: <VideoCallIcon size={ICON_SIZE} />,
-            comingSoon: true,
-          },
-          {
-            key: 'inbox',
-            label: 'Inbox',
-            icon: <MessageIcon size={ICON_SIZE} />,
-            comingSoon: true,
-          },
-          {
-            key: 'tasks',
-            label: 'Tasks',
-            icon: <TaskIcon size={ICON_SIZE} />,
-            comingSoon: true,
-          },
-          {
-            key: 'calendar',
-            label: 'Calendar',
-            icon: <CalendarIcon size={ICON_SIZE} />,
-            comingSoon: true,
-          },
         ],
       },
     ],
@@ -123,18 +70,13 @@ export const MODE_REGISTRY: Record<ClinicMode, ModeDefinition> = {
         items: [
           { key: 'arrivals', label: 'Arrivals', icon: <CheckInIcon size={ICON_SIZE} /> },
           { key: 'queue', label: 'Queue', icon: <QueueIcon size={ICON_SIZE} /> },
-          { key: 'patients', label: 'Patients', icon: <UserMultipleIcon size={ICON_SIZE} /> },
-          { key: 'bookings', label: 'Bookings', icon: <AppointmentIcon size={ICON_SIZE} /> },
         ],
       },
       {
         key: 'desk',
         label: 'Desk',
         items: [
-          { key: 'orders', label: 'Orders', icon: <ClipboardListIcon size={ICON_SIZE} /> },
           { key: 'payments', label: 'Payments', icon: <ReceiptIcon size={ICON_SIZE} /> },
-          { key: 'documents', label: 'Documents', icon: <FolderIcon size={ICON_SIZE} /> },
-          { key: 'reports', label: 'Reports', icon: <ChartIcon size={ICON_SIZE} /> },
         ],
       },
     ],
@@ -151,10 +93,6 @@ export const MODE_REGISTRY: Record<ClinicMode, ModeDefinition> = {
         key: 'station',
         items: [
           { key: 'scan-gate', label: 'Scan', icon: <BarcodeScanIcon size={ICON_SIZE} /> },
-          { key: 'draw-queue', label: 'Queue', icon: <QueueIcon size={ICON_SIZE} /> },
-          { key: 'handoffs', label: 'Handoffs', icon: <CourierIcon size={ICON_SIZE} /> },
-          { key: 'exceptions', label: 'Exceptions', icon: <RouteIcon size={ICON_SIZE} /> },
-          { key: 'supplies', label: 'Supplies', icon: <InventoryIcon size={ICON_SIZE} /> },
         ],
       },
     ],

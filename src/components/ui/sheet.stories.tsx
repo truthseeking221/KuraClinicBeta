@@ -20,7 +20,7 @@ import {
 } from './index';
 
 const meta = {
-  title: 'Design System/Primitives/Sheet',
+  title: 'Design System/Components/Sheet',
   component: Sheet,
   tags: ['autodocs', 'source-reui', 'adapted-kura'],
   parameters: {

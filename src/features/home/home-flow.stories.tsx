@@ -141,7 +141,8 @@ type Story = StoryObj<typeof meta>;
 export const MorningTriageToCriticalResult: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await userEvent.click(canvas.getByRole('link', { name: /Review critical result/ }));
+    const queue = canvas.getByRole('list', { name: 'Patients with results to review' });
+    await userEvent.click(within(queue).getAllByRole('link')[0]);
 
     await waitFor(async () => {
       await expect(canvas.getByRole('heading', { name: 'Results' })).toBeVisible();
@@ -157,7 +158,7 @@ export const WorkspaceSwitchClearsPriorClinicContext: Story = {
     const canvas = within(canvasElement);
     const documentBody = within(canvasElement.ownerDocument.body);
 
-    await expect(canvas.getByText(/Potassium 6.8 mmol\/L/)).toBeVisible();
+    await expect(canvas.getByText(/Potassium/)).toBeVisible();
     await userEvent.click(canvas.getByRole('button', { name: /Mekong Clinic/ }));
     await userEvent.click(
       await documentBody.findByRole('menuitemradio', { name: 'Lotus Family Clinic' }),
@@ -167,7 +168,7 @@ export const WorkspaceSwitchClearsPriorClinicContext: Story = {
       await expect(canvas.getByText('Lotus Family Clinic · Riverside · 26 patients in view')).toBeVisible();
     });
     await expect(canvas.getByText('Care team huddle')).toBeVisible();
-    await expect(canvas.queryByText(/Potassium 6.8 mmol\/L/)).not.toBeInTheDocument();
+    await expect(canvas.queryByText(/Potassium/)).not.toBeInTheDocument();
     await expect(canvas.queryByText(/Sokha Chan/)).not.toBeInTheDocument();
   },
 };

@@ -1,0 +1,135 @@
+.workspace {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  min-width: 0;
+}
+
+/* The strip is chrome for the whole episode, so it sits on the page rather
+   than inside a card of its own. */
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.identity {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--type-xl);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.demographics {
+  font-size: var(--type-sm);
+  color: var(--color-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.strip {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.phase {
+  display: flex;
+  align-items: center;
+  min-height: var(--space-8);
+  padding-inline: var(--space-3);
+  border-radius: var(--radius-badge);
+  background: var(--color-surface-2);
+  font-size: var(--type-sm);
+  color: var(--color-text-secondary);
+}
+
+.phase[data-state='complete'] {
+  background: var(--color-status-success-bg);
+  color: var(--color-status-success-fg);
+}
+
+/* Current carries fill plus weight: position in a sequence must not rest on
+   colour alone. */
+.phase[data-state='current'] {
+  background: var(--color-selection-bg-strong);
+  color: var(--color-selection-fg);
+  font-weight: var(--weight-semibold);
+}
+
+.nextStep {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2) var(--space-3);
+  border-radius: var(--radius-card-tile);
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-surface);
+  box-shadow: var(--elevation-card-tile);
+}
+
+.nextLabel {
+  font-size: var(--type-xs);
+  color: var(--color-text-tertiary);
+}
+
+.nextAction {
+  font-size: var(--type-md);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.nextActor {
+  font-size: var(--type-sm);
+  color: var(--color-text-secondary);
+}
+
+.nextBlocked {
+  font-size: var(--type-sm);
+  color: var(--color-status-warning-fg);
+}
+
+.axes {
+  margin: 0;
+  font-size: var(--type-sm);
+  color: var(--color-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.stepCard {
+  max-width: 48rem;
+}
+
+.stepDetail {
+  margin: 0;
+  font-size: var(--type-base);
+  line-height: var(--leading-normal);
+  color: var(--color-text-primary);
+}
+
+.stepFooter {
+  display: flex;
+  justify-content: flex-end;
+  padding: var(--space-4);
+  border-top: 1px solid var(--color-border);
+}
+
+@media (max-width: 599px) {
+  .stepFooter {
+    padding: var(--space-3);
+  }
+
+  .stepFooter :global([data-slot='button']) {
+    width: 100%;
+  }
+}

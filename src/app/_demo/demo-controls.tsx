@@ -12,19 +12,13 @@ import { useDemoSession } from './demo-session';
 
 export function DemoControls() {
   const router = useRouter();
-  const { session, update, reset } = useDemoSession();
+  const { reset } = useDemoSession();
 
   return (
     <DemoControlPanel
-      licence={session.licence}
-      onJumpHomeScenario={(scenario) =>
-        router.push(scenario === 'default' ? '/home' : `/home?scenario=${scenario}`)
-      }
-      onJumpResultsEpisode={(episode) => router.push(`/results?episode=${episode}`)}
-      onLicenceChange={(licence) => update({ licence })}
-      onReset={() => {
+      onRestart={() => {
         reset();
-        router.push('/door');
+        router.push('/');
       }}
     />
   );

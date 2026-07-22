@@ -2,11 +2,22 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-5);
+  padding-bottom: calc(var(--space-14) + var(--space-4) + env(safe-area-inset-bottom));
 }
 
+.stepper {
+  width: min(100%, 64rem);
+  align-self: center;
+}
+
+/*
+ * Steps without an order rail are forms. A 44rem measure keeps a two-column
+ * field pair near 320px each — wide enough for a name, narrow enough that the
+ * label, its value, and the footer action stay in one glance.
+ */
 .workspace {
   display: grid;
-  grid-template-columns: minmax(0, 56rem);
+  grid-template-columns: minmax(0, 44rem);
   gap: var(--space-5);
   align-items: start;
 }
@@ -15,11 +26,51 @@
   grid-template-columns: minmax(0, 1fr) calc(var(--space-16) * 5);
 }
 
+/* The first two focused steps use the available canvas; order steps retain
+ * their left reading edge beside the order rail. */
+.workspace[data-cart-rail='hidden'][data-step='1'],
+.workspace[data-cart-rail='hidden'][data-step='2'] {
+  justify-content: center;
+}
+
+/* A blank identity search is an entry point, not a form section: centre it in
+ * the owned desktop canvas. Once the desk types, the panel returns to its
+ * reading edge so long matches can grow downward without competing with the
+ * stepper or persistent action bar. */
+@media (min-width: 768px) {
+  .wizard[data-step='1'] {
+    box-sizing: border-box;
+    min-block-size: calc(100dvh - (var(--space-inset-panel) * 2));
+  }
+
+  .wizard[data-step='1'] .workspace {
+    min-block-size: 0;
+    flex: 1 1 auto;
+  }
+
+  .workspace[data-cart-rail='hidden'][data-step='1']:has(
+      [data-identity-search-empty='true']
+    ) {
+    grid-template-rows: minmax(0, 1fr);
+  }
+
+  .workspace[data-cart-rail='hidden'][data-step='1']:has(
+      [data-identity-search-empty='true']
+    ) .stepPanel {
+    align-self: center;
+  }
+}
+
 .stepPanel {
   display: flex;
   flex-direction: column;
   gap: var(--space-5);
   min-width: 0;
+}
+
+/* Browser focus scrolling must stop above the persistent action boundary. */
+.stepPanel :where(input, textarea, button, [role='combobox'], [tabindex]) {
+  scroll-margin-block-end: calc(var(--space-32) + env(safe-area-inset-bottom));
 }
 
 .step {
@@ -34,6 +85,13 @@
   font-weight: var(--weight-semibold);
   line-height: var(--leading-snug);
   color: var(--color-text-primary);
+}
+
+.stepHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
 }
 
 .subTitle {
@@ -113,22 +171,12 @@
   color: var(--color-text-tertiary);
 }
 
-.otherOrders {
-  border-block: 1px solid var(--color-border);
+.additionalOrdersPopover {
+  width: min(24rem, calc(100vw - var(--space-8)));
+  padding: var(--space-2);
 }
 
-.otherOrdersTrigger {
-  width: 100%;
-  padding-inline: 0;
-}
-
-.otherOrdersTitle {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-}
-
-.otherOrderList {
+.additionalOrderList {
   display: flex;
   flex-direction: column;
   margin: 0;
@@ -136,7 +184,7 @@
   list-style: none;
 }
 
-.otherOrderRow {
+.additionalOrderRow {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
@@ -147,11 +195,11 @@
   transition: background-color var(--motion-color);
 }
 
-.otherOrderRow:hover {
+.additionalOrderRow:hover {
   background: var(--color-background-primary-hover);
 }
 
-.otherOrderPrice {
+.additionalOrderPrice {
   font-size: var(--type-sm);
   font-variant-numeric: tabular-nums;
   color: var(--color-text-primary);
@@ -164,13 +212,77 @@
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
+  gap: var(--space-1);
 }
 
+/* One control per section. Status is the leading mark, never a badge column. */
 .intakeRow {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-2);
+  width: 100%;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: var(--touch-target-min);
+  margin-inline: calc(var(--space-2) * -1);
+  padding: var(--space-2) var(--space-2);
+  border: 0;
+  border-radius: var(--radius-control-compact);
+  background: transparent;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+  transition: background-color var(--motion-color);
+}
+
+.intakeRow:hover {
+  background: var(--color-background-secondary-hover);
+}
+
+.intakeRow:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
+
+/* Empty ring = not answered; check = answered. Shape carries the state, not colour. */
+.intakeMark {
+  width: 1rem;
+  height: 1rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid var(--color-border-strong);
+  border-radius: var(--radius-full);
+  color: var(--color-foreground-icon-primary);
+}
+
+.intakeRow[data-filled] .intakeMark {
+  border-color: transparent;
+  background: var(--status-success-bg);
+  color: var(--status-success-fg);
+}
+
+/* Answered rows recede so the outstanding ones read first. */
+.intakeRow[data-filled] .lineName {
+  color: var(--color-text-secondary);
+  font-weight: var(--weight-regular);
+}
+
+.intakeRowAction {
+  font-size: var(--type-sm);
+  color: var(--color-text-tertiary);
+  opacity: 0;
+  transition: opacity var(--motion-color);
+}
+
+.intakeRow:hover .intakeRowAction,
+.intakeRow:focus-visible .intakeRowAction {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .intakeRowAction {
+    opacity: 1;
+  }
 }
 
 .slotRow {
@@ -209,26 +321,53 @@
 }
 
 .stepFooter {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: var(--space-2);
-  padding-top: var(--space-4);
+  position: fixed;
+  inset-inline: var(--app-shell-content-inline-start, 0px) 0;
+  bottom: 0;
+  z-index: 9;
+  padding: var(--space-3) var(--space-page-gutter);
+  padding-bottom: calc(var(--space-3) + env(safe-area-inset-bottom));
+  background: var(--color-surface);
   border-top: 1px solid var(--color-border);
+  transition: inset-inline-start var(--duration-base) var(--ease-standard);
 }
 
-.continueGroup {
-  display: flex;
+.stepFooterInner {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  justify-content: flex-end;
-  flex-wrap: wrap;
-  gap: var(--space-2) var(--space-3);
+  gap: var(--space-3);
+  width: 100%;
+  max-width: 44rem;
+  margin-inline: auto;
+}
+
+.footerBack {
+  grid-column: 1;
+}
+
+.footerReason {
+  grid-column: 2;
   min-width: 0;
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--type-sm);
+  line-height: var(--leading-normal);
   text-align: right;
 }
 
-.continueGroup > button {
+.footerPrimary {
+  grid-column: 3;
+  justify-self: end;
+}
+
+.footerBack,
+.footerPrimary {
   flex-shrink: 0;
+}
+
+.stepFooterInner > span {
+  min-width: 0;
 }
 
 @media (max-width: 1023px) {
@@ -247,6 +386,36 @@
   .phoneRow {
     grid-template-columns: 1fr;
     align-items: stretch;
+  }
+
+  .stepFooter {
+    padding-inline: var(--space-4);
+  }
+
+  .stepFooter[data-mobile-dock='true'] {
+    display: none;
+  }
+
+  .stepFooterInner {
+    grid-template-columns: minmax(0, 1fr) auto;
+    row-gap: var(--space-2);
+  }
+
+  .footerReason {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    text-align: left;
+  }
+
+  .footerBack {
+    grid-column: 1;
+    grid-row: 2;
+    justify-self: start;
+  }
+
+  .footerPrimary {
+    grid-column: 2;
+    grid-row: 2;
   }
 }
 
@@ -338,8 +507,9 @@
   gap: var(--space-3, 12px);
 }
 
+/* Live-operation callout: an outline card whose fill carries the in-progress
+   state. The hairline stays neutral — the tint is the signal, not the edge. */
 .sectionCard[data-tone='brand'] {
-  border-color: var(--color-selection-bg-strong);
   background: var(--color-action-primary-subtle);
 }
 
@@ -350,48 +520,15 @@
   gap: var(--space-3, 12px);
 }
 
-.fieldGrid3 {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--space-3, 12px);
-}
-
-.fieldSpan3 {
+.fieldSpanAll {
   grid-column: 1 / -1;
-}
-
-@media (max-width: 720px) {
-  .fieldGrid3 {
-    grid-template-columns: 1fr;
-  }
-}
-
-.collapsibleTrigger {
-  padding-inline: 0;
-}
-
-.disclosureLabel {
-  display: inline-flex;
-  align-items: baseline;
-  gap: var(--space-2);
-  min-width: 0;
-}
-
-.collapsibleTrigger:focus-visible {
-  outline: 2px solid var(--color-border-focus);
-  outline-offset: 2px;
-}
-
-.optionalTag {
-  font-size: var(--type-xs);
-  color: var(--color-text-tertiary);
 }
 
 .refundRow {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding-top: var(--space-3, 12px);
+  gap: var(--space-2);
+  padding-top: var(--space-3);
   color: var(--color-text-secondary);
 }
 
@@ -405,25 +542,9 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--space-3, 12px);
+  gap: var(--space-3);
   flex-wrap: wrap;
-  padding: var(--space-3, 12px);
-  margin-top: var(--space-3, 12px);
-  border: 1px dashed var(--color-border-strong, var(--color-border));
-  border-radius: var(--radius-inset);
-}
-
-.refundEmptyText {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.refundTitle {
-  margin: 0;
-  font-size: var(--type-sm);
-  font-weight: var(--weight-semibold);
-  color: var(--color-text-primary);
+  padding-top: var(--space-3);
 }
 
 .dataPoints {
@@ -556,7 +677,7 @@
     animation: none;
   }
 
-  .otherOrderRow {
+  .additionalOrderRow {
     transition: none;
   }
 }
@@ -655,13 +776,15 @@
   gap: var(--space-2);
 }
 
+/* Consent items share one continuous surface with dividers, mirroring
+   .disclosures below — a border box per row implied each consent was an
+   independent object when they are rows of the same decision. */
 .consentList {
   list-style: none;
   margin: 0;
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
 }
 
 .consentRow {
@@ -669,9 +792,11 @@
   align-items: center;
   flex-wrap: wrap;
   gap: var(--space-2);
-  padding: var(--space-2) var(--space-3);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-control-compact);
+  padding: var(--space-2) 0;
+}
+
+.consentRow + .consentRow {
+  border-top: 1px solid var(--color-border);
 }
 
 .verbalFields {
@@ -682,25 +807,105 @@
 
 /* ── Intake send + fill-on-behalf ───────────────────────── */
 
-.intakeSendRow {
+/*
+ * The intake block keeps the wizard's 44rem form measure even when the order
+ * rail widens the panel: rows, header actions, and the inline editor then
+ * share one right edge instead of stranding each control at the panel border.
+ */
+.intakeHeader,
+.intakeList {
+  width: 100%;
+  max-width: 44rem;
+}
+
+.intakeHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.intakeHeaderText {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.intakeHeaderActions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-1);
+}
+
+.intakeHeaderButtons {
   display: flex;
   align-items: center;
   gap: var(--space-2);
 }
 
-.intakeFill {
+.intakeHeaderReason {
+  margin: 0;
+  max-width: 24rem;
+  font-size: var(--type-sm);
+  line-height: var(--leading-normal);
+  color: var(--color-text-secondary);
+  text-align: end;
+}
+
+@media (max-width: 40rem) {
+  .intakeHeader {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .intakeHeaderActions {
+    align-items: flex-start;
+  }
+
+  .intakeHeaderReason {
+    text-align: start;
+  }
+}
+
+/*
+ * A transient form in the reading flow needs no surface: the field is the
+ * visible change. A tray here would also flatten the filled field, which
+ * resolves to nearly the same neutral.
+ */
+.inlineForm {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
   gap: var(--space-2);
-  padding: var(--space-2) var(--space-3);
-  border: 1px dashed var(--color-border-strong, var(--color-border));
-  border-radius: var(--radius-control-compact);
+  padding-block: var(--space-1);
 }
 
-.intakeFill > :first-child {
+/* Align the open editor with the label column of the row it replaced. */
+.intakeList > .inlineForm {
+  padding-inline-start: calc(1rem + var(--space-3));
+}
+
+.inlineForm > :first-child {
   flex: 1;
   min-width: 200px;
+}
+
+.dayWarnIcon {
+  margin-inline-start: var(--space-1);
+  color: var(--status-warning-fg);
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 /* ── Keyboard cheatsheet ────────────────────────────────── */
@@ -770,4 +975,95 @@
 
 .disclosures > * {
   padding-block: var(--space-2);
+}
+
+.titleRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.promoRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-3);
+  align-items: end;
+  max-width: 420px;
+}
+
+.dueBreakdown {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  max-width: 420px;
+  font-size: var(--type-sm);
+  color: var(--color-text-secondary);
+}
+
+.dueBreakdown > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.dueBreakdown dt,
+.dueBreakdown dd {
+  margin: 0;
+}
+
+.dueBreakdown dd {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.discount {
+  color: var(--color-text-primary);
+}
+
+/* Mobile dock — hidden above the mobile breakpoint. */
+.dock {
+  display: none;
+}
+
+@media (max-width: 599px) {
+  .dock {
+    position: fixed;
+    inset-inline: 0;
+    bottom: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    padding-bottom: calc(var(--space-3) + env(safe-area-inset-bottom));
+    background: var(--color-surface);
+    border-top: 1px solid var(--color-border);
+  }
+}
+
+.dockInfo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-0-5);
+  min-width: 0;
+}
+
+.dockLabel {
+  font-size: var(--type-sm);
+  color: var(--color-text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dockDue {
+  font-size: var(--type-lg);
+  font-weight: var(--weight-semibold);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-primary);
 }

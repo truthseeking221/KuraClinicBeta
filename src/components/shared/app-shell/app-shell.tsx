@@ -2,14 +2,13 @@
 
 import { cloneElement, isValidElement, useMemo, useState } from 'react';
 import type { ReactElement, ReactNode } from 'react';
+import Image from 'next/image';
 
 import {
   Avatar,
   AvatarFallback,
   Badge,
   ChevronDownIcon,
-  ChevronsLeftIcon,
-  ChevronsRightIcon,
   ClockIcon,
   DropdownMenu,
   DropdownMenuContent,
@@ -26,6 +25,7 @@ import {
   MenuIcon,
   MoreHorizontalIcon,
   NotificationsIcon,
+  PanelRightIcon,
   SearchIcon,
   SettingsIcon,
   Sheet,
@@ -36,6 +36,10 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '../../ui';
+import { LOCALES, LOCALE_LABELS, useLocale, useT } from '../../foundations/i18n';
+import type { Locale } from '../../foundations/i18n';
+
+import { initialsFor } from '../subject-header/identity';
 
 import { MODE_REGISTRY } from './mode-registry';
 import type {
@@ -97,8 +101,10 @@ export type AppShellProps = {
 
   /** Slot above the content for licence lifecycle or outage banners. */
   banner?: ReactNode;
-  /** Extra topbar actions rendered before notifications. */
+  /** Utility actions shown in the sidebar footer, or in the station/mobile topbar. */
   headerActions?: ReactNode;
+  /** Page gutters by default; full-height workspaces can own their internal spacing. */
+  contentInset?: 'page' | 'none';
 
   onOpenSearch?: () => void;
   notificationCount?: number;
@@ -113,6 +119,7 @@ export function AppShell({
   availableModes,
   banner,
   children,
+  contentInset = 'page',
   defaultCollapsed = false,
   headerActions,
   mode,
@@ -135,6 +142,7 @@ export function AppShell({
   workspace,
   workspaces,
 }: AppShellProps) {
+  const t = useT();
   const definition = MODE_REGISTRY[mode];
   const sourceNavGroups = nav ?? definition.nav;
   const navGroups = useMemo(() => {
@@ -163,23 +171,78 @@ export function AppShell({
       className={joinClasses(styles.shell, posture === 'station' && styles.shellStation)}
       data-mode={mode}
       data-posture={posture}
+      data-sidebar-collapsed={posture === 'sidebar' && collapsed ? 'true' : undefined}
       data-slot="app-shell"
     >
       {posture === 'sidebar' ? (
         <aside
+          aria-label={t('Primary navigation')}
           className={joinClasses(styles.sidebar, collapsed && styles.sidebarCollapsed)}
           data-slot="app-shell-sidebar"
         >
           <div className={styles.sidebarHeader}>
-            <WorkspaceSwitcher
-              collapsed={collapsed}
-              onBranchChange={onBranchChange}
-              onWorkspaceChange={onWorkspaceChange}
-              scopeLabel={scopeLabel}
-              workspace={workspace}
-              workspaces={workspaces}
-            />
+            <div className={styles.sidebarBrand} data-slot="app-shell-sidebar-brand">
+              <span className={styles.brandIdentity}>
+                <Image
+                  alt="Kura"
+                  className={styles.brandLogoFull}
+                  height={20}
+                  priority
+                  src="/brand/kura-full-logo.svg"
+                  width={61}
+                />
+                <Image
+                  alt=""
+                  aria-hidden="true"
+                  className={styles.brandLogoMark}
+                  height={20}
+                  src="/brand/kura-mark.svg"
+                  width={24}
+                />
+              </span>
+              <button
+                aria-expanded={!collapsed}
+                aria-label={collapsed ? t('Expand navigation') : t('Collapse navigation')}
+                className={styles.collapseToggle}
+                onClick={() => setCollapsed((value) => !value)}
+                title={collapsed ? t('Expand navigation') : t('Collapse navigation')}
+                type="button"
+              >
+                <PanelRightIcon
+                  aria-hidden="true"
+                  className={styles.collapseToggleIcon}
+                  size={18}
+                />
+              </button>
+            </div>
           </div>
+
+          {onOpenSearch ? (
+            <button
+              aria-label={collapsed ? t('Search') : undefined}
+              className={joinClasses(styles.navItem, styles.sidebarSearch)}
+              onClick={onOpenSearch}
+              title={collapsed ? t('Search') : undefined}
+              type="button"
+            >
+              <span aria-hidden="true" className={styles.navIcon}>
+                <SearchIcon size={18} />
+              </span>
+              <span className={styles.navLabel}>{t('Search')}</span>
+              <span className={styles.searchKbd}>
+                <Kbd>⌘K</Kbd>
+              </span>
+            </button>
+          ) : null}
+
+          <WorkspaceSwitcher
+            collapsed={collapsed}
+            onBranchChange={onBranchChange}
+            onWorkspaceChange={onWorkspaceChange}
+            scopeLabel={scopeLabel}
+            workspace={workspace}
+            workspaces={workspaces}
+          />
 
           <SidebarNav
             activeKey={activeKey}
@@ -196,19 +259,44 @@ export function AppShell({
             onNavigate={onNavigate}
           />
 
-          <div className={styles.sidebarFooter}>
-            <button
-              className={styles.navItem}
-              data-active={activeKey === 'settings' ? 'true' : undefined}
-              onClick={() => (onOpenSettings ? onOpenSettings() : onNavigate('settings'))}
-              title={collapsed ? 'Settings' : undefined}
-              type="button"
-            >
-              <span aria-hidden="true" className={styles.navIcon}>
-                {renderNavIcon(<SettingsIcon size={16} />, activeKey === 'settings')}
-              </span>
-              {!collapsed && <span className={styles.navLabel}>Settings</span>}
-            </button>
+          <div className={styles.sidebarFooter} data-slot="app-shell-sidebar-footer">
+            {(!collapsed && headerActions) || onOpenNotifications ? (
+              <div className={styles.sidebarActionRow}>
+                {!collapsed && headerActions ? (
+                  <div className={styles.sidebarCustomActions}>{headerActions}</div>
+                ) : null}
+                {onOpenNotifications ? (
+                  <span className={styles.notificationWrap}>
+                    <IconButton
+                      aria-label={
+                        notificationCount > 0
+                          ? `Notifications, ${notificationCount} unread`
+                          : 'Notifications'
+                      }
+                      onClick={onOpenNotifications}
+                      size="default"
+                      variant="tertiary"
+                    >
+                      <NotificationsIcon size={18} />
+                    </IconButton>
+                    {notificationCount > 0 ? (
+                      <Badge className={styles.notificationBadge} size="sm" variant="danger">
+                        {notificationCount > 99 ? '99+' : notificationCount}
+                      </Badge>
+                    ) : null}
+                  </span>
+                ) : null}
+              </div>
+            ) : null}
+
+            <div className={styles.sidebarAccount}>
+              <AccountMenu
+                expanded={!collapsed}
+                onOpenSettings={() => (onOpenSettings ? onOpenSettings() : onNavigate('settings'))}
+                onSignOut={onSignOut}
+                user={user}
+              />
+            </div>
           </div>
         </aside>
       ) : null}
@@ -216,17 +304,6 @@ export function AppShell({
       <div className={styles.main}>
         <header className={styles.topbar} data-slot="app-shell-topbar">
           <div className={styles.topbarStart}>
-            {posture === 'sidebar' ? (
-              <IconButton
-                aria-label={collapsed ? 'Expand navigation' : 'Collapse navigation'}
-                className={styles.collapseToggle}
-                onClick={() => setCollapsed((value) => !value)}
-                size="micro"
-                variant="tertiary"
-              >
-                {collapsed ? <ChevronsRightIcon size={16} /> : <ChevronsLeftIcon size={16} />}
-              </IconButton>
-            ) : null}
             {posture === 'sidebar' ? (
               <MobileNav
                 activeKey={activeKey}
@@ -260,7 +337,7 @@ export function AppShell({
             {onOpenSearch ? (
               <button className={styles.searchTrigger} onClick={onOpenSearch} type="button">
                 <SearchIcon aria-hidden="true" size={16} />
-                <span className={styles.searchLabel}>Search</span>
+                <span className={styles.searchLabel}>{t('Search')}</span>
                 <Kbd>⌘K</Kbd>
               </button>
             ) : null}
@@ -286,13 +363,21 @@ export function AppShell({
                 ) : null}
               </span>
             ) : null}
-            <AccountMenu onOpenSettings={onOpenSettings} onSignOut={onSignOut} user={user} />
+            <AccountMenu
+              onOpenSettings={() => (onOpenSettings ? onOpenSettings() : onNavigate('settings'))}
+              onSignOut={onSignOut}
+              user={user}
+            />
           </div>
         </header>
 
         {banner ? <div className={styles.banner}>{banner}</div> : null}
 
-        <main className={styles.content} data-slot="app-shell-content">
+        <main
+          className={styles.content}
+          data-content-inset={contentInset}
+          data-slot="app-shell-content"
+        >
           {children}
         </main>
       </div>
@@ -317,6 +402,7 @@ function WorkspaceSwitcher({
   workspace,
   workspaces,
 }: WorkspaceSwitcherProps) {
+  const t = useT();
   const switchable = !scopeLabel && ((workspaces?.length ?? 0) > 1 || (workspace.branches?.length ?? 0) > 1);
   const activeBranch = scopeLabel
     ? undefined
@@ -329,19 +415,15 @@ function WorkspaceSwitcher({
       <span aria-hidden="true" className={styles.workspaceMark}>
         {initial}
       </span>
-      {!collapsed && (
-        <>
-          <span className={styles.workspaceText}>
-            <span className={styles.workspaceName}>{displayName}</span>
-            {activeBranch ? (
-              <span className={styles.workspaceBranch}>{activeBranch.name}</span>
-            ) : null}
-          </span>
-          {switchable ? (
-            <ChevronDownIcon aria-hidden="true" className={styles.workspaceChevron} size={14} />
-          ) : null}
-        </>
-      )}
+      <span className={styles.workspaceText}>
+        <span className={styles.workspaceName}>{displayName}</span>
+        {activeBranch ? (
+          <span className={styles.workspaceBranch}>{activeBranch.name}</span>
+        ) : null}
+      </span>
+      {switchable ? (
+        <ChevronDownIcon aria-hidden="true" className={styles.workspaceChevron} size={14} />
+      ) : null}
     </>
   );
 
@@ -350,6 +432,7 @@ function WorkspaceSwitcher({
       <div
         aria-label={`Scope: ${scopeLabel}`}
         className={styles.workspaceTrigger}
+        data-collapsed={collapsed ? 'true' : undefined}
         data-scope="person"
         data-slot="workspace-switcher"
         title={collapsed ? scopeLabel : undefined}
@@ -362,6 +445,7 @@ function WorkspaceSwitcher({
   const trigger = (
     <button
       className={styles.workspaceTrigger}
+      data-collapsed={collapsed ? 'true' : undefined}
       data-slot="workspace-switcher"
       title={collapsed ? displayName : undefined}
       type="button"
@@ -380,7 +464,7 @@ function WorkspaceSwitcher({
       <DropdownMenuContent align="start" className={styles.menuContent}>
         {(workspaces?.length ?? 0) > 1 ? (
           <>
-            <DropdownMenuLabel>Workspace</DropdownMenuLabel>
+            <DropdownMenuLabel>{t('Workspace')}</DropdownMenuLabel>
             <DropdownMenuRadioGroup
               onValueChange={(value) => onWorkspaceChange?.(value)}
               value={workspace.id}
@@ -396,7 +480,7 @@ function WorkspaceSwitcher({
         {(workspace.branches?.length ?? 0) > 1 ? (
           <>
             {(workspaces?.length ?? 0) > 1 ? <DropdownMenuSeparator /> : null}
-            <DropdownMenuLabel>Branch</DropdownMenuLabel>
+            <DropdownMenuLabel>{t('Branch')}</DropdownMenuLabel>
             <DropdownMenuRadioGroup
               onValueChange={(value) => onBranchChange?.(value)}
               value={workspace.activeBranchId}
@@ -424,10 +508,12 @@ type ModeSwitcherProps = {
 
 /**
  * Scope control for the work zone: sits at the top of the nav it swaps, one
- * level below the workspace identity. Text-first: the "Work area" kicker
- * names the axis, the value names the current lens.
+ * level below the workspace identity. The visible label names the axis and
+ * the value names the current lens; the collapsed rail retains its icon.
  */
 function ModeSwitcher({ availableModes, collapsed = false, mode, onModeChange }: ModeSwitcherProps) {
+  const t = useT();
+
   if (availableModes.length < 2) {
     return null;
   }
@@ -438,10 +524,11 @@ function ModeSwitcher({ availableModes, collapsed = false, mode, onModeChange }:
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button
-          aria-label={collapsed ? `Work area: ${definition.label}` : undefined}
+          aria-label={`${t('Work area')}: ${t(definition.label)}`}
           className={joinClasses(styles.modeTrigger, collapsed && styles.modeTriggerCollapsed)}
+          data-collapsed={collapsed ? 'true' : undefined}
           data-slot="mode-switcher"
-          title={collapsed ? `Work area: ${definition.label}` : undefined}
+          title={collapsed ? `${t('Work area')}: ${t(definition.label)}` : undefined}
           type="button"
         >
           {collapsed ? (
@@ -449,19 +536,18 @@ function ModeSwitcher({ availableModes, collapsed = false, mode, onModeChange }:
               {definition.icon}
             </span>
           ) : (
-            <>
-              <span aria-hidden="true" className={styles.navIcon}>
-                {definition.icon}
-              </span>
-              <span className={styles.modeKicker}>Work area</span>
-              <span className={styles.modeLabel}>{definition.label}</span>
-              <ChevronDownIcon aria-hidden="true" className={styles.modeChevron} size={14} />
-            </>
+            <span className={styles.modeCopy}>
+              <span className={styles.modeKicker}>{t('Work area')}</span>
+              <span className={styles.modeLabel}>{t(definition.label)}</span>
+            </span>
           )}
+          {!collapsed ? (
+            <ChevronDownIcon aria-hidden="true" className={styles.modeChevron} size={14} />
+          ) : null}
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className={styles.menuContent}>
-        <DropdownMenuLabel>Switch work area</DropdownMenuLabel>
+        <DropdownMenuLabel>{t('Switch work area')}</DropdownMenuLabel>
         <DropdownMenuRadioGroup
           onValueChange={(value) => onModeChange?.(value as ClinicMode)}
           value={mode}
@@ -473,7 +559,7 @@ function ModeSwitcher({ availableModes, collapsed = false, mode, onModeChange }:
                 <span aria-hidden="true" className={styles.menuItemIcon}>
                   {item.icon}
                 </span>
-                {item.label}
+                {t(item.label)}
               </DropdownMenuRadioItem>
             );
           })}
@@ -494,11 +580,16 @@ type SidebarNavProps = {
 };
 
 function SidebarNav({ activeKey, collapsed, groups, modeSwitcher, onNavigate, overlay = false }: SidebarNavProps) {
+  const t = useT();
+
   return (
-    <nav aria-label="Primary" className={styles.nav}>
+    <nav aria-label={t('Primary')} className={styles.nav}>
       {modeSwitcher}
-      {groups.map((group) =>
-        group.overflow && !overlay ? (
+      {groups.map((group) => {
+        const rawGroupLabel = group.label ?? (group.key === 'work' ? 'Work' : undefined);
+        const groupLabel = rawGroupLabel ? t(rawGroupLabel) : undefined;
+
+        return group.overflow && !overlay ? (
           <div className={styles.navGroup} key={group.key}>
             <ul className={styles.navList}>
               <li>
@@ -513,8 +604,8 @@ function SidebarNav({ activeKey, collapsed, groups, modeSwitcher, onNavigate, ov
           </div>
         ) : (
         <div className={styles.navGroup} key={group.key}>
-          {group.label && !collapsed ? (
-            <span className={styles.navGroupLabel}>{group.label}</span>
+          {groupLabel ? (
+            <span className={styles.navGroupLabel}>{groupLabel}</span>
           ) : null}
           <ul className={styles.navList}>
             {group.items.map((item) => (
@@ -528,8 +619,8 @@ function SidebarNav({ activeKey, collapsed, groups, modeSwitcher, onNavigate, ov
                   title={
                     collapsed
                       ? item.comingSoon
-                        ? `${item.label} · Coming soon`
-                        : item.label
+                        ? `${t(item.label)} · ${t('Coming soon')}`
+                        : t(item.label)
                       : undefined
                   }
                   type="button"
@@ -537,10 +628,10 @@ function SidebarNav({ activeKey, collapsed, groups, modeSwitcher, onNavigate, ov
                   <span aria-hidden="true" className={styles.navIcon}>
                     {renderNavIcon(item.icon, item.key === activeKey)}
                   </span>
-                  {!collapsed && <span className={styles.navLabel}>{item.label}</span>}
+                  <span className={styles.navLabel}>{t(item.label)}</span>
                   {!collapsed && item.comingSoon ? (
                     <Badge size="sm" variant="outline">
-                      Soon
+                      {t('Soon')}
                     </Badge>
                   ) : null}
                   {!collapsed && !item.comingSoon && item.badgeCount ? (
@@ -556,8 +647,8 @@ function SidebarNav({ activeKey, collapsed, groups, modeSwitcher, onNavigate, ov
             ))}
           </ul>
         </div>
-        ),
-      )}
+        );
+      })}
     </nav>
   );
 }
@@ -574,7 +665,8 @@ type NavOverflowMenuProps = {
  * tags; the launcher itself is a live control and stays unmuted.
  */
 function NavOverflowMenu({ activeKey, collapsed, group, onNavigate }: NavOverflowMenuProps) {
-  const label = group.label ?? 'More';
+  const t = useT();
+  const label = t(group.label ?? 'More');
   const containsActive = group.items.some((item) => item.key === activeKey);
 
   return (
@@ -589,7 +681,7 @@ function NavOverflowMenu({ activeKey, collapsed, group, onNavigate }: NavOverflo
           <span aria-hidden="true" className={styles.navIcon}>
             {renderNavIcon(<MoreHorizontalIcon size={16} />, containsActive)}
           </span>
-          {!collapsed && <span className={styles.navLabel}>{label}</span>}
+          <span className={styles.navLabel}>{label}</span>
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className={styles.menuContent} side="right">
@@ -622,18 +714,19 @@ type MobileNavProps = {
 };
 
 function MobileNav({ activeKey, contextLabel, groups, modeSwitcher, onNavigate }: MobileNavProps) {
+  const t = useT();
   const [open, setOpen] = useState(false);
 
   return (
     <span className={styles.mobileNav}>
       <Sheet onOpenChange={setOpen} open={open}>
-        <SheetTrigger aria-label="Open navigation" className={styles.mobileNavTrigger}>
+        <SheetTrigger aria-label={t('Open navigation')} className={styles.mobileNavTrigger}>
           <MenuIcon aria-hidden="true" size={20} />
         </SheetTrigger>
         <SheetContent side="left">
           <SheetHeader>
             <SheetTitle>{contextLabel}</SheetTitle>
-            <SheetClose aria-label="Close navigation" />
+            <SheetClose aria-label={t('Close navigation')} />
           </SheetHeader>
           <SheetBody>
             <SidebarNav
@@ -666,6 +759,7 @@ const STATION_ROLE_LABEL: Record<NonNullable<Station['role']>, string> = {
 };
 
 function StationIdentity({ mode, station }: StationIdentityProps) {
+  const t = useT();
   const definition = MODE_REGISTRY[mode];
 
   return (
@@ -675,9 +769,13 @@ function StationIdentity({ mode, station }: StationIdentityProps) {
       </span>
       <span className={styles.stationText}>
         <span className={styles.stationTitle}>
-          {station?.role ? STATION_ROLE_LABEL[station.role] : definition.label}
+          {t(station?.role ? STATION_ROLE_LABEL[station.role] : definition.label)}
         </span>
-        {station ? <span className={styles.stationMeta}>Station {station.id}</span> : null}
+        {station ? (
+          <span className={styles.stationMeta}>
+            {t('Station')} {station.id}
+          </span>
+        ) : null}
       </span>
     </span>
   );
@@ -694,12 +792,14 @@ const SHIFT_LABEL: Record<ClinicShift, string> = {
 };
 
 function ShiftMenu({ onShiftChange, shift }: ShiftMenuProps) {
+  const t = useT();
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button className={styles.shiftTrigger} type="button">
           <ClockIcon aria-hidden="true" size={14} />
-          {SHIFT_LABEL[shift]}
+          {t(SHIFT_LABEL[shift])}
           <ChevronDownIcon aria-hidden="true" size={14} />
         </button>
       </DropdownMenuTrigger>
@@ -708,8 +808,8 @@ function ShiftMenu({ onShiftChange, shift }: ShiftMenuProps) {
           onValueChange={(value) => onShiftChange?.(value as ClinicShift)}
           value={shift}
         >
-          <DropdownMenuRadioItem value="morning">Morning shift</DropdownMenuRadioItem>
-          <DropdownMenuRadioItem value="afternoon">Afternoon shift</DropdownMenuRadioItem>
+          <DropdownMenuRadioItem value="morning">{t('Morning shift')}</DropdownMenuRadioItem>
+          <DropdownMenuRadioItem value="afternoon">{t('Afternoon shift')}</DropdownMenuRadioItem>
         </DropdownMenuRadioGroup>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -717,34 +817,35 @@ function ShiftMenu({ onShiftChange, shift }: ShiftMenuProps) {
 }
 
 type AccountMenuProps = {
+  expanded?: boolean;
   onOpenSettings?: () => void;
   onSignOut?: () => void;
   user: ShellUser;
 };
 
-/** "Dr. Sok Vanna" → "SV": honorifics carry no identity, first + last name do. */
-function initialsFor(name: string) {
-  const words = name
-    .replace(/^(dr|mr|mrs|ms|prof)\.?\s+/i, '')
-    .split(/\s+/)
-    .filter(Boolean);
-  if (words.length === 0) return '?';
-  const first = words[0].charAt(0);
-  const last = words.length > 1 ? words[words.length - 1].charAt(0) : '';
-  return `${first}${last}`.toUpperCase();
-}
+function AccountMenu({ expanded = false, onOpenSettings, onSignOut, user }: AccountMenuProps) {
+  const t = useT();
+  const { locale, setLocale } = useLocale();
 
-function AccountMenu({ onOpenSettings, onSignOut, user }: AccountMenuProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button aria-label={`Account: ${user.name}`} className={styles.accountTrigger} type="button">
+        <button
+          aria-label={`${t('Account')}: ${user.name}`}
+          className={joinClasses(styles.accountTrigger, expanded && styles.accountTriggerExpanded)}
+          type="button"
+        >
           <Avatar aria-hidden="true" size="sm">
             <AvatarFallback tone="neutral">{initialsFor(user.name)}</AvatarFallback>
           </Avatar>
+          <span className={styles.accountTriggerCopy}>
+            <span className={styles.accountTriggerName}>{user.name}</span>
+            <span className={styles.accountTriggerMeta}>{user.email}</span>
+          </span>
+          <ChevronDownIcon aria-hidden="true" className={styles.accountTriggerChevron} size={14} />
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className={styles.menuContent}>
+      <DropdownMenuContent align={expanded ? 'start' : 'end'} className={styles.menuContent}>
         <DropdownMenuLabel>
           <span className={styles.accountName}>
             {user.name}
@@ -752,18 +853,32 @@ function AccountMenu({ onOpenSettings, onSignOut, user }: AccountMenuProps) {
           <span className={styles.accountEmail}>{user.email}</span>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
+        <DropdownMenuLabel>{t('Language')}</DropdownMenuLabel>
+        <DropdownMenuRadioGroup
+          onValueChange={(value) => setLocale(value as Locale)}
+          value={locale}
+        >
+          {LOCALES.map((option) => (
+            // Each language names itself in its own script, so a user who lands
+            // in the wrong language can still find the way back.
+            <DropdownMenuRadioItem key={option} lang={option} value={option}>
+              {LOCALE_LABELS[option]}
+            </DropdownMenuRadioItem>
+          ))}
+        </DropdownMenuRadioGroup>
+        <DropdownMenuSeparator />
         <DropdownMenuGroup>
           <DropdownMenuItem onSelect={() => onOpenSettings?.()}>
             <span aria-hidden="true" className={styles.menuItemIcon}>
               <SettingsIcon size={16} />
             </span>
-            Settings
+            {t('Settings')}
           </DropdownMenuItem>
           <DropdownMenuItem onSelect={() => onSignOut?.()}>
             <span aria-hidden="true" className={styles.menuItemIcon}>
               <LogoutIcon size={16} />
             </span>
-            Sign out
+            {t('Sign out')}
           </DropdownMenuItem>
         </DropdownMenuGroup>
       </DropdownMenuContent>

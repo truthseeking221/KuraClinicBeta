@@ -7,7 +7,7 @@ function signal(overrides: Partial<HomeSignal>): HomeSignal {
   return {
     key: 'results',
     kind: 'worklist',
-    title: 'New results',
+    title: 'Results',
     count: 0,
     detail: '',
     tone: 'neutral',
@@ -68,11 +68,11 @@ describe('licenceBanner', () => {
   });
 
   it('maps every actionable contract state to an honest next step', () => {
-    expect(licenceBanner({ state: 'none' })?.actionLabel).toBe('Verify now');
+    expect(licenceBanner({ state: 'none' })?.actionLabel).toBe('Verify');
     expect(licenceBanner({ state: 'pending_review' })?.actionLabel).toBe('View submission');
-    expect(licenceBanner({ state: 'rejected' })?.actionLabel).toBe('Verify now');
-    expect(licenceBanner({ state: 'expiring' })?.actionLabel).toBe('Renew now');
-    expect(licenceBanner({ state: 'in_grace' })?.actionLabel).toBe('Renew now');
+    expect(licenceBanner({ state: 'rejected' })?.actionLabel).toBe('Update licence');
+    expect(licenceBanner({ state: 'expiring' })?.actionLabel).toBe('Renew');
+    expect(licenceBanner({ state: 'in_grace' })?.actionLabel).toBe('Renew');
     expect(licenceBanner({ state: 'lapsed' })?.actionLabel).toBe('Renew licence');
   });
 

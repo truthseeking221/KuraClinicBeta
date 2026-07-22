@@ -2,6 +2,7 @@
 
 import type { ComponentPropsWithoutRef } from 'react';
 
+import { useT } from '../../components/foundations/i18n';
 import {
   formatMonthShort,
   formatValue,
@@ -34,6 +35,7 @@ export function LabDrawStrip({
   result,
   ...props
 }: LabDrawStripProps) {
+  const t = useT();
   const fullSeries = resultSeries(result);
   const hiddenCount = Math.max(0, fullSeries.length - maxDraws);
   const series = fullSeries.slice(-maxDraws);
@@ -45,11 +47,11 @@ export function LabDrawStrip({
       className={joinClasses(styles.strip, className)}
       data-slot="lab-draw-strip"
       role="list"
-      aria-label={`${result.name} by draw`}
+      aria-label={t('{name} by draw').replace('{name}', result.name)}
     >
       {hiddenCount > 0 ? (
         <div className={styles.earlier} role="listitem">
-          {hiddenCount} earlier
+          {t('{count} earlier').replace('{count}', String(hiddenCount))}
         </div>
       ) : null}
       {series.map((point, index) => {
@@ -65,11 +67,11 @@ export function LabDrawStrip({
             data-missing={missing || undefined}
             role="listitem"
           >
-            <span className={styles.date}>{formatMonthShort(point.date, locale)}</span>
+            <span className={styles.date}>{formatMonthShort(point.date, locale, t)}</span>
             <span className={styles.value} data-tone={tone}>
               {formatValue(point.value)}
             </span>
-            <span className={styles.episode}>{point.episodeLabel}</span>
+            <span className={styles.episode}>{t(point.episodeLabel)}</span>
             <span
               className={styles.dot}
               data-tone={tone}

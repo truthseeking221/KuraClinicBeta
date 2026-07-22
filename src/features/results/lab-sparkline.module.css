@@ -8,10 +8,12 @@
   fill: var(--lab-range-optimal-muted);
 }
 
+/* The trend is context; the latest dot carries the tone. A quiet n400 line
+   reads on the white row and over the reference band without shouting. */
 .line {
   fill: none;
-  stroke: var(--color-text-secondary);
-  stroke-width: 1.5;
+  stroke: var(--color-foreground-icon-tertiary);
+  stroke-width: 1.25;
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-dasharray: 1;
@@ -23,10 +25,6 @@
   from {
     stroke-dashoffset: 1;
   }
-}
-
-.pointDot {
-  fill: var(--color-text-tertiary);
 }
 
 /* Latest reading: surface core + tone ring — same language as the range band. */

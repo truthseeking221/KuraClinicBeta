@@ -39,6 +39,43 @@
   font-variant-numeric: tabular-nums;
 }
 
+.changePhone {
+  align-self: flex-start;
+}
+
+.expiry {
+  color: var(--color-text-tertiary);
+  font-size: var(--type-xs);
+  line-height: var(--leading-normal);
+}
+
+.verificationMeta {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.otpSection {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.resendStatus {
+  margin: 0;
+  padding-block: var(--space-0-5);
+  color: var(--color-text-secondary);
+  font-size: var(--type-xs);
+  line-height: var(--leading-snug);
+}
+
+.resendAction {
+  align-self: flex-start;
+}
+
 .actionRow {
   display: flex;
   align-items: center;
@@ -49,12 +86,6 @@
 
 .licenceActionRow {
   margin-block-start: var(--space-2);
-}
-
-.actionCluster {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
 }
 
 .inlineEnd {
@@ -115,15 +146,6 @@
   }
 
   .actionRow > :global([data-slot="button"]) {
-    width: 100%;
-  }
-
-  .actionCluster {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .actionCluster :global([data-slot="button"]) {
     width: 100%;
   }
 

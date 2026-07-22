@@ -2,8 +2,8 @@
 
 import type { ComponentPropsWithoutRef, ReactNode } from 'react';
 
-import { IconButton } from './icon-button';
-import { XIcon } from './icons';
+import { useT } from '../foundations/i18n';
+import { CloseButton } from './close-button';
 import styles from './alert.module.css';
 
 export type AlertTone =
@@ -61,13 +61,15 @@ const toneClassNames: Record<AlertTone, string> = {
 export function Alert({
   children,
   className,
-  dismissLabel = 'Dismiss alert',
+  dismissLabel,
   icon,
   onDismiss,
   role,
   tone = 'neutral',
   ...props
 }: AlertProps) {
+  const t = useT();
+  const resolvedDismissLabel = dismissLabel ?? t('Dismiss alert');
   const hasIcon = icon !== undefined && icon !== null;
   const resolvedRole = role ?? (tone === 'danger' ? 'alert' : 'status');
 
@@ -86,13 +88,11 @@ export function Alert({
       {children}
       {onDismiss ? (
         <span className={styles.dismiss} data-slot="alert-dismiss">
-          <IconButton
-            aria-label={dismissLabel}
-            variant="tertiary"
+          <CloseButton
+            aria-label={resolvedDismissLabel}
             onClick={onDismiss}
-          >
-            <XIcon aria-hidden="true" />
-          </IconButton>
+            size="md"
+          />
         </span>
       ) : null}
     </div>

@@ -4,6 +4,7 @@ import { Select as SelectPrimitive } from '@base-ui/react';
 import { useId } from 'react';
 import type { ComponentPropsWithoutRef, ReactNode, Ref } from 'react';
 
+import { useT } from '../foundations/i18n';
 import { CheckIcon, ChevronDownIcon } from './icons';
 import styles from './select.module.css';
 
@@ -90,6 +91,7 @@ export function Select({
   value,
   ...triggerProps
 }: SelectProps) {
+  const t = useT();
   const generatedId = useId();
   const selectId = id ?? `select-${generatedId}`;
   const helpId = helpText ? `${selectId}-help` : undefined;
@@ -157,7 +159,7 @@ export function Select({
           ref={ref}
           type="button"
         >
-          <SelectPrimitive.Value placeholder={placeholder ?? 'Select an option'} />
+          <SelectPrimitive.Value placeholder={placeholder ?? t('Select an option')} />
           <SelectPrimitive.Icon aria-hidden="true" className={styles.icon}>
             <ChevronDownIcon size={16} />
           </SelectPrimitive.Icon>

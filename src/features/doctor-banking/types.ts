@@ -202,7 +202,12 @@ export type FloorChange = {
   changedAt: IsoDateTime;
 };
 
-export type DoctorBankingViewState = 'ready' | 'loading' | 'error' | 'permission-denied';
+export type DoctorBankingViewState =
+  | 'ready'
+  | 'loading'
+  | 'error'
+  | 'permission-denied'
+  | 'not-eligible';
 
 export type DoctorBankingFixture = {
   overview: DoctorBankingOverview;

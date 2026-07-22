@@ -27,6 +27,10 @@
   max-width: 30rem;
 }
 
+.w560 {
+  max-width: 35rem;
+}
+
 .w768 {
   max-width: 48rem;
 }

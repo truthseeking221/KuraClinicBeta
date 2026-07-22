@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 
+import { useT, type Translate } from '../foundations/i18n';
 import { Button } from './button';
 import { Calendar, type CalendarRange, type CalendarSelection } from './calendar';
 import { CalendarIcon } from './icons';
@@ -44,8 +45,8 @@ function sameDay(first?: Date, second?: Date) {
   return Boolean(first && second && startOfDay(first).getTime() === startOfDay(second).getTime());
 }
 
-function formatRange(value: CalendarRange | undefined, locale: string) {
-  if (!value?.from) return 'Select date range';
+function formatRange(value: CalendarRange | undefined, locale: string, t: Translate) {
+  if (!value?.from) return t('Select date range');
   const formatter = new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', year: 'numeric' });
   return value.to ? `${formatter.format(value.from)} – ${formatter.format(value.to)}` : formatter.format(value.from);
 }
@@ -60,13 +61,15 @@ export function DateRangePicker({
   className,
   defaultValue,
   disabled = false,
-  label = 'Date range',
+  label,
   locale = 'en-US',
   maxDate,
   minDate,
   onChange,
   value,
 }: DateRangePickerProps) {
+  const t = useT();
+  const resolvedLabel = label ?? t('Date range');
   const [open, setOpen] = useState(false);
   const [mobile, setMobile] = useState(false);
   const [internalValue, setInternalValue] = useState<CalendarRange | undefined>(defaultValue);
@@ -107,19 +110,19 @@ export function DateRangePicker({
         disabled={disabled}
         render={(
           <Button
-            aria-label={label}
+            aria-label={resolvedLabel}
             className={className}
             disabled={disabled}
             leadingIcon={<CalendarIcon aria-hidden size={20} />}
             variant="secondary"
           >
-            {formatRange(committedValue, locale)}
+            {formatRange(committedValue, locale, t)}
           </Button>
         )}
       />
-      <PopoverContent align="end" aria-label={label} className={styles.popover} initialFocus={false} role="dialog">
+      <PopoverContent align="end" aria-label={resolvedLabel} className={styles.popover} initialFocus={false} role="dialog">
         <div className={styles.layout}>
-          <div className={styles.presets} aria-label="Date range shortcuts">
+          <div className={styles.presets} aria-label={t('Date range shortcuts')}>
             {presets.map((preset) => {
               const selected = sameDay(pendingValue?.from, preset.range.from) && sameDay(pendingValue?.to, preset.range.to);
               return (
@@ -130,14 +133,14 @@ export function DateRangePicker({
                   onClick={() => setPendingValue(preset.range)}
                   type="button"
                 >
-                  {preset.label}
+                  {t(preset.label)}
                 </button>
               );
             })}
           </div>
           <div className={styles.calendarPanel}>
             <Calendar
-              aria-label={label}
+              aria-label={resolvedLabel}
               className={styles.calendar}
               locale={locale}
               maxDate={maxDate}
@@ -149,12 +152,12 @@ export function DateRangePicker({
             />
             <div className={styles.footer}>
               <div className={styles.summary}>
-                {pendingValue?.from ? <span>{formatRange(pendingValue, locale)}</span> : <span>Choose a start and end date</span>}
-                {rangeDays(pendingValue) > 0 ? <span className={styles.dayCount}>{rangeDays(pendingValue)} days selected</span> : null}
+                {pendingValue?.from ? <span>{formatRange(pendingValue, locale, t)}</span> : <span>{t('Choose a start and end date')}</span>}
+                {rangeDays(pendingValue) > 0 ? <span className={styles.dayCount}>{rangeDays(pendingValue)} {t('days selected')}</span> : null}
               </div>
               <div className={styles.actions}>
-                <Button onClick={() => { setPendingValue(committedValue); setOpen(false); }} variant="secondary">Cancel</Button>
-                <Button disabled={!pendingValue?.from || !pendingValue.to} onClick={commit}>Apply</Button>
+                <Button onClick={() => { setPendingValue(committedValue); setOpen(false); }} variant="secondary">{t('Cancel')}</Button>
+                <Button disabled={!pendingValue?.from || !pendingValue.to} onClick={commit}>{t('Apply')}</Button>
               </div>
             </div>
           </div>

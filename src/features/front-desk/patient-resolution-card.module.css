@@ -3,24 +3,27 @@
   padding: var(--space-inset-card);
 }
 
+/* Outline card doing a selectable-unit job: the hairline is the base state,
+   so every further state is a tone change on that one edge plus a fill —
+   never a second edge treatment. The selection mark carries the non-colour
+   cue. */
 .card.selectable {
   cursor: pointer;
-  transition: border-color var(--motion-color), box-shadow var(--motion-color);
+  transition: border-color var(--motion-color), background-color var(--motion-color);
 }
 
 .card.selectable:hover {
-  border-color: var(--color-border-strong, var(--color-border));
+  border-color: var(--color-border-strong);
 }
 
 .card.selectable:focus-visible {
   outline: none;
-  border-color: var(--color-border-focus);
   box-shadow: var(--shadow-focus);
 }
 
 .card[data-selected] {
   border-color: var(--color-action-primary-accent);
-  box-shadow: var(--shadow-selected);
+  background: var(--color-selection-bg);
 }
 
 .layout {

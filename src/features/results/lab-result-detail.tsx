@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import type { ComponentPropsWithoutRef } from 'react';
 
+import { useT } from '../../components/foundations/i18n';
 import { Badge } from '../../components/ui/badge';
 import { Button } from '../../components/ui/button';
 import {
@@ -54,19 +55,23 @@ function joinClasses(...classes: Array<string | undefined | false>) {
   return classes.filter(Boolean).join(' ');
 }
 
-function severityBadge(result: LabAnalyteResult) {
+/** Same tone vocabulary as the result row, so the value reads identically
+ *  whether it is in the flowsheet, the hover preview, or the history sheet. */
+function toneFor(result: LabAnalyteResult): 'optimal' | 'caution' | 'out' | undefined {
+  const flag = flagFor(result);
+  if (!flag) return undefined;
+  if (flag.severity === 'critical') return 'out';
+  if (flag.severity === 'abnormal') return 'caution';
+  return 'optimal';
+}
+
+function severityLabel(result: LabAnalyteResult, tone: ReturnType<typeof toneFor>) {
   const flag = flagFor(result);
   if (!flag) return null;
-  const variant =
-    flag.severity === 'critical'
-      ? 'danger'
-      : flag.severity === 'abnormal'
-        ? 'warning'
-        : 'neutral';
   return (
-    <Badge size="sm" variant={variant}>
+    <span className={styles.flagLabel} data-tone={tone}>
       {flag.label}
-    </Badge>
+    </span>
   );
 }
 
@@ -91,6 +96,7 @@ export function LabResultDetail({
   result,
   ...props
 }: LabResultDetailProps) {
+  const t = useT();
   const released = result.status === 'released';
   const reference = rangeDisplay(result.range);
   const observed = result.observedAt ?? result.releasedAt;
@@ -108,18 +114,26 @@ export function LabResultDetail({
       <div className={styles.status}>
         {released ? (
           <>
-            <span className={styles.value}>{formatValue(result.value)}</span>
+            <span className={styles.value} data-tone={toneFor(result)}>
+              {formatValue(result.value)}
+            </span>
             {result.unit ? <span className={styles.unit}>{result.unit}</span> : null}
-            {severityBadge(result)}
-            <span className={styles.meta}>{formatDate(observed, locale)}</span>
-            {reference ? <span className={styles.meta}>Reference {reference}</span> : null}
+            {severityLabel(result, toneFor(result))}
+            <span className={styles.meta}>{formatDate(observed, locale, t)}</span>
+            {reference ? (
+              <span className={styles.meta}>
+                {t('Reference {range}').replace('{range}', reference)}
+              </span>
+            ) : null}
           </>
         ) : (
           <>
             <Badge size="sm" variant={result.status === 'manual_review' ? 'warning' : 'neutral'}>
-              {TEST_STATUS_COPY[result.status].label}
+              {t(TEST_STATUS_COPY[result.status].label)}
             </Badge>
-            <span className={styles.meta}>{TEST_STATUS_COPY[result.status].description}</span>
+            <span className={styles.meta}>
+              {t(TEST_STATUS_COPY[result.status].description)}
+            </span>
           </>
         )}
       </div>
@@ -132,16 +146,18 @@ export function LabResultDetail({
 
       {released && parseLabTimestamp(observed) == null ? (
         <p className={styles.note}>
-          The latest result has no usable observation timestamp and is not plotted on the time axis.
+          {t(
+            'The latest result has no usable observation timestamp and is not plotted on the time axis.',
+          )}
         </p>
       ) : null}
       {result.value.kind === 'missing' && released ? (
-        <p className={styles.note}>Not in this draw — absence is not read as normal.</p>
+        <p className={styles.note}>{t('Not in this draw — absence is not read as normal.')}</p>
       ) : null}
 
       {!compact && series.length > 0 ? (
         <Collapsible className={styles.history} defaultOpen>
-          <CollapsibleTrigger>Full released history</CollapsibleTrigger>
+          <CollapsibleTrigger>{t('Full released history')}</CollapsibleTrigger>
           <CollapsibleContent>
             <ol className={styles.historyList}>
               {[...series].reverse().map((point, index) => (
@@ -154,7 +170,7 @@ export function LabResultDetail({
                     {point.value.kind !== 'missing' && result.unit ? ` ${result.unit}` : ''}
                   </span>
                   <span className={styles.historyMeta}>
-                    {formatDate(point.date, locale)} · {point.episodeLabel}
+                    {formatDate(point.date, locale, t)} · {t(point.episodeLabel)}
                   </span>
                 </li>
               ))}
@@ -174,13 +190,17 @@ export function LabResultDetailTrigger({
   locale = 'en-US',
   result,
 }: LabResultDetailTriggerProps) {
+  const t = useT();
   const [open, setOpen] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
   const bottomSheet = useBottomSheet();
-  const label = `View ${result.name} history`;
+  const label = t('View {name} history').replace('{name}', result.name);
 
   return (
     <>
-      <HoverCard>
+      {/* The preview yields to the sheet: the same history must never be open
+          on two stacked surfaces at once. */}
+      <HoverCard open={previewOpen && !open} onOpenChange={setPreviewOpen}>
         <HoverCardTrigger asChild>
           <Button
             aria-haspopup="dialog"
@@ -190,13 +210,13 @@ export function LabResultDetailTrigger({
             leadingIcon={<HistoryIcon size={16} aria-hidden="true" />}
             onClick={() => setOpen(true)}
           >
-            History
+            {t('History')}
           </Button>
         </HoverCardTrigger>
         <HoverCardContent align="end" size="lg">
           <h3 className={styles.previewTitle}>{result.name}</h3>
           <LabResultDetail compact locale={locale} result={result} />
-          <p className={styles.previewHint}>Click for the complete released history.</p>
+          <p className={styles.previewHint}>{t('Click for the complete released history.')}</p>
         </HoverCardContent>
       </HoverCard>
 
@@ -207,10 +227,10 @@ export function LabResultDetailTrigger({
               <div>
                 <SheetTitle>{result.name}</SheetTitle>
                 <SheetDescription>
-                  Released longitudinal history and the applicable catalog reference range.
+                  {t('Released longitudinal history and the applicable catalog reference range.')}
                 </SheetDescription>
               </div>
-              <SheetClose aria-label={`Close ${result.name} history`} />
+              <SheetClose aria-label={t('Close {name} history').replace('{name}', result.name)} />
             </SheetHeader>
             <SheetBody>
               <LabResultDetail locale={locale} result={result} />

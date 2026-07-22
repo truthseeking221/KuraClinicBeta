@@ -14,19 +14,14 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
   Input,
 } from '../../components/ui';
 import {
-  ChevronDownIcon,
-  FaceIdIcon,
   QrCodeIcon,
   ScanIcon,
   SearchIcon,
 } from '../../components/ui/icons';
+import { useT } from '../../components/foundations/i18n';
 import { detectQueryKind, parseBookingQrPayload } from './logic';
 import type { IdentityQueryKind } from './types';
 import styles from './identity-search.module.css';
@@ -47,9 +42,9 @@ export type IdentitySearchProps = {
 
 /**
  * Step-1 identity capture header: one search field that understands phone,
- * booking code, or name (the three reception doors), a booking-QR scan
- * shortcut, and a low-emphasis menu of future ID methods. The field is the
- * screen's single visual anchor — no card chrome around it.
+ * booking code, or name (the three reception doors), plus a booking-QR scan
+ * shortcut. The field is the screen's single visual anchor — no card chrome
+ * around it.
  */
 export function IdentitySearch({
   autoFocus,
@@ -57,22 +52,27 @@ export function IdentitySearch({
   onChange,
   value,
 }: IdentitySearchProps) {
+  const t = useT();
   const [scanOpen, setScanOpen] = useState(false);
   const kind = detectQueryKind(value);
-  const empty = value.trim() === '';
-
   return (
     <div className={styles.search}>
       <div className={styles.inputRow}>
         <Input
-          aria-label="Find patient by phone, booking code, or name"
+          aria-label={t('Find patient by phone, booking code, or name')}
           autoFocus={autoFocus}
           className={styles.input}
           onChange={(event) => onChange(event.target.value)}
-          placeholder="Phone, booking code, or name"
+          placeholder={t('Phone, booking code, or name')}
           prefix={<SearchIcon size={16} />}
           size="lg"
-          suffix={kind ? <Badge size="sm" variant="neutral">{KIND_LABEL[kind]}</Badge> : undefined}
+          suffix={
+            kind ? (
+              <Badge size="sm" variant="neutral">
+                {t(KIND_LABEL[kind])}
+              </Badge>
+            ) : undefined
+          }
           value={value}
         />
         <Button
@@ -81,38 +81,9 @@ export function IdentitySearch({
           variant="outline"
         >
           <ScanIcon size={16} aria-hidden />
-          Scan booking QR
+          {t('Scan booking QR')}
         </Button>
       </div>
-
-      {empty ? (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button type="button" className={styles.otherMethods}>
-              <ChevronDownIcon size={12} aria-hidden />
-              Other ID methods
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start">
-            <DropdownMenuItem disabled>
-              <FaceIdIcon size={16} aria-hidden />
-              <span className={styles.methodBody}>
-                <span className={styles.methodTitle}>Insert National ID card</span>
-                <span className={styles.methodHint}>Reads the chip on a Cambodian e-ID</span>
-              </span>
-              <span className={styles.methodSoon}>Coming soon</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem disabled>
-              <QrCodeIcon size={16} aria-hidden />
-              <span className={styles.methodBody}>
-                <span className={styles.methodTitle}>Scan National ID QR</span>
-                <span className={styles.methodHint}>Reads the QR printed on the ID</span>
-              </span>
-              <span className={styles.methodSoon}>Coming soon</span>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      ) : null}
 
       <ScanBookingQrDialog
         demoQrPayload={demoQrPayload}
@@ -138,6 +109,7 @@ function ScanBookingQrDialog({
   onOpenChange: (open: boolean) => void;
   open: boolean;
 }) {
+  const t = useT();
   const [payload, setPayload] = useState('');
   const [error, setError] = useState<string | null>(null);
 
@@ -146,7 +118,7 @@ function ScanBookingQrDialog({
     event.preventDefault();
     const code = parseBookingQrPayload(payload);
     if (!code) {
-      setError('No booking code found in this QR.');
+      setError(t('No booking code found in this QR.'));
       return;
     }
     setPayload('');
@@ -167,15 +139,16 @@ function ScanBookingQrDialog({
     >
       <DialogContent size="sm">
         <DialogHeader>
-          <DialogTitle>Scan booking QR</DialogTitle>
+          <DialogTitle>{t('Scan booking QR')}</DialogTitle>
           <DialogDescription>
-            Capture the booking QR before matching the patient. The scanner sends Enter
-            automatically.
+            {t(
+              'Capture the booking QR before matching the patient. The scanner sends Enter automatically.',
+            )}
           </DialogDescription>
         </DialogHeader>
         <DialogBody>
           <Input
-            aria-label="Booking QR payload"
+            aria-label={t('Booking QR payload')}
             autoFocus
             error={error ?? undefined}
             onChange={(event) => {
@@ -183,19 +156,19 @@ function ScanBookingQrDialog({
               setError(null);
             }}
             onKeyDown={handleScan}
-            placeholder="Scan booking QR code"
+            placeholder={t('Scan booking QR code')}
             prefix={<QrCodeIcon size={16} />}
             value={payload}
           />
           {demoQrPayload ? (
             <p className={styles.demoHint}>
-              Demo payload: <code className={styles.demoCode}>{demoQrPayload}</code>
+              {t('Demo payload:')} <code className={styles.demoCode}>{demoQrPayload}</code>
             </p>
           ) : null}
         </DialogBody>
         <DialogFooter>
           <DialogClose asChild>
-            <Button variant="outline">Cancel</Button>
+            <Button variant="outline">{t('Cancel')}</Button>
           </DialogClose>
         </DialogFooter>
       </DialogContent>

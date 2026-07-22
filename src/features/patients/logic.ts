@@ -1,9 +1,17 @@
+import type { Translate } from '../../components/foundations/i18n';
+
 import type {
   AssuranceFilter,
   PatientSex,
   PatientSummary,
   PatientTerminalStatus,
 } from './types';
+
+/**
+ * These helpers run outside React, so the caller passes its `t`. The default
+ * keeps the English source, which is what the language of record renders.
+ */
+const asWritten: Translate = (source) => source;
 
 /** Placeholder for data the platform cannot reveal (shredded) or never had. */
 export const NAME_UNAVAILABLE = 'Name unavailable';
@@ -24,9 +32,15 @@ export function formatAgeSex(patient: Pick<PatientSummary, 'age' | 'hasAge' | 's
   return sex ? `${patient.age} · ${sex}` : String(patient.age);
 }
 
-/** Display name with the shredded/empty fallback applied. */
-export function displayNameOf(patient: Pick<PatientSummary, 'displayName' | 'shredded'>): string {
-  return patient.displayName.trim() === '' ? NAME_UNAVAILABLE : patient.displayName;
+/**
+ * Display name with the shredded/empty fallback applied. Only the fallback is
+ * translated: a patient's own name is record data and is never rewritten.
+ */
+export function displayNameOf(
+  patient: Pick<PatientSummary, 'displayName' | 'shredded'>,
+  t: Translate = asWritten,
+): string {
+  return patient.displayName.trim() === '' ? t(NAME_UNAVAILABLE) : patient.displayName;
 }
 
 /** Two-letter initials for the avatar; '·' when the name is unavailable. */
@@ -90,12 +104,13 @@ export function countByAssurance(
 export function rowLabelOf(
   patient: PatientSummary,
   triageLabel?: string,
+  t: Translate = asWritten,
 ): string {
   const parts = [
-    `Open ${displayNameOf(patient)}`,
+    `${t('Open')} ${displayNameOf(patient, t)}`,
     formatAgeSex(patient) || undefined,
-    statusViewOf(patient).label,
-    triageLabel,
+    t(statusViewOf(patient).label),
+    triageLabel ? t(triageLabel) : undefined,
   ];
   return parts.filter(Boolean).join('. ');
 }

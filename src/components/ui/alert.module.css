@@ -35,41 +35,41 @@
 }
 
 .toneInfo {
-  --alert-bg: var(--status-info-bg);
+  --alert-bg: color-mix(in srgb, var(--status-info-bg) 40%, var(--color-surface));
   --alert-fg: var(--status-info-fg);
-  --alert-description: var(--status-info-fg);
+  --alert-description: var(--color-text-primary);
   --alert-border: var(--status-info-bg);
   --alert-accent: var(--status-info-fg);
 }
 
 .toneSuccess {
-  --alert-bg: var(--status-success-bg);
+  --alert-bg: color-mix(in srgb, var(--status-success-bg) 40%, var(--color-surface));
   --alert-fg: var(--status-success-fg);
-  --alert-description: var(--status-success-fg);
+  --alert-description: var(--color-text-primary);
   --alert-border: var(--status-success-bg);
   --alert-accent: var(--status-success-fg);
 }
 
 .toneWarning {
-  --alert-bg: var(--status-warning-bg);
+  --alert-bg: color-mix(in srgb, var(--status-warning-bg) 40%, var(--color-surface));
   --alert-fg: var(--status-warning-fg);
-  --alert-description: var(--status-warning-fg);
+  --alert-description: var(--color-text-primary);
   --alert-border: var(--status-warning-bg);
   --alert-accent: var(--status-warning-fg);
 }
 
 .toneDanger {
-  --alert-bg: var(--status-danger-bg);
+  --alert-bg: color-mix(in srgb, var(--status-danger-bg) 40%, var(--color-surface));
   --alert-fg: var(--status-danger-fg);
-  --alert-description: var(--status-danger-fg);
+  --alert-description: var(--color-text-primary);
   --alert-border: var(--status-danger-bg);
   --alert-accent: var(--status-danger-fg);
 }
 
 .toneAi {
-  --alert-bg: var(--status-ai-bg);
+  --alert-bg: color-mix(in srgb, var(--status-ai-bg) 40%, var(--color-surface));
   --alert-fg: var(--status-ai-fg);
-  --alert-description: var(--status-ai-fg);
+  --alert-description: var(--color-text-primary);
   --alert-border: var(--status-ai-bg);
   --alert-accent: var(--status-ai-fg);
 }
@@ -157,18 +157,10 @@
   grid-column: 2;
   grid-row: 1;
   margin-inline-start: var(--space-1);
-  --icon-button-bg: transparent;
-  --icon-button-fg: var(--alert-fg);
-  --icon-button-border: transparent;
-  --icon-button-hover-bg: var(--alert-bg);
 }
 
 .alert[data-has-icon='true'] .dismiss {
   grid-column: 3;
-}
-
-.dismiss > button {
-  color: var(--alert-fg);
 }
 
 :global([data-density='compact']) .alert {

@@ -8,6 +8,7 @@ import type {
   ReactNode,
 } from 'react';
 
+import { useT, type Translate } from '../foundations/i18n';
 import { Alert, AlertDescription, AlertTitle } from './alert';
 import { Button } from './button';
 import { IconButton } from './icon-button';
@@ -87,16 +88,20 @@ function nativeItem(file: File): FileUploadItem {
   };
 }
 
-function statusLabel(status: FileUploadStatus | undefined, progress: number | undefined) {
-  if (status === 'uploading') return `Uploading${progress === undefined ? '' : ` ${progress}%`}`;
-  if (status === 'complete') return 'Uploaded';
-  if (status === 'error') return 'Upload failed';
-  return 'Ready to upload';
+function statusLabel(
+  status: FileUploadStatus | undefined,
+  progress: number | undefined,
+  t: Translate,
+) {
+  if (status === 'uploading') return `${t('Uploading')}${progress === undefined ? '' : ` ${progress}%`}`;
+  if (status === 'complete') return t('Uploaded');
+  if (status === 'error') return t('Upload failed');
+  return t('Ready to upload');
 }
 
 export function FileUpload({
   accept = '*',
-  browseLabel = 'select',
+  browseLabel,
   className,
   defaultValue = [],
   description,
@@ -112,6 +117,8 @@ export function FileUpload({
   value,
   ...props
 }: FileUploadProps) {
+  const t = useT();
+  const resolvedBrowseLabel = browseLabel ?? t('select');
   const generatedId = useId();
   const inputId = `file-upload-${generatedId}`;
   const descriptionId = description ? `${inputId}-description` : undefined;
@@ -146,23 +153,25 @@ export function FileUpload({
       const remaining = multiple ? Math.max(0, maxFiles - files.length) : 1;
 
       if (candidates.length > remaining) {
-        messages.push(`You can attach up to ${maxFiles} file${maxFiles === 1 ? '' : 's'}.`);
+        messages.push(
+          `${t('You can attach up to')} ${maxFiles} ${maxFiles === 1 ? t('file') : t('files')}.`,
+        );
       }
 
       const accepted = candidates.slice(0, remaining).flatMap((file) => {
         if (file.size > maxSize) {
-          messages.push(`${file.name} is larger than ${formatFileSize(maxSize)}.`);
+          messages.push(`${file.name} ${t('is larger than')} ${formatFileSize(maxSize)}.`);
           return [];
         }
         if (!matchesAccept(file, accept)) {
-          messages.push(`${file.name} is not an accepted file type.`);
+          messages.push(`${file.name} ${t('is not an accepted file type.')}`);
           return [];
         }
         const duplicate = files.some(
           (existing) => existing.name === file.name && existing.size === file.size,
         );
         if (duplicate) {
-          messages.push(`${file.name} is already attached.`);
+          messages.push(`${file.name} ${t('is already attached.')}`);
           return [];
         }
         const item = nativeItem(file);
@@ -176,7 +185,7 @@ export function FileUpload({
       if (messages.length > 0) onRejected?.(messages);
       if (inputRef.current) inputRef.current.value = '';
     },
-    [accept, commit, disabled, files, maxFiles, maxSize, multiple, onRejected, readOnly],
+    [accept, commit, disabled, files, maxFiles, maxSize, multiple, onRejected, readOnly, t],
   );
 
   function removeFile(id: string) {
@@ -242,7 +251,7 @@ export function FileUpload({
             ref={inputRef}
             accept={accept}
             aria-describedby={[descriptionId, errors.length ? errorId : undefined].filter(Boolean).join(' ') || undefined}
-            aria-label={typeof label === 'string' ? label : 'Choose files'}
+            aria-label={typeof label === 'string' ? label : t('Choose files')}
             className={styles.input}
             disabled={unavailable}
             id={inputId}
@@ -253,7 +262,7 @@ export function FileUpload({
           <UploadIcon aria-hidden size={24} />
           <div className={styles.dropzoneCopy}>
             <div className={styles.dropzonePrompt}>
-              <strong>{dragging ? 'Drop files here' : 'Drag and drop to upload or'}</strong>
+              <strong>{dragging ? t('Drop files here') : t('Drag and drop to upload or')}</strong>
               {!dragging ? (
                 <Button
                   disabled={unavailable}
@@ -261,13 +270,13 @@ export function FileUpload({
                   size="sm"
                   variant="link"
                 >
-                  {atLimit ? 'File limit reached' : browseLabel}
+                  {atLimit ? t('File limit reached') : resolvedBrowseLabel}
                 </Button>
               ) : null}
             </div>
             <span>
-              {maxFiles === 1 ? 'One file' : `Up to ${maxFiles} files`}
-              {Number.isFinite(maxSize) ? ` · ${formatFileSize(maxSize)} each` : ''}
+              {maxFiles === 1 ? t('One file') : `${t('Up to')} ${maxFiles} ${t('files')}`}
+              {Number.isFinite(maxSize) ? ` · ${formatFileSize(maxSize)} ${t('each')}` : ''}
             </span>
           </div>
         </div>
@@ -275,7 +284,7 @@ export function FileUpload({
 
       {errors.length > 0 ? (
         <Alert id={errorId} tone="danger">
-          <AlertTitle>Some files were not added</AlertTitle>
+          <AlertTitle>{t('Some files were not added')}</AlertTitle>
           <AlertDescription>
             <ul className={styles.errorList}>
               {errors.map((message) => (
@@ -287,7 +296,7 @@ export function FileUpload({
       ) : null}
 
       {files.length > 0 ? (
-        <ul className={styles.list} aria-label="Attached files">
+        <ul className={styles.list} aria-label={t('Attached files')}>
           {files.map((item) => {
             const status = item.status ?? 'selected';
             return (
@@ -307,11 +316,11 @@ export function FileUpload({
                 <div className={styles.fileInfo}>
                   <strong className={styles.fileName}>{item.name}</strong>
                   <span className={styles.fileMeta}>
-                    {formatFileSize(item.size)} · {statusLabel(status, item.progress)}
+                    {formatFileSize(item.size)} · {statusLabel(status, item.progress, t)}
                   </span>
                   {status === 'uploading' ? (
                     <progress
-                      aria-label={`Upload progress for ${item.name}`}
+                      aria-label={`${t('Upload progress for')} ${item.name}`}
                       className={styles.progress}
                       max={100}
                       value={item.progress ?? 0}
@@ -321,7 +330,7 @@ export function FileUpload({
                 </div>
                 {!readOnly && status === 'error' && onRetry ? (
                   <IconButton
-                    aria-label={`Retry ${item.name}`}
+                    aria-label={`${t('Retry')} ${item.name}`}
                     onClick={() => onRetry(item)}
                     size="micro"
                     variant="tertiary"
@@ -331,7 +340,7 @@ export function FileUpload({
                 ) : null}
                 {!readOnly ? (
                   <IconButton
-                    aria-label={`Remove ${item.name}`}
+                    aria-label={`${t('Remove')} ${item.name}`}
                     disabled={disabled || status === 'uploading'}
                     onClick={() => removeFile(item.id)}
                     size="micro"
@@ -345,7 +354,7 @@ export function FileUpload({
           })}
         </ul>
       ) : (
-        <p className={styles.empty}>No files attached.</p>
+        <p className={styles.empty}>{t('No files attached.')}</p>
       )}
     </div>
   );

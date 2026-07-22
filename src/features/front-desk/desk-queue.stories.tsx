@@ -272,6 +272,6 @@ export const CheckInToQueueFlow: Story = {
 
     // A new walk-in opens the wizard from the queue.
     await userEvent.click(canvas.getByRole('button', { name: 'New walk-in' }));
-    await expect(await canvas.findByText('Capture identity')).toBeVisible();
+    await expect(await canvas.findByText('Find or create a patient')).toBeVisible();
   },
 };

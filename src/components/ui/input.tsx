@@ -6,6 +6,7 @@ import type { ComponentPropsWithoutRef, ReactNode, Ref } from 'react';
 import styles from './input.module.css';
 
 export type InputSize = 'sm' | 'md' | 'lg';
+export type InputVariant = 'filled' | 'surface';
 
 export type InputProps = Omit<ComponentPropsWithoutRef<'input'>, 'size' | 'children' | 'prefix'> & {
   ref?: Ref<HTMLInputElement>;
@@ -20,6 +21,8 @@ export type InputProps = Omit<ComponentPropsWithoutRef<'input'>, 'size' | 'child
   /** Trailing slot for an icon, unit, or shortcut hint. */
   suffix?: ReactNode;
   size?: InputSize;
+  /** Selects the field surface for its immediate background. */
+  variant?: InputVariant;
 };
 
 function joinClasses(...classes: Array<string | undefined | false>) {
@@ -30,6 +33,11 @@ const sizeClassNames: Record<InputSize, string> = {
   sm: styles.sizeSm,
   md: styles.sizeMd,
   lg: styles.sizeLg,
+};
+
+const variantClassNames: Record<InputVariant, string> = {
+  filled: styles.variantFilled,
+  surface: styles.variantSurface,
 };
 
 export function Input({
@@ -47,6 +55,7 @@ export function Input({
   required = false,
   size = 'md',
   suffix,
+  variant = 'filled',
   ...props
 }: InputProps) {
   const generatedId = useId();
@@ -74,7 +83,11 @@ export function Input({
           ) : null}
         </label>
       ) : null}
-      <div className={joinClasses(styles.control, sizeClassNames[size])} data-slot="input-control">
+      <div
+        className={joinClasses(styles.control, sizeClassNames[size], variantClassNames[variant])}
+        data-slot="input-control"
+        data-variant={variant}
+      >
         {prefix ? (
           <span aria-hidden="true" className={styles.prefix}>
             {prefix}

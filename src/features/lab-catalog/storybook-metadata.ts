@@ -12,7 +12,7 @@ export const LAB_CATALOG_STORYBOOK_KURA = {
     fields:
       'testCatalogId, code, displayName, abbrv, kind, status, requiredPreAnalyticalFields, categoryIds, total',
     note:
-      'Availability is a composed pricing/lab capability fact supplied to this picker. The BFF search contract defaults to 50 rows, so a full 67-row view must request limit=100 or paginate before presenting the total as fully loaded. UNMAPPED FIELDS: componentCount (panel size badge), availability, and unavailableReason (restock copy) are not in the recorded contract field list above; they are prototype-composed facts pending confirmation against kura-platform before any production wiring.',
+      'Availability is a composed pricing/lab capability fact supplied to this picker. The BFF search contract defaults to 50 rows, so a full 67-row view must request limit=100 or paginate before presenting the total as fully loaded. UNMAPPED FIELDS: componentCount, availability, unavailableReason, and the hover preview operational fields remain prototype-composed facts. The preview fixtures are carried over from Legacy DCM and must be replaced by the live clinic contract before this interaction is declared fully ready.',
     consulted: [
       'README.md',
       'docs/INDEX.md',
@@ -46,6 +46,11 @@ export const LAB_CATALOG_STORYBOOK_KURA = {
       searching: '1359:690',
       noResults: '1362:1006',
     },
+  },
+  legacy: {
+    source: '/Users/macbook/Documents/FINAL DCM',
+    component: 'OrdersTab/TestContextPopover',
+    behavior: '1500ms hover intent · 180ms close grace · focus opens · one preview at a time',
   },
   journeys: ['ORD-01', 'ORD-02', 'MOB-02'],
   binding: {

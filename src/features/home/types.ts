@@ -1,4 +1,5 @@
 import type { LicenceState } from '../licence/logic';
+import type { ResultReviewQueueEntry } from '../results/types';
 
 export type { LicenceState } from '../licence/logic';
 
@@ -22,6 +23,25 @@ export type LicenceStatus = {
 export type SignalTone = 'neutral' | 'attention' | 'critical';
 
 export type SignalState = 'ready' | 'loading' | 'error';
+
+export type HomeWorkQueueTone = 'neutral' | 'attention' | 'critical' | 'info';
+
+export type HomeWorkQueueEntry = {
+  id: string;
+  patient: {
+    id: string;
+    name: string;
+    medicalRecordNumber: string;
+    dob: string;
+  };
+  /** The work that needs attention, with timing when it changes priority. */
+  reason: string;
+  /** Supporting context that helps disambiguate the work item. */
+  context?: string;
+  status?: { label: string; tone: HomeWorkQueueTone };
+  disabled?: boolean;
+  unavailableReason?: string;
+};
 
 /**
  * One signal in the Home briefing.
@@ -49,6 +69,10 @@ export type HomeSignal = {
   state: SignalState;
   /** Plain-language failure shown with the retry action when state is `error`. */
   errorMessage?: string;
+  /** Patient-level preview supplied only for the Results review lifecycle axis. */
+  reviewItems?: ResultReviewQueueEntry[];
+  /** Patient-level preview for a non-Results work queue. */
+  workItems?: HomeWorkQueueEntry[];
   /** Outcome-labelled deep link into the owning surface's nav key. */
   action?: { label: string; targetKey: string };
 };
@@ -74,6 +98,8 @@ export type HomeViewState =
 
 export type HomeData = {
   doctorName: string;
+  /** Dedicated activation projection shown until the first booking exists. */
+  firstUse?: boolean;
   /** 0–23 local hour, injected so rendering stays deterministic. */
   hour: number;
   dateLabel: string;
@@ -85,6 +111,21 @@ export type HomeData = {
   viewState?: HomeViewState;
   signals: HomeSignal[];
   nextActions: NextAction[];
+  /**
+   * A seeded patient a new doctor can open before booking anyone real.
+   * Present only during first use, and only while the workspace is empty —
+   * once real work exists, a fabricated patient is noise at best and a
+   * misreading risk at worst.
+   */
+  demoPatient?: {
+    name: string;
+    /** What the record already contains, e.g. "results already back". */
+    summary: string;
+  };
+  /** First-use route action when the workspace has no signals yet. */
+  emptyAction?: { label: string; targetKey: string };
+  /** First-use explanation when no signal exists. */
+  emptyDescription?: string;
   /** End-of-day closure summary. Present only when there is closed work to show. */
   closedToday?: {
     resultLoops: number;

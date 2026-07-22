@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import { Badge, Button, ButtonGroup, IconButton, PlusIcon } from './index';
 
 const meta = {
-  title: 'Design System/Patterns/ButtonGroup',
+  title: 'Design System/Patterns/Button Group',
   component: ButtonGroup,
   tags: ['autodocs', 'source-kura', 'adapted-kura'],
   parameters: {

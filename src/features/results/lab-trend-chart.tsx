@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import type { ComponentPropsWithoutRef } from 'react';
 
+import { useT } from '../../components/foundations/i18n';
 import {
   flagFor,
   formatMonthShort,
@@ -45,6 +46,7 @@ export function LabTrendChart({
   result,
   ...props
 }: LabTrendChartProps) {
+  const t = useT();
   const [activePoint, setActivePoint] = useState<number | null>(null);
   const series: DatedPoint[] = resultSeries(result)
     .map((point) => ({ point, timestamp: parseLabTimestamp(point.date) }))
@@ -155,7 +157,7 @@ export function LabTrendChart({
   }
 
   const description = series
-    .map(({ point }) => `${formatMonthShort(point.date, locale)}: ${formatValue(point.value)}`)
+    .map(({ point }) => `${formatMonthShort(point.date, locale, t)}: ${formatValue(point.value)}`)
     .join(', ');
 
   return (
@@ -167,7 +169,9 @@ export function LabTrendChart({
       <svg
         viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
         role="img"
-        aria-label={`${result.name} history — ${description}`}
+        aria-label={t('{name} history — {series}')
+          .replace('{name}', result.name)
+          .replace('{series}', description)}
       >
         {/* Reference structure: only the normal band is tinted. */}
         {zones.map((zone, index) => (
@@ -246,7 +250,7 @@ export function LabTrendChart({
               : 'optimal';
           const isAbnormal = tone !== 'optimal';
           const showLabel = isLatest || isAbnormal || activePoint === index;
-          const pointLabel = `${formatMonthShort(point.date, locale)} · ${formatValue(point.value)}${result.unit ? ` ${result.unit}` : ''} · ${point.episodeLabel}`;
+          const pointLabel = `${formatMonthShort(point.date, locale, t)} · ${formatValue(point.value)}${result.unit ? ` ${result.unit}` : ''} · ${t(point.episodeLabel)}`;
           return (
             <g
               key={`${point.episodeId}-${point.date ?? 'unknown'}-${index}`}
@@ -305,15 +309,15 @@ export function LabTrendChart({
               y={HEIGHT - 8}
               textAnchor={index === 0 ? 'start' : index === points.length - 1 ? 'end' : 'middle'}
             >
-              {formatMonthShort(point.date, locale)}
+              {formatMonthShort(point.date, locale, t)}
             </text>
           ) : null,
         )}
       </svg>
       <p className={styles.pointSummary} aria-live="polite">
         {active
-          ? `${formatMonthShort(active.point.date, locale)} · ${formatValue(active.point.value)}${result.unit ? ` ${result.unit}` : ''} · ${active.point.episodeLabel}`
-          : 'Hover or focus a chart point for draw details.'}
+          ? `${formatMonthShort(active.point.date, locale, t)} · ${formatValue(active.point.value)}${result.unit ? ` ${result.unit}` : ''} · ${t(active.point.episodeLabel)}`
+          : t('Hover or focus a chart point for draw details.')}
       </p>
     </div>
   );

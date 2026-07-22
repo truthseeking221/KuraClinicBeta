@@ -43,6 +43,7 @@ import {
 } from 'react';
 import { createPortal } from 'react-dom';
 
+import { useT } from '../foundations/i18n';
 import styles from './sortable.module.css';
 
 function joinClasses(...classes: Array<string | undefined | false>) {
@@ -95,7 +96,7 @@ export type SortableProps<T> = Omit<
 };
 
 export function Sortable<T>({
-  'aria-label': ariaLabel = 'Sortable items',
+  'aria-label': ariaLabel,
   children,
   className,
   getItemValue,
@@ -109,6 +110,8 @@ export function Sortable<T>({
   value,
   ...props
 }: SortableProps<T>) {
+  const t = useT();
+  const resolvedAriaLabel = ariaLabel ?? t('Sortable items');
   const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 8 } }),
@@ -174,7 +177,7 @@ export function Sortable<T>({
       <SortableContext items={itemIds} strategy={sortingStrategy}>
         <div
           {...props}
-          aria-label={ariaLabel}
+          aria-label={resolvedAriaLabel}
           className={joinClasses(styles.root, className)}
           data-dragging={activeId !== null ? 'true' : undefined}
           data-slot="sortable"
@@ -254,7 +257,7 @@ export type SortableItemHandleProps = ComponentPropsWithoutRef<'button'> & {
 };
 
 export function SortableItemHandle({
-  'aria-label': ariaLabel = 'Reorder item',
+  'aria-label': ariaLabel,
   children,
   className,
   cursor = true,
@@ -262,6 +265,7 @@ export function SortableItemHandle({
   type = 'button',
   ...props
 }: SortableItemHandleProps) {
+  const t = useT();
   const context = useContext(SortableItemContext);
   if (!context) throw new Error('SortableItemHandle must be used within SortableItem.');
 
@@ -273,7 +277,7 @@ export function SortableItemHandle({
       {...props}
       {...attributes}
       {...listeners}
-      aria-label={ariaLabel}
+      aria-label={ariaLabel ?? t('Reorder item')}
       className={joinClasses(
         styles.handle,
         cursor && styles.handleCursor,

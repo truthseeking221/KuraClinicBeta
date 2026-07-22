@@ -1,0 +1,25 @@
+import{c as e,i as t}from"./preload-helper-MclHqJXp.js";import{U as n,g as r}from"./iframe-DWdOCsUQ.js";import{$r as i,Qr as a,Rt as o,Xr as s,Zr as c,ai as l,ei as u,ni as d,t as f,ti as p}from"./ui-C9kmmzkH.js";var m,h,g,_,v,y=t((()=>{m=`_empty_g0him_1`,h=`_emptyHint_g0him_7`,g=`_itemBody_g0him_12`,_=`_itemHint_g0him_18`,v={empty:m,emptyHint:h,itemBody:g,itemHint:_}}));function b({description:e=`Search the destinations and actions available in your current workspace.`,emptyContent:t=C,hotkey:n=!0,onOpenChange:r,open:f,placeholder:m=`Exact phone, booking code, test, or action`,sections:h,title:g=`Search Kura`}){return(0,S.useEffect)(()=>{if(!n)return;function e(e){(e.metaKey||e.ctrlKey)&&e.key.toLowerCase()===`k`&&(e.preventDefault(),r(!f))}return window.addEventListener(`keydown`,e),()=>window.removeEventListener(`keydown`,e)},[n,r,f]),(0,x.jsx)(c,{description:e,onOpenChange:r,open:f,title:g,children:(0,x.jsxs)(s,{label:typeof g==`string`?g:`Global search`,loop:!0,children:[(0,x.jsx)(u,{placeholder:m}),(0,x.jsxs)(d,{children:[(0,x.jsx)(a,{children:t}),h.map(e=>(0,x.jsx)(i,{heading:e.heading,children:e.items.map(e=>(0,x.jsxs)(p,{disabled:e.disabled,keywords:e.keywords,onSelect:()=>{e.onSelect?.(),r(!1)},value:e.id,children:[e.icon,(0,x.jsxs)(`span`,{className:v.itemBody,children:[(0,x.jsx)(`span`,{children:e.label}),e.hint?(0,x.jsx)(`span`,{className:v.itemHint,children:e.hint}):null]}),e.shortcut?(0,x.jsx)(l,{children:(0,x.jsx)(o,{children:e.shortcut})}):null]},e.id))},e.id))]})]})})}var x,S,C,w=t((()=>{x=r(),S=e(n()),f(),y(),C=(0,x.jsxs)(`span`,{className:v.empty,children:[(0,x.jsx)(`span`,{children:`No authorised match.`}),(0,x.jsx)(`span`,{className:v.emptyHint,children:`Patients resolve by exact phone or booking code, or from recent patients. Names are never searchable across the registry.`})]}),b.__docgenInfo={description:`The shell-owned ⌘K palette: renders an already permission-filtered registry
+through the canonical Command component and owns the global hotkey. Records
+resolve through the reception doors only; selecting a consequential action
+starts its governed flow — nothing clinical completes inside the palette.`,methods:[],displayName:`GlobalSearch`,props:{sections:{required:!0,tsType:{name:`Array`,elements:[{name:`signature`,type:`object`,raw:`{
+  id: string;
+  heading: string;
+  items: GlobalSearchItem[];
+}`,signature:{properties:[{key:`id`,value:{name:`string`,required:!0}},{key:`heading`,value:{name:`string`,required:!0}},{key:`items`,value:{name:`Array`,elements:[{name:`signature`,type:`object`,raw:`{
+  id: string;
+  label: string;
+  /** Secondary line: destination context, masked identifiers, or the disabled reason. */
+  hint?: string;
+  icon?: ReactNode;
+  keywords?: string[];
+  shortcut?: string;
+  /** Unavailable actions stay visible; \`hint\` must then carry the gate reason. */
+  disabled?: boolean;
+  onSelect?: () => void;
+}`,signature:{properties:[{key:`id`,value:{name:`string`,required:!0}},{key:`label`,value:{name:`string`,required:!0}},{key:`hint`,value:{name:`string`,required:!1},description:`Secondary line: destination context, masked identifiers, or the disabled reason.`},{key:`icon`,value:{name:`ReactNode`,required:!1}},{key:`keywords`,value:{name:`Array`,elements:[{name:`string`}],raw:`string[]`,required:!1}},{key:`shortcut`,value:{name:`string`,required:!1}},{key:`disabled`,value:{name:`boolean`,required:!1},description:"Unavailable actions stay visible; `hint` must then carry the gate reason."},{key:`onSelect`,value:{name:`signature`,type:`function`,raw:`() => void`,signature:{arguments:[],return:{name:`void`}},required:!1}}]}}],raw:`GlobalSearchItem[]`,required:!0}}]}}],raw:`GlobalSearchSection[]`},description:`Permission-filtered registry supplied by the application shell.`},open:{required:!0,tsType:{name:`boolean`},description:``},onOpenChange:{required:!0,tsType:{name:`signature`,type:`function`,raw:`(open: boolean) => void`,signature:{arguments:[{type:{name:`boolean`},name:`open`}],return:{name:`void`}}},description:``},hotkey:{required:!1,tsType:{name:`boolean`},description:`Attach the global ⌘K / Ctrl+K listener. Exactly one owner per page.`,defaultValue:{value:`true`,computed:!1}},title:{required:!1,tsType:{name:`ReactNode`},description:``,defaultValue:{value:`'Search Kura'`,computed:!1}},description:{required:!1,tsType:{name:`ReactNode`},description:``,defaultValue:{value:`'Search the destinations and actions available in your current workspace.'`,computed:!1}},placeholder:{required:!1,tsType:{name:`string`},description:``,defaultValue:{value:`'Exact phone, booking code, test, or action'`,computed:!1}},emptyContent:{required:!1,tsType:{name:`ReactNode`},description:`Shown when nothing matches; defaults to explaining the reception doors.`,defaultValue:{value:`<span className={styles.empty}>
+  <span>No authorised match.</span>
+  <span className={styles.emptyHint}>
+    Patients resolve by exact phone or booking code, or from recent patients. Names are never
+    searchable across the registry.
+  </span>
+</span>`,computed:!1}}}}}));export{w as n,b as t};

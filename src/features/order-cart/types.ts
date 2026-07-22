@@ -7,31 +7,22 @@
  * strings, USD canonical, KHR only as a tender-side display.
  */
 
-export type OrderCartRole = 'doctor' | 'receptionist';
+import type { OrderIndication } from "../assessment/types";
+
+export type OrderCartRole = "doctor" | "receptionist";
 
 export type OrderCartItemKind =
-  | 'visit'
-  | 'lab'
-  | 'imaging'
-  | 'ecg'
-  | 'vitals'
-  | 'telecon';
+  "visit" | "lab" | "imaging" | "ecg" | "vitals" | "telecon";
 
 export type OrderCartItemState =
-  | 'default'
-  | 'locked'
-  | 'supplemental'
-  | 'cancelled';
+  "default" | "locked" | "supplemental" | "cancelled";
 
 /**
  * How a nested line relates to its container. Mirrors the catalog ontology
  * (package ⊃ profile ⊃ panel ⊃ channels; derived tests consume inputs).
  */
 export type OrderCartChildRelation =
-  | 'package_child'
-  | 'profile_child'
-  | 'panel_channel'
-  | 'derived_input';
+  "package_child" | "profile_child" | "panel_channel" | "derived_input";
 
 /**
  * A nested member of a container line. Children are facts of the container:
@@ -52,7 +43,7 @@ export type OrderCartItem = {
   name: string;
   code?: string;
   priceMinor: string;
-  currencyCode: 'USD';
+  currencyCode: "USD";
   quantity: number;
   state?: OrderCartItemState;
   meta?: string;
@@ -70,12 +61,12 @@ export type OrderCartPatient = {
   encounterLabel?: string;
 };
 
-export type OrderCartLifecycle = 'draft' | 'placed' | 'cancelled';
+export type OrderCartLifecycle = "draft" | "placed" | "cancelled";
 
 export type OrderCartPriceSummary = {
   subtotalMinor: string;
   patientDueMinor: string;
-  currencyCode: 'USD';
+  currencyCode: "USD";
   /** Injected config quote rendered as a secondary KHR value. */
   patientDueKhrMinor?: string;
   previousPaidMinor?: string;
@@ -94,10 +85,7 @@ export type OrderCartPriceSummary = {
  * are the proposed engine contract.
  */
 export type CartSuggestionKind =
-  | 'exact_match'
-  | 'upsell'
-  | 'redundancy'
-  | 'dependency_fill';
+  "exact_match" | "upsell" | "redundancy" | "dependency_fill";
 
 export type CartSuggestion = {
   id: string;
@@ -106,7 +94,7 @@ export type CartSuggestion = {
   detail?: string;
   /** Signed money effect, minor units: save (−) or add (+). */
   deltaMinor?: string;
-  deltaDirection?: 'save' | 'add';
+  deltaDirection?: "save" | "add";
   actionLabel: string;
 };
 
@@ -118,11 +106,11 @@ export type OrderCartRepricedLine = {
 };
 
 export type OrderCartPricing =
-  | { state: 'ready'; summary: OrderCartPriceSummary }
-  | { state: 'loading'; summary?: OrderCartPriceSummary }
-  | { state: 'error'; message?: string }
+  | { state: "ready"; summary: OrderCartPriceSummary }
+  | { state: "loading"; summary?: OrderCartPriceSummary }
+  | { state: "error"; message?: string }
   | {
-      state: 'stale';
+      state: "stale";
       summary: OrderCartPriceSummary;
       repricedLines: OrderCartRepricedLine[];
     };
@@ -141,22 +129,22 @@ export type OrderCartBlocker = {
   label: string;
   recovery?: string;
   actionLabel?: string;
-  tone?: 'neutral' | 'warning' | 'danger';
+  tone?: "neutral" | "warning" | "danger";
 };
 
 /* ── Collection & payment decisions (the Figma decision card) ── */
 
 /** Who draws the sample: the ordering clinician, or Kura staff. */
-export type CollectBy = 'self' | 'kura';
+export type CollectBy = "self" | "kura";
 
 /** Where Kura draws when it collects. */
-export type DrawSite = 'kura-psc' | 'patient-home';
+export type DrawSite = "kura-psc" | "patient-home";
 
 /** Doctor-side payment routes (ADR money law: doctor account may collect). */
-export type DoctorPaymentRoute = 'pay-now' | 'pay-later-kura';
+export type DoctorPaymentRoute = "pay-now" | "pay-later-kura";
 
 /** Reception-side tender methods (capture contract: cash is the real one). */
-export type ReceptionPaymentMethod = 'cash' | 'khqr' | 'pay-later';
+export type ReceptionPaymentMethod = "cash" | "khqr" | "pay-later";
 
 export type CollectionDecisions = {
   collectBy?: CollectBy;
@@ -166,19 +154,33 @@ export type CollectionDecisions = {
 };
 
 /** The decision card presentation state (Figma: Set up / expanded / Edit-View summary). */
-export type DecisionPanelState = 'unset' | 'expanded' | 'summary';
+export type DecisionPanelState = "unset" | "expanded" | "summary";
+
+/** One server-resolved, earning-eligible test line. */
+export type OrderCartEarningsLine = {
+  itemId: string;
+  /** Net-after-discount basis used by pricing-ms for this line. */
+  netBaseMinor: string;
+  /** Resolved per-test rate, in basis points. */
+  commissionBp: number;
+  /** Pre-derived earning for this line. The UI never recomputes this value. */
+  earnMinor: string;
+};
 
 /** Commission economics for the ordering clinician (doctor-banking contract). */
 export type OrderCartEarnings = {
-  /** Basis points, 0–10000, from the pricing commission matrix. */
-  commissionBp: number;
-  /** Pre-derived earn amount in minor units for the current subtotal. */
+  currencyCode: "USD";
+  /** Sum of the earning-eligible net line bases, supplied by the workflow. */
+  eligibleSubtotalMinor: string;
+  /** Server-derived estimate for the current order. */
   earnMinor: string;
+  /** Per-test resolution facts used only to explain the estimate. */
+  lines: OrderCartEarningsLine[];
 };
 
 /* ── Tube preparation (in-cart secondary view for self-draw) ── */
 
-export type TubePrepMethod = 'scan' | 'print';
+export type TubePrepMethod = "scan" | "print";
 
 export type OrderCartTube = {
   id: string;
@@ -196,7 +198,7 @@ export type OrderCartTube = {
 type BaseOrderCartWorkflow = {
   role: OrderCartRole;
   actorName: string;
-  access: 'allowed' | 'read-only' | 'denied';
+  access: "allowed" | "read-only" | "denied";
   blockers: OrderCartBlocker[];
 };
 
@@ -205,12 +207,21 @@ type BaseOrderCartWorkflow = {
  * `draft` (building + deciding) → `code-sent` | `collected` (Kura collects)
  * or `tubes` → `confirmed` (self-draw).
  */
-export type DoctorStage = 'draft' | 'code-sent' | 'collected' | 'tubes' | 'confirmed';
+export type DoctorStage =
+  "draft" | "code-sent" | "collected" | "tubes" | "confirmed";
 
 export type DoctorOrderCartWorkflow = BaseOrderCartWorkflow & {
-  role: 'doctor';
+  role: "doctor";
   stage: DoctorStage;
-  authority: 'verified' | 'explorer' | 'read-only';
+  authority: "verified" | "explorer" | "read-only";
+  /**
+   * The clinical reason this order exists, copied from the encounter that
+   * produced it. An order without one cannot be sent: a lab test is an act on
+   * a patient, and the record has to say what it was for. Absent means the
+   * doctor reached the cart without an assessment, not that the reason is
+   * optional.
+   */
+  indication?: OrderIndication;
   decisions: CollectionDecisions;
   panel: DecisionPanelState;
   /** "I have collected $X via cash or KHQR" — required before pay-now advances. */
@@ -223,14 +234,14 @@ export type DoctorOrderCartWorkflow = BaseOrderCartWorkflow & {
 };
 
 export type ReceptionPaymentStatus =
-  | 'not-started'
-  | 'due'
-  | 'waiting-khqr'
-  | 'paid'
-  | 'deferred'
-  | 'no-charge'
-  | 'refunded'
-  | 'voided';
+  | "not-started"
+  | "due"
+  | "waiting-khqr"
+  | "paid"
+  | "deferred"
+  | "no-charge"
+  | "refunded"
+  | "voided";
 
 export type ReceptionPaymentSummary = {
   status: ReceptionPaymentStatus;
@@ -241,13 +252,13 @@ export type ReceptionPaymentSummary = {
 
 export type OrderCartPrescriber = {
   name: string;
-  status: 'verified' | 'missing' | 'expired';
+  status: "verified" | "missing" | "expired";
 };
 
 export type ReceptionistOrderCartWorkflow = BaseOrderCartWorkflow & {
-  role: 'receptionist';
-  stage: 'order-review' | 'payment' | 'ready-to-check-in' | 'checked-in';
-  origin: 'doctor-order' | 'on-behalf';
+  role: "receptionist";
+  stage: "order-review" | "payment" | "ready-to-check-in" | "checked-in";
+  origin: "doctor-order" | "on-behalf";
   prescriber?: OrderCartPrescriber;
   payerLabel?: string;
   payment: ReceptionPaymentSummary;
@@ -263,8 +274,7 @@ export type ReceptionistOrderCartWorkflow = BaseOrderCartWorkflow & {
 };
 
 export type OrderCartWorkflow =
-  | DoctorOrderCartWorkflow
-  | ReceptionistOrderCartWorkflow;
+  DoctorOrderCartWorkflow | ReceptionistOrderCartWorkflow;
 
 export type OrderCartPrimaryAction = {
   label: string;

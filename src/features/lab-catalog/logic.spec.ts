@@ -14,6 +14,22 @@ describe('lab catalog picker logic', () => {
     expect(LAB_CATALOG_CATEGORIES.reduce((sum, category) => sum + category.count, 0)).toBe(67);
   });
 
+  it('carries the Legacy DCM preview contract across the full catalog', () => {
+    expect(LAB_CATALOG_TESTS.every((test) => test.preview)).toBe(true);
+    expect(
+      LAB_CATALOG_TESTS.find(
+        (test) => test.testCatalogId === 'fasting-glucose',
+      )?.preview,
+    ).toMatchObject({
+      preparation: 'Fasting 9–12h',
+      specimen: 'Serum/plasma',
+      turnaround: 'Same-day',
+      referenceRange: '70–99 mg/dL',
+      priceMinor: '500',
+      earningMinor: '300',
+    });
+  });
+
   it('matches the backend-supported name, code, and abbreviation fields', () => {
     const hba1c = LAB_CATALOG_TESTS.find((test) => test.testCatalogId === 'hba1c');
     expect(hba1c).toBeDefined();

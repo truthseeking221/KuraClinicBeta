@@ -76,45 +76,4 @@
   top: calc(var(--space-3) - var(--space-1-5));
   right: calc(var(--space-3) - var(--space-1-5));
   z-index: 1;
-  display: inline-flex;
-  width: var(--control-h-sm);
-  min-width: var(--control-h-sm);
-  min-height: var(--control-h-sm);
-  align-items: center;
-  justify-content: center;
-  border: 0;
-  border-radius: var(--radius-control);
-  padding: 0;
-  background: transparent;
-  color: var(--color-text-secondary);
-  transition:
-    background-color var(--motion-color),
-    color var(--motion-color),
-    box-shadow var(--motion-color);
-}
-
-.dismiss > svg {
-  width: var(--space-3);
-  height: var(--space-3);
-}
-
-.dismiss:hover {
-  cursor: pointer;
-  background: var(--muted);
-  color: var(--color-text-primary);
-}
-
-.dismiss:active {
-  background: var(--color-surface-sunken);
-}
-
-.dismiss:focus-visible {
-  outline: none;
-  box-shadow: var(--elevation-focus);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .dismiss {
-    transition: none;
-  }
 }

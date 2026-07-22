@@ -12,8 +12,9 @@ import type {
   SyntheticEvent,
 } from 'react';
 
-import { SearchIcon, XIcon } from './icons';
-import { IconButton } from './icon-button';
+import { useT } from '../foundations/i18n';
+import { CloseButton } from './close-button';
+import { SearchIcon } from './icons';
 import styles from './command.module.css';
 
 function joinClasses(...classes: Array<string | undefined | false>) {
@@ -61,12 +62,16 @@ export function CommandDialog({
   closeOnBackdrop = true,
   closeOnEscape = true,
   defaultOpen = false,
-  description = 'Search the destinations and actions available in your current workspace.',
+  description,
   initialFocusRef,
   onOpenChange,
   open,
-  title = 'Search Kura',
+  title,
 }: CommandDialogProps) {
+  const t = useT();
+  const resolvedDescription =
+    description ?? t('Search the destinations and actions available in your current workspace.');
+  const resolvedTitle = title ?? t('Search Kura');
   const descriptionId = useId().replaceAll(':', '');
   const titleId = useId().replaceAll(':', '');
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -162,21 +167,21 @@ export function CommandDialog({
       onClose={handleClose}
       onKeyDown={handleKeyDown}
     >
-      <section className={styles.panel} aria-label={typeof title === 'string' ? title : undefined}>
+      <section
+        className={styles.panel}
+        aria-label={typeof resolvedTitle === 'string' ? resolvedTitle : undefined}
+      >
         <header className={styles.header}>
           <div className={styles.heading}>
-            <h2 id={`command-title-${titleId}`} className={styles.title}>{title}</h2>
-            <p id={`command-description-${descriptionId}`} className={styles.description}>{description}</p>
+            <h2 id={`command-title-${titleId}`} className={styles.title}>{resolvedTitle}</h2>
+            <p id={`command-description-${descriptionId}`} className={styles.description}>{resolvedDescription}</p>
           </div>
-          <IconButton
-            aria-label="Close search"
+          <CloseButton
+            aria-label={t('Close search')}
             className={styles.close}
-            size="micro"
-            variant="tertiary"
             onClick={() => dialogRef.current?.close()}
-          >
-            <XIcon aria-hidden="true" />
-          </IconButton>
+            size="md"
+          />
         </header>
         {children}
       </section>

@@ -48,6 +48,7 @@ const meta = {
   },
   argTypes: {
     size: { control: 'radio', options: ['sm', 'md', 'lg'] },
+    variant: { control: 'radio', options: ['filled', 'surface'] },
     disabled: { control: 'boolean' },
     readOnly: { control: 'boolean' },
     required: { control: 'boolean' },
@@ -94,6 +95,37 @@ export const Default: Story = {
     const input = canvas.getByLabelText('Patient name');
     await userEvent.type(input, 'Sokha Chan');
     await expect(input).toHaveValue('Sokha Chan');
+  },
+};
+
+/** The white surface variant keeps a field distinct inside a gray tray. */
+export const SurfaceOnTray: Story = {
+  args: {
+    label: 'Tendered (USD)',
+    placeholder: '0.00',
+    variant: 'surface',
+  },
+  decorators: [
+    (Story) => (
+      <div
+        style={{
+          background: 'var(--color-surface-2)',
+          borderRadius: 'var(--radius-card-surface)',
+          padding: 'var(--space-inset-card)',
+          width: 'min(320px, 90vw)',
+        }}
+      >
+        <Story />
+      </div>
+    ),
+  ],
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const input = canvas.getByLabelText('Tendered (USD)');
+    await expect(input.closest('[data-slot="input-control"]')).toHaveAttribute(
+      'data-variant',
+      'surface',
+    );
   },
 };
 

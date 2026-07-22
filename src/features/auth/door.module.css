@@ -32,20 +32,11 @@
 }
 
 .methodGroup {
-  display: flex;
   min-width: 0;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: var(--space-1);
 }
 
 .methodGroup > :first-child {
   width: 100%;
-}
-
-.methodSwitch {
-  align-self: flex-start;
-  padding-inline: 0;
 }
 
 .divider {

@@ -4,7 +4,7 @@ import { expect, userEvent, within } from 'storybook/test';
 import { CalendarIcon, ClockIcon, HistoryIcon, SegmentedToggle, UserMultipleIcon } from './index';
 
 const meta = {
-  title: 'Design System/Patterns/SegmentedToggle',
+  title: 'Design System/Patterns/Segmented Toggle',
   component: SegmentedToggle,
   tags: ['autodocs', 'source-kura', 'adapted-kura'],
   parameters: {
@@ -80,6 +80,33 @@ export const FilterMode: Story = {
       { value: 'review', label: 'Needs review' },
     ],
     defaultValue: 'all',
+  },
+};
+
+/** Rapid changes retarget the same indicator instead of cross-fading two selected surfaces. */
+export const RapidRetargeting: Story = {
+  args: {
+    label: 'Lab unit system',
+    options: [
+      { value: 'conventional', label: 'Conventional' },
+      { value: 'si', label: 'SI' },
+    ],
+    defaultValue: 'conventional',
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const conventional = canvas.getByRole('radio', { name: 'Conventional' });
+    const si = canvas.getByRole('radio', { name: 'SI' });
+
+    await userEvent.click(si);
+    await userEvent.click(conventional);
+    await userEvent.click(si);
+
+    await expect(si).toHaveAttribute('aria-checked', 'true');
+    await expect(conventional).toHaveAttribute('aria-checked', 'false');
+    await expect(
+      canvasElement.querySelectorAll('[data-slot="segmented-toggle-indicator"]'),
+    ).toHaveLength(1);
   },
 };
 

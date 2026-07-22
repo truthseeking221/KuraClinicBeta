@@ -22,25 +22,43 @@
   flex-direction: column;
 }
 
+/* Table grammar: a grey header band on the white container, hairlines above and
+   below, and white data rows. The band shares the card's inset so the section
+   title, the card title, and every analyte name sit on one left edge. */
+/* `inset="none"` drops the disclosure's own 12px gutter; the attribute is
+   repeated here so this card inset wins over it and the band, the card title,
+   and every analyte name land on one left edge. */
+.sectionTrigger[data-inset][data-slot='collapsible-trigger'] {
+  padding-inline: var(--space-inset-card);
+}
+
+/* No side borders: the band spans the card, and its 1px sides would push the
+   section label one pixel off the shared left edge. Focus stays visible
+   through the trigger's focus ring. */
 .sectionTrigger {
+  border-radius: 0;
+  border-inline-width: 0;
   border-bottom: 1px solid var(--color-border);
   background: var(--color-surface-2);
+}
+
+/* Rows own their vertical rhythm; the disclosure must not add a trailing gap
+   between the last row and the next section band. */
+.section [data-slot='collapsible-content'] {
+  padding-block-end: 0;
+}
+
+.section + .section .sectionTrigger {
+  border-top: 1px solid var(--color-border);
 }
 
 :global([data-density='compact']) .sectionTrigger {
   min-height: var(--touch-target-min);
 }
 
-.sectionLabel {
-  display: flex;
-  min-width: 0;
-  flex: 1;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-1) var(--space-3);
-}
-
-.sectionTitle {
+/* A flowsheet section header labels a data region rather than a form field, so
+   it keeps the table-header treatment on the canonical trigger's text slot. */
+.sectionTrigger [data-slot='collapsible-trigger-text'] {
   color: var(--color-text-secondary);
   font-size: var(--type-xs);
   font-weight: var(--weight-bold);
@@ -48,12 +66,14 @@
   text-transform: uppercase;
 }
 
-.sectionMeta {
-  color: var(--color-text-secondary);
+.sectionTrigger [data-slot='collapsible-trigger-meta'] {
   font-size: var(--type-xs);
   font-weight: var(--weight-medium);
-  letter-spacing: normal;
-  text-transform: none;
+}
+
+.rows {
+  display: flex;
+  flex-direction: column;
 }
 
 .empty {

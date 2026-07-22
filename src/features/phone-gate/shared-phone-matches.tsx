@@ -1,5 +1,6 @@
 'use client';
 
+import { useT } from '../../components/foundations/i18n';
 import { Alert, AlertDescription, AlertTitle, Radio, RadioGroup } from '../../components/ui';
 
 import { PHONE_GATE_COPY } from './logic';
@@ -25,16 +26,20 @@ export function SharedPhoneMatches({
   onSelect,
   selectedId,
 }: SharedPhoneMatchesProps) {
+  const t = useT();
+
   return (
     <div className={styles.stack}>
       <Alert tone="warning">
-        <AlertTitle>This number is linked to {candidates.length} patients</AlertTitle>
-        <AlertDescription>{PHONE_GATE_COPY.identityCaveat}</AlertDescription>
+        <AlertTitle>
+          {t('This number is linked to')} {candidates.length} {t('patients')}
+        </AlertTitle>
+        <AlertDescription>{t(PHONE_GATE_COPY.identityCaveat)}</AlertDescription>
       </Alert>
       <RadioGroup
         className={styles.candidates}
         error={error ?? undefined}
-        legend="Matching patients"
+        legend={t('Matching patients')}
         onValueChange={onSelect}
         required
         value={selectedId ?? undefined}

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import type { KeyboardEvent } from 'react';
 
+import { useT } from '../../components/foundations/i18n';
 import {
   Button,
   Checkbox,
@@ -54,6 +55,7 @@ export type CourierPickupRowProps = { initialPickup: CourierPickup };
  * logistics needs at least one day, so Save blocks until one is selected.
  */
 export function CourierPickupRow({ initialPickup }: CourierPickupRowProps) {
+  const t = useT();
   const [pickup, setPickup] = useState(initialPickup);
   const [draft, setDraft] = useState(initialPickup);
   const [editing, setEditing] = useState(false);
@@ -69,7 +71,7 @@ export function CourierPickupRow({ initialPickup }: CourierPickupRowProps) {
     if (error) return;
     setPickup(draft);
     setEditing(false);
-    toast.success('Courier pickup updated');
+    toast.success(t('Courier pickup updated'));
   };
 
   const handleKeyDown = (event: KeyboardEvent) => {
@@ -91,10 +93,10 @@ export function CourierPickupRow({ initialPickup }: CourierPickupRowProps) {
             size="sm"
             variant="ghost"
           >
-            Change route
+            {t('Change route')}
           </Button>
         }
-        label="Courier pickup"
+        label={t('Courier pickup')}
         value={formatCourierPickup(pickup)}
       />
     );
@@ -103,12 +105,12 @@ export function CourierPickupRow({ initialPickup }: CourierPickupRowProps) {
   return (
     <Item className={`${styles.row} ${styles.settingGrid}`} onKeyDown={handleKeyDown} size="sm">
       <ItemContent className={styles.rowLabelCell}>
-        <ItemTitle className={styles.rowLabel}>Courier pickup</ItemTitle>
+        <ItemTitle className={styles.rowLabel}>{t('Courier pickup')}</ItemTitle>
       </ItemContent>
       <div className={styles.editCell}>
         <div className={styles.editorFields}>
           <Select
-            label="Route"
+            label={t('Route')}
             onValueChange={(value) => {
               if (value) setDraft({ ...draft, routeId: value as CourierRouteId });
             }}
@@ -116,7 +118,7 @@ export function CourierPickupRow({ initialPickup }: CourierPickupRowProps) {
             value={draft.routeId}
           />
           <Select
-            label="Pickup time"
+            label={t('Pickup time')}
             onValueChange={(value) => {
               if (value) setDraft({ ...draft, time: value as CourierTime });
             }}
@@ -124,7 +126,7 @@ export function CourierPickupRow({ initialPickup }: CourierPickupRowProps) {
             value={draft.time}
           />
           <fieldset className={styles.dayFieldset}>
-            <legend className={styles.dayLegend}>Pickup days</legend>
+            <legend className={styles.dayLegend}>{t('Pickup days')}</legend>
             <div className={styles.dayChecks}>
               {COURIER_DAYS.map((day) => (
                 <Checkbox
@@ -145,17 +147,17 @@ export function CourierPickupRow({ initialPickup }: CourierPickupRowProps) {
             </div>
             {error ? (
               <p className={styles.editorError} role="alert">
-                {error}
+                {t(error)}
               </p>
             ) : null}
           </fieldset>
         </div>
         <div className={styles.editControls}>
           <Button disabled={Boolean(error)} onClick={save} size="sm" variant="primary">
-            Save
+            {t('Save')}
           </Button>
           <Button onClick={cancel} size="sm" variant="ghost">
-            Cancel
+            {t('Cancel')}
           </Button>
         </div>
       </div>
@@ -183,10 +185,16 @@ export type HoursRowProps = { initialHours: WeekHours };
  * "Custom days". Open days must close after they open.
  */
 export function HoursRow({ initialHours }: HoursRowProps) {
+  const t = useT();
   const [hours, setHours] = useState(initialHours);
   const [draft, setDraft] = useState(initialHours);
   const [preset, setPreset] = useState<HoursPresetId>('monToSat');
   const [editing, setEditing] = useState(false);
+
+  const presetOptions = PRESET_OPTIONS.map((option) => ({
+    ...option,
+    label: t(option.label),
+  }));
 
   const error = hoursError(draft);
 
@@ -199,7 +207,7 @@ export function HoursRow({ initialHours }: HoursRowProps) {
     if (error) return;
     setHours(draft);
     setEditing(false);
-    toast.success('Hours updated');
+    toast.success(t('Hours updated'));
   };
 
   const handleKeyDown = (event: KeyboardEvent) => {
@@ -221,11 +229,11 @@ export function HoursRow({ initialHours }: HoursRowProps) {
             size="sm"
             variant="ghost"
           >
-            Edit hours
+            {t('Edit hours')}
           </Button>
         }
-        label="Hours"
-        sub="Shown to patients in the directory"
+        label={t('Hours')}
+        sub={t('Shown to patients in the directory')}
         value={formatHours(hours)}
       />
     );
@@ -234,19 +242,19 @@ export function HoursRow({ initialHours }: HoursRowProps) {
   return (
     <Item className={`${styles.row} ${styles.settingGrid}`} onKeyDown={handleKeyDown} size="sm">
       <ItemContent className={styles.rowLabelCell}>
-        <ItemTitle className={styles.rowLabel}>Hours</ItemTitle>
+        <ItemTitle className={styles.rowLabel}>{t('Hours')}</ItemTitle>
       </ItemContent>
       <div className={styles.editCell}>
         <div className={styles.editorFields}>
           <SegmentedToggle
-            label="Hours preset"
+            label={t('Hours preset')}
             labelVisible
             onValueChange={(value) => {
               const next = value as HoursPresetId;
               setPreset(next);
               setDraft(applyHoursPreset(next, draft));
             }}
-            options={PRESET_OPTIONS}
+            options={presetOptions}
             value={preset}
           />
           {preset === 'custom' ? (
@@ -264,12 +272,12 @@ export function HoursRow({ initialHours }: HoursRowProps) {
                         });
                       }}
                     >
-                      {day.label}
+                      {t(day.label)}
                     </Checkbox>
                     {dayHours.open ? (
                       <div className={styles.dayTimes}>
                         <Select
-                          aria-label={`${day.label} opens at`}
+                          aria-label={`${t(day.label)} ${t('opens at')}`}
                           onValueChange={(value) => {
                             if (value) {
                               setDraft({
@@ -281,11 +289,13 @@ export function HoursRow({ initialHours }: HoursRowProps) {
                           options={HOUR_SELECT_OPTIONS}
                           value={dayHours.from}
                         />
+                        {/* Reads with the 24h times either side, which stay
+                            in Latin digits in every language. */}
                         <span aria-hidden="true" className={styles.dayTimesTo}>
                           to
                         </span>
                         <Select
-                          aria-label={`${day.label} closes at`}
+                          aria-label={`${t(day.label)} ${t('closes at')}`}
                           onValueChange={(value) => {
                             if (value) {
                               setDraft({
@@ -299,7 +309,7 @@ export function HoursRow({ initialHours }: HoursRowProps) {
                         />
                       </div>
                     ) : (
-                      <span className={styles.rowSub}>Closed</span>
+                      <span className={styles.rowSub}>{t('Closed')}</span>
                     )}
                   </div>
                 );
@@ -309,16 +319,16 @@ export function HoursRow({ initialHours }: HoursRowProps) {
           <p className={styles.editorPreview}>{formatHours(draft)}</p>
           {error ? (
             <p className={styles.editorError} role="alert">
-              {error}
+              {t(error)}
             </p>
           ) : null}
         </div>
         <div className={styles.editControls}>
           <Button disabled={Boolean(error)} onClick={save} size="sm" variant="primary">
-            Save
+            {t('Save')}
           </Button>
           <Button onClick={cancel} size="sm" variant="ghost">
-            Cancel
+            {t('Cancel')}
           </Button>
         </div>
       </div>

@@ -3,6 +3,7 @@
 import { useId, useMemo, useState } from 'react';
 import type { CSSProperties, FormEvent } from 'react';
 
+import { useT } from '../foundations/i18n';
 import { StarIcon } from './icons';
 import styles from './rating.module.css';
 
@@ -47,7 +48,7 @@ export function Rating({
   defaultRating = 0,
   disabled = false,
   editable = false,
-  label = 'Rating',
+  label,
   max = 5,
   name,
   onRatingChange,
@@ -58,6 +59,8 @@ export function Rating({
   size = 'md',
   step = 1,
 }: RatingProps) {
+  const t = useT();
+  const resolvedLabel = label ?? t('Rating');
   if (!Number.isInteger(max) || max < 1 || max > 10) {
     throw new RangeError('Rating max must be an integer between 1 and 10.');
   }
@@ -114,7 +117,7 @@ export function Rating({
                     onPointerEnter={() => setPreviewRating(candidate)}
                   >
                     <input
-                      aria-label={`${formatRating(candidate)} out of ${max}`}
+                      aria-label={`${formatRating(candidate)} ${t('out of')} ${max}`}
                       checked={value === candidate}
                       className={styles.input}
                       disabled={disabled}
@@ -144,7 +147,7 @@ export function Rating({
         data-slot="rating"
         disabled={disabled}
       >
-        <legend className={styles.legend}>{label}</legend>
+        <legend className={styles.legend}>{resolvedLabel}</legend>
         <span className={styles.row}>
           {stars}
           {showValue ? (
@@ -165,7 +168,7 @@ export function Rating({
       data-slot="rating"
     >
       <span className={styles.row}>
-        <span role="img" aria-label={`${label}: ${formatRating(value)} out of ${max}`}>
+        <span role="img" aria-label={`${resolvedLabel}: ${formatRating(value)} ${t('out of')} ${max}`}>
           {stars}
         </span>
         {showValue ? <span className={styles.value}>{formatRating(value)} / {max}</span> : null}

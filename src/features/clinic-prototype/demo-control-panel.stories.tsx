@@ -16,7 +16,7 @@ const meta = {
         decision: 'COMPOSE',
         owner: 'src/features/clinic-prototype',
         evidence:
-          'Presenter controls for the prototype app header. Composed from Popover, Select, Badge, Button, Separator; licence options come from the canonical VERIFICATION_META (seven-state lifecycle), scenario/episode options mirror the home and results demo-data fixtures. Pure props — the app wires session and navigation.',
+          'Presenter control for the prototype app header. Composed from Popover, Badge, and Button. Scenario selection remains owned by the onboarding phone registry; the app only clears the session and returns to the Door.',
         exclusions: ['No product functionality — this is demo tooling and is labelled as such.'],
       },
       responsive: { strategy: ['FLUID'], minimumWidth: 320 },
@@ -25,16 +25,12 @@ const meta = {
     docs: {
       description: {
         component:
-          'The "Demo" popover in the prototype shell header: walk the seven licence states, jump home scenarios and results episodes, reset the demo session. Every option originates from canonical fixtures — the panel invents no states.',
+          'The "Demo" popover restarts the onboarding-driven demo. It deliberately has no state selectors: every scenario begins at the Door with a registered phone.',
       },
     },
   },
   args: {
-    licence: 'verified',
-    onLicenceChange: fn(),
-    onJumpHomeScenario: fn(),
-    onJumpResultsEpisode: fn(),
-    onReset: fn(),
+    onRestart: fn(),
   },
 } satisfies Meta<typeof DemoControlPanel>;
 
@@ -60,20 +56,9 @@ export const OpenPanel: Story = {
 
     await expect(await screen.findByText('Demo controls')).toBeVisible();
     await expect(screen.getByText('Prototype')).toBeVisible();
-    await expect(screen.getByText('State persists in this browser only.')).toBeVisible();
+    await expect(screen.getByText('Clears demo-only browser state.')).toBeVisible();
 
-    await userEvent.click(screen.getByRole('button', { name: 'Reset demo' }));
-    await expect(args.onReset).toHaveBeenCalled();
-  },
-};
-
-export const JumpScenario: Story = {
-  play: async ({ canvasElement, args }) => {
-    const canvas = within(canvasElement);
-    const screen = body(canvasElement);
-    await userEvent.click(canvas.getByRole('button', { name: 'Demo' }));
-    await userEvent.click(await screen.findByRole('combobox', { name: /Home scenario/ }));
-    await userEvent.click(await screen.findByRole('option', { name: 'Critical day' }));
-    await expect(args.onJumpHomeScenario).toHaveBeenCalledWith('critical-day');
+    await userEvent.click(screen.getByRole('button', { name: 'Choose another scenario' }));
+    await expect(args.onRestart).toHaveBeenCalled();
   },
 };

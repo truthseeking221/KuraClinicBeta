@@ -65,63 +65,6 @@
     var(--color-surface-bg);
 }
 
-:global([data-theme='dark']) .shell {
-  background:
-    radial-gradient(
-      66% 52% at 50% 45%,
-      rgba(var(--color-auth-surface-rgb), 0.68) 0%,
-      rgba(var(--color-auth-surface-rgb), 0.28) 48%,
-      transparent 72%
-    ),
-    linear-gradient(
-      115deg,
-      transparent 12%,
-      rgba(var(--color-auth-ambient-primary-rgb), 0.06) 38%,
-      rgba(var(--color-auth-ambient-primary-rgb), 0.08) 50%,
-      rgba(var(--color-auth-ambient-light-rgb), 0.04) 64%,
-      transparent 84%
-    ),
-    conic-gradient(
-      from 210deg at 85% -20%,
-      transparent 0deg,
-      rgba(var(--color-auth-ambient-light-rgb), 0.08) 80deg,
-      rgba(var(--color-auth-ambient-primary-rgb), 0.12) 150deg,
-      rgba(var(--color-auth-ambient-primary-rgb), 0.05) 230deg,
-      transparent 330deg
-    ),
-    radial-gradient(
-      95% 80% at 10% -12%,
-      rgba(var(--color-auth-ambient-light-rgb), 0.13) 0%,
-      rgba(var(--color-auth-ambient-light-rgb), 0.06) 38%,
-      transparent 78%
-    ),
-    radial-gradient(
-      110% 90% at 112% 30%,
-      rgba(var(--color-auth-ambient-primary-rgb), 0.17) 0%,
-      rgba(var(--color-auth-ambient-primary-rgb), 0.07) 40%,
-      transparent 80%
-    ),
-    radial-gradient(
-      90% 70% at -10% 78%,
-      rgba(var(--color-auth-ambient-light-rgb), 0.09) 0%,
-      rgba(var(--color-auth-ambient-light-rgb), 0.04) 42%,
-      transparent 74%
-    ),
-    radial-gradient(
-      80% 46% at 62% 114%,
-      rgba(var(--color-auth-ambient-deep-rgb), 0.18) 0%,
-      rgba(var(--color-auth-ambient-primary-rgb), 0.06) 45%,
-      transparent 76%
-    ),
-    linear-gradient(
-      168deg,
-      rgba(var(--color-auth-ambient-light-rgb), 0.04) 0%,
-      rgba(var(--color-auth-ambient-primary-rgb), 0.03) 50%,
-      rgba(var(--color-auth-ambient-primary-rgb), 0.06) 100%
-    ),
-    var(--color-surface-bg);
-}
-
 /* Focal panels float above the ambient gradient, so they take a white
    surface with real elevation. The gray tray card is a grouping device for
    the white app canvas; against the brand tint it reads as disabled. */

@@ -72,6 +72,8 @@ Do not work around a missing icon. Do not import another icon library, deep-impo
 
 ## Apply the component build contract
 
+Before placing any container, choosing any background, or reaching for a shadow, read [the Kura surface direction](references/kura-surface-direction.md) completely. It is the visual law for every Kura surface: white page; grouping by proximity, alignment, spacing, and typography first; flat gray trays only for groups that need a distinct functional region; white tiles with one feather shadow; and colour reserved for data, status, and the single primary action.
+
 Before creating, adapting, registering, reviewing, or approving any reusable component, Storybook story, Storybook flow, ReUI or shadcn intake, or BoardUI-style finish, read [the ReUI × BoardUI × Kura component build guide](references/reui-boardui-kura-component-build-guide.md) completely and follow it as a mandatory delivery contract.
 
 Keep the three responsibilities distinct:

@@ -48,6 +48,9 @@ jobs:
       - name: Check ReUI ownership
         run: npm run check:reui-ownership
 
+      - name: Check CloseButton usage
+        run: npm run check:close-button-usage
+
       - name: Build
         run: npm run build
 

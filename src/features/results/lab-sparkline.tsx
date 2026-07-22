@@ -2,6 +2,7 @@
 
 import type { ComponentPropsWithoutRef } from 'react';
 
+import { useT } from '../../components/foundations/i18n';
 import {
   flagFor,
   formatMonthShort,
@@ -39,6 +40,7 @@ function markerTone(result: LabAnalyteResult): RangeTone {
 }
 
 export function LabSparkline({ className, result, ...props }: LabSparklineProps) {
+  const t = useT();
   const dated = resultSeries(result)
     .map((point) => ({ point, timestamp: parseLabTimestamp(point.date) }))
     .filter(
@@ -96,7 +98,7 @@ export function LabSparkline({ className, result, ...props }: LabSparklineProps)
   const bandBottom = normalLow != null ? yFor(normalLow) : HEIGHT - PAD_Y;
   const lastDrawn = [...points].reverse().find((point) => point.y != null);
   const description = dated
-    .map(({ point }) => `${formatMonthShort(point.date)}: ${formatValue(point.value)}`)
+    .map(({ point }) => `${formatMonthShort(point.date, 'en-US', t)}: ${formatValue(point.value)}`)
     .join(', ');
 
   return (
@@ -110,7 +112,9 @@ export function LabSparkline({ className, result, ...props }: LabSparklineProps)
         width={WIDTH}
         height={HEIGHT}
         role="img"
-        aria-label={`${result.name} trend — ${description}`}
+        aria-label={t('{name} trend — {series}')
+          .replace('{name}', result.name)
+          .replace('{series}', description)}
       >
         {normalTiers.length > 0 ? (
           <rect
@@ -130,26 +134,18 @@ export function LabSparkline({ className, result, ...props }: LabSparklineProps)
             points={segment.map((point) => `${point.x},${point.y}`).join(' ')}
           />
         ))}
-        {points.map((point, index) =>
-          point.y == null ? null : point === lastDrawn ? (
-            <circle
-              key={`${point.date ?? 'unknown'}-${index}`}
-              className={styles.latestDot}
-              data-tone={markerTone(result)}
-              cx={point.x}
-              cy={point.y}
-              r={3}
-            />
-          ) : (
-            <circle
-              key={`${point.date ?? 'unknown'}-${index}`}
-              className={styles.pointDot}
-              cx={point.x}
-              cy={point.y}
-              r={1.7}
-            />
-          ),
-        )}
+        {/* Only the latest reading gets a marker: at this size a dot per
+            point turns the trend into noise, and the line already carries
+            every intermediate value. */}
+        {lastDrawn && lastDrawn.y != null ? (
+          <circle
+            className={styles.latestDot}
+            data-tone={markerTone(result)}
+            cx={lastDrawn.x}
+            cy={lastDrawn.y}
+            r={2.8}
+          />
+        ) : null}
       </svg>
     </span>
   );

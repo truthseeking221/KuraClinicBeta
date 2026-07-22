@@ -9,6 +9,7 @@ import {
   EmptyStateHeader,
   EmptyStateTitle,
 } from '../../components/shared';
+import { useT } from '../../components/foundations/i18n';
 import { Alert, AlertAction, AlertDescription, AlertTitle, Button } from '../../components/ui';
 
 import { Door } from './door';
@@ -26,7 +27,7 @@ import styles from './first-sign-in-flow.module.css';
 
 type FlowStage =
   | { kind: 'door' }
-  | { kind: 'wizard' }
+  | { kind: 'wizard'; verifiedIdentifier?: string }
   | {
       kind: 'gate';
       workspaces: readonly GateWorkspace[];
@@ -49,6 +50,7 @@ type FlowStage =
  * licence state into a workspace-wide EXPLORER/PRACTICE mode.
  */
 export function FirstSignInFlow() {
+  const t = useT();
   const [stage, setStage] = useState<FlowStage>({ kind: 'door' });
 
   function ownCabinet(result: WizardResult): GateWorkspace {
@@ -64,10 +66,10 @@ export function FirstSignInFlow() {
   if (stage.kind === 'door') {
     return (
       <Door
-        onRouted={(route) =>
+        onRouted={(route, identifier) =>
           setStage(
             route === 'wizard'
-              ? { kind: 'wizard' }
+              ? { kind: 'wizard', verifiedIdentifier: identifier }
               : { kind: 'gate', workspaces: DEMO_WORKSPACES, fresh: false },
           )
         }
@@ -78,11 +80,15 @@ export function FirstSignInFlow() {
   if (stage.kind === 'wizard') {
     return (
       <OnboardingWizard
-        entry={{
-          isInvitee: false,
-          phoneVerified: true,
-          verifiedPhone: '+85598111222',
-        }}
+        entry={
+          stage.verifiedIdentifier?.startsWith('+')
+            ? {
+                isInvitee: false,
+                phoneVerified: true,
+                verifiedPhone: stage.verifiedIdentifier,
+              }
+            : { isInvitee: false, phoneVerified: false }
+        }
         onDone={(result) =>
           setStage({
             kind: 'gate',
@@ -150,24 +156,28 @@ export function FirstSignInFlow() {
       <div className={styles.appContent}>
         {stage.showLicencePrompt ? (
           <Alert className={styles.stickyPrompt} tone="info">
-            <AlertTitle>Verify your medical licence</AlertTitle>
+            <AlertTitle>{t('Verify your medical licence')}</AlertTitle>
             <AlertDescription>
-              Catalog and branch prices remain available. New self-attributed clinic orders
-              unlock when your professional credential becomes live.
+              {t(
+                'You can browse the catalog and view prices. Your licence cannot be used for new clinic orders until it is approved.',
+              )}
             </AlertDescription>
             <AlertAction>
               <Button size="sm" variant="outline">
-                Upload licence
+                {t('Upload licence')}
               </Button>
             </AlertAction>
           </Alert>
         ) : null}
         <EmptyState>
           <EmptyStateHeader>
-            <EmptyStateTitle>Welcome to {stage.workspace.name}</EmptyStateTitle>
+            <EmptyStateTitle>
+              {t('Welcome to')} {stage.workspace.name}
+            </EmptyStateTitle>
             <EmptyStateDescription>
-              Your scoped workspace is ready. Browse the catalog and prices now; clinic order
-              placement still requires an explicit capability and a live attributed prescriber.
+              {t(
+                'Browse the catalog and view prices. Order access depends on your permissions and the prescriber selected for the order.',
+              )}
             </EmptyStateDescription>
           </EmptyStateHeader>
         </EmptyState>
@@ -178,6 +188,7 @@ export function FirstSignInFlow() {
 
 /** Invite-link onboarding lands directly in the inviting workspace. */
 export function InviteeOnboardingFlow() {
+  const t = useT();
   const [result, setResult] = useState<WizardResult | null>(null);
   const workspace = DEMO_WORKSPACES[0];
 
@@ -205,21 +216,27 @@ export function InviteeOnboardingFlow() {
     >
       <div className={styles.appContent}>
         <Alert className={styles.stickyPrompt} tone="info">
-          <AlertTitle>Tell us about your medical licence</AlertTitle>
+          <AlertTitle>{t('Medical licence question remaining')}</AlertTitle>
           <AlertDescription>
-            This one-time in-app question is deferred until after you join the workspace.
+            {t(
+              'Answer this question to determine whether licence verification applies to you. It does not set your role or access.',
+            )}
           </AlertDescription>
           <AlertAction>
             <Button size="sm" variant="outline">
-              Answer licence question
+              {t('Answer question')}
             </Button>
           </AlertAction>
         </Alert>
         <EmptyState>
           <EmptyStateHeader>
-            <EmptyStateTitle>Welcome to {workspace.name}</EmptyStateTitle>
+            <EmptyStateTitle>
+              {t('Welcome to')} {workspace.name}
+            </EmptyStateTitle>
             <EmptyStateDescription>
-              You joined as a member. The workspace owner can assign your branch and role.
+              {t(
+                'You joined as a member. The workspace owner assigns your role and branch.',
+              )}
             </EmptyStateDescription>
           </EmptyStateHeader>
         </EmptyState>

@@ -17,12 +17,16 @@ import {
   DEMO_QUEUE,
 } from '../../../../features/collection/demo-data';
 import { queueForRole } from '../../../../features/collection/logic';
-
-const PHLEBOTOMY_QUEUE = queueForRole([...DEMO_QUEUE], 'phlebotomy');
+import { useDemoSession } from '../../../_demo/demo-session';
 
 export default function CollectionScanPage() {
+  const { session } = useDemoSession();
   const [patient, setPatient] = useState<CollectionPatient | null>(null);
   const [samples, setSamples] = useState<Sample[]>([]);
+  const queue =
+    session.demoProfile === 'new-doctor'
+      ? []
+      : queueForRole([...DEMO_QUEUE], 'phlebotomy');
 
   if (!patient) {
     return (
@@ -31,7 +35,7 @@ export default function CollectionScanPage() {
           setPatient(matched);
           setSamples(matched.samples);
         }}
-        queue={PHLEBOTOMY_QUEUE}
+        queue={queue}
         role="phlebotomy"
       />
     );

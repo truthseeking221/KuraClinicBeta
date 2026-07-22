@@ -16,7 +16,7 @@ import {
 } from './carousel';
 
 const meta = {
-  title: 'Design System/Primitives/Carousel',
+  title: 'Design System/Components/Carousel',
   component: Carousel,
   tags: ['autodocs', 'source-reui', 'adapted-kura'],
   parameters: {

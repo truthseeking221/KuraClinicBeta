@@ -4,6 +4,7 @@ import { useState } from 'react';
 
 import { AppShell } from '../../components/shared/app-shell';
 
+import { CheckInComplete } from './check-in-complete';
 import { CheckInWizard } from './check-in-wizard';
 import {
   blankWalkIn,
@@ -13,10 +14,9 @@ import {
   EXISTING_PATIENTS,
   STALE_PRICING,
 } from './demo-data';
-import { findCollisionCandidates, phonesMatch } from './logic';
+import { findCollisionCandidates, nextQueueNumber, phonesMatch } from './logic';
 import type { FrontDeskPatient } from './types';
 import type { FxRateQuote } from './money';
-import styles from './front-desk.stories.module.css';
 import { READINESS } from '../../components/foundations/readiness-data';
 
 const STORY_FX_RATE: FxRateQuote = {
@@ -40,7 +40,7 @@ const meta = {
         evidence:
           'ReUI searched: stepper intaken as the wizard nav; checkout/onboarding blocks are references only. Order selection composes the canonical LabTestPicker; the order cart consumes minor-unit priced lines, renders through MoneyText, and receives FX as an injected config contract.',
         exclusions: [
-          'NFC/chip National ID capture (hardware ceremony — shown as Coming soon in Other ID methods)',
+          'NFC/chip National ID capture (hardware ceremony, deferred)',
           'Patient photo capture (camera ceremony, deferred)',
           'Patient PWA (separate surface); booking-QR scan and booking-code intake now live in Step 1',
         ],
@@ -62,18 +62,28 @@ type Story = StoryObj<typeof meta>;
 function WizardPlayground({
   initial,
   prescribers,
+  pricingStatus,
 }: {
   initial?: FrontDeskPatient;
   prescribers?: typeof DEMO_PRESCRIBERS;
+  pricingStatus?: 'ready' | 'loading' | 'error';
 }) {
   const [patient, setPatient] = useState<FrontDeskPatient>(initial ?? blankWalkIn('walk-in-1', 27));
   const [checkedIn, setCheckedIn] = useState(false);
 
+  // Legacy desk law: check-in immediately opens the next blank slot.
   if (checkedIn) {
     return (
-      <div className={styles.completion} role="status">
-        Reception complete — {patient.name} · queue #{patient.queueNumber}.
-      </div>
+      <CheckInComplete
+        onNextPatient={() => {
+          setPatient({
+            ...blankWalkIn(`walk-in-next-${patient.id}`, nextQueueNumber([patient.queueNumber])),
+            arrivedLabel: 'Just now',
+          });
+          setCheckedIn(false);
+        }}
+        patient={patient}
+      />
     );
   }
 
@@ -85,6 +95,7 @@ function WizardPlayground({
       onPatientChange={setPatient}
       patient={patient}
       prescribers={prescribers}
+      pricingStatus={pricingStatus}
     />
   );
 }
@@ -242,9 +253,16 @@ export const FullCheckInFlow: Story = {
         workspace={{ id: 'ws-mekong', name: 'Mekong Clinic' }}
       >
         {checkedIn ? (
-          <div className={styles.completion} role="status">
-            Reception complete — order placed and payment recorded. Next patient.
-          </div>
+          <CheckInComplete
+            onNextPatient={() => {
+              setPatient({
+                ...blankWalkIn('walk-in-10', nextQueueNumber([patient.queueNumber])),
+                arrivedLabel: 'Just now',
+              });
+              setCheckedIn(false);
+            }}
+            patient={patient}
+          />
         ) : (
           <CheckInWizard
             existingPatients={EXISTING_PATIENTS}
@@ -260,18 +278,18 @@ export const FullCheckInFlow: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
 
-    // Step 1 — identity search finds no record; continue as a new patient
-    // (capturing identity advances to Step 2 in one action).
+    // Step 1: identity search finds no record; create a new patient.
     await userEvent.type(
       canvas.getByLabelText('Find patient by phone, booking code, or name'),
       'Bopha Kim',
     );
-    await userEvent.click(await canvas.findByRole('button', { name: 'Continue as new patient' }));
+    await userEvent.click(await canvas.findByRole('button', { name: 'Create a new patient' }));
 
     // Step 2 — review + OTP.
-    await userEvent.type(canvas.getByLabelText(/Date of birth/), '1990-05-05');
+    const dateOfBirth = canvas.getByLabelText(/Date of birth/);
+    await userEvent.type(dateOfBirth, '19900505');
+    await expect(dateOfBirth).toHaveValue('1990-05-05');
     await userEvent.click(canvas.getByRole('radio', { name: 'Female' }));
-    await userEvent.click(canvas.getByRole('radio', { name: 'SMS' }));
     await userEvent.type(canvas.getByLabelText(/^Phone/), '99887766');
     await userEvent.click(canvas.getByRole('button', { name: 'Send SMS code' }));
     await userEvent.type(canvas.getByLabelText('SMS code'), DEMO_OTP);
@@ -308,7 +326,14 @@ export const FullCheckInFlow: Story = {
     const finishButton = canvas.getByRole('button', { name: 'Finish' });
     await waitFor(async () => expect(finishButton).toBeEnabled());
     await userEvent.click(finishButton);
-    await expect(await canvas.findByText(/Reception complete/)).toBeVisible();
+
+    // Terminal outcome: checked-in summary, then the next blank slot spawns
+    // with the following queue number (legacy desk law).
+    await expect(await canvas.findByText('Checked in')).toBeVisible();
+    await expect(canvas.getByText(/Paid · R-58213/)).toBeVisible();
+    await userEvent.click(canvas.getByRole('button', { name: 'Next patient' }));
+    await expect(await canvas.findByText('Find or create a patient')).toBeVisible();
+    await expect(canvas.getByText('Q-034')).toBeVisible();
   },
 };
 
@@ -502,7 +527,7 @@ export const PrescriberAttribution: Story = {
     await userEvent.click(select);
     const body = within(canvasElement.ownerDocument.body);
     // Expired licence renders disabled — selectable clinicians are eligible only.
-    const expired = await body.findByRole('option', { name: /Dr. Chan Rotha · licence expired/ });
+    const expired = await body.findByRole('option', { name: /Dr. Chan Rotha · licence not live/ });
     await expect(expired).toHaveAttribute('aria-disabled', 'true');
     await userEvent.click(body.getByRole('option', { name: /Dr. Sok Vanna/ }));
 
@@ -710,7 +735,7 @@ export const KeyboardShortcuts: Story = {
     // Steps 1–3 are done → F1 jumps back to Identity.
     await fireEvent.keyDown(canvasElement.ownerDocument.body, { key: 'F1' });
     await expect(
-      await canvas.findByRole('heading', { level: 2, name: 'Identity captured' }),
+      await canvas.findByRole('heading', { level: 2, name: 'Patient selected' }),
     ).toBeVisible();
     // F6 stays locked (no orders yet) — the gate always wins.
     await fireEvent.keyDown(canvasElement.ownerDocument.body, { key: 'F6' });
@@ -718,5 +743,137 @@ export const KeyboardShortcuts: Story = {
     // ? opens the cheatsheet.
     await fireEvent.keyDown(canvasElement.ownerDocument.body, { key: '?' });
     await expect(await body.findByText('Keyboard shortcuts')).toBeVisible();
+  },
+};
+
+/**
+ * Promo codes follow the legacy money order — item promo, then fixed, then
+ * percent, each against the running remainder. PROTOTYPE: no upstream engine.
+ */
+export const PromoDiscount: Story = {
+  name: 'Promo codes · item → fixed → percent',
+  args: Default.args,
+  render: () => (
+    <WizardPlayground
+      initial={{
+        ...readyWithOrders('promo-1', { attributedPrescriberId: 'dr-sok-vanna' }),
+      }}
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(canvas.getByRole('tab', { name: /6 Payment/ }));
+
+    // Unknown code fails loudly, applies nothing.
+    await userEvent.type(canvas.getByLabelText('Promo code'), 'NOPE');
+    await userEvent.click(canvas.getByRole('button', { name: 'Apply' }));
+    await expect(await canvas.findByText('Code not recognised.')).toBeVisible();
+
+    // WELCOME10: 10% of $15.00 due.
+    await userEvent.clear(canvas.getByLabelText('Promo code'));
+    await userEvent.type(canvas.getByLabelText('Promo code'), 'WELCOME10');
+    await userEvent.click(canvas.getByRole('button', { name: 'Apply' }));
+    await expect(await canvas.findByText(/New patient · 10% off · WELCOME10/)).toBeVisible();
+
+    // Item promo for CBC in cart stacks before the percent in money order.
+    await userEvent.type(canvas.getByLabelText('Promo code'), 'CBC50');
+    await userEvent.click(canvas.getByRole('button', { name: 'Apply' }));
+    await expect(await canvas.findByText(/CBC half price · CBC50/)).toBeVisible();
+
+    // Discount reaches the cart rail through the shared credit row.
+    await expect(canvas.getByText('Promo discount')).toBeVisible();
+
+    // Removing a promo restores the due amount.
+    await userEvent.click(canvas.getByRole('button', { name: 'Remove promo WELCOME10' }));
+    await expect(canvas.queryByText(/WELCOME10/)).not.toBeInTheDocument();
+  },
+};
+
+/**
+ * Server pricing unavailable: the rail shows the failure and payment refuses
+ * to collect until pricing returns — the desk never keys an amount by hand.
+ */
+export const PricingUnavailableInFlow: Story = {
+  name: 'Pricing error · collection blocked in the flow',
+  args: Default.args,
+  render: () => (
+    <WizardPlayground
+      initial={readyWithOrders('pricing-err', { attributedPrescriberId: 'dr-sok-vanna' })}
+      pricingStatus="error"
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      await canvas.findByText(/Do not collect payment until the server price is available/),
+    ).toBeVisible();
+    await userEvent.click(canvas.getByRole('tab', { name: /6 Payment/ }));
+    await expect(
+      await canvas.findByText(/The order total could not be refreshed — retry pricing/),
+    ).toBeVisible();
+    await expect(canvas.getByRole('button', { name: 'Confirm cash' })).toBeDisabled();
+    await expect(canvas.getByRole('button', { name: 'Generate QR' })).toBeDisabled();
+  },
+};
+
+/**
+ * Visit and vitals lines are orderable desk services — the legacy default
+ * walk-in lines, deliberately added by hand instead of auto-seeded so the
+ * order gate and prescriber attribution stay honest.
+ */
+export const VisitAndVitalsOrderable: Story = {
+  name: 'Orders · clinic visit and vitals lines',
+  args: Default.args,
+  render: () => {
+    const base = readyWithOrders('visit-vitals', { attributedPrescriberId: 'dr-sok-vanna' });
+    return <WizardPlayground initial={{ ...base, cart: { ...base.cart, items: [] } }} />;
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(canvas.getByRole('tab', { name: /4 Orders/ }));
+    const body = within(canvasElement.ownerDocument.body);
+    await userEvent.click(canvas.getByRole('button', { name: 'Additional order types' }));
+    await userEvent.click(await body.findByRole('checkbox', { name: 'Clinic visit' }));
+    await userEvent.click(canvas.getByRole('button', { name: 'Additional order types' }));
+    await userEvent.click(await body.findByRole('checkbox', { name: 'Vital signs' }));
+    await expect(canvas.getAllByText('Clinic visit').length).toBeGreaterThan(0);
+    await expect(canvas.getAllByText('Vital signs').length).toBeGreaterThan(0);
+  },
+};
+
+/**
+ * The mobile dock begins at order selection, when it has a meaningful next
+ * action. Its CTA resumes at the first not-done step and never bypasses the
+ * gate. The checked-in state renders on CheckInComplete.
+ */
+export const MobileDock: Story = {
+  name: 'Mobile dock · sticky next action',
+  args: Default.args,
+  globals: { viewport: { value: 'kura390' } },
+  render: () => (
+    <WizardPlayground
+      initial={readyWithOrders('dock-1', { attributedPrescriberId: 'dr-sok-vanna' })}
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const dock = await canvas.findByRole('region', { name: 'Check-in progress' });
+    // Ready to pay → loud due + Collect.
+    await expect(within(dock).getByText('Patient due')).toBeVisible();
+    const collect = within(dock).getByRole('button', { name: 'Collect payment' });
+    await userEvent.click(collect);
+    // The CTA resumed at Payment (first not-done step).
+    await expect(
+      await canvas.findByRole('heading', { level: 2, name: 'Payment' }),
+    ).toBeVisible();
+
+    // Cash payment flips the dock to the paid state with Finish.
+    await userEvent.type(canvas.getByLabelText(/Tendered/), '20');
+    await userEvent.click(canvas.getByRole('button', { name: 'Confirm cash' }));
+    await expect(
+      await within(dock).findByRole('button', { name: 'Finish check-in' }),
+    ).toBeVisible();
+    await userEvent.click(within(dock).getByRole('button', { name: 'Finish check-in' }));
+    await expect(await canvas.findByText('Checked in')).toBeVisible();
   },
 };

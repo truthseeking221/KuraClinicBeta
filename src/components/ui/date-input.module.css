@@ -1,0 +1,9 @@
+.root {
+  min-width: 0;
+}
+
+@media (pointer: coarse) {
+  .root :global([data-slot='input-control']) {
+    min-height: var(--touch-target-min);
+  }
+}

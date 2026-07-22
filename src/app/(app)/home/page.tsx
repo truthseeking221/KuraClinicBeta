@@ -2,69 +2,49 @@
 
 /**
  * Clinical Home. The scenario follows the session's licence state so the
- * demo panel can walk the whole credential lifecycle; ?scenario= overrides
- * for operational edge states (critical day, all caught up, outage, ...).
+ * onboarding phone selects the Storybook-owned operational variant.
  */
 
-import { useRouter, useSearchParams } from 'next/navigation';
-import { Suspense } from 'react';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 import { HomeWorkspace } from '../../../features/home';
-import * as home from '../../../features/home/demo-data';
-import type { LicenceState } from '../../../features/licence/logic';
+import { HOME_DEMO_SCENARIOS } from '../../../features/home/demo-data';
+import { demoOnboardingScenarioById } from '../../../features/auth/demo-data';
+import { DEMO_TOUR_PATIENT_ID } from '../../../features/patients/demo-data';
 import { useDemoSession } from '../../_demo/demo-session';
+import { homeDataForSession } from '../../_demo/home-data';
 import { useSettingsDialog } from '../../_demo/settings-dialog-context';
 import { pathForNavKey } from '../../_demo/route-map';
 
-const HOME_BY_LICENCE: Record<LicenceState, typeof home.busyMorning> = {
-  verified: home.busyMorning,
-  none: home.licenceNone,
-  pending_review: home.licencePendingReview,
-  rejected: home.licenceRejected,
-  expiring: home.licenceExpiring,
-  in_grace: home.licenceInGrace,
-  lapsed: home.licenceLapsed,
-};
-
-/** Operational edge scenarios, reachable from the demo panel. */
-const SCENARIOS: Record<string, typeof home.busyMorning> = {
-  'busy-morning': home.busyMorning,
-  'critical-day': home.criticalDay,
-  'all-caught-up': home.allCaughtUp,
-  'afternoon-handover': home.afternoonHandover,
-  'empty-clinic': home.verifiedEmptyClinic,
-  'solo-doctor': home.soloDoctor,
-  loading: home.loading,
-  'partial-data': home.partialData,
-  'full-failure': home.fullFailure,
-  stale: home.stale,
-  offline: home.offline,
-  'long-content': home.longContent,
-};
-
 function HomePage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { session } = useDemoSession();
   const { openSettings } = useSettingsDialog();
+  const [recovered, setRecovered] = useState(false);
 
-  const scenario = searchParams.get('scenario');
-  const data = (scenario && SCENARIOS[scenario]) || HOME_BY_LICENCE[session.licence];
+  const registered = demoOnboardingScenarioById(session.demoScenarioId);
+  const scenario = registered.surface === 'home' ? registered.variant : null;
+  const selectedData =
+    session.demoProfile === 'established-doctor' &&
+    scenario &&
+    scenario in HOME_DEMO_SCENARIOS
+      ? HOME_DEMO_SCENARIOS[scenario as keyof typeof HOME_DEMO_SCENARIOS]
+      : homeDataForSession(session);
+  const data = recovered ? HOME_DEMO_SCENARIOS['busy-morning'] : selectedData;
 
   return (
     <HomeWorkspace
       data={data}
       onNavigate={(targetKey) => router.push(pathForNavKey('clinical', targetKey))}
+      onOpenDemoPatient={() => router.push(`/patients/${DEMO_TOUR_PATIENT_ID}`)}
       onOpenLicence={() => openSettings('account')}
-      onRefresh={() => router.refresh()}
+      onStartBooking={() => router.push('/catalog?intent=booking')}
+      onRefresh={() => setRecovered(true)}
     />
   );
 }
 
 export default function Page() {
-  return (
-    <Suspense fallback={null}>
-      <HomePage />
-    </Suspense>
-  );
+  return <HomePage />;
 }

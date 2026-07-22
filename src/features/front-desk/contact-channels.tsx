@@ -9,11 +9,13 @@ import {
   AlertTitle,
   Badge,
   Button,
+  Card,
   Input,
   SegmentedToggle,
   Select,
   SpinnerGapIcon,
 } from '../../components/ui';
+import { useT } from '../../components/foundations/i18n';
 import { DEMO_OTP } from './demo-data';
 import { UNVERIFIED_REASONS } from './types';
 import type { FrontDeskPatient } from './types';
@@ -37,7 +39,11 @@ export type ContactChannelsProps = {
  * driven by explicit demo controls, never hidden timers.
  */
 export function ContactChannels({ onUpdate, patient }: ContactChannelsProps) {
-  const [channel, setChannel] = useState<'sms' | 'telegram' | null>(null);
+  const t = useT();
+  // SMS is the desk default so the block has work to do in its first frame.
+  // An empty channel picker rendered a card with nothing in it and pushed the
+  // real task one click away; Telegram stays one click away instead.
+  const [channel, setChannel] = useState<'sms' | 'telegram'>('sms');
   const [otpSent, setOtpSent] = useState(false);
   const [otpInput, setOtpInput] = useState('');
   const [otpError, setOtpError] = useState<string | null>(null);
@@ -66,15 +72,15 @@ export function ContactChannels({ onUpdate, patient }: ContactChannelsProps) {
       UNVERIFIED_REASONS.find((reason) => reason.code === patient.unverifiedReason?.code)?.label ??
       patient.unverifiedReason.code;
     return (
-      <div className={styles.channel}>
-        <h3 className={styles.subTitle}>Contact channel</h3>
+      <Card as="section" className={styles.channel} variant="outline">
+        <h3 className={styles.subTitle}>{t('Contact channel')}</h3>
         <Alert tone="warning">
-          <AlertTitle>Unverified · {reasonLabel}</AlertTitle>
+          <AlertTitle>{t('Unverified')} · {t(reasonLabel)}</AlertTitle>
           <AlertDescription>
             {patient.unverifiedReason.note
-              ? `${patient.unverifiedReason.note} — reminders`
-              : 'Reminders'}{' '}
-            and results need a verified channel; the patient may miss them.
+              ? `${patient.unverifiedReason.note} — ${t('reminders')}`
+              : t('Reminders')}{' '}
+            {t('and results need a verified channel; the patient may miss them.')}
           </AlertDescription>
           <AlertAction>
             <Button
@@ -82,24 +88,24 @@ export function ContactChannels({ onUpdate, patient }: ContactChannelsProps) {
               size="sm"
               variant="outline"
             >
-              Verify instead
+              {t('Verify instead')}
             </Button>
           </AlertAction>
         </Alert>
-      </div>
+      </Card>
     );
   }
 
   return (
-    <div className={styles.channel}>
+    <Card as="section" className={styles.channel} variant="outline">
       <div className={styles.channelHeader}>
-        <h3 className={styles.subTitle}>Contact channel</h3>
-        <span className={styles.requiredTag}>Required</span>
+        <h3 className={styles.subTitle}>{t('Contact channel')}</h3>
+        <span className={styles.requiredTag}>{t('Required')}</span>
       </div>
 
       {patient.telegramVerified ? (
         <div className={styles.verifiedRow}>
-          <Badge variant="success">Telegram verified</Badge>
+          <Badge variant="success">{t('Telegram verified')}</Badge>
           <span className={styles.verifiedMeta}>
             {patient.telegramHandle} · {patient.countryCode} {patient.phoneNumber}
           </span>
@@ -114,13 +120,13 @@ export function ContactChannels({ onUpdate, patient }: ContactChannelsProps) {
             size="sm"
             variant="ghost"
           >
-            Change
+            {t('Change')}
           </Button>
         </div>
       ) : null}
       {patient.otpVerified ? (
         <div className={styles.verifiedRow}>
-          <Badge variant="success">SMS verified</Badge>
+          <Badge variant="success">{t('SMS verified')}</Badge>
           <span className={styles.verifiedMeta}>
             {patient.countryCode} {patient.phoneNumber}
           </span>
@@ -134,20 +140,20 @@ export function ContactChannels({ onUpdate, patient }: ContactChannelsProps) {
             size="sm"
             variant="ghost"
           >
-            Edit to re-verify
+            {t('Edit to re-verify')}
           </Button>
         </div>
       ) : null}
 
       {anyVerified ? (
         <p className={styles.assuranceNote}>
-          Confirms the patient controls this channel — it does not prove who they are.
+          {t('Confirms the patient controls this channel — it does not prove who they are.')}
         </p>
       ) : null}
 
       {patient.otpVerified && patient.telegramVerified ? (
         <SegmentedToggle
-          label="Preferred channel"
+          label={t('Preferred channel')}
           labelVisible
           onValueChange={(value) =>
             onUpdate({ preferredChannel: value as 'sms' | 'telegram' })
@@ -160,40 +166,21 @@ export function ContactChannels({ onUpdate, patient }: ContactChannelsProps) {
         />
       ) : null}
 
-      {/* Picking a channel is a value choice, not two competing actions; the
-          unverified escape sits on the same line as its alternative. */}
-      {!anyVerified && channel === null ? (
-        <div className={styles.choiceRow}>
-          <SegmentedToggle
-            label="Verify by"
-            labelVisible
-            onValueChange={(value) => setChannel(value as 'sms' | 'telegram')}
-            options={[
-              { value: 'telegram', label: 'Telegram' },
-              { value: 'sms', label: 'SMS' },
-            ]}
-            value=""
-          />
-          {!unverifiedOpen ? (
-            <Button onClick={() => setUnverifiedOpen(true)} size="sm" variant="ghost">
-              Continue without verifying
-            </Button>
-          ) : null}
-        </div>
-      ) : null}
-
-      {!patient.telegramVerified && channel === 'telegram' ? (
+      {!anyVerified && channel === 'telegram' ? (
         <div className={styles.telegramCard}>
           <div className={styles.telegramText}>
-            <p className={styles.telegramTitle}>Telegram QR pushed to the patient display</p>
+            <p className={styles.telegramTitle}>
+              {t('Telegram QR pushed to the patient display')}
+            </p>
             <p className={styles.hint}>
-              Ask the patient to scan it with their phone camera — their number fills in when
-              they share it.
+              {t(
+                'Ask the patient to scan it with their phone camera — their number fills in when they share it.',
+              )}
             </p>
           </div>
           <span aria-hidden className={styles.waiting}>
             <SpinnerGapIcon className={styles.waitingSpinner} size={16} />
-            Waiting for the patient…
+            {t('Waiting for the patient…')}
           </span>
           <div className={styles.telegramActions}>
             {/* Demo stand-in for the patient completing the share on their phone. */}
@@ -207,25 +194,27 @@ export function ContactChannels({ onUpdate, patient }: ContactChannelsProps) {
                   preferredChannel: 'telegram',
                   unverifiedReason: null,
                 });
-                setChannel(null);
+                setChannel('sms');
               }}
               size="sm"
               variant="outline"
             >
-              Simulate patient share
+              {t('Simulate patient share')}
             </Button>
-            <Button onClick={() => setChannel(null)} size="sm" variant="ghost">
-              Cancel
+            <Button onClick={() => setChannel('sms')} size="sm" variant="ghost">
+              {t('Use SMS instead')}
             </Button>
           </div>
         </div>
       ) : null}
 
-      {!patient.otpVerified && channel === 'sms' ? (
+      {/* Once any channel is verified the ceremony is done — a verified row
+          plus a live "send a code" form would ask the desk to redo settled work. */}
+      {!anyVerified && channel === 'sms' ? (
         <>
           <div className={styles.phoneRow}>
             <Input
-              label="Phone"
+              label={t('Phone')}
               inputMode="tel"
               onChange={(event) => onUpdate({ phoneNumber: event.target.value })}
               placeholder="12 345 678"
@@ -239,10 +228,10 @@ export function ContactChannels({ onUpdate, patient }: ContactChannelsProps) {
               variant="secondary"
             >
               {cooldown > 0
-                ? `Resend in ${cooldown}s`
+                ? `${t('Resend in')} ${cooldown}s`
                 : otpSent
-                  ? 'Resend code'
-                  : 'Send SMS code'}
+                  ? t('Resend code')
+                  : t('Send SMS code')}
             </Button>
           </div>
           {otpSent ? (
@@ -250,7 +239,7 @@ export function ContactChannels({ onUpdate, patient }: ContactChannelsProps) {
               <Input
                 error={otpError}
                 inputMode="numeric"
-                label="SMS code"
+                label={t('SMS code')}
                 maxLength={6}
                 onChange={(event) => {
                   setOtpInput(event.target.value);
@@ -267,14 +256,27 @@ export function ContactChannels({ onUpdate, patient }: ContactChannelsProps) {
                       preferredChannel: patient.preferredChannel ?? 'sms',
                       unverifiedReason: null,
                     });
-                    setChannel(null);
+                    setChannel('sms');
                   } else {
-                    setOtpError('Code does not match.');
+                    setOtpError(t('Code does not match.'));
                   }
                 }}
                 variant="primary"
               >
-                Verify
+                {t('Verify')}
+              </Button>
+            </div>
+          ) : null}
+          {/* Both ways out sit under the action they replace — the Nextdoor
+              "try another method" placement. A bare escape floating beside the
+              primary reads as label text, not a control. */}
+          {!unverifiedOpen ? (
+            <div className={styles.escapeRow}>
+              <Button onClick={() => setChannel('telegram')} size="sm" variant="ghost">
+                {t('Use Telegram instead')}
+              </Button>
+              <Button onClick={() => setUnverifiedOpen(true)} size="sm" variant="ghost">
+                {t('Continue without verifying')}
               </Button>
             </div>
           ) : null}
@@ -285,22 +287,22 @@ export function ContactChannels({ onUpdate, patient }: ContactChannelsProps) {
         unverifiedOpen ? (
           <div className={styles.unverifiedForm}>
             <Select
-              label="Why does it stay unverified?"
+              label={t('Why does it stay unverified?')}
               onChange={(event) => setReasonCode(event.target.value)}
               options={[
-                { value: '', label: 'Choose a reason' },
+                { value: '', label: t('Choose a reason') },
                 ...UNVERIFIED_REASONS.map((reason) => ({
                   value: reason.code,
-                  label: reason.label,
+                  label: t(reason.label),
                 })),
               ]}
               value={reasonCode}
             />
             {reasonCode === 'other' ? (
               <Input
-                label="Reason"
+                label={t('Reason')}
                 onChange={(event) => setReasonNote(event.target.value)}
-                placeholder="What happened"
+                placeholder={t('What happened')}
                 value={reasonNote}
               />
             ) : null}
@@ -321,10 +323,10 @@ export function ContactChannels({ onUpdate, patient }: ContactChannelsProps) {
                 size="sm"
                 variant="secondary"
               >
-                Save unverified
+                {t('Save unverified')}
               </Button>
               <Button onClick={() => setUnverifiedOpen(false)} size="sm" variant="ghost">
-                Back
+                {t('Back')}
               </Button>
             </div>
           </div>
@@ -332,7 +334,7 @@ export function ContactChannels({ onUpdate, patient }: ContactChannelsProps) {
       ) : null}
 
       <LanguageField onUpdate={onUpdate} patient={patient} />
-    </div>
+    </Card>
   );
 }
 
@@ -341,10 +343,11 @@ export function ContactChannels({ onUpdate, patient }: ContactChannelsProps) {
  * reminder, intake link, and results notice go out in.
  */
 function LanguageField({ onUpdate, patient }: ContactChannelsProps) {
+  const t = useT();
   return (
     <Select
       className={styles.languageField}
-      label="Language for messages"
+      label={t('Language for messages')}
       onChange={(event) =>
         onUpdate({
           preferredLanguage: event.target.value as FrontDeskPatient['preferredLanguage'],

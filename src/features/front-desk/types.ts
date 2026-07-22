@@ -1,5 +1,7 @@
 /** Front-desk domain types. Money follows backend int64 minor-unit strings. */
 
+import type { LicenceState } from '../licence/logic';
+
 export type CartItemKind = 'visit' | 'lab' | 'imaging' | 'ecg' | 'vitals' | 'telecon';
 
 /**
@@ -41,6 +43,16 @@ export type CartItem = {
     overrideBy?: string;
   };
 };
+
+/**
+ * A promotion the desk applied to the cart. PROTOTYPE SURFACE: kura-platform
+ * has no promo engine — the discount order (item → fixed → percent, each
+ * against the running remainder) is the legacy money rule being carried.
+ */
+export type Promo =
+  | { code: string; label: string; kind: 'item'; itemId: string; percentOff: number }
+  | { code: string; label: string; kind: 'fixed'; amountMinor: string }
+  | { code: string; label: string; kind: 'percent'; percentOff: number };
 
 export type PaymentStatus =
   | 'idle'
@@ -89,7 +101,8 @@ export type Prescriber = {
   name: string;
   specialty?: string;
   workspaceMember: boolean;
-  licence: 'verified' | 'expired';
+  /** `expired` is the legacy desk contract; lifecycle-native callers use LicenceState. */
+  licence: LicenceState | 'expired';
 };
 
 /**
@@ -125,6 +138,8 @@ export type Cart = {
   attributedPrescriberId?: string | null;
   pricing?: CartPricing;
   placeFailure?: PlaceOrderFailure | null;
+  /** Promotions applied at the desk, in the order they were entered. */
+  promos?: Promo[];
 };
 
 export type EligibilityResult =
@@ -172,6 +187,15 @@ export type TeleconsultState = {
 export type IntakeAuthor = 'patient' | 'nurse' | 'system';
 
 export type IdentitySource = 'manual' | 'qr' | 'existing' | null;
+
+export const INTAKE_SKIP_REASONS = [
+  { code: 'patient-declined', label: 'Patient declined' },
+  { code: 'no-phone', label: 'No usable phone' },
+  { code: 'language-barrier', label: 'Language barrier' },
+  { code: 'urgent-visit', label: 'Urgent visit — no time' },
+  { code: 'other', label: 'Other' },
+] as const;
+export type IntakeSkipReasonCode = (typeof INTAKE_SKIP_REASONS)[number]['code'];
 
 export const UNVERIFIED_REASONS = [
   { code: 'no-sms-access', label: 'No SMS access' },
@@ -265,15 +289,6 @@ export type TrustSignal = {
   tone: 'success' | 'info' | 'neutral' | 'warning' | 'danger';
 };
 
-/** Confidence tier for an ambiguous search candidate. */
-export type MatchConfidenceTier = 'identity' | 'strong' | 'possible' | 'low';
-
-export type MatchConfidence = {
-  tier: MatchConfidenceTier;
-  /** 0–100, from the collision scoring model. */
-  score: number;
-};
-
 export type IdentityResolution =
   | { kind: 'known-here'; record: PatientRecordSummary }
   | { kind: 'known-elsewhere'; record: PatientRecordSummary }
@@ -333,6 +348,11 @@ export type FrontDeskPatient = {
   intake: IntakeFields;
   /** Set when the secure intake link went to the patient's phone. */
   intakeSentAtLabel?: string | null;
+  /**
+   * Recorded decision to proceed without the intake. Never a gate — the
+   * reason keeps the skip honest, mirroring the unverified-contact pattern.
+   */
+  intakeSkipped?: { code: IntakeSkipReasonCode; note?: string } | null;
   intakeAuthors?: Partial<Record<keyof IntakeFields, IntakeAuthor>>;
   visitReason: string[];
 };

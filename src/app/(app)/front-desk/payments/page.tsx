@@ -17,11 +17,13 @@ import {
 } from '../../../../components/shared';
 import { PaymentReceipt } from '../../../../features/front-desk/payment-receipt';
 import { useFrontDeskStore } from '../../../_demo/front-desk-store';
+import { useDemoSession } from '../../../_demo/demo-session';
 import styles from '../../../_demo/app-pages.module.css';
 
 export default function PaymentsPage() {
   const router = useRouter();
   const { receipts } = useFrontDeskStore();
+  const { session } = useDemoSession();
 
   const confirmed = receipts.filter(
     (patient) => patient.cart.payment.status === 'confirmed',
@@ -56,7 +58,7 @@ export default function PaymentsPage() {
     <div className={styles.stack}>
       {confirmed.map((patient) => (
         <PaymentReceipt
-          branchLabel="Branch BKK1"
+          branchLabel={session.customWorkspaceName ?? 'My cabinet'}
           items={patient.cart.items}
           key={patient.id}
           onPrint={() => window.print()}

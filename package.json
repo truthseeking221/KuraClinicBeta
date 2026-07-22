@@ -7,8 +7,11 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "check:close-button-usage": "node scripts/check-close-button-usage.mjs",
     "check:color-tokens": "node scripts/check-color-token-usage.mjs",
+    "check:doctor-journey-docs": "node scripts/generate-doctor-journey-coverage.mjs --check",
     "check:reui-ownership": "node scripts/check-reui-ownership.mjs",
+    "docs:doctor-journey": "node scripts/generate-doctor-journey-coverage.mjs",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build"
   },

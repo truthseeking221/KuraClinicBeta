@@ -1,5 +1,6 @@
 'use client';
 
+import { useT } from '../../components/foundations/i18n';
 import { Button } from '../../components/ui/button';
 import { SearchIcon } from '../../components/ui/icons';
 import { Input } from '../../components/ui/input';
@@ -42,31 +43,33 @@ export function ResultsToolbar({
   onReset,
   query,
 }: ResultsToolbarProps) {
+  const t = useT();
   const hasFilters = query.trim().length > 0 || filter !== 'all' || historyMode !== 'full';
 
   return (
-    <section className={styles.toolbar} aria-label="Results controls">
+    <section className={styles.toolbar} aria-label={t('Results controls')}>
       <Input
-        aria-label="Search analytes, codes, or panels"
+        aria-label={t('Search analytes, codes, or panels')}
         className={styles.search}
-        placeholder="Search analytes, codes, or panels"
+        placeholder={t('Search analytes, codes, or panels')}
         prefix={<SearchIcon size={16} />}
         type="search"
         value={query}
         onChange={(event) => onQueryChange(event.currentTarget.value)}
       />
+      {/* Each control names itself through its own value, so no floating field
+          labels sit above a toolbar row and break its shared baseline. */}
       <Select
+        aria-label={t('Result filter')}
         className={styles.filter}
-        label="Result filter"
-        options={FILTER_OPTIONS}
+        options={FILTER_OPTIONS.map((option) => ({ ...option, label: t(option.label) }))}
         value={filter}
         onChange={(event) => onFilterChange(event.currentTarget.value as ResultsFilter)}
       />
       <SegmentedToggle
         className={styles.history}
-        label="History display"
-        labelVisible
-        options={HISTORY_OPTIONS}
+        label={t('History display')}
+        options={HISTORY_OPTIONS.map((option) => ({ ...option, label: t(option.label) }))}
         value={historyMode}
         onValueChange={(value) => onHistoryModeChange(value as ResultsHistoryMode)}
       />
@@ -77,7 +80,7 @@ export function ResultsToolbar({
         variant="ghost"
         onClick={onReset}
       >
-        Reset
+        {t('Reset')}
       </Button>
     </section>
   );

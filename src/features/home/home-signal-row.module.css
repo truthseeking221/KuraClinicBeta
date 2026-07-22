@@ -1,0 +1,87 @@
+/* A signal on the white page with no surface of its own. Hover is a background
+ * shift that still reads if the row is ever dropped into a grey tray. */
+
+.row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  column-gap: var(--space-3);
+  margin-inline: calc(var(--space-2) * -1);
+  padding: var(--space-2-5) var(--space-2);
+  border-radius: var(--radius-control-compact);
+  color: inherit;
+  text-decoration: none;
+  transition: background-color var(--motion-color);
+}
+
+a.row:hover {
+  background: var(--color-background-secondary-hover);
+}
+
+a.row:focus-visible {
+  outline: 2px solid var(--color-border-focus);
+  outline-offset: -2px;
+}
+
+.text {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.title {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  color: var(--color-text-primary);
+  font-size: var(--type-base);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-snug);
+}
+
+.detail {
+  color: var(--color-text-secondary);
+  font-size: var(--type-sm);
+  line-height: var(--leading-normal);
+}
+
+/* The value outranks its own label: a count never renders at label size. */
+.value {
+  color: var(--color-text-primary);
+  font-size: var(--type-lg);
+  font-weight: var(--weight-medium);
+  font-variant-numeric: tabular-nums;
+  line-height: var(--leading-tight);
+  white-space: nowrap;
+}
+
+.value[data-tone='critical'] {
+  color: var(--color-status-danger-fg);
+}
+
+.valueSkeleton {
+  width: var(--space-12);
+  height: var(--space-4);
+}
+
+.chevron {
+  color: var(--color-text-tertiary);
+  transition: transform var(--motion-control);
+}
+
+a.row:hover .chevron {
+  transform: translateX(2px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .row,
+  .chevron {
+    transition: none;
+  }
+
+  a.row:hover .chevron {
+    transform: none;
+  }
+}

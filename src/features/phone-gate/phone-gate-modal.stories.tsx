@@ -38,7 +38,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'Safety checkpoint before a booking code is sent: verify a Cambodia phone by OTP, detect an existing patient, attach it or create a temporary patient. One column, one question per step; the bound number stays visible from the code step onward, with a single Change control on its own row. “Phone checked” never claims identity — PSC confirms it later. Demo scaffolding: code 123456; 070 123 496 → known match (Sokha Chann); 070 123 497 → shared phone (three candidates); numbers ending 000 → lookup error; ending 999 → OTP rate limit; anything else → no match.',
+          'Safety checkpoint before a booking code is sent: verify a Cambodia phone by OTP, detect an existing patient, attach it or create a provisional patient. One column, one question per step; the destination stays inline with Change on the code step, while the checked number remains visible afterward. “Phone checked” never claims identity. PSC confirms it later. Demo scaffolding: code 123456; 070 123 496 → known match (Sokha Chann); 070 123 497 → shared phone (three candidates); numbers ending 000 → lookup error; ending 999 → OTP rate limit; anything else → no match.',
       },
     },
   },
@@ -61,23 +61,25 @@ export const EnterPhone: Story = {
   play: async ({ canvasElement }) => {
     const screen = body(canvasElement);
     await expect(await screen.findByRole('dialog')).toBeVisible();
-    await expect(screen.getByRole('heading', { name: 'Patient phone' })).toBeVisible();
-    await expect(screen.getByText('The patient, a guardian, or a guarantor.')).toBeVisible();
+    await expect(screen.getByRole('heading', { name: 'Contact phone number' })).toBeVisible();
+    await expect(
+      screen.getByText('Use the patient’s number, or a guardian’s or guarantor’s.'),
+    ).toBeVisible();
 
     await userEvent.click(screen.getByRole('button', { name: 'Send SMS code' }));
     await expect(await screen.findByText(/valid Cambodia phone/)).toBeVisible();
   },
 };
 
-/** State 2 — OTP: destination and its single Change control sit on one row. */
+/** State 2 — OTP: destination supports the code task instead of becoming a second field. */
 export const VerifyOtp: Story = {
   play: async ({ canvasElement }) => {
     const screen = body(canvasElement);
-    await userEvent.type(await screen.findByLabelText(/Phone number/), FRESH_PHONE);
+    await userEvent.type(await screen.findByLabelText(/Contact phone number/), FRESH_PHONE);
     await userEvent.click(screen.getByRole('button', { name: 'Send SMS code' }));
 
     await expect(await screen.findByRole('heading', { name: 'Enter the code' })).toBeVisible();
-    await expect(screen.getByText('Code sent to')).toBeVisible();
+    await expect(screen.getByText('Sent to')).toBeVisible();
     await expect(screen.getByText(/\+855 99 \.\.\. 222/)).toBeVisible();
 
     const verify = screen.getByRole('button', { name: 'Verify code' });
@@ -89,11 +91,11 @@ export const VerifyOtp: Story = {
     await expect(screen.getByRole('button', { name: /Resend in/ })).toBeDisabled();
 
     await userEvent.click(screen.getByRole('button', { name: 'Change phone number' }));
-    await expect(await screen.findByRole('heading', { name: 'Patient phone' })).toBeVisible();
+    await expect(await screen.findByRole('heading', { name: 'Contact phone number' })).toBeVisible();
   },
 };
 
-/** State 3 — known match: the verified number stays on screen beside the record. */
+/** State 3 — known match: the checked number stays on screen beside the record. */
 export const KnownMatch: Story = {
   args: { initial: { state: 'knownMatch', phone: '+85570123496' } },
   play: async ({ canvasElement, args }) => {
@@ -101,7 +103,7 @@ export const KnownMatch: Story = {
     await expect(
       await screen.findByRole('heading', { name: 'Is this the patient?' }),
     ).toBeVisible();
-    await expect(screen.getByText('Verified phone')).toBeVisible();
+    await expect(screen.getByText('Phone checked')).toBeVisible();
     await expect(screen.getByText('070 123 496')).toBeVisible();
     await expect(
       screen.getByText('SMS confirms the number, not who is being tested.'),
@@ -180,15 +182,19 @@ export const DifferentPatient: Story = {
     await expect(await screen.findByText('This may be a different patient')).toBeVisible();
     await expect(screen.getByText('070 123 496')).toBeVisible();
 
-    await userEvent.click(screen.getByRole('button', { name: 'Create temporary patient' }));
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Create provisional patient' }),
+    );
     await expect(await screen.findByText('Enter the full name.')).toBeVisible();
-    await expect(screen.getByText('Enter a date of birth or age.')).toBeVisible();
+    await expect(screen.getByText('Enter a date of birth or estimated age.')).toBeVisible();
     await expect(screen.getByText('Select a sex.')).toBeVisible();
 
     await userEvent.type(screen.getByLabelText(/Full name/), 'Pierre');
-    await userEvent.type(screen.getByLabelText(/DOB or age/), '32');
+    await userEvent.type(screen.getByLabelText(/Date of birth or age/), '32');
     await userEvent.click(screen.getByRole('radio', { name: 'Female' }));
-    await userEvent.click(screen.getByRole('button', { name: 'Create temporary patient' }));
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Create provisional patient' }),
+    );
 
     await waitFor(() =>
       expect(args.onOutcome).toHaveBeenCalledWith(
@@ -203,13 +209,22 @@ export const NoMatch: Story = {
   args: { initial: { state: 'noMatch', phone: '+85599111222' }, createDelayMs: 0 },
   play: async ({ canvasElement, args }) => {
     const screen = body(canvasElement);
-    await expect(await screen.findByRole('heading', { name: 'New patient' })).toBeVisible();
-    await expect(screen.getByText('No Kura patient uses this number.')).toBeVisible();
+    await expect(
+      await screen.findByRole('heading', { name: 'Patient details' }),
+    ).toBeVisible();
+    await expect(
+      screen.getByText('No patient matches this phone number. PSC confirms identity.'),
+    ).toBeVisible();
+    await expect(
+      screen.getByText('Use age only if date of birth is unknown.'),
+    ).toBeVisible();
 
     await userEvent.type(screen.getByLabelText(/Full name/), 'Pierre');
-    await userEvent.type(screen.getByLabelText(/DOB or age/), '32');
+    await userEvent.type(screen.getByLabelText(/Date of birth or age/), '32');
     await userEvent.click(screen.getByRole('radio', { name: 'Female' }));
-    await userEvent.click(screen.getByRole('button', { name: 'Create temporary patient' }));
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Create provisional patient' }),
+    );
 
     await waitFor(() =>
       expect(args.onOutcome).toHaveBeenCalledWith(
@@ -229,7 +244,7 @@ export const ChangeVerifiedPhone: Story = {
     ).toHaveLength(1);
 
     await userEvent.click(screen.getByRole('button', { name: 'Change phone number' }));
-    await expect(await screen.findByRole('heading', { name: 'Patient phone' })).toBeVisible();
+    await expect(await screen.findByRole('heading', { name: 'Contact phone number' })).toBeVisible();
   },
 };
 
@@ -239,11 +254,13 @@ export const SubmittingTemporaryPatient: Story = {
   play: async ({ canvasElement }) => {
     const screen = body(canvasElement);
     await userEvent.type(await screen.findByLabelText(/Full name/), 'Pierre');
-    await userEvent.type(screen.getByLabelText(/DOB or age/), '32');
+    await userEvent.type(screen.getByLabelText(/Date of birth or age/), '32');
     await userEvent.click(screen.getByRole('radio', { name: 'Female' }));
-    await userEvent.click(screen.getByRole('button', { name: 'Create temporary patient' }));
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Create provisional patient' }),
+    );
 
-    const pending = await screen.findByRole('button', { name: 'Creating…' });
+    const pending = await screen.findByRole('button', { name: 'Creating provisional patient…' });
     await expect(pending).toHaveAttribute('aria-busy', 'true');
     await expect(screen.getByDisplayValue('Pierre')).toBeVisible();
   },
@@ -253,7 +270,7 @@ export const SubmittingTemporaryPatient: Story = {
 export const LookupError: Story = {
   play: async ({ canvasElement }) => {
     const screen = body(canvasElement);
-    await userEvent.type(await screen.findByLabelText(/Phone number/), '099111000');
+    await userEvent.type(await screen.findByLabelText(/Contact phone number/), '099111000');
     await userEvent.click(screen.getByRole('button', { name: 'Send SMS code' }));
     await userEvent.type(screen.getByRole('textbox', { name: 'SMS code' }), DEMO_OTP);
     await userEvent.click(screen.getByRole('button', { name: 'Verify code' }));
@@ -268,7 +285,7 @@ export const LookupError: Story = {
 export const RateLimited: Story = {
   play: async ({ canvasElement }) => {
     const screen = body(canvasElement);
-    await userEvent.type(await screen.findByLabelText(/Phone number/), '099111999');
+    await userEvent.type(await screen.findByLabelText(/Contact phone number/), '099111999');
     await userEvent.click(screen.getByRole('button', { name: 'Send SMS code' }));
     await expect(await screen.findByText(/Too many codes requested/)).toBeVisible();
   },
@@ -278,7 +295,7 @@ export const RateLimited: Story = {
 export const UnsavedDataGuard: Story = {
   play: async ({ canvasElement, args }) => {
     const screen = body(canvasElement);
-    await userEvent.type(await screen.findByLabelText(/Phone number/), '0991');
+    await userEvent.type(await screen.findByLabelText(/Contact phone number/), '0991');
     await userEvent.keyboard('{Escape}');
 
     await expect(await screen.findByText('Discard what you entered?')).toBeVisible();
@@ -291,21 +308,25 @@ export const UnsavedDataGuard: Story = {
   },
 };
 
-/** Full journey — fresh phone to temporary patient, end to end. */
+/** Full journey — fresh phone to provisional patient, end to end. */
 export const FullJourneyTemporary: Story = {
   args: { createDelayMs: 0 },
   play: async ({ canvasElement, args }) => {
     const screen = body(canvasElement);
-    await userEvent.type(await screen.findByLabelText(/Phone number/), FRESH_PHONE);
+    await userEvent.type(await screen.findByLabelText(/Contact phone number/), FRESH_PHONE);
     await userEvent.click(screen.getByRole('button', { name: 'Send SMS code' }));
     await userEvent.type(screen.getByRole('textbox', { name: 'SMS code' }), DEMO_OTP);
     await userEvent.click(screen.getByRole('button', { name: 'Verify code' }));
 
-    await expect(await screen.findByText('No Kura patient uses this number.')).toBeVisible();
+    await expect(
+      await screen.findByText('No patient matches this phone number. PSC confirms identity.'),
+    ).toBeVisible();
     await userEvent.type(screen.getByLabelText(/Full name/), 'Pierre');
-    await userEvent.type(screen.getByLabelText(/DOB or age/), '32');
+    await userEvent.type(screen.getByLabelText(/Date of birth or age/), '32');
     await userEvent.click(screen.getByRole('radio', { name: 'Female' }));
-    await userEvent.click(screen.getByRole('button', { name: 'Create temporary patient' }));
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Create provisional patient' }),
+    );
 
     await waitFor(() => expect(args.onClose).toHaveBeenCalledWith('completed'));
   },
@@ -315,7 +336,7 @@ export const FullJourneyTemporary: Story = {
 export const FullJourneyKnownMatch: Story = {
   play: async ({ canvasElement, args }) => {
     const screen = body(canvasElement);
-    await userEvent.type(await screen.findByLabelText(/Phone number/), KNOWN_PHONE);
+    await userEvent.type(await screen.findByLabelText(/Contact phone number/), KNOWN_PHONE);
     await userEvent.click(screen.getByRole('button', { name: 'Send SMS code' }));
     await userEvent.type(screen.getByRole('textbox', { name: 'SMS code' }), DEMO_OTP);
     await userEvent.click(screen.getByRole('button', { name: 'Verify code' }));
@@ -330,8 +351,8 @@ export const Mobile320: Story = {
   parameters: { viewport: { defaultViewport: 'kura320' } },
   play: async ({ canvasElement }) => {
     const screen = body(canvasElement);
-    await expect(await screen.findByRole('heading', { name: 'Patient phone' })).toBeVisible();
-    await expect(screen.getByLabelText(/Phone number/)).toBeVisible();
+    await expect(await screen.findByRole('heading', { name: 'Contact phone number' })).toBeVisible();
+    await expect(screen.getByLabelText(/Contact phone number/)).toBeVisible();
     await expect(screen.getByRole('button', { name: 'Send SMS code' })).toBeVisible();
   },
 };
@@ -370,7 +391,9 @@ export const MobileNoMatchLongContent: Story = {
   play: async ({ canvasElement }) => {
     const screen = body(canvasElement);
     await expect(await screen.findByDisplayValue('Sreymom Nguyễn Thị Hồng Phương')).toBeVisible();
-    await expect(screen.getByRole('button', { name: 'Create temporary patient' })).toBeVisible();
+    await expect(
+      screen.getByRole('button', { name: 'Create provisional patient' }),
+    ).toBeVisible();
   },
 };
 

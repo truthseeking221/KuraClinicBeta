@@ -13,25 +13,35 @@
 
 .header {
   display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
 }
 
 .title {
+  margin: 0;
   color: var(--color-text-primary);
-  font-size: var(--type-lg);
-  font-weight: var(--weight-semibold);
-  line-height: var(--leading-snug);
-}
-
-.description {
-  color: var(--color-text-tertiary);
-  font-size: var(--type-xs);
-  line-height: var(--leading-normal);
+  font-size: var(--type-2xl);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-tight);
+  letter-spacing: -0.01em;
 }
 
 .toolbar {
   justify-content: flex-start;
+}
+
+.emptyIllustration {
+  inline-size: calc(var(--space-32) + var(--space-8));
+  block-size: calc(var(--space-32) + var(--space-8));
+}
+
+.emptyIllustrationImage {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: contain;
 }
 
 /* ── Patient cell ─────────────────────────────────────────── */
@@ -48,6 +58,14 @@
   flex-direction: column;
   gap: 2px;
   min-inline-size: 0;
+}
+
+.nameLine {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-inline-size: 0;
+  flex-wrap: wrap;
 }
 
 .name {

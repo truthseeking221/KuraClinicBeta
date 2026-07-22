@@ -64,16 +64,16 @@ export type PhoneGateOutcome =
     };
 
 /**
- * Each step title names the question that step asks, so the heading and the
- * controls below it never disagree.
+ * Each step title names the task, so the heading and the controls below it
+ * never disagree.
  */
 export const PHONE_GATE_COPY = {
-  phoneTitle: 'Patient phone',
-  phoneSubtitle: 'The patient, a guardian, or a guarantor.',
+  phoneTitle: 'Contact phone number',
+  phoneSubtitle: 'Use the patient’s number, or a guardian’s or guarantor’s.',
   otpTitle: 'Enter the code',
   matchTitle: 'Is this the patient?',
   sharedTitle: 'Which patient?',
-  newPatientTitle: 'New patient',
+  newPatientTitle: 'Patient details',
   lookupTitle: 'Patient lookup',
 
   sendCode: 'Send SMS code',
@@ -84,19 +84,19 @@ export const PHONE_GATE_COPY = {
   someoneElse: 'Someone else',
   choosePatient: 'Use selected patient',
   noneOfThese: 'None of these',
-  createTemporary: 'Create temporary patient',
-  creating: 'Creating…',
+  createTemporary: 'Create provisional patient',
+  creating: 'Creating provisional patient…',
   changePhone: 'Change',
   changePhoneLabel: 'Change phone number',
 
-  verifiedLabel: 'Verified phone',
-  sentToLabel: 'Code sent to',
+  verifiedLabel: 'Phone checked',
+  sentToLabel: 'Sent to',
   /** The one fact the gate exists to protect: possession is not identity. */
   identityCaveat: 'SMS confirms the number, not who is being tested.',
   differentTitle: 'This may be a different patient',
   differentBody:
-    'This number already belongs to a Kura patient. Creating a record here is logged as a possible duplicate.',
-  noMatchBody: 'No Kura patient uses this number.',
+    'This number belongs to a Kura patient. Creating another record is logged as a possible duplicate.',
+  noMatchBody: 'No patient matches this phone number. PSC confirms identity.',
 
   invalidPhone: 'Enter a valid Cambodia phone number.',
   rateLimited: 'Too many codes requested — try again in a few minutes.',
@@ -104,9 +104,9 @@ export const PHONE_GATE_COPY = {
   lookupErrorTitle: 'Lookup unavailable',
   lookupError: 'The patient lookup did not respond. Your entries are kept.',
   nameRequired: 'Enter the full name.',
-  dobRequired: 'Enter a date of birth or age.',
+  dobRequired: 'Enter a date of birth or estimated age.',
   sexRequired: 'Select a sex.',
-  noSelection: 'Select a patient, or add a temporary one.',
+  noSelection: 'Select a patient, or add a provisional patient.',
 
   phoneChecked: 'Phone checked',
   pscConfirms: 'PSC will confirm identity',
@@ -196,8 +196,8 @@ export function hasUnsavedEntries(input: {
 export function temporaryPatientContext(draft: DraftPatient, provisionalCode: string) {
   return {
     heading: `For ${draft.name.trim()}`,
-    meta: `${provisionalCode} · New patient · ${PHONE_GATE_COPY.phoneChecked}`,
+    meta: `${provisionalCode} · Provisional patient · ${PHONE_GATE_COPY.phoneChecked}`,
     status: PHONE_GATE_COPY.pscConfirms,
-    supporting: 'Phone checked. Not matched in Kura.',
+    supporting: 'Phone checked. No patient matches this number.',
   };
 }

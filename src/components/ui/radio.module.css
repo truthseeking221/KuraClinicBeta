@@ -5,24 +5,23 @@
   gap: var(--space-stack-label);
 }
 
+/* Card options are white tiles nested inside a tray, so they share the tile
+   radius — not the tray-level surface radius. The inset lives on the label
+   below, never here: padding on this wrapper would leave a dead rim the
+   pointer cannot click. */
 .field[data-appearance="card"] {
   box-sizing: border-box;
   width: 100%;
-  min-height: var(--touch-target-min);
   gap: 0;
-  padding: var(--space-1) var(--space-2);
+  padding: 0;
   border: 1px solid var(--card-border-outline);
-  border-radius: var(--radius-card-surface);
+  border-radius: var(--radius-card-tile);
   background: var(--color-surface);
   box-shadow: var(--elevation-card-outline);
   transition:
     background-color var(--duration-fast) var(--ease-standard),
     border-color var(--duration-fast) var(--ease-standard),
     box-shadow var(--duration-fast) var(--ease-standard);
-}
-
-.field[data-appearance="card"][data-card-density="comfortable"] {
-  padding: var(--space-inset-control);
 }
 
 .field[data-appearance="card"]:hover:not(
@@ -46,10 +45,14 @@
 
 .field[data-appearance="card"] .control {
   width: 100%;
-  min-height: var(--control-h);
+  min-height: var(--touch-target-min);
   align-items: flex-start;
-  padding: 0;
-  border-radius: 0;
+  padding: var(--space-2) var(--space-3);
+  border-radius: inherit;
+}
+
+.field[data-appearance="card"][data-card-density="comfortable"] .control {
+  padding: var(--space-inset-control) var(--space-4);
 }
 
 .field[data-appearance="card"] .control:hover:not([data-disabled="true"]),

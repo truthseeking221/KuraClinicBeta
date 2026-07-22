@@ -2,7 +2,7 @@
   box-sizing: border-box;
   display: flex;
   width: 100%;
-  max-width: calc(var(--space-32) * 9);
+  max-width: 72rem;
   margin: 0 auto;
   padding: var(--space-page-gutter);
   flex-direction: column;
@@ -14,12 +14,18 @@
 .pageHeader {
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-start;
+  align-items: flex-end;
   justify-content: space-between;
   gap: var(--space-inline-group);
 }
 
-.eyebrow,
+.pageHeading {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
 .patient,
 .filterStatus {
   margin: 0;
@@ -28,23 +34,33 @@
   line-height: var(--leading-normal);
 }
 
-.eyebrow {
-  font-size: var(--type-xs);
-  font-weight: var(--weight-semibold);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-
 .pageTitle {
-  margin: var(--space-1) 0;
+  margin: 0;
   color: var(--color-text-primary);
-  font-size: var(--type-3xl);
+  font-size: var(--type-2xl);
   font-weight: var(--weight-bold);
   line-height: var(--leading-tight);
+  letter-spacing: -0.01em;
 }
 
 .filterStatus {
   text-align: right;
+}
+
+.emptyState {
+  min-height: calc(var(--row-h) * 8);
+}
+
+.emptyIllustration {
+  inline-size: calc(var(--space-32) + var(--space-8));
+  block-size: calc(var(--space-32) + var(--space-8));
+}
+
+.emptyIllustrationImage {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: contain;
 }
 
 @media (max-width: 48rem) {
@@ -53,6 +69,7 @@
   }
 
   .pageHeader {
+    align-items: stretch;
     flex-direction: column;
   }
 

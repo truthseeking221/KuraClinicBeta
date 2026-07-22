@@ -1,0 +1,287 @@
+.planCard,
+.loopCard {
+  max-width: 48rem;
+}
+
+/* ── Plan ──────────────────────────────────────────────────── */
+
+.planMeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.planVersion {
+  font-size: var(--type-sm);
+  color: var(--color-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.holdReason {
+  margin: var(--space-1) 0 0;
+  font-size: var(--type-sm);
+  color: var(--color-status-warning-fg);
+}
+
+.planContent {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.empty {
+  margin: 0;
+  font-size: var(--type-sm);
+  color: var(--color-text-secondary);
+}
+
+/* Each clinical thread is a white tile inside the tray: separate threads that
+   still belong to one plan. */
+.focus {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  border-radius: var(--radius-card-tile);
+  padding: var(--space-4);
+  background: var(--color-surface);
+  box-shadow: var(--elevation-card-tile);
+}
+
+.focusHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.focusTitle {
+  margin: 0;
+  font-size: var(--type-base);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.goalList,
+.interventionList,
+.evidenceList,
+.proposalList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.goal {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.goalLabel {
+  font-size: var(--type-sm);
+  color: var(--color-text-primary);
+  overflow-wrap: anywhere;
+}
+
+.goalValue {
+  font-size: var(--type-base);
+  font-weight: var(--weight-semibold);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-primary);
+}
+
+.intervention {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  border-radius: var(--radius-control);
+  padding: var(--space-2);
+  background: var(--color-surface-2);
+}
+
+.intervention[data-status='complete'] {
+  background: transparent;
+}
+
+.interventionMain {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+
+.interventionLabel {
+  font-size: var(--type-sm);
+  font-weight: var(--weight-medium);
+  color: var(--color-text-primary);
+  overflow-wrap: anywhere;
+}
+
+.interventionMeta,
+.interventionEvidence {
+  font-size: var(--type-xs);
+  color: var(--color-text-secondary);
+  overflow-wrap: anywhere;
+}
+
+.interventionActions {
+  display: flex;
+  gap: var(--space-1);
+}
+
+/* The blocking reason spans the row: it explains the whole step, not the
+   button beside it. */
+.interventionBlocked {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: var(--type-xs);
+  color: var(--color-status-warning-fg);
+}
+
+.monitoring {
+  margin: 0;
+  font-size: var(--type-sm);
+  color: var(--color-text-secondary);
+}
+
+/* ── Care loop review ──────────────────────────────────────── */
+
+.loopStatus {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.loopHint {
+  font-size: var(--type-sm);
+  color: var(--color-text-secondary);
+}
+
+.loopContent {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.sectionTitle {
+  margin: 0 0 var(--space-2);
+  font-size: var(--type-base);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.evidence,
+.proposals {
+  border-radius: var(--radius-card-tile);
+  padding: var(--space-4);
+  background: var(--color-surface);
+  box-shadow: var(--elevation-card-tile);
+}
+
+.evidenceRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.evidenceLabel {
+  font-size: var(--type-sm);
+  color: var(--color-text-primary);
+}
+
+.evidenceValue {
+  font-size: var(--type-md);
+  font-weight: var(--weight-semibold);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-primary);
+}
+
+.evidenceReference {
+  font-size: var(--type-xs);
+  color: var(--color-text-tertiary);
+  font-variant-numeric: tabular-nums;
+}
+
+.proposal {
+  display: grid;
+  grid-template-columns: 7rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-3);
+  border-radius: var(--radius-control);
+  padding: var(--space-2);
+}
+
+.proposal[data-spine='true'] {
+  background: var(--color-surface-2);
+}
+
+.proposalKind {
+  font-size: var(--type-xs);
+  color: var(--color-text-tertiary);
+}
+
+.proposalMain {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+
+.proposalLabel {
+  font-size: var(--type-sm);
+  font-weight: var(--weight-medium);
+  color: var(--color-text-primary);
+  overflow-wrap: anywhere;
+}
+
+.proposalDetail {
+  font-size: var(--type-xs);
+  color: var(--color-text-secondary);
+}
+
+.proposalFixed {
+  font-size: var(--type-xs);
+  color: var(--color-text-tertiary);
+  white-space: nowrap;
+}
+
+.loopFooter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-top: 1px solid var(--color-border);
+}
+
+.loopSummary {
+  margin: 0;
+  min-width: 0;
+  font-size: var(--type-sm);
+  color: var(--color-text-secondary);
+}
+
+@media (max-width: 599px) {
+  .goal,
+  .intervention,
+  .evidenceRow,
+  .proposal {
+    grid-template-columns: minmax(0, 1fr);
+    align-items: flex-start;
+  }
+
+  .loopFooter {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .loopFooter :global([data-slot='button']) {
+    width: 100%;
+  }
+}

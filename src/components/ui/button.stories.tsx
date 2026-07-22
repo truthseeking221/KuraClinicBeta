@@ -14,7 +14,7 @@ const meta = {
         decision: 'REUSE',
         owner: 'src/components/ui',
         evidence:
-          'The canonical Kura Button remains the action owner and adopts Kura geometry, gradients, borders, shadows, and states.',
+          'The canonical Kura Button remains the action owner and uses one solid Brand 500 fill for primary actions, with Kura geometry, borders, shadows, and states.',
       },
       source: {
         vendor: 'Kura',
@@ -92,6 +92,7 @@ export const Default: Story = {
     const canvas = within(canvasElement);
     const button = canvas.getByRole('button', { name: 'Save visit draft' });
     await expect(button).toBeEnabled();
+    await expect(window.getComputedStyle(button).backgroundImage).toBe('none');
     await userEvent.tab();
     await expect(button).toHaveFocus();
   },

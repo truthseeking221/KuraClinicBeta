@@ -1,5 +1,8 @@
+'use client';
+
 import { createContext, useContext, type ComponentPropsWithoutRef } from 'react';
 
+import { useT } from '../foundations/i18n';
 import styles from './timeline.module.css';
 
 function joinClasses(...classes: Array<string | undefined | false>) {
@@ -29,20 +32,21 @@ export type TimelineProps = ComponentPropsWithoutRef<'ol'> & {
 };
 
 export function Timeline({
-  'aria-label': ariaLabel = 'Timeline',
+  'aria-label': ariaLabel,
   className,
   defaultValue = 1,
   orientation = 'vertical',
   value,
   ...props
 }: TimelineProps) {
+  const t = useT();
   const currentStep = value ?? defaultValue;
 
   return (
     <TimelineContext.Provider value={{ currentStep }}>
       <ol
         {...props}
-        aria-label={ariaLabel}
+        aria-label={ariaLabel ?? t('Timeline')}
         className={joinClasses(styles.root, className)}
         data-orientation={orientation}
         data-slot="timeline"

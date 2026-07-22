@@ -3,6 +3,7 @@
 import { Slider as SliderPrimitive } from '@base-ui/react/slider';
 import type { ReactNode } from 'react';
 
+import { useT } from '../foundations/i18n';
 import styles from './slider.module.css';
 
 export type SliderValue = number | readonly number[];
@@ -42,9 +43,10 @@ export function Slider({
   value,
   ...props
 }: SliderProps) {
+  const t = useT();
   const renderedValue = value ?? defaultValue;
   const thumbCount = Array.isArray(renderedValue) ? renderedValue.length : 1;
-  const fallbackLabel = ariaLabel ?? (typeof label === 'string' ? label : 'Slider');
+  const fallbackLabel = ariaLabel ?? (typeof label === 'string' ? label : t('Slider'));
 
   return (
     <SliderPrimitive.Root

@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 
+import { useT } from '../../components/foundations/i18n';
 import {
   Alert,
   AlertDescription,
@@ -31,6 +32,7 @@ export function ResultsReviewFlow({
   patient,
   sections,
 }: ResultsReviewFlowProps) {
+  const t = useT();
   const [acknowledged, setAcknowledged] = useState(initialAcknowledged);
   const [closed, setClosed] = useState(initialClosed);
   const allResults = sections.flatMap((section) => section.results);
@@ -45,10 +47,14 @@ export function ResultsReviewFlow({
   const canClose = progress.pending === 0 && (!critical || acknowledged);
   const closeReason =
     progress.pending > 0
-      ? `${progress.pending} test ${progress.pending === 1 ? 'line is' : 'lines are'} still pending.`
+      ? t(
+          progress.pending === 1
+            ? '{count} test line is still pending.'
+            : '{count} test lines are still pending.',
+        ).replace('{count}', String(progress.pending))
       : critical && !acknowledged
-        ? 'A critical released result still requires acknowledgment.'
-        : 'All release and acknowledgment gates are satisfied.';
+        ? t('A critical released result still requires acknowledgment.')
+        : t('All release and acknowledgment gates are satisfied.');
 
   return (
     <div className={styles.flow} data-slot="results-review-flow">
@@ -62,10 +68,11 @@ export function ResultsReviewFlow({
 
       {closed ? (
         <Alert tone="neutral" icon={<CheckIcon />}>
-          <AlertTitle>Clinical result review closed</AlertTitle>
+          <AlertTitle>{t('Clinical result review closed')}</AlertTitle>
           <AlertDescription>
-            The closure event is represented as a product/design target until backend audit and
-            concurrency contracts are mapped.
+            {t(
+              'The closure event is represented as a product/design target until backend audit and concurrency contracts are mapped.',
+            )}
           </AlertDescription>
         </Alert>
       ) : null}
@@ -82,14 +89,14 @@ export function ResultsReviewFlow({
           <div className={styles.closureStatus}>
             <LockKeyIcon size={20} aria-hidden="true" />
             <div>
-              <p className={styles.closureTitle}>Clinical closure gate</p>
+              <p className={styles.closureTitle}>{t('Clinical closure gate')}</p>
               <p className={styles.closureReason}>{closeReason}</p>
             </div>
           </div>
         </CardContent>
         <CardFooter>
           <Button disabled={!canClose || closed} onClick={() => setClosed(true)}>
-            {closed ? 'Review closed' : 'Close result review'}
+            {t(closed ? 'Review closed' : 'Close result review')}
           </Button>
         </CardFooter>
       </Card>

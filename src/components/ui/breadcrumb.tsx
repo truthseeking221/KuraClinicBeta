@@ -1,6 +1,9 @@
+'use client';
+
 import { cloneElement, isValidElement } from 'react';
 import type { ComponentPropsWithoutRef, ReactElement, ReactNode } from 'react';
 
+import { useT } from '../foundations/i18n';
 import { ChevronRightIcon, DotsThreeIcon } from './icons';
 import styles from './breadcrumb.module.css';
 
@@ -15,10 +18,12 @@ export type BreadcrumbProps = Omit<ComponentPropsWithoutRef<'nav'>, 'aria-label'
 };
 
 export function Breadcrumb({ label, 'aria-label': ariaLabel, className, ...props }: BreadcrumbProps) {
+  const t = useT();
+
   return (
     <nav
       {...props}
-      aria-label={ariaLabel ?? label ?? 'Breadcrumb'}
+      aria-label={ariaLabel ?? label ?? t('Breadcrumb')}
       data-slot="breadcrumb"
       className={joinClasses(styles.nav, className)}
     />
@@ -126,6 +131,8 @@ export type BreadcrumbEllipsisProps = Omit<
 >;
 
 export function BreadcrumbEllipsis({ className, ...props }: BreadcrumbEllipsisProps) {
+  const t = useT();
+
   return (
     <span
       {...props}
@@ -135,7 +142,7 @@ export function BreadcrumbEllipsis({ className, ...props }: BreadcrumbEllipsisPr
       className={joinClasses(styles.ellipsis, className)}
     >
       <DotsThreeIcon aria-hidden="true" />
-      <span className={styles.srOnly}>More breadcrumb levels</span>
+      <span className={styles.srOnly}>{t('More breadcrumb levels')}</span>
     </span>
   );
 }

@@ -15,6 +15,7 @@ import type {
   SeparatorProps,
 } from 'react-resizable-panels';
 
+import { useT } from '../foundations/i18n';
 import styles from './resizable.module.css';
 
 function joinClasses(...classes: Array<string | undefined | false>) {
@@ -54,15 +55,17 @@ export type ResizableHandleProps = SeparatorProps & {
 
 /** Keyboard-, pointer-, and touch-operable separator between adjacent panels. */
 export function ResizableHandle({
-  'aria-label': ariaLabel = 'Resize panels',
+  'aria-label': ariaLabel,
   children,
   className,
   showIndicator = false,
   ...props
 }: ResizableHandleProps) {
+  const t = useT();
+
   return (
     <ResizablePrimitiveSeparator
-      aria-label={ariaLabel}
+      aria-label={ariaLabel ?? t('Resize panels')}
       data-slot="resizable-handle"
       className={joinClasses(styles.handle, className)}
       {...props}

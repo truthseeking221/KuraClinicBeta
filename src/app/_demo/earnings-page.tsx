@@ -9,16 +9,22 @@ import {
 } from '../../features/doctor-banking';
 import {
   confirmedKhqr,
+  doctorFixture,
+  EARNINGS_DEMO_SCENARIOS,
   pendingKhqr,
   pendingLinkSession,
   redDoctorFixture,
   unlinkedMandate,
 } from '../../features/doctor-banking/demo-data';
+import { demoOnboardingScenarioById } from '../../features/auth/demo-data';
 import type {
   DoctorBankingFixture,
   KhqrIntent,
   MandateLinkSession,
 } from '../../features/doctor-banking';
+import type { EarningsDemoScenario } from '../../features/doctor-banking/demo-data';
+import { useDemoSession } from './demo-session';
+import { useSettingsDialog } from './settings-dialog-context';
 
 const EARNINGS_PATH: Record<EarningsRoute, string> = {
   overview: '/earnings',
@@ -30,10 +36,33 @@ const EARNINGS_PATH: Record<EarningsRoute, string> = {
 /** Route and fixture adapter only; all visible UI remains Storybook-owned. */
 export function EarningsPage({ route }: { route: EarningsRoute }) {
   const router = useRouter();
-  const [data, setData] = useState<DoctorBankingFixture>(redDoctorFixture);
-  const [intent, setIntent] = useState<KhqrIntent | null>(null);
-  const [linkSession, setLinkSession] = useState<MandateLinkSession | null>(null);
-  const [downloadState, setDownloadState] = useState<'idle' | 'success'>('idle');
+  const { session } = useDemoSession();
+  const { openSettings } = useSettingsDialog();
+  const selected = demoOnboardingScenarioById(session.demoScenarioId);
+  const registered: EarningsDemoScenario | undefined =
+    selected.surface === 'earnings' && selected.variant in EARNINGS_DEMO_SCENARIOS
+      ? EARNINGS_DEMO_SCENARIOS[
+          selected.variant as keyof typeof EARNINGS_DEMO_SCENARIOS
+        ]
+      : undefined;
+  const initial = registered ?? {
+    data: redDoctorFixture,
+    state: 'ready' as const,
+    downloadState: 'idle' as const,
+    intent: null,
+    linkSession: null,
+  };
+  const [data, setData] = useState<DoctorBankingFixture>(
+    session.demoProfile === 'new-doctor' ? doctorFixture : initial.data,
+  );
+  const [intent, setIntent] = useState<KhqrIntent | null>(initial.intent ?? null);
+  const [linkSession, setLinkSession] = useState<MandateLinkSession | null>(
+    initial.linkSession ?? null,
+  );
+  const [downloadState, setDownloadState] = useState<
+    'idle' | 'loading' | 'success' | 'error'
+  >(initial.downloadState ?? 'idle');
+  const [viewState, setViewState] = useState(initial.state);
 
   const updateMandate = (mandate: DoctorBankingFixture['overview']['mandate']) => {
     setData((current) => ({
@@ -57,16 +86,18 @@ export function EarningsPage({ route }: { route: EarningsRoute }) {
       onCreateKhqr={() => setIntent(pendingKhqr)}
       onDownload={() => setDownloadState('success')}
       onNavigate={(next) => router.push(EARNINGS_PATH[next])}
+      onOpenLicence={() => openSettings('account')}
       onRefresh={() => setIntent(confirmedKhqr)}
       onRegenerate={() => setIntent(pendingKhqr)}
       onRegenerateLink={beginLink}
       onRenew={beginLink}
-      onRetry={() => router.refresh()}
+      onRetry={() => setViewState('ready')}
       onUnlink={() => {
         setLinkSession(null);
         updateMandate(unlinkedMandate);
       }}
       route={route}
+      state={session.demoProfile === 'new-doctor' ? 'not-eligible' : viewState}
     />
   );
 }

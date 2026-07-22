@@ -1,5 +1,8 @@
+import { useEffect, useState } from 'react';
 import type { Decorator, Preview } from '@storybook/nextjs-vite';
 import '../src/app/globals.css';
+import { LocaleProvider } from '../src/components/foundations/i18n';
+import type { Locale } from '../src/components/foundations/i18n';
 
 const withTheme: Decorator = (Story, context) => {
   if (typeof document !== 'undefined') {
@@ -13,6 +16,32 @@ const withTheme: Decorator = (Story, context) => {
   return Story();
 };
 
+/**
+ * Every story renders in either interface language from the toolbar, so Khmer
+ * line-height, wrapping, and long-label overflow are verified in the same
+ * place the component is designed — not discovered in the app.
+ *
+ * The decorator owns the language as state, the way the app session does, so
+ * an in-story language control (the shell account menu) actually switches the
+ * story. The toolbar sets the starting language and overrides it when changed.
+ */
+const withLocale: Decorator = (Story, context) => {
+  const toolbarLocale = (context.globals.locale ?? 'en') as Locale;
+  const [locale, setLocale] = useState<Locale>(toolbarLocale);
+
+  useEffect(() => setLocale(toolbarLocale), [toolbarLocale]);
+
+  useEffect(() => {
+    document.documentElement.lang = locale;
+  }, [locale]);
+
+  return (
+    <LocaleProvider locale={locale} onLocaleChange={setLocale}>
+      <Story />
+    </LocaleProvider>
+  );
+};
+
 const preview: Preview = {
   globalTypes: {
     theme: {
@@ -24,6 +53,18 @@ const preview: Preview = {
         items: [
           { value: 'light', title: 'Light' },
           { value: 'dark', title: 'Dark' },
+        ],
+      },
+    },
+    locale: {
+      description: 'Interface language',
+      defaultValue: 'en',
+      toolbar: {
+        title: 'Language',
+        icon: 'globe',
+        items: [
+          { value: 'en', title: 'English' },
+          { value: 'km', title: 'ភាសាខ្មែរ' },
         ],
       },
     },
@@ -83,21 +124,18 @@ const preview: Preview = {
       },
     },
   },
-  decorators: [withTheme],
+  decorators: [withLocale, withTheme],
   parameters: {
     options: {
       storySort: {
         order: [
           'Design System',
           [
-            'Introduction',
             'Foundations',
-            ['Overview'],
             'Primitives',
             'Components',
             'Clinical Components',
             'Patterns',
-            'Patterns (Planned)',
             'Governance',
           ],
           'Clinic',
@@ -105,9 +143,19 @@ const preview: Preview = {
             'Shell',
             'Auth',
             'Clinical',
-            ['Home', 'Patients', 'Results', 'Lab Catalog', 'Phone Gate', 'Patient Context Rail', 'Patient Workspace (Planned)'],
+            [
+              'Home',
+              'Patients',
+              'Assessment',
+              'Care Plan',
+              'Lab Catalog',
+              'Results',
+              'Phone Gate',
+              'Patient Context Rail',
+            ],
             'Front Desk',
             [
+              'Desk Queue',
               'Check-In Wizard',
               [
                 'Step 1 Identity',
@@ -115,12 +163,34 @@ const preview: Preview = {
                 'Step 4 Orders & Consent',
                 'Step 5 Pre-Consult',
               ],
+              'Booking Detail Sheet',
+              'Cart Rail',
+              'Payment Receipt',
             ],
             'Collection',
+            ['Draw Worksheet', 'Defer Draw Dialog', 'Tube Labeling'],
             'Finance',
-            'Practice Admin (Planned)',
+            [
+              'Earnings',
+              ['Overview', 'Settle', 'Auto-pay', 'Activity & Statements', 'Activity Ledger'],
+            ],
             'Settings',
             'Flows',
+            [
+              'Clinic Flow Landscape',
+              'First Sign-In',
+              'Doctor Onboarding Readiness',
+              'Morning Triage',
+              'Patient Acquisition and Intake',
+              'Create Patient from Registry',
+              'First Patient Journey',
+              'Test Ordering',
+              'Prescribing',
+              'Lab Order and Sample Collection',
+              'Reception to Phlebotomy',
+              'Result Review and Closure',
+              'Earnings Settlement',
+            ],
           ],
           'Platform Admin',
         ],

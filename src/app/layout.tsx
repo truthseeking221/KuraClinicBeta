@@ -5,6 +5,7 @@ import "./globals.css";
 // barrel would pull client-context modules into the RSC graph.
 import { Toaster } from "../components/ui/toast";
 import { DemoSessionProvider } from "./_demo/demo-session";
+import { DemoLocaleProvider } from "./_demo/locale-bridge";
 
 export const metadata: Metadata = {
   title: "Kura Clinic",
@@ -20,8 +21,10 @@ export default function RootLayout({
     <html lang="en" className="h-full">
       <body className="min-h-full">
         <DemoSessionProvider>
-          {children}
-          <Toaster />
+          <DemoLocaleProvider>
+            {children}
+            <Toaster />
+          </DemoLocaleProvider>
         </DemoSessionProvider>
       </body>
     </html>

@@ -13,6 +13,7 @@ import {
   TestTubeIcon,
   ViewIcon,
 } from '../../components/ui';
+import { useT } from '../../components/foundations/i18n';
 
 import type { ResultsProgress } from './types';
 import styles from './action-rails.module.css';
@@ -28,19 +29,19 @@ const NEXT_ACTIONS: readonly NextAction[] = [
   {
     id: 'order',
     icon: <TestTubeIcon aria-hidden="true" size={16} />,
-    label: 'Order',
+    label: 'Order tests',
     description: 'Request or repeat lab tests',
   },
   {
     id: 'prescribe',
     icon: <PrescriptionIcon aria-hidden="true" size={16} />,
-    label: 'Prescribe',
+    label: 'Prescribe medication',
     description: 'Add or update medication',
   },
   {
     id: 'schedule',
     icon: <CalendarAddIcon aria-hidden="true" size={16} />,
-    label: 'Schedule',
+    label: 'Schedule follow-up',
     description: 'Set a follow-up reminder',
   },
 ];
@@ -63,11 +64,12 @@ export function NextActionsRail({
   onSchedule,
   patientName,
 }: NextActionsRailProps) {
+  const t = useT();
   const handlers = { order: onOrder, prescribe: onPrescribe, schedule: onSchedule };
   return (
     <section aria-labelledby="next-actions-title" className={styles.rail}>
       <h2 className={styles.title} id="next-actions-title">
-        What should we do with {patientName} today?
+        {t('What should we do with')} {patientName} {t('today?')}
       </h2>
       <div className={styles.actions}>
         {NEXT_ACTIONS.map((action) => (
@@ -81,8 +83,8 @@ export function NextActionsRail({
               {action.icon}
             </span>
             <span className={styles.actionCopy}>
-              <span className={styles.actionLabel}>{action.label}</span>
-              <span className={styles.actionDescription}>{action.description}</span>
+              <span className={styles.actionLabel}>{t(action.label)}</span>
+              <span className={styles.actionDescription}>{t(action.description)}</span>
             </span>
             <ChevronRightIcon aria-hidden="true" className={styles.actionChevron} size={16} />
           </button>
@@ -107,6 +109,7 @@ export function ResultsProgressRail({
   onReviewAvailable,
   progress,
 }: ResultsProgressRailProps) {
+  const t = useT();
   const [notifyRequested, setNotifyRequested] = useState(false);
   const complete = progress.resulted >= progress.total;
 
@@ -115,10 +118,10 @@ export function ResultsProgressRail({
       <div className={styles.progressHead}>
         <p className={styles.progressCount} id="results-progress-title">
           <span className={styles.progressResulted}>{progress.resulted}</span>
-          {` of ${progress.total} resulted`}
+          {` ${t('of')} ${progress.total} ${t('resulted')}`}
         </p>
         <Progress
-          aria-label={`${progress.resulted} of ${progress.total} tests resulted`}
+          aria-label={`${progress.resulted} ${t('of')} ${progress.total} ${t('tests resulted')}`}
           max={progress.total}
           value={progress.resulted}
         />
@@ -134,7 +137,7 @@ export function ResultsProgressRail({
             </span>
             <span className={styles.actionCopy}>
               <span className={styles.actionLabel}>
-                Review {complete ? 'results' : 'available results'}
+                {complete ? t('Review results') : t('Review available results')}
               </span>
               <span
                 className={
@@ -142,8 +145,12 @@ export function ResultsProgressRail({
                 }
               >
                 {progress.flagged > 0
-                  ? `${progress.flagged} flagged ${progress.flagged === 1 ? 'value needs' : 'values need'} review now`
-                  : 'Nothing flagged so far'}
+                  ? `${progress.flagged} ${
+                      progress.flagged === 1
+                        ? t('flagged value needs review now')
+                        : t('flagged values need review now')
+                    }`
+                  : t('Nothing flagged so far')}
               </span>
             </span>
             <ChevronRightIcon aria-hidden="true" className={styles.actionChevron} size={16} />
@@ -153,7 +160,7 @@ export function ResultsProgressRail({
           notifyRequested ? (
             <p className={styles.notifyConfirmed} role="status">
               <CheckIcon aria-hidden="true" size={14} />
-              You&apos;ll get one alert when all {progress.total} are in.
+              {t("You'll get one alert when all")} {progress.total} {t('are in.')}
             </p>
           ) : (
             <Button
@@ -165,7 +172,7 @@ export function ResultsProgressRail({
               size="sm"
               variant="ghost"
             >
-              Notify me when complete
+              {t('Notify me when complete')}
             </Button>
           )
         ) : null}

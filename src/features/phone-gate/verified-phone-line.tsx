@@ -1,5 +1,6 @@
 'use client';
 
+import { useT } from '../../components/foundations/i18n';
 import { Button, CheckIcon } from '../../components/ui';
 
 import { PHONE_GATE_COPY } from './logic';
@@ -11,6 +12,8 @@ export type VerifiedPhoneLineProps = {
   /** Masked while unverified, full once the code is accepted. */
   value: string;
   verified?: boolean;
+  /** Keep send destination as supporting context within the code-entry task. */
+  inline?: boolean;
   onChange: () => void;
 };
 
@@ -24,24 +27,28 @@ export function VerifiedPhoneLine({
   label,
   onChange,
   value,
+  inline = false,
   verified = false,
 }: VerifiedPhoneLineProps) {
+  const t = useT();
+
   return (
-    <div className={styles.phoneLine}>
-      <span className={styles.phoneLineLabel}>{label}</span>
+    <div className={styles.phoneLine} data-inline={inline || undefined}>
+      {!inline ? <span className={styles.phoneLineLabel}>{label}</span> : null}
       <span className={styles.phoneLineValue}>
         {verified ? (
           <CheckIcon aria-hidden="true" className={styles.phoneLineCheck} />
         ) : null}
+        {inline ? <span className={styles.phoneLineInlineLabel}>{label}</span> : null}
         <span className={styles.phoneLineNumber}>{value}</span>
       </span>
       <Button
-        aria-label={PHONE_GATE_COPY.changePhoneLabel}
+        aria-label={t(PHONE_GATE_COPY.changePhoneLabel)}
         onClick={onChange}
         size="sm"
         variant="link"
       >
-        {PHONE_GATE_COPY.changePhone}
+        {t(PHONE_GATE_COPY.changePhone)}
       </Button>
     </div>
   );
