@@ -1,0 +1,94 @@
+.checks {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.title {
+  margin: 0;
+  color: var(--color-text-primary);
+  font-size: var(--type-sm);
+  font-weight: var(--weight-semibold);
+}
+
+.progress {
+  color: var(--color-text-tertiary);
+  font-size: var(--type-xs);
+  font-weight: var(--weight-medium);
+}
+
+.progress[data-complete='true'] {
+  color: var(--color-status-success-fg);
+}
+
+/* What the order says, beside the tick that claims it was checked. */
+.facts {
+  display: grid;
+  min-width: 0;
+  margin: 0;
+  gap: var(--space-2);
+}
+
+.facts > div {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(0, 7rem) minmax(0, 1fr);
+  gap: var(--space-2);
+  align-items: baseline;
+}
+
+.facts dt {
+  color: var(--color-text-tertiary);
+  font-size: var(--type-xs);
+}
+
+.facts dd {
+  margin: 0;
+  color: var(--color-text-primary);
+  font-size: var(--type-xs);
+  overflow-wrap: anywhere;
+}
+
+.allergies {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.items {
+  display: flex;
+  margin: 0;
+  padding: 0;
+  flex-direction: column;
+  gap: var(--space-2);
+  list-style: none;
+}
+
+ /* The rail is narrow by design, so the site controls stack rather than
+    squeezing a select into a half column. */
+.site {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--color-border);
+}
+
+@media (max-width: 479px) {
+  .facts > div {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-0-5);
+  }
+
+  .site {
+    align-items: stretch;
+  }
+}

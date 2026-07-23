@@ -11,7 +11,7 @@ export type DemoScenarioSurface =
   | 'patients'
   | 'patient-chart'
   | 'results'
-  | 'earnings'
+  | 'balance'
   | 'front-desk-queue'
   | 'front-desk-check-in'
   | 'front-desk-payments'
@@ -279,42 +279,48 @@ const RESULT_SCENARIOS = ([
   }),
 ) satisfies readonly DemoScenarioDefinition[];
 
-const EARNINGS_SCENARIOS = ([
-  ['earnings-green', '+85598116001', 'Positive earnings balance', 'overview-green', '/earnings', 'Overview#GreenBalance'],
-  ['earnings-red', '+85598116002', 'Negative balance needs settlement', 'overview-red', '/earnings', 'Overview#RedBalanceNeedsSettlement'],
-  ['earnings-zero', '+85598116003', 'Settled balance at zero', 'overview-zero', '/earnings', 'Overview#SettledAtZero'],
-  ['earnings-unavailable', '+85598116004', 'Signed amount unavailable', 'overview-unavailable', '/earnings', 'Overview#SignedInt64Fallback'],
-  ['earnings-empty', '+85598116005', 'Earnings ledger empty', 'overview-empty', '/earnings', 'Overview#EmptyLedger'],
-  ['earnings-loading', '+85598116006', 'Earnings loading', 'overview-loading', '/earnings', 'Overview#Loading'],
-  ['earnings-error', '+85598116007', 'Earnings load failure', 'overview-error', '/earnings', 'Overview#RecoverableFailure'],
-  ['earnings-permission', '+85598116008', 'Earnings permission denied', 'overview-permission', '/earnings', 'Overview#PermissionDenied'],
-  ['earnings-activity-failed-pull', '+85598116009', 'Activity with failed collection', 'activity-failed-pull', '/earnings/activity', 'Activity & statements#FailedPullNotice'],
-  ['earnings-activity-empty', '+85598116010', 'Activity and notifications empty', 'activity-empty', '/earnings/activity', 'Activity & statements#EmptyActivityAndNotifications'],
-  ['earnings-download-error', '+85598116011', 'Statement download failure', 'activity-download-error', '/earnings/activity', 'Activity & statements#DownloadFailure'],
-  ['earnings-download-success', '+85598116012', 'Statement download complete', 'activity-download-success', '/earnings/activity', 'Activity & statements#DownloadSuccess'],
-  ['earnings-auto-pay-linked', '+85598116013', 'Auto-pay linked', 'auto-pay-linked', '/earnings/auto-pay', 'Auto-pay#Linked'],
-  ['earnings-auto-pay-unlinked', '+85598116014', 'Auto-pay unlinked', 'auto-pay-unlinked', '/earnings/auto-pay', 'Auto-pay#Unlinked'],
-  ['earnings-auto-pay-pending', '+85598116015', 'Auto-pay awaiting provider', 'auto-pay-pending', '/earnings/auto-pay', 'Auto-pay#LinkPendingProviderConfirmation'],
-  ['earnings-auto-pay-link-expired', '+85598116016', 'Auto-pay link session expired', 'auto-pay-link-expired', '/earnings/auto-pay', 'Auto-pay#LinkSessionExpired'],
-  ['earnings-auto-pay-confirmed', '+85598116017', 'Auto-pay provider confirmed', 'auto-pay-confirmed', '/earnings/auto-pay', 'Auto-pay#LinkProviderConfirmed'],
-  ['earnings-auto-pay-renewal', '+85598116018', 'Auto-pay renewal required', 'auto-pay-renewal', '/earnings/auto-pay', 'Auto-pay#RenewalRequired'],
-  ['earnings-auto-pay-expired', '+85598116019', 'Auto-pay authorization expired', 'auto-pay-expired', '/earnings/auto-pay', 'Auto-pay#AuthorizationExpired'],
-  ['earnings-auto-pay-frozen', '+85598116020', 'Auto-pay collection frozen', 'auto-pay-frozen', '/earnings/auto-pay', 'Auto-pay#CollectionFrozen'],
-  ['earnings-auto-pay-deleted', '+85598116021', 'Auto-pay authorization deleted', 'auto-pay-deleted', '/earnings/auto-pay', 'Auto-pay#AuthorizationDeleted'],
-  ['earnings-settle-pending', '+85598116022', 'Settlement awaiting confirmation', 'settle-pending', '/earnings/settle', 'Settle#AwaitingProviderConfirmation'],
-  ['earnings-settle-expired', '+85598116023', 'Settlement QR expired', 'settle-expired', '/earnings/settle', 'Settle#ExpiredNeedsRegeneration'],
-  ['earnings-settle-confirmed', '+85598116024', 'Settlement provider confirmed', 'settle-confirmed', '/earnings/settle', 'Settle#ProviderConfirmed'],
-  ['earnings-settle-nothing-due', '+85598116025', 'Nothing due for settlement', 'settle-nothing-due', '/earnings/settle', 'Settle#NothingDue'],
+const BALANCE_SCENARIOS = ([
+  ['balance-green', '+85598116001', 'Kura owes the doctor', 'overview-green', '/balance', 'Overview#KuraOwesYou'],
+  ['balance-red', '+85598116002', 'Doctor owes Kura, collection failed', 'overview-red', '/balance', 'Overview#YouOweKura'],
+  ['balance-zero', '+85598116003', 'Settled at zero', 'overview-zero', '/balance', 'Overview#Settled'],
+  ['balance-pending-wall', '+85598116026', 'Nothing settled yet this month', 'overview-pending-wall', '/balance', 'Overview#PendingWall'],
+  ['balance-floor-pressure', '+85598116027', 'Projected balance at the ordering floor', 'overview-floor-pressure', '/balance', 'Overview#OrderingFloorReached'],
+  ['balance-unavailable', '+85598116004', 'Signed amount unavailable', 'overview-unavailable', '/balance', 'Overview#AmountUnavailable'],
+  ['balance-licence-lapsed', '+85598116028', 'Licence lapsed with an existing ledger', 'overview-licence-lapsed', '/balance', 'Overview#LicenceLapsedKeepsLedger'],
+  ['balance-empty', '+85598116005', 'Ledger empty', 'overview-empty', '/balance', 'Overview#EmptyLedger'],
+  ['balance-loading', '+85598116006', 'Balance loading', 'overview-loading', '/balance', 'Overview#Loading'],
+  ['balance-error', '+85598116007', 'Balance load failure', 'overview-error', '/balance', 'Overview#RecoverableFailure'],
+  ['balance-permission', '+85598116008', 'Balance permission denied', 'overview-permission', '/balance', 'Overview#PermissionDenied'],
+  ['balance-activity-failed-pull', '+85598116009', 'Activity with failed collection', 'activity-failed-pull', '/balance/activity', 'Activity & Statements#FailedCollectionNotice'],
+  ['balance-activity-all-notifications', '+85598116029', 'Every notice and receipt kind', 'activity-all-notifications', '/balance/activity', 'Activity & Statements#AllNoticesAndReceipts'],
+  ['balance-activity-empty', '+85598116010', 'Activity and notices empty', 'activity-empty', '/balance/activity', 'Activity & Statements#EmptyActivityAndNotices'],
+  ['balance-download-error', '+85598116011', 'Statement download failure', 'activity-download-error', '/balance/activity', 'Activity & Statements#DownloadFailure'],
+  ['balance-download-success', '+85598116012', 'Statement download complete', 'activity-download-success', '/balance/activity', 'Activity & Statements#DownloadSuccess'],
+  ['balance-auto-pay-linked', '+85598116013', 'Auto-pay linked', 'auto-pay-linked', '/balance/auto-pay', 'Auto-pay#Linked'],
+  ['balance-auto-pay-unlinked', '+85598116014', 'Auto-pay unlinked', 'auto-pay-unlinked', '/balance/auto-pay', 'Auto-pay#Unlinked'],
+  ['balance-auto-pay-pending', '+85598116015', 'Auto-pay awaiting provider', 'auto-pay-pending', '/balance/auto-pay', 'Auto-pay#LinkPendingProviderConfirmation'],
+  ['balance-auto-pay-link-expired', '+85598116016', 'Auto-pay link session expired', 'auto-pay-link-expired', '/balance/auto-pay', 'Auto-pay#LinkSessionExpired'],
+  ['balance-auto-pay-link-long-running', '+85598116030', 'Auto-pay link still running', 'auto-pay-link-long-running', '/balance/auto-pay', 'Auto-pay#LinkLongRunning'],
+  ['balance-auto-pay-confirmed', '+85598116017', 'Auto-pay provider confirmed', 'auto-pay-confirmed', '/balance/auto-pay', 'Auto-pay#LinkProviderConfirmed'],
+  ['balance-auto-pay-renewal', '+85598116018', 'Auto-pay renewal required', 'auto-pay-renewal', '/balance/auto-pay', 'Auto-pay#RenewalRequired'],
+  ['balance-auto-pay-expired', '+85598116019', 'Auto-pay authorization expired', 'auto-pay-expired', '/balance/auto-pay', 'Auto-pay#AuthorizationExpired'],
+  ['balance-auto-pay-frozen', '+85598116020', 'Auto-pay collection frozen', 'auto-pay-frozen', '/balance/auto-pay', 'Auto-pay#CollectionFrozen'],
+  ['balance-auto-pay-deleted', '+85598116021', 'Auto-pay authorization deleted', 'auto-pay-deleted', '/balance/auto-pay', 'Auto-pay#AuthorizationDeleted'],
+  ['balance-auto-pay-licence-lapsed', '+85598116031', 'Auto-pay blocked by lapsed licence', 'auto-pay-licence-lapsed', '/balance/auto-pay', 'Auto-pay#LicenceLapsedBlocksNewLink'],
+  ['balance-settle-pending', '+85598116022', 'Payment code awaiting the bank', 'settle-pending', '/balance/settle', 'Settle Now#WaitingForTheBank'],
+  ['balance-settle-expired', '+85598116023', 'Payment code expired', 'settle-expired', '/balance/settle', 'Settle Now#CodeExpired'],
+  ['balance-settle-confirmed', '+85598116024', 'Payment confirmed', 'settle-confirmed', '/balance/settle', 'Settle Now#PaymentConfirmed'],
+  ['balance-settle-nothing-due', '+85598116025', 'Nothing to settle', 'settle-nothing-due', '/balance/settle', 'Settle Now#NothingToSettle'],
 ] as const).map(([id, phone, label, variant, entryPath, story]) =>
   established({
     id,
     phone,
     label,
     entryPath,
-    surface: 'earnings' as const,
+    surface: 'balance' as const,
     variant,
     journeyIds: ['FIN-12', 'FIN-13'],
-    source: `Clinic/Finance/Earnings/${story}`,
+    source: `Clinic/Finance/Balance/${story}`,
   }),
 ) satisfies readonly DemoScenarioDefinition[];
 
@@ -423,7 +429,7 @@ const COLLECTION_SCENARIOS = ([
   ['phlebotomy-empty-queue', '+85598119002', 'Phlebotomy — queue clear', 'scan-empty', 'ScanGateEmptyQueue', ['WQ-09']],
   ['phlebotomy-ready-draw', '+85598119003', 'Phlebotomy — ready for collection', 'worksheet-ready', 'Default', ['PHL-01', 'PHL-03', 'PHL-06', 'PHL-10']],
   ['phlebotomy-vitals-missing', '+85598119004', 'Phlebotomy — vitals not recorded', 'worksheet-vitals-missing', 'VitalsMissingWarning', ['PHL-01']],
-  ['phlebotomy-partial-draw', '+85598119005', 'Phlebotomy — partial draw with clot clock', 'worksheet-partial', 'ClotClockRunning', ['PHL-07']],
+  ['phlebotomy-partial-draw', '+85598119005', 'Phlebotomy — one tube drawn, two open', 'worksheet-partial', 'RegisterOneTube', ['PHL-07']],
 ] as const).map(([id, phone, label, variant, story, journeyIds]) =>
   staff({
     id,
@@ -454,7 +460,7 @@ const ALL_DEMO_ONBOARDING_SCENARIOS = [
   ...HOME_SCENARIOS,
   ...PATIENT_SCENARIOS,
   ...RESULT_SCENARIOS,
-  ...EARNINGS_SCENARIOS,
+  ...BALANCE_SCENARIOS,
   ...FULL_CLINIC_SCENARIOS,
   ...RECEPTION_SCENARIOS,
   ...COLLECTION_SCENARIOS,

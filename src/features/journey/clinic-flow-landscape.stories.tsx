@@ -30,7 +30,7 @@ const meta = {
           'Clinic/Flows/Test Ordering',
           'Clinic/Flows/Lab Order and Sample Collection',
           'Clinic/Flows/Result Review and Closure',
-          'Clinic/Flows/Earnings Settlement',
+          'Clinic/Flows/Doctor Banking/Settlement',
         ],
       },
       journeys: [

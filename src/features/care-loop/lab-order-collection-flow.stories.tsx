@@ -149,23 +149,36 @@ export const FullJourney: Story = {
 
     const patientId = canvas.getByLabelText("Patient ID");
     await userEvent.type(patientId, "P8842{Enter}");
-    for (const label of [
-      "Patient ID confirmed",
-      "Fasting status checked",
-      "Allergies reviewed",
-      "Patient consented",
-      "Site confirmed (L/R arm)",
-    ]) {
-      await userEvent.click(canvas.getByRole("checkbox", { name: label }));
+
+    // Each tube is its own registration, label and scan — there is no bulk
+    // collect, and a tube exists only once the lab system issues its identity.
+    for (let index = 0; index < 4; index += 1) {
+      await userEvent.click(
+        canvas.getAllByRole("button", { name: "Draw this tube" })[0],
+      );
+      const dialog = within(await screen.findByRole("dialog"));
+      await userEvent.click(dialog.getByRole("button", { name: "Print label" }));
+      const sampleId = canvasElement.ownerDocument.body
+        .querySelector('[class*="previewSample"]')
+        ?.textContent?.trim();
+      await userEvent.type(
+        dialog.getByRole("textbox", { name: "Scan the attached label" }),
+        `${sampleId}{Enter}`,
+      );
+      await waitFor(async () => {
+        await expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+      });
     }
-    await userEvent.click(
-      canvas.getByRole("button", { name: "Mark all collected" }),
-    );
     for (const button of canvas.getAllByRole("button", { name: /Invert ×/ })) {
       await userEvent.click(button);
     }
+    await userEvent.type(
+      await canvas.findByLabelText(/Received by/),
+      "Courier Rithy",
+    );
+    await userEvent.click(canvas.getByRole("button", { name: "Record handoff" }));
     await userEvent.click(
-      canvas.getByRole("button", { name: "Submit collection & next patient" }),
+      canvas.getByRole("button", { name: "Complete collection" }),
     );
 
     await userEvent.click(

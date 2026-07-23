@@ -4,21 +4,21 @@ import { expect, userEvent, waitFor, within } from 'storybook/test';
 
 import { READINESS } from '../../components/foundations/readiness-data';
 
-import { confirmedKhqr, pendingKhqr, redDoctorFixture } from './demo-data';
-import { DoctorEarningsWorkspace } from './earnings-workspace';
+import { confirmedKhqr, failedPullFixture, pendingKhqr } from './demo-data';
+import { DoctorBalanceWorkspace } from './balance-workspace';
 import { DOCTOR_BANKING_STORYBOOK_KURA } from './storybook-metadata';
 import { DoctorBankingStoryFrame } from './story-frame';
-import type { EarningsRoute } from './earnings-workspace';
+import type { BalanceRoute } from './balance-workspace';
 import type { KhqrIntent } from './types';
 
 function RedBalanceSettlementFlow() {
-  const [route, setRoute] = useState<EarningsRoute>('overview');
+  const [route, setRoute] = useState<BalanceRoute>('overview');
   const [intent, setIntent] = useState<KhqrIntent | null>(null);
 
   return (
-    <DoctorBankingStoryFrame onNavigate={(key) => key === 'earnings' && setRoute('overview')}>
-      <DoctorEarningsWorkspace
-        data={redDoctorFixture}
+    <DoctorBankingStoryFrame onNavigate={(key) => key === 'balance' && setRoute('overview')}>
+      <DoctorBalanceWorkspace
+        data={failedPullFixture}
         intent={intent}
         onCreateKhqr={() => setIntent(pendingKhqr)}
         onNavigate={setRoute}
@@ -31,7 +31,7 @@ function RedBalanceSettlementFlow() {
 }
 
 const meta = {
-  title: 'Clinic/Flows/Earnings Settlement',
+  title: 'Clinic/Flows/Doctor Banking/Settlement',
   component: RedBalanceSettlementFlow,
   tags: ['autodocs', 'source-reui', 'adapted-kura'],
   parameters: {
@@ -41,8 +41,8 @@ const meta = {
       readiness: READINESS.flows,
       flow: {
         pages: [
-          'Clinic/Finance/Earnings/Overview',
-          'Clinic/Finance/Earnings/Settle',
+          'Clinic/Finance/Balance/Overview',
+          'Clinic/Finance/Balance/Settle Now',
         ],
         terminal: 'The exact KHQR amount is provider-confirmed and applied to the ledger',
       },
@@ -51,7 +51,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'Executable doctor-owned settlement journey. It routes from the signed person-global balance to an immutable exact-amount KHQR request, waits for provider confirmation, and ends only after the provider-confirmed success state appears.',
+          'Executable settlement journey. It starts from a failed collection on the Balance overview, creates an immutable exact-amount payment code, waits for the provider, and ends only on the confirmed receipt with the balance after payment.',
       },
     },
   },
@@ -60,27 +60,29 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const RedBalanceToConfirmedKhqr: Story = {
+export const FailedCollectionToConfirmedPayment: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
 
-    await expect(canvas.getByRole('heading', { name: 'Earnings' })).toBeVisible();
-    await userEvent.click(canvas.getByRole('button', { name: 'Settle now' }));
+    await expect(canvas.getByRole('heading', { name: 'Balance' })).toBeVisible();
+    await expect(canvas.getByText('Collection failed')).toBeVisible();
+    await userEvent.click(canvas.getAllByRole('button', { name: 'Settle now' })[0]);
 
     await waitFor(async () => {
-      await expect(canvas.getByRole('heading', { name: 'Settle balance' })).toBeVisible();
+      await expect(canvas.getByRole('heading', { name: 'Settle now' })).toBeVisible();
     });
-    await userEvent.click(canvas.getByRole('button', { name: 'Create exact KHQR' }));
-    await expect(canvas.getByText('Awaiting confirmation')).toBeVisible();
-    await userEvent.click(canvas.getByRole('button', { name: 'Check confirmation' }));
+    await userEvent.click(canvas.getByRole('button', { name: 'Create payment code' }));
+    await expect(canvas.getByText('Waiting for your bank')).toBeVisible();
+    await userEvent.click(canvas.getByRole('button', { name: 'Check for payment' }));
 
     await waitFor(async () => {
-      await expect(canvas.getByText('Settlement confirmed')).toBeVisible();
+      await expect(canvas.getByText('Payment confirmed')).toBeVisible();
     });
     await expect(canvas.getByText('$48.60')).toBeVisible();
+    await expect(canvas.getByText('RCPT-40126')).toBeVisible();
   },
 };
 
 export const Mobile320: Story = {
-  parameters: { viewport: { defaultViewport: 'kura320' } },
+  globals: { viewport: { value: 'kura320' } },
 };

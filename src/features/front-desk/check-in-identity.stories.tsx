@@ -7,7 +7,7 @@ import { blankWalkIn, EXISTING_PATIENTS, IDENTITY_REGISTRY } from './demo-data';
 import type { FrontDeskPatient } from './types';
 import { READINESS } from '../../components/foundations/readiness-data';
 
-const SEARCH_LABEL = 'Find patient by phone, booking code, or name';
+const SEARCH_LABEL = 'Find the booking by code or phone';
 
 function IdentityPlayground({
   existingPatients = EXISTING_PATIENTS,
@@ -31,7 +31,7 @@ function IdentityPlayground({
 }
 
 const meta = {
-  title: 'Clinic/Front Desk/Check-In Wizard/Step 1 Identity',
+  title: 'Clinic/Front Desk/Check-In/Arrival',
   component: CheckInWizard,
   tags: ['autodocs', 'adapted-kura'],
   parameters: {
@@ -84,9 +84,12 @@ export const BlankWalkIn: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getByLabelText(SEARCH_LABEL)).toHaveFocus();
-    await expect(canvas.getByRole('heading', { level: 2, name: 'Find or create a patient' })).toBeVisible();
-    await expect(canvas.queryByRole('button', { name: /Other ID methods/ })).not.toBeInTheDocument();
-    await expect(canvas.getByRole('button', { name: 'Review details' })).toBeDisabled();
+    await expect(canvas.getByRole('heading', { level: 2, name: 'Find the booking' })).toBeVisible();
+    // Scanning is the field, never a button that opens a dialog first.
+    await expect(canvas.queryByRole('button', { name: /Scan/ })).not.toBeInTheDocument();
+    // The walk-in door is an explicit action, not something a search implies.
+    await expect(canvas.getByRole('button', { name: 'Start a walk-in' })).toBeVisible();
+    await expect(canvas.getByRole('button', { name: 'Confirm the patient' })).toBeDisabled();
 
     const workspace = canvasElement.querySelector<HTMLElement>(
       '[data-slot="check-in-workspace"]',
@@ -117,7 +120,7 @@ export const PhoneMatchKnownHere: Story = {
     await expect(canvas.getByText('Sok Phearom')).toBeVisible();
     // Bookings are the primary check-in action; walk-in demotes to an escape.
     await expect(
-      canvas.getByRole('button', { name: 'Check in against booking GW87430' }),
+      canvas.getByRole('button', { name: 'Use booking PSC-A82Q7K3M' }),
     ).toBeVisible();
     await expect(
       canvas.getByRole('button', { name: 'Continue without a booking' }),
@@ -155,18 +158,18 @@ export const SharedPhoneGuardianGate: Story = {
     await expect(
       await canvas.findByText('Confirm the guardian is present to continue with a minor.'),
     ).toBeVisible();
-    await expect(canvas.queryByRole('button', { name: /Check in Baby Prum/ })).not.toBeInTheDocument();
+    await expect(canvas.queryByRole('button', { name: /Continue with Baby Prum/ })).not.toBeInTheDocument();
 
     await userEvent.click(canvas.getByRole('button', { name: 'Confirm guardian present' }));
     await expect(await canvas.findByText(/Guardian confirmed/)).toBeVisible();
     await expect(
-      canvas.getByRole('button', { name: /Check in Baby Prum · GW87441/ }),
+      canvas.getByRole('button', { name: /Continue with Baby Prum · PSC-D19K6B83/ }),
     ).toBeVisible();
 
     // Switching to the adult clears the gate.
     await userEvent.click(within(group).getByRole('radio', { name: /Lina Prum/ }));
     await expect(
-      canvas.getByRole('button', { name: /Check in Lina Prum · GW87440/ }),
+      canvas.getByRole('button', { name: /Continue with Lina Prum · PSC-C77H2X54/ }),
     ).toBeVisible();
   },
 };
@@ -176,38 +179,56 @@ export const BookingCodeMatch: Story = {
   render: () => <IdentityPlayground />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await userEvent.type(canvas.getByLabelText(SEARCH_LABEL), 'GW87430');
+    await userEvent.type(canvas.getByLabelText(SEARCH_LABEL), 'PSC-A82Q7K3M');
     await expect(await canvas.findByText('Booking matched')).toBeVisible();
     await expect(canvas.getByText('Code')).toBeVisible();
     await expect(
-      canvas.getByRole('button', { name: /Check in booking GW87430/ }),
+      canvas.getByRole('button', { name: 'Continue to confirm patient' }),
     ).toBeVisible();
   },
 };
 
+/**
+ * Scanning is an input method, not a workflow: the desk scanner types into
+ * the lookup field itself, so there is no scan button and no scan dialog.
+ */
 export const ScanBookingQr: Story = {
-  name: 'Scan booking QR → code fills the search',
+  name: 'Scanner · QR payload normalises to the booking code',
   args: baseArgs,
   render: () => <IdentityPlayground />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await userEvent.click(canvas.getByRole('button', { name: 'Scan booking QR' }));
+    const field = canvas.getByLabelText(SEARCH_LABEL);
 
-    const dialog = await within(document.body).findByRole('dialog', { name: 'Scan booking QR' });
-    const scanField = within(dialog).getByLabelText('Booking QR payload');
+    // A payload still arriving resolves nothing — no candidate flicker.
+    await userEvent.type(field, 'kura://booking/PSC-A82');
+    await expect(await canvas.findByText('Reading booking QR…')).toBeVisible();
+    await expect(canvas.queryByText('Booking matched')).not.toBeInTheDocument();
 
-    // A payload without a code reports the failure inline.
-    await userEvent.type(scanField, 'hello{Enter}');
-    await expect(
-      await within(dialog).findByText('No booking code found in this QR.'),
-    ).toBeVisible();
-
-    await userEvent.clear(scanField);
-    await userEvent.type(scanField, 'kura://booking/GW87430{Enter}');
+    await userEvent.type(field, 'Q7K3M');
     await waitFor(async () => {
-      await expect(canvas.getByLabelText(SEARCH_LABEL)).toHaveValue('GW87430');
+      await expect(field).toHaveValue('PSC-A82Q7K3M');
     });
     await expect(await canvas.findByText('Booking matched')).toBeVisible();
+  },
+};
+
+/**
+ * A foreign QR carrying a code-shaped string must never open a patient. Only
+ * the canonical `kura://booking/` payload resolves.
+ */
+export const ForeignQrRejected: Story = {
+  name: 'Scanner · a QR that is not ours resolves nothing',
+  args: baseArgs,
+  render: () => <IdentityPlayground />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.type(
+      canvas.getByLabelText(SEARCH_LABEL),
+      'https://example.test/PSC-A82Q7K3M',
+    );
+    await expect(await canvas.findByText('This is not a Kura booking QR.')).toBeVisible();
+    await expect(canvas.queryByText('Booking matched')).not.toBeInTheDocument();
   },
 };
 
@@ -219,8 +240,8 @@ export const NameCandidates: Story = {
     const canvas = within(canvasElement);
     await userEvent.type(canvas.getByLabelText(SEARCH_LABEL), 'Sok');
     await expect(await canvas.findByText('Possible matches')).toBeVisible();
-    await expect(canvas.getAllByText('Verified').length).toBeGreaterThanOrEqual(1);
-    await expect(canvas.getByText('Unverified')).toBeVisible();
+    await expect(canvas.getAllByText('Identity verified').length).toBeGreaterThanOrEqual(1);
+    await expect(canvas.getByText('Identity provisional')).toBeVisible();
 
     // "Different person" dismisses a candidate without capturing.
     const dismissButtons = canvas.getAllByRole('button', { name: 'Different person' });
@@ -244,9 +265,9 @@ export const NoMatchNewPatient: Story = {
     await expect(await canvas.findByText('No existing record')).toBeVisible();
 
     // Capturing advances to Step 2 with the phone carried over.
-    await userEvent.click(canvas.getByRole('button', { name: 'Create a new patient' }));
+    await userEvent.click(canvas.getByRole('button', { name: 'Start a walk-in' }));
     await expect(
-      await canvas.findByRole('heading', { level: 2, name: /Review & confirm/ }),
+      await canvas.findByRole('heading', { level: 2, name: /Confirm the patient/ }),
     ).toBeVisible();
   },
 };
@@ -257,16 +278,16 @@ export const UnknownBookingCode: Story = {
   render: () => <IdentityPlayground />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await userEvent.type(canvas.getByLabelText(SEARCH_LABEL), 'ZZ99999');
+    await userEvent.type(canvas.getByLabelText(SEARCH_LABEL), 'PSC-ZZ999999');
     await expect(await canvas.findByText('No existing record')).toBeVisible();
     await expect(
-      canvas.queryByRole('button', { name: 'Create a new patient' }),
+      canvas.queryByRole('button', { name: 'Start a walk-in' }),
     ).not.toBeInTheDocument();
   },
 };
 
 export const IdentityCaptured: Story = {
-  name: 'Patient selected · manual entry and change patient path',
+  name: 'Record selected · manual entry and change patient path',
   args: baseArgs,
   render: () => {
     const captured: FrontDeskPatient = {
@@ -284,25 +305,25 @@ export const IdentityCaptured: Story = {
     const canvas = within(canvasElement);
     // A selected patient reopens on Step 2 (first not-done step); Step 1 stays
     // reachable to review or choose another patient.
-    await userEvent.click(canvas.getByRole('tab', { name: /Identity/ }));
+    await userEvent.click(canvas.getByRole('tab', { name: /Arrival/ }));
     await expect(
-      await canvas.findByRole('heading', { level: 2, name: 'Patient selected' }),
+      await canvas.findByRole('heading', { level: 2, name: 'Record selected' }),
     ).toBeVisible();
     await expect(canvas.getByText('Source: Manual entry')).toBeVisible();
-    await expect(canvas.getByText('Review and edit details on the next step.')).toBeVisible();
-    await expect(canvas.getByRole('button', { name: 'Review details' })).toBeEnabled();
+    await expect(canvas.getByText('Review and edit the details next.')).toBeVisible();
+    await expect(canvas.getByRole('button', { name: 'Confirm the patient' })).toBeEnabled();
 
     // Changing patients asks first, then returns to the search.
     await userEvent.click(canvas.getByRole('button', { name: 'Choose a different patient' }));
     await expect(canvas.getByText('Choose a different patient?')).toBeVisible();
     await userEvent.click(canvas.getByRole('button', { name: 'Search again' }));
     await expect(await canvas.findByLabelText(SEARCH_LABEL)).toBeVisible();
-    await expect(canvas.getByRole('button', { name: 'Review details' })).toBeDisabled();
+    await expect(canvas.getByRole('button', { name: 'Confirm the patient' })).toBeDisabled();
   },
 };
 
 export const IdentityCapturedMobile: Story = {
-  name: 'Patient selected · narrow viewport and long name',
+  name: 'Record selected · narrow viewport and long name',
   args: baseArgs,
   globals: { viewport: { value: 'kura390' } },
   parameters: { chromatic: { viewports: [320, 390] } },
@@ -319,15 +340,15 @@ export const IdentityCapturedMobile: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await userEvent.click(canvas.getByRole('tab', { name: /Identity/ }));
-    await expect(canvas.getAllByText('Patient selected')).toHaveLength(1);
+    await userEvent.click(canvas.getByRole('tab', { name: /Arrival/ }));
+    await expect(canvas.getAllByText('Record selected')).toHaveLength(1);
     // The name reads twice on this step by design: the identity strip carries
     // it through all six steps, the card confirms what was just captured.
     // Both must survive a long name at 390px without clipping the other.
     await expect(canvas.getAllByText('Sokha Chanmony Rattanak Sambath')).toHaveLength(2);
     await expect(canvas.getByText('Source: Manual entry')).toBeVisible();
     await expect(canvas.getByRole('button', { name: 'Choose a different patient' })).toBeVisible();
-    await expect(canvas.getByRole('button', { name: 'Review details' })).toBeEnabled();
+    await expect(canvas.getByRole('button', { name: 'Confirm the patient' })).toBeEnabled();
   },
 };
 
@@ -347,18 +368,20 @@ export const MobileNarrow: Story = {
  * silently redeemed: the desk sees the canonical status, why it blocks, and a
  * recovery door (walk-in with the same record) — never a dead end.
  */
-export const BookingExpired: Story = {
+export const OldCodeStillRedeems: Story = {
+  name: 'An old code still redeems — codes do not expire',
   args: baseArgs,
   render: () => <IdentityPlayground />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await userEvent.type(canvas.getByLabelText(SEARCH_LABEL), 'GW87510');
-    await expect(await canvas.findByText('Booking code expired')).toBeVisible();
-    await expect(canvas.getByText('Expired')).toBeVisible();
+    await userEvent.type(canvas.getByLabelText(SEARCH_LABEL), 'PSC-E52N4Q18');
+    // Issued nine days ago, never used. Nothing upstream expires a code, so
+    // the desk must not invent a refusal the patient cannot resolve.
+    await expect(await canvas.findByText(/Issued 9 days ago/)).toBeVisible();
+    await expect(canvas.queryByText(/expired/i)).not.toBeInTheDocument();
     await expect(
-      canvas.getByRole('button', { name: /Continue with Sok Phearom as walk-in/ }),
-    ).toBeVisible();
-    await expect(canvas.queryByRole('button', { name: /Check in booking/ })).not.toBeInTheDocument();
+      canvas.getByRole('button', { name: 'Continue to confirm patient' }),
+    ).toBeEnabled();
   },
 };
 
@@ -367,7 +390,7 @@ export const BookingAlreadyRedeemed: Story = {
   render: () => <IdentityPlayground />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await userEvent.type(canvas.getByLabelText(SEARCH_LABEL), 'GW87511');
+    await userEvent.type(canvas.getByLabelText(SEARCH_LABEL), 'PSC-F63R8W25');
     await expect(await canvas.findByText('Code already redeemed')).toBeVisible();
     await expect(canvas.getByText(/may already be checked in/)).toBeVisible();
     // Duplicate-visit risk: the recovery is deliberately secondary, never primary.
@@ -380,7 +403,7 @@ export const BookingCancelledCode: Story = {
   render: () => <IdentityPlayground />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await userEvent.type(canvas.getByLabelText(SEARCH_LABEL), 'GW87512');
+    await userEvent.type(canvas.getByLabelText(SEARCH_LABEL), 'PSC-G74T5Y36');
     await expect(await canvas.findByText('Booking cancelled')).toBeVisible();
     await expect(canvas.getByText(/Confirm with the patient/)).toBeVisible();
   },
@@ -391,7 +414,7 @@ export const BookingWrongBranch: Story = {
   render: () => <IdentityPlayground />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await userEvent.type(canvas.getByLabelText(SEARCH_LABEL), 'GW87513');
+    await userEvent.type(canvas.getByLabelText(SEARCH_LABEL), 'PSC-H85V6Z47');
     await expect(await canvas.findByText('Issued for another branch')).toBeVisible();
     await expect(canvas.getByText(/direct the patient there/i)).toBeVisible();
     await expect(
@@ -418,13 +441,10 @@ export const MultiBookingCheckIn: Story = {
     await expect(canvas.getByRole('button', { name: 'Continue without a booking' })).toBeVisible();
     // Non-redeemable codes stay visible as facts but are never check-in targets.
     await expect(
-      canvas.queryByRole('button', { name: 'Check in against booking GW87510' }),
-    ).not.toBeInTheDocument();
-    await expect(
-      canvas.queryByRole('button', { name: 'Check in against booking GW87513' }),
+      canvas.queryByRole('button', { name: 'Use booking PSC-H85V6Z47' }),
     ).not.toBeInTheDocument();
     await userEvent.click(
-      canvas.getByRole('button', { name: 'Check in against booking GW87431' }),
+      canvas.getByRole('button', { name: 'Use booking PSC-B41M9T27' }),
     );
     // Bound booking travels with the capture and the wizard advances.
     await waitFor(async () => {
@@ -487,7 +507,7 @@ export const CollisionSupervisorPin: Story = {
  * bound booking; changing patients asks first and preserves data until replaced.
  */
 export const CapturedProvenance: Story = {
-  name: 'Patient selected · provenance and change patient confirmation',
+  name: 'Record selected · provenance and change patient confirmation',
   args: baseArgs,
   render: () => {
     const draft: FrontDeskPatient = {
@@ -496,7 +516,7 @@ export const CapturedProvenance: Story = {
       dob: '1974-03-15',
       sexAtBirth: 'Male',
       arrivedLabel: '08:24 · 12 min ago',
-      boundBookingCode: 'GW87430',
+      boundBookingCode: 'PSC-A82Q7K3M',
       identity: {
         source: 'existing',
         lockedFields: ['name', 'dob', 'sexAtBirth'],
@@ -508,12 +528,12 @@ export const CapturedProvenance: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     // A selected patient reopens on Step 2; Step 1 stays reachable for review.
-    await userEvent.click(canvas.getByRole('tab', { name: /Identity/ }));
+    await userEvent.click(canvas.getByRole('tab', { name: /Arrival/ }));
     await expect(
       await canvas.findByText('Source: Existing Kura record · Captured 08:31'),
     ).toBeVisible();
     await expect(canvas.getByText('3 fields locked')).toBeVisible();
-    await expect(canvas.getByText('Booking GW87430')).toBeVisible();
+    await expect(canvas.getByText('Booking PSC-A82Q7K3M')).toBeVisible();
     await expect(canvas.getByText('Q-034')).toBeVisible();
     await expect(canvas.getByText('Arrived 08:24 · 12 min ago')).toBeVisible();
     await userEvent.click(canvas.getByRole('button', { name: 'Choose a different patient' }));

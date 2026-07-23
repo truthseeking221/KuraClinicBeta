@@ -90,7 +90,7 @@ export const CriticalTone: Story = {
 
 /** Money always renders through MoneyText, in minor units. */
 export const MoneyValue: Story = {
-  args: { signal: signal(demo.busyMorning, 'earnings') },
+  args: { signal: signal(demo.busyMorning, 'balance') },
 };
 
 /** A non-numeric headline: the next pickup window. */
@@ -138,5 +138,5 @@ export const LongContent: Story = {
 
 export const MobileWidth320: Story = {
   parameters: { viewport: { defaultViewport: 'kura320' } },
-  args: { signal: signal(demo.longContent, 'earnings') },
+  args: { signal: signal(demo.longContent, 'balance') },
 };

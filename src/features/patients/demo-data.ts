@@ -222,7 +222,6 @@ export const DEMO_RESUMABLE_PATIENT_JOURNEY: PatientAcquisitionJourneySnapshot =
     sexLabel: 'Female',
     age: 32,
     dob: '1994-02-12',
-    dobOrAge: '1994-02-12',
     phone: '+85512345678',
     status: 'Provisional · PSC verifies',
   },
@@ -435,6 +434,24 @@ export const DEMO_RESULTS_PROGRESS: ResultsProgress = {
   total: 30,
   flagged: 5,
   arrivalNote: 'Chemistry lands about 4:30 PM. HbA1c tomorrow 9:00 AM.',
+};
+
+/**
+ * A record the phone gate has just created: phone verified by SMS, identity
+ * provisional until PSC confirms it, and nothing scheduled. It exists to prove
+ * the registry states both axes and claims no next step — creating a patient
+ * is a complete outcome, not the first step of an intake or an order.
+ */
+export const NEW_PROVISIONAL_PATIENT: PatientSummary = {
+  userId: 'p-chariya-som',
+  displayName: 'Chariya Som',
+  sexAtBirth: 'F',
+  age: 34,
+  hasAge: true,
+  mrnMasked: '··93',
+  phoneMasked: '+85*****6108',
+  assurance: 'unverified',
+  status: '',
 };
 
 /** A patient whose name pushes wrapping: long Khmer-Latin compound name. */

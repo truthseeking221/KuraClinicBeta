@@ -34,6 +34,12 @@ export type CartItem = {
   fasting?: boolean;
   consent?: LineConsent;
   /**
+   * Who is expected to pay this line. Payer responsibility is per line, not
+   * per visit: one basket can hold a covered lab and a self-pay scan, and the
+   * desk resolves each before money is taken. Unset until the payer task runs.
+   */
+  payer?: 'insurer' | 'direct';
+  /**
    * Pregnancy screen recorded when imaging was ordered for a patient whose
    * sex at birth is Female. "possibly"/"declined" only pass with a named
    * clinician override — otherwise the order is cancelled, never defaulted.
@@ -54,15 +60,19 @@ export type Promo =
   | { code: string; label: string; kind: 'fixed'; amountMinor: string }
   | { code: string; label: string; kind: 'percent'; percentOff: number };
 
+/**
+ * Every state here is a payment the desk can actually reach. Insurer claims
+ * are not among them: the platform captures cash only, so routing a balance
+ * to an insurer would be a completion the clinic cannot honour. Claims appear
+ * as a disabled design target on the payer task instead.
+ */
 export type PaymentStatus =
   | 'idle'
   | 'waiting'
   | 'confirmed'
   | 'deferred'
   | 'no-charge'
-  | 'split-cash'
-  /** Routed to the insurer; copay collected separately. PROTOTYPE: upstream is cash-only. */
-  | 'pending-claim';
+  | 'split-cash';
 export type PaymentMethod = 'cash' | 'khqr' | 'split' | null;
 
 export type CartPayment = {
@@ -186,7 +196,12 @@ export type TeleconsultState = {
 /** Who supplied an intake answer — provenance is display-worthy, not audit theatre. */
 export type IntakeAuthor = 'patient' | 'nurse' | 'system';
 
-export type IdentitySource = 'manual' | 'qr' | 'existing' | null;
+/**
+ * Where the identity on this visit came from. A scanned QR is not a source:
+ * it is one way of entering a booking code, and the code resolves to an
+ * `existing` record like any other lookup.
+ */
+export type IdentitySource = 'manual' | 'existing' | null;
 
 export const INTAKE_SKIP_REASONS = [
   { code: 'patient-declined', label: 'Patient declined' },
@@ -212,9 +227,24 @@ export type UnverifiedReasonCode = (typeof UNVERIFIED_REASONS)[number]['code'];
 export type IdentityQueryKind = 'phone' | 'code' | 'name';
 
 /**
+ * What a scanned payload turned out to be. `partial` is a Kura QR still
+ * arriving from a desk scanner; `foreign` is a QR that is not a Kura booking
+ * QR and must never be mined for a code-shaped substring.
+ */
+export type ScanReading =
+  | { kind: 'code'; code: string }
+  | { kind: 'partial' }
+  | { kind: 'foreign' }
+  | null;
+
+/**
  * Canonical collection-code lifecycle, verbatim from
  * `libs/contracts/src/lib/status/collection-code-status.ts`. `draft` never
  * reaches the reception surface — codes arrive at least `issued`.
+ *
+ * `expired` is declared by the contract but has no producer: collection codes
+ * do not lapse. The desk therefore never blocks a code for expiry, and no
+ * story may stage that state as if a patient could meet it.
  */
 export const COLLECTION_CODE_STATUSES = [
   'issued',
@@ -226,7 +256,7 @@ export const COLLECTION_CODE_STATUSES = [
 export type CollectionCodeStatus = (typeof COLLECTION_CODE_STATUSES)[number];
 
 /** Why a resolved booking code cannot be checked in at this desk. */
-export type BookingBlockReason = 'expired' | 'cancelled' | 'redeemed' | 'wrong-branch';
+export type BookingBlockReason = 'cancelled' | 'redeemed' | 'wrong-branch';
 
 export type BookingSummary = {
   code: string;
@@ -338,6 +368,14 @@ export type FrontDeskPatient = {
    */
   unverifiedReason: { code: UnverifiedReasonCode; note?: string } | null;
   identity: { source: IdentitySource; lockedFields: string[]; capturedAtLabel?: string };
+  /**
+   * Positive identification of the person at the desk, recorded when the
+   * answers to open questions matched the record. Null means the record was
+   * found but the person has not been identified — finding a booking is not
+   * identifying a patient. PROTOTYPE SURFACE: no confirmation command exists
+   * upstream; the fact is carried on the visit.
+   */
+  identityConfirmation: { method: 'open-questions'; byLabel: string; atLabel: string } | null;
   /** The one booking this check-in redeems, when the visit is booking-led. */
   boundBookingCode?: string | null;
   insurance: InsurancePolicy[];
@@ -368,20 +406,57 @@ export type IntakeFields = {
   sensitiveConsent: string;
 };
 
-export type StepId = 1 | 2 | 3 | 4 | 5 | 6;
+// ── Check-in tasks ─────────────────────────────────────────
+//
+// A visit is not a six-step form. Each task below is an independent axis of
+// the same visit, and a visit only carries the tasks its own facts require:
+// a booking-led arrival reviews quoted lines instead of composing them, a
+// patient with no policy never sees payer resolution, and a cart with no
+// teleconsult never shows a pre-consult step. Order is information
+// dependency, not habit — payer cannot resolve before the lines it pays for
+// exist.
+
+export type DeskTaskId =
+  /** How the person arrived: booking code, phone match, or walk-in. */
+  | 'arrival'
+  /** The person in front of the desk: details, contact ownership, identity assurance. */
+  | 'patient'
+  /** The order lines: composed here, or reviewed when the booking already quoted them. */
+  | 'orders'
+  /** Who pays each line. Only exists when the patient has a policy on file. */
+  | 'payer'
+  /** Only exists when a teleconsult line is in the cart. */
+  | 'preconsult'
+  /** Collect, defer, or record no charge. */
+  | 'payment';
+
+export const DESK_TASK_ORDER: DeskTaskId[] = [
+  'arrival',
+  'patient',
+  'orders',
+  'payer',
+  'preconsult',
+  'payment',
+];
+
 export type StepStatus = 'locked' | 'active' | 'done';
 
-export type WizardGate = {
-  stepStatus: Record<StepId, StepStatus>;
-  step1Done: boolean;
-  step2Done: boolean;
-  step3Done: boolean;
-  step4Done: boolean;
-  step5Done: boolean;
-  step6Done: boolean;
+export type CheckInGate = {
+  /** The tasks this visit actually carries, in dependency order. */
+  tasks: DeskTaskId[];
+  status: Record<DeskTaskId, StepStatus>;
+  done: Record<DeskTaskId, boolean>;
+  /** Why a task is not done yet — shown beside its blocked action, never alone. */
+  blockers: Partial<Record<DeskTaskId, string>>;
   paid: boolean;
   payLater: boolean;
   isReadyToCheckIn: boolean;
+};
+
+/** One rejected identity field, with the reason the desk can act on. */
+export type IdentityFieldIssue = {
+  field: 'name' | 'dob';
+  message: string;
 };
 
 // ── Desk queue (arrivals) ──────────────────────────────────
@@ -391,28 +466,82 @@ export type WizardGate = {
 // collapsed into one master status — payment success is not an arrival, and
 // a completed draw is not a collected payment.
 
-/** Visit axis (domain truth): reception owns arrival; phlebotomy owns draw completion. */
-export type VisitStage = 'arrived' | 'identity-resolved' | 'draw-complete' | 'completed';
+/**
+ * Visit axis (domain truth). One PSC staffer carries a visit from arrival
+ * through the draw, so `in-draw` is a reception-visible stage, not a handoff
+ * to another surface.
+ */
+export type VisitStage =
+  | 'arrived'
+  | 'identity-resolved'
+  | 'in-draw'
+  | 'draw-complete'
+  | 'completed';
 
 /** Payment axis as the desk sees it — independent from the visit axis. */
 export type VisitPaymentFact = 'pending' | 'collected' | 'deferred' | 'waiting';
 
+/**
+ * Why this visit holds the position it holds. Order is a clinical and
+ * contractual promise, not arrival luck: an urgent draw outranks a kept
+ * appointment, and a kept appointment outranks a walk-in who arrived first.
+ */
+export type ArrivalClass = 'stat' | 'appointment' | 'walk-in';
+
+/**
+ * Calling axis. Separate from the visit stage because a called patient who
+ * does not answer is still waiting for care — skipping is a recorded desk
+ * decision with a reason, never a silent drop.
+ */
+export type QueueCall =
+  | { state: 'waiting' }
+  | { state: 'called'; atLabel: string; deskLabel: string }
+  | { state: 'serving'; deskLabel: string }
+  | { state: 'skipped'; atLabel: string; reason: QueueSkipReasonCode };
+
+export const QUEUE_SKIP_REASONS = [
+  { code: 'no-answer', label: 'No answer at the desk' },
+  { code: 'stepped-out', label: 'Patient stepped out' },
+  { code: 'not-ready', label: 'Patient not ready' },
+  { code: 'interpreter', label: 'Waiting for an interpreter' },
+] as const;
+export type QueueSkipReasonCode = (typeof QUEUE_SKIP_REASONS)[number]['code'];
+
 export type DeskVisit = {
   id: string;
   queueNumber: number;
+  /**
+   * The number the waiting room sees, printed on the slip. Distinct from the
+   * internal queue number so a recall or a merge never renumbers the room.
+   */
+  ticket: string;
   patientName: string;
   nameKhmer?: string;
   arrivedLabel: string;
   /** Minutes since arrival, injected — the queue never reads the clock. */
   waitMinutes: number;
+  arrivalClass: ArrivalClass;
+  /** Booked slot as the desk announces it, e.g. "09:30". Appointments only. */
+  appointmentLabel?: string;
+  /**
+   * Minutes until the booked slot, injected. Negative means the slot has
+   * passed. An appointment only outranks walk-ins once its slot is due.
+   */
+  appointmentMinutesAway?: number;
+  /** Times this visit was called and did not answer. A recall waits again. */
+  recalls?: number;
+  call: QueueCall;
   stage: VisitStage;
-  /** patient-ms assurance axis, shown as its own fact. */
+  /**
+   * patient-ms assurance axis: someone checked this person's identity
+   * document. A verified phone never sets this.
+   */
   assurance: 'unverified' | 'verified';
+  /** Contact-ownership axis: the patient proved control of the channel. */
+  contact: 'unconfirmed' | 'confirmed';
   payment: VisitPaymentFact;
-  /** Present while a check-in is unfinished: the step the desk resumes at. */
-  resumeStep?: StepId;
-  /** Set once the visit has been queued for phlebotomy. */
-  queuedForDraw?: boolean;
+  /** Present while a check-in is unfinished: the task the desk resumes at. */
+  resumeTask?: DeskTaskId;
 };
 
 export type DeskQueueState = 'ready' | 'loading' | 'error' | 'offline' | 'stale' | 'denied';

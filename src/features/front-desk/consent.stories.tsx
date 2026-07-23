@@ -35,7 +35,7 @@ function ConsentPlayground({ initial }: { initial: FrontDeskPatient }) {
 }
 
 const meta = {
-  title: 'Clinic/Front Desk/Check-In Wizard/Step 4 Orders & Consent',
+  title: 'Clinic/Front Desk/Check-In/Orders & Consent',
   component: CheckInWizard,
   tags: ['autodocs', 'adapted-kura'],
   parameters: {

@@ -11,7 +11,13 @@ import { useT } from '../../components/foundations/i18n';
 import type { Translate } from '../../components/foundations/i18n';
 
 import { ORDER_CATALOG } from './catalog';
-import { cartTotals, consentBlockers, lineResponsibilityMinor, paymentDueAmountMinor } from './logic';
+import {
+  cartTotals,
+  consentBlockers,
+  lineResponsibilityMinor,
+  linePayer,
+  paymentDueAmountMinor,
+} from './logic';
 import type { FxRateQuote } from './money';
 import { convertUsdMinorToKhr } from './money';
 import type { CartPayment, FrontDeskPatient } from './types';
@@ -50,13 +56,6 @@ function paymentSummary(payment: CartPayment, t: Translate): ReceptionPaymentSum
   }
   if (payment.status === 'deferred') {
     return { status: 'deferred', label: t('Payment deferred') };
-  }
-  if (payment.status === 'pending-claim') {
-    return {
-      status: 'deferred',
-      label: t('Insurance claim pending'),
-      detail: t('Copay collected separately'),
-    };
   }
   if (payment.status === 'no-charge') {
     return { status: 'no-charge', label: t('No charge') };
@@ -190,7 +189,9 @@ export function CartRail({
         [
           item.fasting ? t('Fasting preparation') : null,
           // Per-line payer preview — display only; upstream capture is cash-only.
-          coverage && item.priceMinor !== '0' && (item.kind === 'lab' || item.kind === 'imaging' || item.kind === 'ecg')
+          // Reads the payer resolved on the line, never the policy alone: a
+          // self-pay line in a covered basket must not advertise a discount.
+          coverage && item.priceMinor !== '0' && linePayer(item, patient.insurance) === 'insurer'
             ? `${coverageProvider} ${coverage.coveragePct}% · ${t('patient owes')} ${(
                 Number(lineResponsibilityMinor(item.priceMinor, coverage.coveragePct).patientMinor) / 100
               ).toFixed(2)} USD`

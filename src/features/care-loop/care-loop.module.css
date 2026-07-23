@@ -330,7 +330,8 @@
 }
 
 .intakeHandoffCard[data-state="unknown"],
-.intakeHandoffCard[data-state="complete"] {
+.intakeHandoffCard[data-state="complete"],
+.intakeHandoffCard[data-state="decided"] {
   width: min(100%, 29rem);
 }
 
@@ -366,19 +367,31 @@
   padding: var(--space-8) var(--space-6) 0;
 }
 
+/* One or two actions per state, and the declining path always spans the row
+   beneath them. auto-fit lets a single action fill the card instead of the
+   footer needing a rule per stage. */
 .intakeHandoffCard .intakeCardActions {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
   gap: var(--space-2);
   padding: var(--space-8) var(--space-6) var(--space-6);
 }
 
-.intakeHandoffCard[data-state="unknown"] .intakeCardActions {
-  grid-template-columns: minmax(0, 0.56fr) minmax(0, 1fr);
+/* Declining intake is a real clinical choice, so it states its cost next to
+   itself rather than being disabled or hidden. */
+.intakeDecline {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-0-5);
+  grid-column: 1 / -1;
+  margin-top: var(--space-2);
 }
 
-.intakeHandoffCard[data-state="complete"] .intakeCardActions {
-  grid-template-columns: minmax(0, 1fr);
+.intakeDecline p {
+  margin: 0;
+  padding-inline: var(--space-3);
+  color: var(--color-text-tertiary);
+  font-size: var(--type-xs);
 }
 
 .intakeCardActions :global([data-slot="button"]) {
@@ -451,7 +464,15 @@
     color var(--motion-color) var(--intake-row-delay);
 }
 
+/* An answer that arrived is neutral. Success colour and a check mark are
+   reserved for what a clinician has confirmed: four green ticks under a
+   patient's own answers is how reported data starts reading as verified. */
 .intakeStatusRow[data-answered="true"] .intakeStatusMarker {
+  background: var(--color-surface-sunken);
+  color: var(--color-text-secondary);
+}
+
+.intakeStatusRow[data-reviewed="true"] .intakeStatusMarker {
   background: var(--color-status-success-bg);
   color: var(--color-status-success-fg);
 }
@@ -471,6 +492,72 @@
 .intakeStatusCopy {
   display: grid;
   min-width: 0;
+}
+
+/* The review list: one control per row. Status is the leading mark and the
+   action belongs to the row, so no badge column and no repeated button. */
+.intakeReviewRow {
+  width: 100%;
+  display: grid;
+  grid-template-columns: var(--space-6) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-2-5);
+  min-height: var(--touch-target-min);
+  margin-inline: calc(var(--space-2) * -1);
+  padding: var(--space-2);
+  border: 0;
+  border-radius: var(--radius-control-compact);
+  background: transparent;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+  transition: background-color var(--motion-color);
+}
+
+.intakeReviewRow:hover {
+  background: var(--color-background-secondary-hover);
+}
+
+.intakeReviewRow:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
+
+/* Empty ring = unread; check = confirmed. Shape carries the state, not colour. */
+.intakeReviewRow .intakeStatusMarker {
+  background: transparent;
+  border: 1.5px solid var(--color-border-strong);
+  color: var(--color-status-success-fg);
+}
+
+.intakeReviewRow[data-confirmed] .intakeStatusMarker {
+  border-color: transparent;
+  background: var(--color-status-success-bg);
+}
+
+/* Confirmed rows recede so the unread ones read first. */
+.intakeReviewRow[data-confirmed] .intakeStatusCopy strong {
+  color: var(--color-text-secondary);
+  font-weight: var(--weight-regular);
+}
+
+.intakeReviewAction {
+  color: var(--color-text-tertiary);
+  font-size: var(--type-sm);
+  opacity: 0;
+  transition: opacity var(--motion-color);
+}
+
+.intakeReviewRow:hover .intakeReviewAction,
+.intakeReviewRow:focus-visible .intakeReviewAction,
+.intakeReviewRow[data-confirmed] .intakeReviewAction {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .intakeReviewAction {
+    opacity: 1;
+  }
 }
 
 /* The answer opens the row it belongs to instead of the card jumping to a new

@@ -71,8 +71,13 @@ export function workItemFromJourney(
     return { action: 'continue', label: 'Choose lab tests' };
   }
   if (labStage) return { action: 'continue', label: 'Lab order in progress' };
-  if (journey.stage === 'intake-complete') {
-    return { action: 'continue', label: 'Intake received' };
+  // A submitted intake is unread work, not a finished step: the next thing the
+  // doctor does is read it, and the registry says so.
+  if (journey.stage === 'intake-complete' || journey.stage === 'intake-review') {
+    return { action: 'continue', label: 'Intake to review' };
+  }
+  if (journey.stage === 'next-step') {
+    return { action: 'continue', label: 'Ready for the next step' };
   }
   if (journey.stage === 'ready-to-order') {
     return { action: 'continue', label: 'Ready to order tests' };

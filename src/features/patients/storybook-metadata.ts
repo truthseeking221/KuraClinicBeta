@@ -15,7 +15,7 @@ export const PATIENTS_STORYBOOK_KURA = {
       'apps/clinic/clinic-patients-mf/src/app/patients-page.tsx',
     ],
     note:
-      'The row shape, masking, recency order, and pagination mirror the live list contract verbatim. The triage column and assurance filter are design intent: the RPC accepts only limit/offset, and no triage model exists. Name search is impossible by schema (encrypted names, no HMAC) and is deliberately absent, not deferred.',
+      'The row shape, masking, recency order, and pagination mirror the live list contract verbatim. Both status axes come from that record and are rendered as two columns: assurance is the identity axis (verified means a sighted document), and a masked phone is populated only for a verified primary number, so its absence is the contact axis stating itself. The triage column and assurance filter are design intent: the RPC accepts only limit/offset, and no triage model exists. Name search is impossible by schema (encrypted names, no HMAC) and is deliberately absent, not deferred.',
   },
   intake: {
     decision: 'COMPOSE + FEATURE-OWN',
@@ -27,6 +27,9 @@ export const PATIENTS_STORYBOOK_KURA = {
       'No free-text or name search input. Names are unsearchable by schema; patient resolution happens through the reception doors (exact phone, booking code) owned by front-desk and phone-gate.',
       'No client-side sorting. The server orders by workspace recency and accepts no sort parameter; re-sorting a fetched page would misrepresent the registry.',
       'No care-focus, last-event, or condition columns: no problems, encounters, or activity model exists in the platform.',
+      'No single "Verified" verdict per patient. Identity and contact are separate facts everywhere in the product, and the registry states each under a header that names its axis.',
+      'No merge-review-pending, NID-collision, stale-phone, or reused-patient status. The profile carries deceased and merged only; the rest would be invented identity states, and the legacy five-value identityStatus was already rejected for that reason.',
+      'No stated next step per row beyond the target-contract triage and work-item layers. A provisional record is a complete outcome; an intake or an order is a later clinical decision, not the registry’s claim.',
       'The chart action rail launches governed flows and reports result-arrival progress. The patient-order flow is a Storybook-owned adapter: authoritative placement remains at its supplied action boundary, while the chart record refreshes only after that boundary returns a placed order. Batch ETAs, flag counts, and completion notifications have no backend model yet.',
     ],
   },

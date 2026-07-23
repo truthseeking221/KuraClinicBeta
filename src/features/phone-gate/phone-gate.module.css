@@ -27,6 +27,23 @@
   align-items: center;
 }
 
+/* Date of birth and the checkbox that replaces it are one decision, so they
+   sit closer to each other than to the fields on either side. */
+.dateOfBirth {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--space-2-5);
+}
+
+/* What pressing the primary action will do, last thing before the action. */
+.consequence {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--type-xs);
+  line-height: var(--leading-normal);
+}
+
 /* ── The number the gate is about (spec §4/§6/§8) ─────────── */
 
 .phoneLine {
@@ -102,6 +119,16 @@
 
 .phoneLineNumber {
   min-width: 0;
+}
+
+/* The identity axis, in words, under the number. A green check states that the
+   contact channel is confirmed; only this line states that the person is not. */
+.phoneLineNote {
+  grid-row: 3;
+  grid-column: 1;
+  color: var(--color-text-secondary);
+  font-size: var(--type-xs);
+  line-height: var(--leading-normal);
 }
 
 /* Change sits on the value row it changes, so proximity carries its meaning. */

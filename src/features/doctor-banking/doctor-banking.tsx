@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import Image from 'next/image';
 
 import {
@@ -25,25 +26,47 @@ import {
   EmptyStateHeader,
   EmptyStateMedia,
   EmptyStateTitle,
-  WorkspaceMetricGrid,
   WorkspacePage,
   WorkspacePageHeader,
 } from '../../components/shared';
 
 import { ActivityLedger } from './activity-ledger';
-import { balanceDirection, formatBankingDate, formatBankingDateTime } from './logic';
+import { FinancialNotifications } from './financial-notifications';
+import {
+  balanceDirection,
+  balanceHeadline,
+  EMPTY_ACTIVITY_QUERY,
+  earningsMonthLabel,
+  filterLedgerEntries,
+  floorBreached,
+  formatBankingDate,
+  formatBankingDateTime,
+  isActivityQueryFiltered,
+  mandateCapabilities,
+  nextCollectionStep,
+  parseSignedUsdMinor,
+  statementRangeError,
+} from './logic';
+import type { ActivityQuery, NextCollectionStep } from './logic';
 import { MANDATE_COPY, MandatePanel } from './mandate-panel';
 import { AmountText, SignedMoneyText } from './money';
 import type {
+  Amount,
   DoctorBankingFixture,
   DoctorBankingOverview,
   DoctorBankingViewState,
-  DoctorFinancialNotification,
   KhqrIntent,
   MandateLinkSession,
   MandateSummary,
 } from './types';
 import styles from './doctor-banking.module.css';
+
+const BALANCE = 'Balance';
+
+function isZero(amount: Amount) {
+  const parsed = parseSignedUsdMinor(amount.minor);
+  return parsed === null || BigInt(parsed) === 0n;
+}
 
 function PageHeader({
   actions,
@@ -67,7 +90,7 @@ function PageHeader({
           size="sm"
           variant="link"
         >
-          {t('Earnings')}
+          {t(BALANCE)}
         </Button>
       ) : null}
       <WorkspacePageHeader
@@ -92,8 +115,8 @@ function PageState({
 
   if (state === 'loading') {
     return (
-      <section aria-label={t('Loading earnings')} className={styles.loadingStack} role="status">
-        <span className={styles.srOnly}>{t('Loading earnings')}</span>
+      <section aria-label={t('Loading your balance')} className={styles.loadingStack} role="status">
+        <span className={styles.srOnly}>{t('Loading your balance')}</span>
         <Skeleton className={styles.skeletonHero} />
         <Skeleton className={styles.skeletonStrip} />
         <Skeleton className={styles.skeletonTable} />
@@ -105,9 +128,9 @@ function PageState({
     return (
       <EmptyState align="center" surface="muted">
         <EmptyStateHeader>
-          <EmptyStateTitle>{t('Earnings access denied')}</EmptyStateTitle>
+          <EmptyStateTitle>{t('This balance is not yours to view')}</EmptyStateTitle>
           <EmptyStateDescription>
-            {t('This ledger is person-owned. Delegated users cannot view balances, debt, mandate details, or payment codes.')}
+            {t('The ledger belongs to the doctor, not the workspace. Delegated users cannot see balances, debt, ABA details, or payment codes.')}
           </EmptyStateDescription>
         </EmptyStateHeader>
       </EmptyState>
@@ -129,9 +152,9 @@ function PageState({
               width={1254}
             />
           </EmptyStateMedia>
-          <EmptyStateTitle>{t('Earnings require a verified licence')}</EmptyStateTitle>
+          <EmptyStateTitle>{t('Your balance opens with a verified licence')}</EmptyStateTitle>
           <EmptyStateDescription>
-            {t('Earnings belong to you, not your workspace. Manage your medical licence to access them.')}
+            {t('Your balance follows you, not your workspace. Verify your medical licence to start earning.')}
           </EmptyStateDescription>
         </EmptyStateHeader>
         {onOpenLicence ? (
@@ -145,7 +168,7 @@ function PageState({
 
   return (
     <Alert tone="danger">
-      <AlertTitle>{t('Earnings unavailable')}</AlertTitle>
+      <AlertTitle>{t('Balance unavailable')}</AlertTitle>
       <AlertDescription>
         {t('Current amounts could not be verified. No balance or payment action is shown.')}
       </AlertDescription>
@@ -156,7 +179,44 @@ function PageState({
   );
 }
 
-function BalanceCard({
+/**
+ * A lapsed licence never hides an existing ledger. The doctor keeps reading,
+ * settling, and unlinking; only new ordering and new ABA links stop.
+ */
+function LicenceLapsedNotice({ onOpenLicence }: { onOpenLicence?: () => void }) {
+  const t = useT();
+  return (
+    <Alert tone="warning">
+      <AlertTitle>{t('Your medical licence has lapsed')}</AlertTitle>
+      <AlertDescription>
+        {t('You can still see your balance, settle what you owe, and unlink ABA. New orders and new ABA links are blocked until the licence is verified.')}
+      </AlertDescription>
+      {onOpenLicence ? (
+        <AlertAction>
+          <Button onClick={onOpenLicence} variant="outline">{t('Manage licence')}</Button>
+        </AlertAction>
+      ) : null}
+    </Alert>
+  );
+}
+
+/** The reason a doctor opens this page: what they earned this month. */
+function EarningsHero({ overview }: { overview: DoctorBankingOverview }) {
+  const t = useT();
+  return (
+    <section aria-labelledby="earnings-hero-title" className={styles.hero}>
+      <p className={styles.heroLabel} id="earnings-hero-title">
+        {t('Earned in')} {earningsMonthLabel(overview.periodStart)}
+      </p>
+      <AmountText className={styles.heroValue} value={overview.earnedThisMonth} />
+      <p className={styles.heroNote}>
+        {t('Your settled share from completed orders across all Kura workspaces.')}
+      </p>
+    </section>
+  );
+}
+
+function BalanceSummary({
   onSettle,
   overview,
 }: {
@@ -165,109 +225,243 @@ function BalanceCard({
 }) {
   const t = useT();
   const direction = balanceDirection(overview.settledBalance.minor);
-  const balanceLabel =
-    direction === 'doctor-owes'
-      ? t('You owe Kura')
-      : direction === 'kura-owes'
-        ? t('Kura owes you')
-        : direction === 'settled'
-          ? t('Settled balance')
-          : t('Balance unavailable');
   const tone =
-    direction === 'doctor-owes'
-      ? 'danger'
-      : direction === 'kura-owes'
-        ? 'positive'
-        : 'neutral';
+    direction === 'doctor-owes' ? 'danger' : direction === 'kura-owes' ? 'positive' : 'neutral';
+  const support =
+    direction === 'kura-owes'
+      ? t('This credit offsets future charges. Cash payout is not available yet.')
+      : direction === 'settled'
+        ? t('Neither you nor Kura owes anything.')
+        : direction === 'unavailable'
+          ? t('We could not verify this amount, so no payment action is offered.')
+          : null;
 
   return (
-    <Card
-      aria-labelledby="balance-summary-title"
-      as="div"
-      className={styles.balanceCard}
-      data-tone={tone}
-      role="listitem"
-    >
+    <section aria-labelledby="balance-summary-title" className={styles.balanceRow} data-tone={tone}>
       <div className={styles.balanceMain}>
-        <p className={styles.metricLabel} id="balance-summary-title">{balanceLabel}</p>
-        <SignedMoneyText announceDirection className={styles.balanceValue} value={overview.settledBalance} />
-        <p className={styles.metricHelp}>
-          {t('Credit floor')} <SignedMoneyText value={overview.creditFloor} /> · {t('current exposure')}{' '}
-          <SignedMoneyText value={overview.exposure} />
-        </p>
+        <h2 className={styles.balanceLabel} id="balance-summary-title">
+          {t(balanceHeadline(direction))}
+        </h2>
+        {direction === 'unavailable' ? null : (
+          <SignedMoneyText
+            announceDirection
+            className={styles.balanceValue}
+            value={overview.settledBalance}
+          />
+        )}
+        {support ? <p className={styles.metricHelp}>{support}</p> : null}
       </div>
       {direction === 'doctor-owes' ? (
         <div className={styles.balanceAction}>
-          <Button onClick={onSettle}>{t('Settle now')}</Button>
+          <Button leadingIcon={<QrCodeIcon aria-hidden="true" />} onClick={onSettle}>
+            {t('Settle now')}
+          </Button>
         </div>
+      ) : null}
+    </section>
+  );
+}
+
+/**
+ * One functional tray for the three amounts that are not yours yet, plus the
+ * projected balance and ordering floor those amounts decide.
+ */
+function InProgress({ overview }: { overview: DoctorBankingOverview }) {
+  const t = useT();
+  const idle =
+    isZero(overview.pendingCredit) && isZero(overview.pendingDebit) && isZero(overview.reservedDebit);
+  const breached = floorBreached(overview);
+
+  return (
+    <Card aria-labelledby="in-progress-title" as="section" className={styles.progressTray}>
+      <h2 className={styles.sectionTitle} id="in-progress-title">{t('In progress')}</h2>
+      {idle ? (
+        <p className={styles.quietCopy}>{t('Nothing in progress.')}</p>
+      ) : (
+        <dl className={styles.progressFacts}>
+          <div>
+            <dt>{t('Pending earnings')}</dt>
+            <dd><AmountText value={overview.pendingCredit} /></dd>
+          </div>
+          <div>
+            <dt>{t('Pending charges')}</dt>
+            <dd><AmountText value={overview.pendingDebit} /></dd>
+          </div>
+          <div>
+            <dt>{t('Reserved for draft orders')}</dt>
+            <dd><AmountText value={overview.reservedDebit} /></dd>
+          </div>
+        </dl>
+      )}
+      <p className={styles.projectedLine}>
+        {t('Projected balance if everything completes')} <SignedMoneyText value={overview.exposure} />{' '}
+        · {t('Ordering floor')} <SignedMoneyText value={overview.creditFloor} />
+      </p>
+      {breached ? (
+        <p className={styles.floorWarning}>
+          {t('You have reached your ordering floor. Settle your balance to send new orders.')}
+        </p>
       ) : null}
     </Card>
   );
 }
 
-function PeriodStats({ overview }: { overview: DoctorBankingOverview }) {
-  const t = useT();
-  const stats = [
-    { label: t('Earned this period'), value: overview.earnedThisPeriod },
-    { label: t('Pending earnings'), value: overview.pendingCredit },
-    { label: t('Pending charges'), value: overview.pendingDebit },
-    { label: t('Reserved'), value: overview.reservedDebit },
-  ];
+/**
+ * No action button lives here. Every step that needs paying happens while the
+ * balance is red, and the one Settle now sits beside the amount it settles.
+ */
+type NextStepView = {
+  sentence: React.ReactNode;
+  badge?: { label: string; variant: 'neutral' | 'info' | 'warning' | 'danger' | 'success' };
+};
 
-  return (
-    <>
-      {stats.map((stat) => (
-        <Card as="div" className={styles.metricCard} key={stat.label} role="listitem">
-          <p className={styles.metricLabel}>{stat.label}</p>
-          <p className={styles.metricValue}><AmountText value={stat.value} /></p>
-        </Card>
-      ))}
-    </>
-  );
+function nextStepView(step: NextCollectionStep, t: Translate): NextStepView {
+  switch (step.kind) {
+    case 'unavailable':
+      return {
+        sentence: t('The balance could not be verified, so no collection is scheduled from this screen.'),
+        badge: { label: t('Unknown'), variant: 'warning' },
+      };
+    case 'nothing_due':
+      return { sentence: t('No collection is scheduled.') };
+    case 'credit_held':
+      return {
+        sentence: t('No collection is scheduled. Your credit offsets future charges.'),
+      };
+    case 'sweep_scheduled':
+      return {
+        sentence: (
+          <>
+            {t('Kura will collect up to')} <AmountText value={step.maximum} /> {t('on')}{' '}
+            {formatBankingDate(step.date)}. {t('You get a notice before it happens.')}
+          </>
+        ),
+      };
+    case 'notice_sent':
+      return {
+        badge: { label: t('Notice sent'), variant: 'info' },
+        sentence: (
+          <>
+            {t('Kura will collect up to')} <AmountText value={step.maximum} /> {t('on')}{' '}
+            {formatBankingDate(step.date)}.
+          </>
+        ),
+      };
+    case 'notice_reduced':
+      return {
+        badge: { label: t('Notice sent'), variant: 'info' },
+        sentence: (
+          <>
+            {t('Kura will collect up to')} <AmountText value={step.maximum} /> {t('on')}{' '}
+            {formatBankingDate(step.date)} — {t('down from')} <AmountText value={step.noticed} />{' '}
+            {t('after your payment.')}
+          </>
+        ),
+      };
+    case 'notice_cleared':
+      return {
+        badge: { label: t('Nothing left to collect'), variant: 'success' },
+        sentence: (
+          <>
+            {t('Nothing remains for the')} {formatBankingDate(step.date)} {t('collection.')}
+          </>
+        ),
+      };
+    case 'retry_pending':
+      return {
+        badge: { label: t('Collection failed'), variant: 'danger' },
+        sentence: (
+          <>
+            {step.retryDate
+              ? `${t('Kura retries on')} ${formatBankingDate(step.retryDate)}`
+              : t('Kura retries on the next eligible day')}
+            {step.retrySlot ? ` · ${t('attempt')} ${step.retrySlot} ${t('of 3')}` : ''}.{' '}
+            {t('Paying now stops the retry.')}
+          </>
+        ),
+      };
+    case 'retry_expired':
+      return {
+        badge: { label: t('Retry window closed'), variant: 'danger' },
+        sentence: (
+          <>
+            {t('Kura cannot retry this collection. Settle')} <AmountText value={step.amount} />{' '}
+            {t('by KHQR.')}
+          </>
+        ),
+      };
+    case 'retries_exhausted':
+      return {
+        badge: { label: t('No retries left'), variant: 'danger' },
+        sentence: (
+          <>
+            {step.date
+              ? `${t('Kura will wait until the next sweep on')} ${formatBankingDate(step.date)}.`
+              : t('Kura will wait until the next sweep.')}{' '}
+            {t('You can settle now instead.')}
+          </>
+        ),
+      };
+    case 'settle_manually':
+      return {
+        badge: { label: t(MANDATE_COPY[step.mandate].label), variant: 'warning' },
+        sentence: (
+          <>
+            {t('Kura cannot collect automatically. Settle')} <AmountText value={step.amount} />{' '}
+            {t('by KHQR.')}
+          </>
+        ),
+      };
+  }
 }
 
-function CollectionsSection({
-  onManageAutoPay,
+function NextStep({
+  notifications,
   overview,
 }: {
-  onManageAutoPay?: () => void;
+  notifications: DoctorBankingFixture['notifications'];
   overview: DoctorBankingOverview;
 }) {
   const t = useT();
-  const { mandate, nextSweep } = overview;
+  const view = nextStepView(nextCollectionStep(overview, notifications), t);
   return (
-    <Card aria-labelledby="collections-title" as="section" className={styles.collectionTray}>
+    <section aria-labelledby="next-step-title" className={styles.section}>
+      <div className={styles.nextStepHeading}>
+        <h2 className={styles.sectionTitle} id="next-step-title">{t('What happens next')}</h2>
+        {view.badge ? <Badge variant={view.badge.variant}>{view.badge.label}</Badge> : null}
+      </div>
+      <p className={styles.nextStepSentence}>{view.sentence}</p>
+    </section>
+  );
+}
+
+function AutoPaySummary({
+  mandate,
+  onManageAutoPay,
+}: {
+  mandate: MandateSummary;
+  onManageAutoPay?: () => void;
+}) {
+  const t = useT();
+  return (
+    <section aria-labelledby="auto-pay-summary-title" className={styles.section}>
       <header className={styles.sectionHeader}>
-        <div>
-          <h2 className={styles.sectionTitle} id="collections-title">{t('Scheduled collections')}</h2>
-          <p className={styles.sectionDescription}>
-            {t('Kura collects owed balances on the 1st and 15th after the required notice.')}
-          </p>
-        </div>
+        <h2 className={styles.sectionTitle} id="auto-pay-summary-title">{t('Auto-pay')}</h2>
         <Button onClick={onManageAutoPay} size="sm" variant="ghost">{t('Manage auto-pay')}</Button>
       </header>
-      <dl className={styles.collectionFacts}>
-        {nextSweep ? (
-          <>
-            <div><dt>{t('Next sweep')}</dt><dd>{formatBankingDate(nextSweep.date)}</dd></div>
-            <div><dt>{t('Maximum')}</dt><dd><AmountText value={nextSweep.maximumAmount} /></dd></div>
-            <div>
-              <dt>{t('Notice')}</dt>
-              <dd>{nextSweep.noticeState === 'sent' ? t('Sent') : nextSweep.noticeState === 'due' ? t('Due') : t('Not due')}</dd>
-            </div>
-          </>
-        ) : (
-          <div><dt>{t('Next sweep')}</dt><dd>{t('None scheduled')}</dd></div>
-        )}
+      <dl className={styles.inlineFacts}>
         <div>
-          <dt>{t('Auto-pay')}</dt>
-          <dd>
-            {t(MANDATE_COPY[mandate.state].label)}
-            {mandate.maskedAccount ? ` · ${mandate.maskedAccount}` : ''}
-          </dd>
+          <dt>{t('Status')}</dt>
+          <dd>{t(MANDATE_COPY[mandate.state].label)}</dd>
         </div>
+        {mandate.maskedAccount ? (
+          <div><dt>{t('Account')}</dt><dd>{mandate.maskedAccount}</dd></div>
+        ) : null}
+        {mandate.expiresAt ? (
+          <div><dt>{t('Expires')}</dt><dd>{formatBankingDate(mandate.expiresAt.slice(0, 10))}</dd></div>
+        ) : null}
       </dl>
-    </Card>
+    </section>
   );
 }
 
@@ -299,20 +493,18 @@ export function DoctorBalancePage({
             <Button onClick={onOpenStatements} variant="secondary">{t('Activity & statements')}</Button>
           ) : undefined
         }
-        title="Earnings"
+        title={BALANCE}
       />
       {state !== 'ready' ? <PageState onOpenLicence={onOpenLicence} onRetry={onRetry} state={state} /> : (
         <div className={styles.pageFlow}>
-          <section aria-label={t('This period')} className={styles.overviewMetrics}>
-            <WorkspaceMetricGrid role="list">
-              <BalanceCard onSettle={onSettle} overview={data.overview} />
-              <PeriodStats overview={data.overview} />
-            </WorkspaceMetricGrid>
-            <p className={styles.statNote}>
-              {t('Earned includes settled and pending earnings across your Kura workspaces. Pending and reserved amounts do not change the settled balance yet.')}
-            </p>
-          </section>
-          <CollectionsSection onManageAutoPay={onManageAutoPay} overview={data.overview} />
+          {data.overview.licence === 'lapsed' ? (
+            <LicenceLapsedNotice onOpenLicence={onOpenLicence} />
+          ) : null}
+          <EarningsHero overview={data.overview} />
+          <BalanceSummary onSettle={onSettle} overview={data.overview} />
+          <InProgress overview={data.overview} />
+          <NextStep notifications={data.notifications} overview={data.overview} />
+          <AutoPaySummary mandate={data.overview.mandate} onManageAutoPay={onManageAutoPay} />
           <ActivityLedger entries={data.entries} onViewAll={onOpenStatements} variant="recent" />
         </div>
       )}
@@ -320,84 +512,12 @@ export function DoctorBalancePage({
   );
 }
 
-function notificationCopy(
-  notification: DoctorFinancialNotification,
-  t: Translate,
-): {
-  title: string;
-  detail: string;
-  tone: 'info' | 'warning' | 'success' | 'danger';
-} {
-  switch (notification.kind) {
-    case 'pre_notice':
-      return {
-        title: `${t('Sweep notice for')} ${formatBankingDate(notification.sweepDate)}`,
-        detail: `${notification.originalCap.minor === notification.remainingCap.minor ? t('Maximum remains') : t('Maximum reduced to')} $${(Number(notification.remainingCap.minor) / 100).toFixed(2)}.`,
-        tone: notification.state === 'expired' ? 'warning' : 'info',
-      };
-    case 'receipt': {
-      const sourceLabels: Record<typeof notification.source, string> = {
-        khqr: 'KHQR payment',
-        scheduled: 'Scheduled collection',
-        scheduled_retry: 'Collection retry',
-        admin_retry: 'Collection retry',
-        jit: 'Automatic collection',
-        final_unlink: 'Final collection',
-      };
-      return {
-        title: t('Payment receipt'),
-        detail: `${t(sourceLabels[notification.source])} ${t('applied to the ledger.')}`,
-        tone: 'success' as const,
-      };
-    }
-    case 'pull_failed':
-      return { title: t('Collection attempt failed'), detail: notification.failureReason, tone: 'danger' as const };
-    case 'mandate':
-      return { title: `${t('ABA authorization')} ${notification.event.replaceAll('_', ' ')}`, detail: notification.maskedAccount ?? t('No account is linked.'), tone: notification.event === 'linked' ? 'success' as const : 'warning' as const };
-    case 'adjustment':
-      return { title: t('Ledger adjustment recorded'), detail: notification.reason, tone: 'info' as const };
-  }
-}
-
-function FinancialNotifications({ notifications }: { notifications: DoctorFinancialNotification[] }) {
-  const t = useT();
-  return (
-    <section aria-labelledby="financial-notifications-title" className={styles.section}>
-      <header className={styles.sectionHeader}>
-        <div>
-          <h2 className={styles.sectionTitle} id="financial-notifications-title">{t('Financial notifications')}</h2>
-          <p className={styles.sectionDescription}>{t('Only doctor-audience notices and receipts appear here.')}</p>
-        </div>
-      </header>
-      {notifications.length === 0 ? (
-        <p className={styles.quietCopy}>{t('No financial notifications.')}</p>
-      ) : (
-        <ol className={styles.notificationList}>
-          {notifications.map((notification) => {
-            const copy = notificationCopy(notification, t);
-            return (
-              <li className={styles.notificationItem} key={notification.notificationRef}>
-                <div>
-                  <span className={styles.notificationTitle} data-tone={copy.tone}>{copy.title}</span>
-                  <p className={styles.notificationDetail}>{copy.detail}</p>
-                </div>
-                <time className={styles.notificationTime} dateTime={notification.occurredAt}>
-                  {formatBankingDateTime(notification.occurredAt)}
-                </time>
-              </li>
-            );
-          })}
-        </ol>
-      )}
-    </section>
-  );
-}
-
 export type DoctorStatementsPageProps = {
   data: DoctorBankingFixture;
   downloadState?: 'idle' | 'loading' | 'success' | 'error';
   state?: DoctorBankingViewState;
-  onDownload?: (format: 'pdf' | 'xlsx') => void;
+  /** The active filter travels with the export so the file matches the screen. */
+  onDownload?: (format: 'pdf' | 'xlsx', query: ActivityQuery) => void;
   onBack?: () => void;
   onOpenLicence?: () => void;
   onRetry?: () => void;
@@ -413,14 +533,34 @@ export function DoctorStatementsPage({
   state = 'ready',
 }: DoctorStatementsPageProps) {
   const t = useT();
+  const [query, setQuery] = useState<ActivityQuery>(EMPTY_ACTIVITY_QUERY);
+  const rangeError = statementRangeError(query);
+  const visible = filterLedgerEntries(data.entries, query);
+  const filtered = isActivityQueryFiltered(query);
+
   return (
     <WorkspacePage>
       <PageHeader
         actions={
           state === 'ready' ? (
             <>
-              <Button leadingIcon={<DownloadIcon aria-hidden="true" />} loading={downloadState === 'loading'} onClick={() => onDownload?.('pdf')} variant="secondary">PDF</Button>
-              <Button leadingIcon={<DownloadIcon aria-hidden="true" />} loading={downloadState === 'loading'} onClick={() => onDownload?.('xlsx')}>Excel</Button>
+              <Button
+                disabled={Boolean(rangeError)}
+                leadingIcon={<DownloadIcon aria-hidden="true" />}
+                loading={downloadState === 'loading'}
+                onClick={() => onDownload?.('pdf', query)}
+                variant="secondary"
+              >
+                PDF
+              </Button>
+              <Button
+                disabled={Boolean(rangeError)}
+                leadingIcon={<DownloadIcon aria-hidden="true" />}
+                loading={downloadState === 'loading'}
+                onClick={() => onDownload?.('xlsx', query)}
+              >
+                Excel
+              </Button>
             </>
           ) : undefined
         }
@@ -429,13 +569,27 @@ export function DoctorStatementsPage({
       />
       {state !== 'ready' ? <PageState onOpenLicence={onOpenLicence} onRetry={onRetry} state={state} /> : (
         <div className={styles.pageFlow}>
+          {rangeError ? (
+            <Alert tone="danger">
+              <AlertTitle>{t('Date range is backwards')}</AlertTitle>
+              <AlertDescription>{t('The From date is after the To date, so no statement can be produced.')}</AlertDescription>
+            </Alert>
+          ) : null}
           {downloadState === 'error' ? (
             <Alert tone="danger"><AlertTitle>{t('Statement download failed')}</AlertTitle><AlertDescription>{t('No file was saved. Check the date range and try again.')}</AlertDescription></Alert>
           ) : null}
           {downloadState === 'success' ? (
-            <Alert tone="success"><AlertTitle>{t('Statement ready')}</AlertTitle><AlertDescription>{t('The filtered statement download has started.')}</AlertDescription></Alert>
+            <Alert tone="success"><AlertTitle>{t('Statement ready')}</AlertTitle><AlertDescription>{t('The download covers exactly the activity shown below.')}</AlertDescription></Alert>
           ) : null}
-          <ActivityLedger entries={data.entries} />
+          <ActivityLedger
+            description={
+              filtered
+                ? `${t('Downloads cover the')} ${visible.length} ${t('filtered activities shown.')}`
+                : undefined
+            }
+            entries={data.entries}
+            onQueryChange={setQuery}
+          />
           <FinancialNotifications notifications={data.notifications} />
         </div>
       )}
@@ -455,6 +609,48 @@ export type DoctorSettlePageProps = {
   onRetry?: () => void;
 };
 
+function SettlementConfirmed({
+  intent,
+  onBack,
+}: {
+  intent: KhqrIntent;
+  onBack?: () => void;
+}) {
+  const t = useT();
+  const overpaid =
+    intent.balanceAfter !== null && balanceDirection(intent.balanceAfter.minor) === 'kura-owes';
+  return (
+    <section aria-labelledby="settlement-confirmed-title" className={styles.section}>
+      <Alert tone="success">
+        <AlertTitle id="settlement-confirmed-title">{t('Payment confirmed')}</AlertTitle>
+        <AlertDescription>
+          {overpaid
+            ? t('You paid more than you owed. The extra amount is now credit on your balance.')
+            : t('The provider confirmed this payment and it is already on your ledger.')}
+        </AlertDescription>
+      </Alert>
+      <dl className={styles.inlineFacts}>
+        <div><dt>{t('Amount received')}</dt><dd><AmountText value={intent.amount} /></dd></div>
+        {intent.balanceAfter ? (
+          <div>
+            <dt>{t('Balance after payment')}</dt>
+            <dd><SignedMoneyText value={intent.balanceAfter} /></dd>
+          </div>
+        ) : null}
+        {intent.receiptRef ? (
+          <div><dt>{t('Receipt')}</dt><dd>{intent.receiptRef}</dd></div>
+        ) : null}
+      </dl>
+      <p className={styles.quietCopy}>
+        {t('A matching entry is now in Activity & statements.')}
+      </p>
+      <div className={styles.objectActions}>
+        <Button onClick={onBack}>{t('Back to Balance')}</Button>
+      </div>
+    </section>
+  );
+}
+
 export function DoctorSettlePage({
   intent,
   onBack,
@@ -468,38 +664,43 @@ export function DoctorSettlePage({
 }: DoctorSettlePageProps) {
   const t = useT();
   const direction = balanceDirection(overview.settledBalance.minor);
+  const shortfall = intent?.purpose === 'pending_shortfall';
+
   return (
     <WorkspacePage width="reading">
       <PageHeader
-        description="Pay the exact settled amount you owe from any KHQR-enabled bank app."
+        description="Pay the exact amount you owe from any KHQR bank app. The amount cannot be edited."
         onBack={onBack}
-        title="Settle balance"
+        title="Settle now"
       />
-      {state !== 'ready' ? <PageState onOpenLicence={onOpenLicence} onRetry={onRetry} state={state} /> : direction === 'unavailable' ? (
+      {state !== 'ready' ? <PageState onOpenLicence={onOpenLicence} onRetry={onRetry} state={state} /> : direction === 'unavailable' && !shortfall ? (
         <Alert tone="danger"><AlertTitle>{t('Amount unavailable')}</AlertTitle><AlertDescription>{t('The balance cannot be displayed safely, so no KHQR code was created.')}</AlertDescription></Alert>
-      ) : direction !== 'doctor-owes' ? (
+      ) : direction !== 'doctor-owes' && !shortfall ? (
         <EmptyState align="center" surface="muted">
-          <EmptyStateHeader><EmptyStateTitle>{t('Nothing to settle')}</EmptyStateTitle><EmptyStateDescription>{t('Your settled balance is not red, so no KHQR payment is needed.')}</EmptyStateDescription></EmptyStateHeader>
+          <EmptyStateHeader><EmptyStateTitle>{t('Nothing to settle')}</EmptyStateTitle><EmptyStateDescription>{t('You do not owe Kura anything, so no payment is needed.')}</EmptyStateDescription></EmptyStateHeader>
+          <EmptyStateContent><Button onClick={onBack} variant="secondary">{t('Back to Balance')}</Button></EmptyStateContent>
         </EmptyState>
       ) : !intent ? (
         <EmptyState align="center" surface="muted">
-          <EmptyStateHeader><EmptyStateTitle>{t('Ready to create exact KHQR')}</EmptyStateTitle><EmptyStateDescription>{t('The code will request exactly')} <SignedMoneyText value={overview.settledBalance} />. {t('It cannot be edited or reused after expiry.')}</EmptyStateDescription></EmptyStateHeader>
-          <EmptyStateContent><Button leadingIcon={<QrCodeIcon aria-hidden="true" />} onClick={onCreateKhqr}>{t('Create exact KHQR')}</Button></EmptyStateContent>
+          <EmptyStateHeader><EmptyStateTitle>{t('Create your payment code')}</EmptyStateTitle><EmptyStateDescription>{t('The code requests exactly')} <SignedMoneyText value={overview.settledBalance} />. {t('It cannot be edited or reused after it expires.')}</EmptyStateDescription></EmptyStateHeader>
+          <EmptyStateContent><Button leadingIcon={<QrCodeIcon aria-hidden="true" />} onClick={onCreateKhqr}>{t('Create payment code')}</Button></EmptyStateContent>
         </EmptyState>
       ) : intent.state === 'expired' ? (
-        <Alert tone="warning"><AlertTitle>{t('KHQR code expired')}</AlertTitle><AlertDescription>{t('No payment was confirmed. Create a new code for the same verified amount.')}</AlertDescription><AlertAction><Button onClick={onRegenerate} variant="outline">{t('Create new KHQR')}</Button></AlertAction></Alert>
+        <Alert tone="warning"><AlertTitle>{t('Payment code expired')}</AlertTitle><AlertDescription>{t('No payment was confirmed. Create a new code for the same verified amount.')}</AlertDescription><AlertAction><Button onClick={onRegenerate} variant="outline">{t('Create a new code')}</Button></AlertAction></Alert>
       ) : intent.state === 'confirmed' ? (
-        <Alert tone="success"><AlertTitle>{t('Settlement confirmed')}</AlertTitle><AlertDescription><AmountText value={intent.amount} /> {t('was confirmed by the provider and applied to the ledger.')}</AlertDescription></Alert>
+        <SettlementConfirmed intent={intent} onBack={onBack} />
       ) : (
         <section aria-labelledby="khqr-title" className={styles.settlementObject}>
-          <div className={styles.qrObject} aria-label={t('KHQR settlement code')} role="img"><QrCodeIcon aria-hidden="true" size={120} /></div>
+          <div className={styles.qrObject} aria-label={t('KHQR payment code')} role="img"><QrCodeIcon aria-hidden="true" size={120} /></div>
           <div className={styles.settlementDetails}>
-            <Badge variant="warning">{t('Awaiting confirmation')}</Badge>
-            <h2 className={styles.objectTitle} id="khqr-title">{t('Pay the exact amount')}</h2>
+            <Badge variant="warning">{t('Waiting for your bank')}</Badge>
+            <h2 className={styles.objectTitle} id="khqr-title">
+              {shortfall ? t('Pay the order shortfall') : t('Pay the exact amount')}
+            </h2>
             <AmountText className={styles.settlementAmount} value={intent.amount} />
-            <p className={styles.objectDescription}>{t('Scan with any KHQR-enabled bank app. Kura will wait for provider confirmation.')}</p>
+            <p className={styles.objectDescription}>{t('Scan with any KHQR bank app. Kura waits for the provider to confirm.')}</p>
             <p className={styles.quietCopy}>{t('Expires')} {formatBankingDateTime(intent.expiresAt)}</p>
-            <Button leadingIcon={<RefreshIcon aria-hidden="true" />} onClick={onRefresh} variant="secondary">{t('Check confirmation')}</Button>
+            <Button leadingIcon={<RefreshIcon aria-hidden="true" />} onClick={onRefresh} variant="secondary">{t('Check for payment')}</Button>
           </div>
         </section>
       )}
@@ -509,6 +710,9 @@ export function DoctorSettlePage({
 
 export type DoctorPaymentsPageProps = {
   mandate: MandateSummary;
+  licence?: DoctorBankingOverview['licence'];
+  /** Shown on unlink so the doctor knows what stays owed after auto-pay stops. */
+  remainingBalance?: DoctorBankingOverview['settledBalance'];
   linkSession?: MandateLinkSession | null;
   state?: DoctorBankingViewState;
   onBack?: () => void;
@@ -521,6 +725,7 @@ export type DoctorPaymentsPageProps = {
 };
 
 export function DoctorPaymentsPage({
+  licence = 'verified',
   linkSession,
   mandate,
   onBack,
@@ -530,25 +735,42 @@ export function DoctorPaymentsPage({
   onRenew,
   onRetry,
   onUnlink,
+  remainingBalance,
   state = 'ready',
 }: DoctorPaymentsPageProps) {
   const t = useT();
+  const capabilities = mandateCapabilities(mandate.state, licence);
   return (
     <WorkspacePage width="reading">
       <PageHeader
-        description="Manage the optional ABA authorization used for scheduled collections. KHQR remains available when auto-pay is off."
+        description="Auto-pay is optional. KHQR always works, with or without it."
         onBack={onBack}
         title="Auto-pay"
       />
       {state !== 'ready' ? <PageState onOpenLicence={onOpenLicence} onRetry={onRetry} state={state} /> : (
         <div className={styles.narrowFlow}>
+          {capabilities.linkBlockedByLicence ? (
+            <Alert tone="warning">
+              <AlertTitle>{t('You cannot link a new account right now')}</AlertTitle>
+              <AlertDescription>
+                {t('Your medical licence has lapsed. Settling by KHQR still works.')}
+              </AlertDescription>
+              {onOpenLicence ? (
+                <AlertAction>
+                  <Button onClick={onOpenLicence} variant="outline">{t('Manage licence')}</Button>
+                </AlertAction>
+              ) : null}
+            </Alert>
+          ) : null}
           <MandatePanel
+            capabilities={capabilities}
             linkSession={linkSession}
             mandate={mandate}
             onBeginLink={onBeginLink}
             onRegenerateLink={onRegenerateLink}
             onRenew={onRenew}
             onUnlink={onUnlink}
+            remainingBalance={remainingBalance}
           />
           <section className={styles.section}>
             <h2 className={styles.sectionTitle}>{t('What Kura stores')}</h2>

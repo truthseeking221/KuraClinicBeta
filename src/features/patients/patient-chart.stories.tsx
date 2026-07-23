@@ -767,7 +767,7 @@ export const VerifyIdentityFlow: Story = {
     await userEvent.click(
       canvas.getByRole("button", { name: "Verify identity" }),
     );
-    await expect(canvas.queryByText("Unverified")).not.toBeInTheDocument();
+    await expect(canvas.queryByText("Provisional")).not.toBeInTheDocument();
   },
 };
 

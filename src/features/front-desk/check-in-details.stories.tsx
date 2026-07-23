@@ -7,7 +7,7 @@ import { blankWalkIn, EXISTING_PATIENTS, IDENTITY_REGISTRY } from './demo-data';
 import type { FrontDeskPatient } from './types';
 import { READINESS } from '../../components/foundations/readiness-data';
 
-/** A patient captured from the Kura record — the Step-2 entry state. */
+/** A record found on arrival — the person at the desk is not identified yet. */
 function capturedPatient(): FrontDeskPatient {
   return {
     ...blankWalkIn('walk-in-details', 29),
@@ -21,9 +21,17 @@ function capturedPatient(): FrontDeskPatient {
   };
 }
 
-/** Step-3 entry state: contact verified, no insurance decision yet. */
+/** After positive identification — the entry state for the rest of the task. */
+function confirmedPatient(): FrontDeskPatient {
+  return {
+    ...capturedPatient(),
+    identityConfirmation: { method: 'open-questions', byLabel: 'Sothea Ly', atLabel: '08:33' },
+  };
+}
+
+/** Patient task complete: confirmed and contactable. */
 function reviewedPatient(): FrontDeskPatient {
-  return { ...capturedPatient(), otpVerified: true };
+  return { ...confirmedPatient(), otpVerified: true };
 }
 
 function DetailsPlayground({ initial }: { initial: FrontDeskPatient }) {
@@ -68,7 +76,7 @@ async function verifyPersistentActionBar(canvasElement: HTMLElement) {
 }
 
 const meta = {
-  title: 'Clinic/Front Desk/Check-In Wizard/Steps 2–3 Patient & Insurance',
+  title: 'Clinic/Front Desk/Check-In/Patient',
   component: CheckInWizard,
   tags: ['autodocs', 'adapted-kura'],
   parameters: {
@@ -76,14 +84,13 @@ const meta = {
     kura: {
       readiness: READINESS.frontDesk,
       intake: {
-        decision: 'EXTEND (front-desk Steps 2–3 to upstream information parity)',
+        decision: 'EXTEND (front-desk patient task to upstream information parity)',
         owner: 'src/features/front-desk',
         evidence:
-          'Information architecture ported from Kura-med/ui-kit `Receptionist/Wizard/Step 2 Patient` and `Step 3 Insurance` (source-kura-ui-kit): identity section with locked captured fields + Unlock, Khmer name, preferred language, optional Address and Refund-account disclosures, and the full policy contract (member/group/coverage/co-pay/active-until/pre-auth/tier/effective, checking + result states, co-pay banner). Composed from house Card, Collapsible, Input, Select, SegmentedToggle, Badge, Alert, MoneyText; Tailwind and tabler icons replaced.',
+          'Information architecture ported from Kura-med/ui-kit `Receptionist/Wizard/Step 2 Patient` (source-kura-ui-kit): identity section with read-only record fields, Khmer name, preferred language, and optional Address, Refund-account, and Insurance-policy disclosures. Composed from house Card, Collapsible, Input, Select, SegmentedToggle, Badge, Alert, MoneyText; Tailwind and tabler icons replaced. Coverage moved out of this task entirely — it is resolved after the order lines exist.',
         exclusions: [
           'Capture photo (camera hardware ceremony)',
           'Telegram contact channel (platform ceremony — SMS OTP carries the verified-contact gate)',
-          'Scan insurance card (hardware ceremony)',
           'Real KHQR scan for the refund account (demo saves a fixture payload)',
         ],
       },
@@ -100,7 +107,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'Step 2 reviews captured identity (locked fields require an explicit Unlock), verifies a contact channel, and optionally records address and a Bakong refund account. Step 3 attaches an insurance policy with a live eligibility check — or records an explicit direct-pay decision. The order rail stays hidden until orders exist.',
+          'The patient task identifies the person at the desk against the record it found — open questions, no editable record values — then verifies a contact channel. Name and date of birth are validated against the calendar, so a number typed into the name field or a date like 1991-23-23 never reaches a sample label. An insurance policy is patient-record data and lives in a collapsed disclosure here; who pays for what is resolved later, once the order lines exist. The order rail stays hidden until orders exist.',
       },
     },
   },
@@ -117,14 +124,14 @@ const baseArgs = {
 };
 
 export const ReviewLockedIdentity: Story = {
-  name: 'Step 2 — Captured identity with locked fields',
+  name: 'Record values stay read-only',
   args: baseArgs,
-  render: () => <DetailsPlayground initial={capturedPatient()} />,
+  render: () => <DetailsPlayground initial={confirmedPatient()} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(await canvas.findByText('From Kura record')).toBeVisible();
 
-    // Captured fields arrive locked; free fields stay editable.
+    // Record-backed fields are read-only; desk-owned fields stay editable.
     await expect(canvas.getByLabelText(/Full name \(Latin\)/)).toBeDisabled();
     await expect(canvas.getByLabelText(/Date of birth/)).toBeDisabled();
     await expect(canvas.getByLabelText(/Sex at birth/)).toBeDisabled();
@@ -133,21 +140,73 @@ export const ReviewLockedIdentity: Story = {
     // Language moved to the contact section: it decides message language.
     await expect(canvas.getByLabelText(/Language for messages/)).toBeEnabled();
 
-    // Unlock is an explicit, confirmed decision — never one accidental click.
-    await userEvent.click(canvas.getByRole('button', { name: 'Unlock fields' }));
-    await expect(await canvas.findByText('Unlock captured fields?')).toBeVisible();
-    await userEvent.click(canvas.getByRole('button', { name: 'Unlock' }));
-    await waitFor(async () => {
-      await expect(canvas.getByLabelText(/Full name \(Latin\)/)).toBeEnabled();
-      await expect(canvas.getByLabelText(/Date of birth/)).toBeEnabled();
-    });
+    // No unlock: editing a record to fit the person in front of the desk is
+    // how a wrong-patient match gets buried.
+    await expect(canvas.queryByRole('button', { name: /Unlock/ })).not.toBeInTheDocument();
+    await expect(canvas.getByText(/read-only at the desk/)).toBeVisible();
+  },
+};
+
+/**
+ * Finding a booking is not identifying a person: the desk asks open questions
+ * and types the answers before Step 2 can be completed.
+ */
+export const ConfirmPatientOpenQuestions: Story = {
+  name: 'Open questions confirm the patient',
+  args: baseArgs,
+  render: () => <DetailsPlayground initial={capturedPatient()} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      await canvas.findByText('Confirm this is the person in front of you.'),
+    ).toBeVisible();
+
+    const confirm = canvas.getByRole('button', { name: 'Confirm patient' });
+    await expect(confirm).toBeDisabled();
+    await expect(canvas.getByText('Type both answers to confirm.')).toBeVisible();
+
+    await userEvent.type(canvas.getByLabelText('What is your full name?'), 'Sok Phearom');
+    await userEvent.type(canvas.getByLabelText('What is your date of birth?'), '19740315');
+    await userEvent.click(confirm);
+
+    await expect(await canvas.findByText(/Patient confirmed/)).toBeVisible();
+    // Confirmation alone does not finish the task — contact still gates it.
+    await expect(
+      canvas.getByText(
+        'Verify a contact channel, or record why the visit continues without one.',
+      ),
+    ).toBeVisible();
+  },
+};
+
+/** A mismatch means the wrong record is open — never a record to edit. */
+export const ConfirmPatientMismatch: Story = {
+  name: 'Answers that do not match block the visit',
+  args: baseArgs,
+  render: () => <DetailsPlayground initial={capturedPatient()} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.type(await canvas.findByLabelText('What is your full name?'), 'Sok Phearom');
+    await userEvent.type(canvas.getByLabelText('What is your date of birth?'), '19740316');
+    await userEvent.click(canvas.getByRole('button', { name: 'Confirm patient' }));
+
+    await expect(
+      await canvas.findByText('The answers do not match this record'),
+    ).toBeVisible();
+    await expect(canvas.getByText(/Do not change the record to match/)).toBeVisible();
+
+    // The recovery drops the record and returns to the lookup.
+    await userEvent.click(canvas.getByRole('button', { name: 'This is not the patient' }));
+    await expect(
+      await canvas.findByRole('heading', { level: 2, name: 'Find the booking' }),
+    ).toBeVisible();
   },
 };
 
 export const ReviewOptionalSections: Story = {
-  name: 'Step 2 — Address & refund account disclosures',
+  name: 'Address, refund, and policy disclosures',
   args: baseArgs,
-  render: () => <DetailsPlayground initial={capturedPatient()} />,
+  render: () => <DetailsPlayground initial={confirmedPatient()} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
 
@@ -163,18 +222,88 @@ export const ReviewOptionalSections: Story = {
     await expect(await canvas.findByText(/No account saved\./)).toBeVisible();
     await userEvent.click(canvas.getByRole('button', { name: 'Scan KHQR' }));
     await expect(await canvas.findByText('Bakong KHQR saved')).toBeVisible();
+
+    // A policy is patient-record data, not a step. It stays collapsed, and it
+    // asks nothing about coverage — that is decided once lines exist.
+    await userEvent.click(canvas.getByRole('button', { name: /Insurance policy/ }));
+    await expect(
+      await canvas.findByText(/Coverage is worked out after the order is composed\./),
+    ).toBeVisible();
+    await expect(canvas.queryByRole('button', { name: 'Check eligibility' })).not.toBeInTheDocument();
+  },
+};
+
+/**
+ * A name of digits and a date the calendar does not contain are not edge
+ * cases — they are the desk typing into the wrong field, and every label,
+ * sample, and result downstream would carry the mistake.
+ */
+export const ImpossibleIdentityValues: Story = {
+  name: 'Impossible name and date of birth are blocked',
+  args: baseArgs,
+  render: () => (
+    <DetailsPlayground
+      initial={{
+        ...reviewedPatient(),
+        name: '2312312',
+        dob: '1991-23-23',
+        identity: { source: 'manual', lockedFields: [] },
+      }}
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    // Each bad value carries its own reason on its own field...
+    await expect(
+      await canvas.findByText('A name needs letters. Check this was not typed into the wrong field.'),
+    ).toBeVisible();
+    await expect(
+      canvas.getByText('That date does not exist. Check the month and day.'),
+    ).toBeVisible();
+    // ...and the blocked action points at them instead of repeating one.
+    await expect(canvas.getByText('Fix the highlighted patient details.')).toBeVisible();
+    await expect(canvas.getByRole('button', { name: 'Record arrival' })).toBeDisabled();
+  },
+};
+
+/** A patient who does not know their birthday still gets a record: year alone. */
+export const YearOfBirthOnly: Story = {
+  name: 'Year of birth alone is accepted',
+  args: baseArgs,
+  render: () => (
+    <DetailsPlayground
+      initial={{
+        ...confirmedPatient(),
+        dob: '1991',
+        identity: { source: 'manual', lockedFields: [] },
+      }}
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const dob = await canvas.findByLabelText(/Date of birth/);
+    await expect(dob).toHaveValue('1991');
+    await expect(canvas.queryByText(/That date does not exist/)).not.toBeInTheDocument();
+    // Only the contact channel is still outstanding — the year is accepted.
+    await expect(
+      canvas.getByText(
+        'Verify a contact channel, or record why the visit continues without one.',
+      ),
+    ).toBeVisible();
   },
 };
 
 export const ReviewContactGate: Story = {
-  name: 'Step 2 — Contact verification gates Continue',
+  name: 'Contact verification gates the arrival',
   args: baseArgs,
-  render: () => <DetailsPlayground initial={capturedPatient()} />,
+  render: () => <DetailsPlayground initial={confirmedPatient()} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByRole('button', { name: 'Continue' })).toBeDisabled();
+    await expect(canvas.getByRole('button', { name: 'Record arrival' })).toBeDisabled();
     await expect(
-      canvas.getByText('Date of birth, sex, and a contact channel are required.'),
+      canvas.getByText(
+        'Verify a contact channel, or record why the visit continues without one.',
+      ),
     ).toBeVisible();
 
     // SMS is the default channel, so the phone field is already on screen —
@@ -183,19 +312,19 @@ export const ReviewContactGate: Story = {
     await userEvent.type(canvas.getByLabelText('SMS code'), '123456');
     await userEvent.click(canvas.getByRole('button', { name: 'Verify' }));
     await expect(await canvas.findByText('SMS verified')).toBeVisible();
-    await expect(canvas.getByRole('button', { name: 'Continue' })).toBeEnabled();
+    await expect(canvas.getByRole('button', { name: 'Record arrival' })).toBeEnabled();
   },
 };
 
 export const PersistentActionBar: Story = {
-  name: 'Step 2 — Actions remain visible while scrolling',
+  name: 'Actions remain visible while scrolling',
   args: baseArgs,
   render: () => <DetailsPlayground initial={capturedPatient()} />,
   play: async ({ canvasElement }) => verifyPersistentActionBar(canvasElement),
 };
 
 export const PersistentActionBarMobile320: Story = {
-  name: 'Step 2 — Actions remain visible at 320 px',
+  name: 'Actions remain visible at 320 px',
   args: baseArgs,
   globals: { viewport: { value: 'kura320' } },
   render: () => <DetailsPlayground initial={capturedPatient()} />,
@@ -203,9 +332,9 @@ export const PersistentActionBarMobile320: Story = {
 };
 
 export const TelegramChannel: Story = {
-  name: 'Step 2 — Telegram via the patient display',
+  name: 'Telegram via the patient display',
   args: baseArgs,
-  render: () => <DetailsPlayground initial={capturedPatient()} />,
+  render: () => <DetailsPlayground initial={confirmedPatient()} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await userEvent.click(canvas.getByRole('button', { name: 'Use Telegram instead' }));
@@ -216,17 +345,17 @@ export const TelegramChannel: Story = {
     await userEvent.click(canvas.getByRole('button', { name: 'Simulate patient share' }));
     await expect(await canvas.findByText('Telegram verified')).toBeVisible();
     await expect(canvas.getByText(/t\.me\//)).toBeVisible();
-    await expect(canvas.getByRole('button', { name: 'Continue' })).toBeEnabled();
+    await expect(canvas.getByRole('button', { name: 'Record arrival' })).toBeEnabled();
   },
 };
 
 export const SaveUnverifiedReason: Story = {
-  name: 'Step 2 — Unverified passes only with a recorded reason',
+  name: 'Unverified passes only with a recorded reason',
   args: baseArgs,
-  render: () => <DetailsPlayground initial={capturedPatient()} />,
+  render: () => <DetailsPlayground initial={confirmedPatient()} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByRole('button', { name: 'Continue' })).toBeDisabled();
+    await expect(canvas.getByRole('button', { name: 'Record arrival' })).toBeDisabled();
     await userEvent.click(canvas.getByRole('button', { name: 'Continue without verifying' }));
     const save = canvas.getByRole('button', { name: 'Save unverified' });
     await expect(save).toBeDisabled();
@@ -237,142 +366,15 @@ export const SaveUnverifiedReason: Story = {
     await userEvent.click(save);
     await expect(await canvas.findByText('Unverified · Guardian phone only')).toBeVisible();
     await expect(canvas.getByText(/patient may miss them/)).toBeVisible();
-    // Trusted-desk door: the reason unblocks Continue; verify stays offered.
-    await expect(canvas.getByRole('button', { name: 'Continue' })).toBeEnabled();
+    // Trusted-desk door: the reason unblocks the arrival; verify stays offered.
+    await expect(canvas.getByRole('button', { name: 'Record arrival' })).toBeEnabled();
     await expect(canvas.getByRole('button', { name: 'Verify instead' })).toBeVisible();
   },
 };
 
-export const InsuranceEmpty: Story = {
-  name: 'Step 3 — No insurance on file',
-  args: baseArgs,
-  render: () => <DetailsPlayground initial={reviewedPatient()} />,
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    await expect(await canvas.findByText('No insurance on file')).toBeVisible();
-    await expect(canvas.getByRole('button', { name: 'Continue without insurance' })).toBeVisible();
-    await expect(canvas.getByRole('button', { name: 'Continue' })).toBeDisabled();
-
-    await userEvent.click(canvas.getByRole('button', { name: 'Continue without insurance' }));
-    await expect(await canvas.findByText('Direct pay')).toBeVisible();
-    await expect(canvas.getByRole('button', { name: 'Continue' })).toBeEnabled();
-  },
-};
-
-export const InsuranceEligibilityFlow: Story = {
-  name: 'Step 3 — Add policy → checking → eligible → saved',
-  args: baseArgs,
-  render: () => <DetailsPlayground initial={reviewedPatient()} />,
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    await userEvent.click(await canvas.findByRole('button', { name: 'Add policy' }));
-
-    await userEvent.type(canvas.getByLabelText(/Policy number/), 'FRT-887200115');
-    await userEvent.type(canvas.getByLabelText(/Member ID/), '887200119');
-    await userEvent.click(canvas.getByRole('button', { name: 'Check eligibility' }));
-
-    // Transient checking state, then the eligibility verdict.
-    await expect(await canvas.findByText(/Checking eligibility with Forte Insurance/)).toBeVisible();
-    await expect(
-      await canvas.findByText(/Eligible — 80% of eligible services/),
-    ).toBeVisible();
-
-    await userEvent.click(canvas.getByRole('button', { name: 'Save policy' }));
-
-    // The attached policy renders the full contract + the co-pay banner.
-    await expect(await canvas.findByText('Member ID')).toBeVisible();
-    await expect(canvas.getByText('Group')).toBeVisible();
-    await expect(canvas.getByText('CORP-90021')).toBeVisible();
-    await expect(canvas.getByText('Pre-auth')).toBeVisible();
-    await expect(canvas.getByText(/co-pay\s+applies/)).toBeVisible();
-    await expect(canvas.getByRole('button', { name: /Re-verify/ })).toBeVisible();
-    await expect(canvas.getByRole('button', { name: 'Continue' })).toBeEnabled();
-  },
-};
-
-export const InsuranceUnreachable: Story = {
-  name: 'Step 3 — Insurer unreachable, add anyway',
-  args: baseArgs,
-  render: () => <DetailsPlayground initial={reviewedPatient()} />,
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    await userEvent.click(await canvas.findByRole('button', { name: 'Add policy' }));
-    await userEvent.type(canvas.getByLabelText(/Policy number/), 'FRT-000000009');
-    await userEvent.click(canvas.getByRole('button', { name: 'Check eligibility' }));
-
-    await expect(await canvas.findByText('Insurer unreachable')).toBeVisible();
-    await userEvent.click(canvas.getByRole('button', { name: 'Add anyway' }));
-    await expect(await canvas.findByText('Unverified')).toBeVisible();
-  },
-};
-
 export const MobileNarrow: Story = {
-  name: 'Step 2 — Mobile',
+  name: 'Mobile',
   args: baseArgs,
   globals: { viewport: { value: 'kura390' } },
   render: () => <DetailsPlayground initial={capturedPatient()} />,
-};
-
-export const InsuranceScanCard: Story = {
-  name: 'Step 3 — Scan card autofills the policy form',
-  args: baseArgs,
-  render: () => <DetailsPlayground initial={reviewedPatient()} />,
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    await userEvent.click(await canvas.findByRole('button', { name: 'Scan card' }));
-    await expect(await canvas.findByLabelText(/Policy number/)).toHaveValue('FRT-88720011');
-    await expect(canvas.getByLabelText(/Member ID/)).toHaveValue('M-8872001');
-  },
-};
-
-export const InsuranceClaimRoute: Story = {
-  name: 'Step 6 — Route the balance to an insurer claim',
-  args: baseArgs,
-  render: () => {
-    const base = reviewedPatient();
-    return (
-      <DetailsPlayground
-        initial={{
-          ...base,
-          insurance: [
-            {
-              id: 'pol-1',
-              provider: 'Forte',
-              policyNumber: 'FRT-88720011',
-              memberName: base.name,
-              eligibility: {
-                kind: 'eligible',
-                tier: 'Outpatient',
-                coveragePct: 80,
-                copayMinor: '500',
-                activeUntil: '2027-12',
-                verifiedAtLabel: 'Verified 08:21 · supervisor LN',
-              },
-            },
-          ],
-          insuranceAcked: true,
-          cart: {
-            ...base.cart,
-            attributedPrescriberId: 'dr-sok-vanna',
-            items: [
-              { id: 'lipid', kind: 'lab', name: 'Lipid panel', priceMinor: '1200', currencyCode: 'USD', qty: 1 },
-            ],
-          },
-        }}
-      />
-    );
-  },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    await userEvent.click(canvas.getByRole('tab', { name: /6 Payment/ }));
-    // Per-line payer preview rides the cart rail line.
-    await expect(await canvas.findByText(/Forte 80% · patient owes 2.40 USD/)).toBeVisible();
-    await userEvent.click(canvas.getByRole('button', { name: 'Route to insurer claim' }));
-    await expect(
-      await canvas.findByText('Insurance claim pending · Forte'),
-    ).toBeVisible();
-    await expect(canvas.getByText(/no claim is actually filed/)).toBeVisible();
-    // Claim routing resolves the payment gate like pay-later.
-    await expect(canvas.getByRole('button', { name: 'Finish' })).toBeEnabled();
-  },
 };

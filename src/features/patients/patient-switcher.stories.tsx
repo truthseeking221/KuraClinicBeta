@@ -59,7 +59,14 @@ export const Default: Story = {
     const dialog = await body.findByRole("dialog", { name: "Switch patient" });
     await expect(within(dialog).getByText("61 · M · MRN ··87")).toBeVisible();
     const daraRow = within(dialog).getByRole("button", { name: /Dara Pich/ });
-    await expect(within(daraRow).getByText("Verified")).toBeVisible();
+    // A verified identity is the routine case and carries no badge; only the
+    // records that need a second look are marked.
+    await expect(within(daraRow).queryByText("Verified")).not.toBeInTheDocument();
+    await expect(
+      within(within(dialog).getByRole("button", { name: /Lina Prum/ })).getByText(
+        "Provisional",
+      ),
+    ).toBeVisible();
 
     await userEvent.click(daraRow);
     await expect(args.onSwitchPatient).toHaveBeenCalledWith("p-dara-pich");

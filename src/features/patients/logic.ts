@@ -56,21 +56,67 @@ export function initialsOf(patient: Pick<PatientSummary, 'displayName' | 'shredd
 }
 
 export type PatientStatusView =
-  | { kind: 'terminal'; status: Exclude<PatientTerminalStatus, ''>; label: string }
-  | { kind: 'assurance'; assurance: PatientSummary['assurance']; label: string };
+  | {
+      kind: 'terminal';
+      status: Exclude<PatientTerminalStatus, ''>;
+      label: string;
+      rowLabel: string;
+    }
+  | {
+      kind: 'assurance';
+      assurance: PatientSummary['assurance'];
+      label: string;
+      /** The same fact with its axis named, for readings that carry no header. */
+      rowLabel: string;
+    };
 
 /**
- * One status per row. Terminal states outrank assurance: a deceased or
- * merged record must never present as a routine verified patient.
+ * One status per row, on the identity axis only.
+ *
+ * `verified` means someone sighted an identity document; it never means the
+ * phone was verified. A bare "Verified" reads as both, so the short label is
+ * only ever shown under a header that names the axis, and every headerless
+ * reading uses `rowLabel`. `unverified` is the ordinary state of a record the
+ * phone gate just created, so it is named `Provisional` — the vocabulary the
+ * gate, the journey, and the context rail already use.
+ *
+ * Terminal states outrank assurance: a deceased or merged record must never
+ * present as a routine patient.
  */
 export function statusViewOf(
   patient: Pick<PatientSummary, 'assurance' | 'status'>,
 ): PatientStatusView {
-  if (patient.status === 'deceased') return { kind: 'terminal', status: 'deceased', label: 'Deceased' };
-  if (patient.status === 'merged') return { kind: 'terminal', status: 'merged', label: 'Merged' };
+  if (patient.status === 'deceased') {
+    return { kind: 'terminal', status: 'deceased', label: 'Deceased', rowLabel: 'Deceased' };
+  }
+  if (patient.status === 'merged') {
+    return { kind: 'terminal', status: 'merged', label: 'Merged', rowLabel: 'Merged' };
+  }
   return patient.assurance === 'verified'
-    ? { kind: 'assurance', assurance: 'verified', label: 'Verified' }
-    : { kind: 'assurance', assurance: 'unverified', label: 'Unverified' };
+    ? {
+        kind: 'assurance',
+        assurance: 'verified',
+        label: 'Verified',
+        rowLabel: 'Identity verified',
+      }
+    : {
+        kind: 'assurance',
+        assurance: 'unverified',
+        label: 'Provisional',
+        rowLabel: 'Identity provisional',
+      };
+}
+
+/**
+ * The contact axis, kept separate from identity everywhere in the product.
+ * `phone_masked` is populated only for a verified primary phone, so an empty
+ * value is a fact with a consequence — the results link and the payment link
+ * have nowhere to go — and is named rather than left as a blank dash.
+ */
+export const NO_VERIFIED_PHONE = 'No verified phone';
+
+export function hasVerifiedPhone(patient: Pick<PatientSummary, 'phoneMasked'>): boolean {
+  return patient.phoneMasked.trim() !== '';
 }
 
 /**
@@ -100,7 +146,11 @@ export function countByAssurance(
   return counts;
 }
 
-/** Accessible row summary so the whole row can act as one open-record control. */
+/**
+ * Accessible row summary so the whole row can act as one open-record control.
+ * Both axes are named because a row read aloud carries no column headers, and
+ * the missing phone is announced only when it is missing.
+ */
 export function rowLabelOf(
   patient: PatientSummary,
   triageLabel?: string,
@@ -109,7 +159,8 @@ export function rowLabelOf(
   const parts = [
     `${t('Open')} ${displayNameOf(patient, t)}`,
     formatAgeSex(patient) || undefined,
-    t(statusViewOf(patient).label),
+    t(statusViewOf(patient).rowLabel),
+    hasVerifiedPhone(patient) ? undefined : t(NO_VERIFIED_PHONE),
     triageLabel ? t(triageLabel) : undefined,
   ];
   return parts.filter(Boolean).join('. ');

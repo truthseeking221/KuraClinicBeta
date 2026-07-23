@@ -4,8 +4,8 @@ import { expect, within } from "storybook/test";
 
 import { READINESS } from "../../components/foundations/readiness-data";
 
-import { TubeLabeling } from "./tube-labeling";
-import type { TubeLabelMethod, TubeLabelPhotoCheck } from "./types";
+import { DoctorTubeLabeling } from "./doctor-tube-labeling";
+import type { TubeLabelMethod, TubeLabelPhotoCheck } from "./doctor-tube-labeling";
 
 const TUBE_KEYS = ["red", "gold-sst", "green", "lavender"];
 
@@ -23,7 +23,7 @@ function Harness({
     photographed: false,
   });
   return (
-    <TubeLabeling
+    <DoctorTubeLabeling
       method={method}
       onConfirm={() => {}}
       onMethodChange={setMethod}
@@ -37,8 +37,8 @@ function Harness({
 }
 
 const meta = {
-  title: "Clinic/Collection/Tube Labeling",
-  component: TubeLabeling,
+  title: "Clinic/Flows/Doctor Tube Labeling",
+  component: DoctorTubeLabeling,
   tags: ["autodocs", "source-figma", "adapted-kura"],
   args: {
     method: "sticker",
@@ -78,7 +78,7 @@ const meta = {
       },
     },
   },
-} satisfies Meta<typeof TubeLabeling>;
+} satisfies Meta<typeof DoctorTubeLabeling>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
@@ -132,7 +132,7 @@ export const SingleTube: Story = {
   render: function SingleTubeHarness() {
     const [method, setMethod] = useState<TubeLabelMethod>("pen");
     return (
-      <TubeLabeling
+      <DoctorTubeLabeling
         method={method}
         onConfirm={() => {}}
         onMethodChange={setMethod}

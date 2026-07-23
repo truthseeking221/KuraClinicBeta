@@ -1,9 +1,16 @@
 import type {
+  Amount,
+  DoctorBankingOverview,
+  DoctorFinancialNotification,
   DoctorLedgerSummary,
+  IsoDate,
   LedgerEntry,
   LedgerEntryKind,
   LedgerEntryState,
+  LicenceState,
+  MandateState,
   Pull,
+  SignedMoney,
   SignedUsdMinor,
 } from './types';
 
@@ -35,13 +42,59 @@ export function splitSignedUsdMinorForDisplay(value: SignedUsdMinor): SignedUsdM
   };
 }
 
-export function balanceDirection(value: SignedUsdMinor) {
+export type BalanceDirection = 'doctor-owes' | 'kura-owes' | 'settled' | 'unavailable';
+
+export function balanceDirection(value: SignedUsdMinor): BalanceDirection {
   const parsed = parseSignedUsdMinor(value);
-  if (!parsed) return 'unavailable' as const;
+  if (!parsed || parsed === '-9223372036854775808') return 'unavailable';
   const amount = BigInt(parsed);
-  if (amount < 0n) return 'doctor-owes' as const;
-  if (amount > 0n) return 'kura-owes' as const;
-  return 'settled' as const;
+  if (amount < 0n) return 'doctor-owes';
+  if (amount > 0n) return 'kura-owes';
+  return 'settled';
+}
+
+/**
+ * The heading carries the meaning so red and green stay a second signal only.
+ * A doctor reading this in greyscale still knows who owes whom.
+ */
+export function balanceHeadline(direction: BalanceDirection) {
+  switch (direction) {
+    case 'doctor-owes':
+      return 'You owe Kura';
+    case 'kura-owes':
+      return 'Kura owes you';
+    case 'settled':
+      return "You're settled";
+    case 'unavailable':
+      return 'Amount unavailable';
+  }
+}
+
+/**
+ * `earnedThisMonth` is settled positive `completion_credit` only. Pending
+ * earnings are excluded because the work is complete but the money is not.
+ */
+export function earnedSinceMonthStart(
+  entries: readonly LedgerEntry[],
+  periodStart: IsoDate,
+): Amount {
+  const total = entries.reduce((sum, entry) => {
+    if (entry.kind !== 'completion_credit') return sum;
+    if (entry.state !== 'settled') return sum;
+    if (entry.occurredAt.slice(0, 10) < periodStart) return sum;
+    const parsed = parseSignedUsdMinor(entry.amount.minor);
+    if (!parsed) return sum;
+    const value = BigInt(parsed);
+    return value > 0n ? sum + value : sum;
+  }, 0n);
+  return { minor: total.toString(), currency: 'USD' };
+}
+
+/** "July" — the hero says which month it earned, so "this period" never appears. */
+export function earningsMonthLabel(periodStart: IsoDate) {
+  const date = new Date(`${periodStart}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return periodStart;
+  return new Intl.DateTimeFormat('en-GB', { month: 'long' }).format(date);
 }
 
 export type ActivityQuery = {
@@ -51,6 +104,8 @@ export type ActivityQuery = {
   from?: string;
   to?: string;
 };
+
+export const EMPTY_ACTIVITY_QUERY: ActivityQuery = { query: '' };
 
 export function filterLedgerEntries(entries: readonly LedgerEntry[], query: ActivityQuery) {
   const normalized = query.query.trim().toLocaleLowerCase();
@@ -65,6 +120,16 @@ export function filterLedgerEntries(entries: readonly LedgerEntry[], query: Acti
       (value) => value.toLocaleLowerCase().includes(normalized),
     );
   });
+}
+
+export function isActivityQueryFiltered(query: ActivityQuery) {
+  return Boolean(query.query.trim() || query.state || query.kind || query.from || query.to);
+}
+
+/** A backwards range would silently produce an empty statement; block it instead. */
+export function statementRangeError(query: ActivityQuery) {
+  if (query.from && query.to && query.from > query.to) return 'range-backwards' as const;
+  return null;
 }
 
 export function recentLedgerEntries(entries: readonly LedgerEntry[], limit: number) {
@@ -86,6 +151,137 @@ export function filterDoctorLedgers(
       value.toLocaleLowerCase().includes(normalized),
     );
   });
+}
+
+/**
+ * What the doctor may do with the ABA authorization. A lapsed licence blocks a
+ * new authorization but never traps an existing one: unlink stays available.
+ */
+export function mandateCapabilities(state: MandateState, licence: LicenceState) {
+  const verified = licence === 'verified';
+  return {
+    canLink: verified && (state === 'unlinked' || state === 'expired' || state === 'deleted'),
+    canRenew: verified && state === 'renewal_required',
+    canUnlink: state === 'linked' || state === 'renewal_required' || state === 'frozen',
+    linkBlockedByLicence:
+      !verified && (state === 'unlinked' || state === 'expired' || state === 'deleted'),
+  };
+}
+
+/** Whether the ledger can still be collected against without doctor action. */
+function autoPayUsable(state: MandateState) {
+  return state === 'linked' || state === 'renewal_required';
+}
+
+export type NextCollectionStep =
+  | { kind: 'unavailable' }
+  | { kind: 'nothing_due' }
+  | { kind: 'credit_held' }
+  | { kind: 'sweep_scheduled'; date: IsoDate; maximum: Amount }
+  | { kind: 'notice_sent'; date: IsoDate; maximum: Amount }
+  | { kind: 'notice_reduced'; date: IsoDate; maximum: Amount; noticed: Amount }
+  | { kind: 'notice_cleared'; date: IsoDate; noticed: Amount }
+  | { kind: 'retry_pending'; retryDate: IsoDate | null; retrySlot: 1 | 2 | 3 | null; amount: Amount }
+  | { kind: 'retry_expired'; amount: Amount }
+  | { kind: 'retries_exhausted'; amount: Amount; date: IsoDate | null }
+  | { kind: 'settle_manually'; amount: Amount; mandate: MandateState };
+
+function isZero(amount: Amount) {
+  const parsed = parseSignedUsdMinor(amount.minor);
+  return parsed !== null && BigInt(parsed) === 0n;
+}
+
+function owedAmount(balance: SignedMoney): Amount {
+  const display = splitSignedUsdMinorForDisplay(balance.minor);
+  return {
+    minor: display.kind === 'money' ? display.magnitude : '0',
+    currency: 'USD',
+  };
+}
+
+function latestFailedPull(notifications: readonly DoctorFinancialNotification[]) {
+  return notifications
+    .filter((notification) => notification.kind === 'pull_failed')
+    .sort((a, b) => b.occurredAt.localeCompare(a.occurredAt))[0];
+}
+
+/**
+ * The single most useful sentence on the page: what Kura does next and when.
+ * Derived, never authored per fixture, so every scenario answers the same way.
+ */
+export function nextCollectionStep(
+  overview: DoctorBankingOverview,
+  notifications: readonly DoctorFinancialNotification[] = [],
+): NextCollectionStep {
+  const direction = balanceDirection(overview.settledBalance.minor);
+  if (direction === 'unavailable') return { kind: 'unavailable' };
+
+  const sweep = overview.nextSweep;
+  if (direction !== 'doctor-owes') {
+    // A notice that was sent and then paid off still deserves an answer: the
+    // doctor needs to know that collection will take nothing.
+    if (sweep && sweep.noticeState === 'sent' && isZero(sweep.maximumAmount)) {
+      return {
+        kind: 'notice_cleared',
+        date: sweep.date,
+        noticed: sweep.noticedAmount ?? sweep.maximumAmount,
+      };
+    }
+    return direction === 'kura-owes' ? { kind: 'credit_held' } : { kind: 'nothing_due' };
+  }
+
+  const owed = owedAmount(overview.settledBalance);
+  const failed = latestFailedPull(notifications);
+  if (failed && failed.kind === 'pull_failed') {
+    if (failed.retryState === 'retry_pending') {
+      return {
+        kind: 'retry_pending',
+        retryDate: failed.retryDate,
+        retrySlot: failed.retrySlot,
+        amount: owed,
+      };
+    }
+    if (failed.retryState === 'not_retryable') return { kind: 'retry_expired', amount: owed };
+    return {
+      kind: 'retries_exhausted',
+      amount: owed,
+      date: overview.nextSweep?.date ?? null,
+    };
+  }
+
+  if (!autoPayUsable(overview.mandate.state)) {
+    return { kind: 'settle_manually', amount: owed, mandate: overview.mandate.state };
+  }
+
+  if (!sweep) return { kind: 'settle_manually', amount: owed, mandate: overview.mandate.state };
+
+  if (sweep.noticeState !== 'sent') {
+    return { kind: 'sweep_scheduled', date: sweep.date, maximum: sweep.maximumAmount };
+  }
+  if (isZero(sweep.maximumAmount)) {
+    return {
+      kind: 'notice_cleared',
+      date: sweep.date,
+      noticed: sweep.noticedAmount ?? sweep.maximumAmount,
+    };
+  }
+  if (sweep.noticedAmount && sweep.noticedAmount.minor !== sweep.maximumAmount.minor) {
+    return {
+      kind: 'notice_reduced',
+      date: sweep.date,
+      maximum: sweep.maximumAmount,
+      noticed: sweep.noticedAmount,
+    };
+  }
+  return { kind: 'notice_sent', date: sweep.date, maximum: sweep.maximumAmount };
+}
+
+/** True when the projected balance has reached or passed the ordering floor. */
+export function floorBreached(overview: DoctorBankingOverview) {
+  const exposure = parseSignedUsdMinor(overview.exposure.minor);
+  const floor = parseSignedUsdMinor(overview.creditFloor.minor);
+  if (!exposure || !floor) return false;
+  return BigInt(exposure) <= BigInt(floor);
 }
 
 /**

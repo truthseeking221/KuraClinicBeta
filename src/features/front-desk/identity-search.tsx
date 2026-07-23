@@ -1,28 +1,9 @@
 'use client';
 
-import { useState } from 'react';
-import type { KeyboardEvent } from 'react';
-
-import {
-  Badge,
-  Button,
-  Dialog,
-  DialogBody,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  Input,
-} from '../../components/ui';
-import {
-  QrCodeIcon,
-  ScanIcon,
-  SearchIcon,
-} from '../../components/ui/icons';
+import { Badge, Input } from '../../components/ui';
+import { QrCodeIcon } from '../../components/ui/icons';
 import { useT } from '../../components/foundations/i18n';
-import { detectQueryKind, parseBookingQrPayload } from './logic';
+import { detectQueryKind, readBookingQr } from './logic';
 import type { IdentityQueryKind } from './types';
 import styles from './identity-search.module.css';
 
@@ -35,143 +16,52 @@ const KIND_LABEL: Record<IdentityQueryKind, string> = {
 export type IdentitySearchProps = {
   value: string;
   onChange: (next: string) => void;
-  /** Demo QR payload surfaced inside the scan dialog. */
-  demoQrPayload?: string;
   autoFocus?: boolean;
 };
 
 /**
- * Step-1 identity capture header: one search field that understands phone,
- * booking code, or name (the three reception doors), plus a booking-QR scan
- * shortcut. The field is the screen's single visual anchor — no card chrome
- * around it.
+ * Step-1 booking lookup: one field that the desk scanner types into and the
+ * receptionist can also type into. Scanning is an input method, not a
+ * workflow — there is no scan button and no scan dialog, because a desk
+ * scanner is a keyboard and a separate modal would only add a click before
+ * every arrival. A Kura booking QR normalises to its collection code as it
+ * lands; any other QR is named as foreign rather than mined for a code.
+ *
+ * The field is the screen's single visual anchor — no card chrome around it.
  */
-export function IdentitySearch({
-  autoFocus,
-  demoQrPayload,
-  onChange,
-  value,
-}: IdentitySearchProps) {
+export function IdentitySearch({ autoFocus, onChange, value }: IdentitySearchProps) {
   const t = useT();
-  const [scanOpen, setScanOpen] = useState(false);
-  const kind = detectQueryKind(value);
+  const reading = readBookingQr(value);
+  const kind = reading === null ? detectQueryKind(value) : null;
+
   return (
     <div className={styles.search}>
-      <div className={styles.inputRow}>
-        <Input
-          aria-label={t('Find patient by phone, booking code, or name')}
-          autoFocus={autoFocus}
-          className={styles.input}
-          onChange={(event) => onChange(event.target.value)}
-          placeholder={t('Phone, booking code, or name')}
-          prefix={<SearchIcon size={16} />}
-          size="lg"
-          suffix={
-            kind ? (
-              <Badge size="sm" variant="neutral">
-                {t(KIND_LABEL[kind])}
-              </Badge>
-            ) : undefined
-          }
-          value={value}
-        />
-        <Button
-          onClick={() => setScanOpen(true)}
-          size="lg"
-          variant="outline"
-        >
-          <ScanIcon size={16} aria-hidden />
-          {t('Scan booking QR')}
-        </Button>
-      </div>
-
-      <ScanBookingQrDialog
-        demoQrPayload={demoQrPayload}
-        onBookingCode={(code) => {
-          onChange(code);
-          setScanOpen(false);
+      <Input
+        aria-label={t('Find the booking by code or phone')}
+        autoFocus={autoFocus}
+        className={styles.input}
+        error={reading?.kind === 'foreign' ? t('This is not a Kura booking QR.') : undefined}
+        onChange={(event) => {
+          const next = readBookingQr(event.target.value);
+          onChange(next?.kind === 'code' ? next.code : event.target.value);
         }}
-        onOpenChange={setScanOpen}
-        open={scanOpen}
-      />
-    </div>
-  );
-}
-
-function ScanBookingQrDialog({
-  demoQrPayload,
-  onBookingCode,
-  onOpenChange,
-  open,
-}: {
-  demoQrPayload?: string;
-  onBookingCode: (code: string) => void;
-  onOpenChange: (open: boolean) => void;
-  open: boolean;
-}) {
-  const t = useT();
-  const [payload, setPayload] = useState('');
-  const [error, setError] = useState<string | null>(null);
-
-  function handleScan(event: KeyboardEvent<HTMLInputElement>) {
-    if (event.key !== 'Enter') return;
-    event.preventDefault();
-    const code = parseBookingQrPayload(payload);
-    if (!code) {
-      setError(t('No booking code found in this QR.'));
-      return;
-    }
-    setPayload('');
-    setError(null);
-    onBookingCode(code);
-  }
-
-  return (
-    <Dialog
-      open={open}
-      onOpenChange={(next) => {
-        if (!next) {
-          setPayload('');
-          setError(null);
+        placeholder={t('Scan or type the booking code')}
+        prefix={<QrCodeIcon size={16} />}
+        size="lg"
+        suffix={
+          kind ? (
+            <Badge size="sm" variant="neutral">
+              {t(KIND_LABEL[kind])}
+            </Badge>
+          ) : undefined
         }
-        onOpenChange(next);
-      }}
-    >
-      <DialogContent size="sm">
-        <DialogHeader>
-          <DialogTitle>{t('Scan booking QR')}</DialogTitle>
-          <DialogDescription>
-            {t(
-              'Capture the booking QR before matching the patient. The scanner sends Enter automatically.',
-            )}
-          </DialogDescription>
-        </DialogHeader>
-        <DialogBody>
-          <Input
-            aria-label={t('Booking QR payload')}
-            autoFocus
-            error={error ?? undefined}
-            onChange={(event) => {
-              setPayload(event.target.value);
-              setError(null);
-            }}
-            onKeyDown={handleScan}
-            placeholder={t('Scan booking QR code')}
-            prefix={<QrCodeIcon size={16} />}
-            value={payload}
-          />
-          {demoQrPayload ? (
-            <p className={styles.demoHint}>
-              {t('Demo payload:')} <code className={styles.demoCode}>{demoQrPayload}</code>
-            </p>
-          ) : null}
-        </DialogBody>
-        <DialogFooter>
-          <DialogClose asChild>
-            <Button variant="outline">{t('Cancel')}</Button>
-          </DialogClose>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        value={value}
+      />
+      <p className={styles.hint} role="status">
+        {reading?.kind === 'partial'
+          ? t('Reading booking QR…')
+          : t('No booking code? Search by the phone number on the booking.')}
+      </p>
+    </div>
   );
 }

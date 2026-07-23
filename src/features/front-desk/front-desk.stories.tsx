@@ -28,7 +28,7 @@ const STORY_FX_RATE: FxRateQuote = {
 };
 
 const meta = {
-  title: 'Clinic/Front Desk/Check-In Wizard',
+  title: 'Clinic/Front Desk/Check-In',
   component: CheckInWizard,
   tags: ['autodocs', 'source-reui', 'adapted-kura'],
   parameters: {
@@ -116,9 +116,9 @@ export const Default: Story = {
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByRole('tab', { name: /2 Review/ })).toBeDisabled();
-    await expect(canvas.getByRole('tab', { name: /6 Payment/ })).toBeDisabled();
-    await expect(canvas.getByRole('button', { name: 'Review details' })).toBeDisabled();
+    await expect(canvas.getByRole('tab', { name: /Patient/ })).toBeDisabled();
+    await expect(canvas.getByRole('tab', { name: /Payment/ })).toBeDisabled();
+    await expect(canvas.getByRole('button', { name: 'Confirm the patient' })).toBeDisabled();
   },
 };
 
@@ -132,9 +132,9 @@ export const PlannedVisit: Story = {
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByText('Booking GW87430')).toBeVisible();
+    await expect(canvas.getByText('Booking PSC-A82Q7K3M')).toBeVisible();
     await expect(
-      canvas.getByRole('heading', { name: 'Review & confirm' }),
+      canvas.getByRole('heading', { name: 'Confirm the patient' }),
     ).toBeVisible();
   },
 };
@@ -302,12 +302,12 @@ export const FullCheckInFlow: Story = {
 
     // Step 1: identity search finds no record; create a new patient.
     await userEvent.type(
-      canvas.getByLabelText('Find patient by phone, booking code, or name'),
+      canvas.getByLabelText('Find the booking by code or phone'),
       'Bopha Kim',
     );
-    await userEvent.click(await canvas.findByRole('button', { name: 'Create a new patient' }));
+    await userEvent.click(await canvas.findByRole('button', { name: 'Start a walk-in' }));
 
-    // Step 2 — review + OTP.
+    // Patient — confirm details and prove the contact channel.
     const dateOfBirth = canvas.getByLabelText(/Date of birth/);
     await userEvent.type(dateOfBirth, '19900505');
     await expect(dateOfBirth).toHaveValue('1990-05-05');
@@ -317,13 +317,12 @@ export const FullCheckInFlow: Story = {
     await userEvent.type(canvas.getByLabelText('SMS code'), DEMO_OTP);
     await userEvent.click(canvas.getByRole('button', { name: 'Verify' }));
     await expect(await canvas.findByText('SMS verified')).toBeVisible();
-    await userEvent.click(canvas.getByRole('button', { name: 'Continue' }));
+    await userEvent.click(canvas.getByRole('button', { name: 'Record arrival' }));
 
-    // Step 3 — direct pay.
-    await userEvent.click(canvas.getByRole('button', { name: 'Continue without insurance' }));
-    await userEvent.click(canvas.getByRole('button', { name: 'Continue' }));
+    // Orders — no policy on file, so no payer task stands between the two.
+    await expect(canvas.queryByRole('tab', { name: /Payer/ })).not.toBeInTheDocument();
 
-    // Step 4 — add CBC and attribute the ordering clinician (ADR-0057).
+    // Add CBC and attribute the ordering clinician (ADR-0057).
     await expect(canvas.getByLabelText('67 tests')).toBeVisible();
     await userEvent.click(
       canvas.getByRole('checkbox', { name: /Complete blood count/ }),
@@ -334,18 +333,19 @@ export const FullCheckInFlow: Story = {
         name: /Dr\. Sok Vanna/,
       }),
     );
-    await userEvent.click(canvas.getByRole('button', { name: 'Continue' }));
+    await userEvent.click(canvas.getByRole('button', { name: 'Confirm the order' }));
 
-    // Step 5 — no telecon in cart → continue directly.
-    await userEvent.click(canvas.getByRole('button', { name: 'Continue' }));
+    // Intake — no teleconsult in the cart, so no booking section appears.
+    await expect(canvas.queryByRole('button', { name: 'Skip consult' })).not.toBeInTheDocument();
+    await userEvent.click(canvas.getByRole('button', { name: 'Confirm intake' }));
 
-    // Step 6 — cash $25 for $6 due.
+    // Payment — cash $25 for $6 due.
     await userEvent.type(canvas.getByLabelText(/Tendered/), '25');
     await userEvent.click(canvas.getByRole('button', { name: 'Confirm cash' }));
     await expect(await canvas.findByText(/Paid · R-58213/)).toBeVisible();
 
     // Finish from the workflow footer; the cart rail has no business action.
-    const finishButton = canvas.getByRole('button', { name: 'Finish' });
+    const finishButton = canvas.getByRole('button', { name: 'Finish check-in' });
     await waitFor(async () => expect(finishButton).toBeEnabled());
     await userEvent.click(finishButton);
 
@@ -354,7 +354,9 @@ export const FullCheckInFlow: Story = {
     await expect(await canvas.findByText('Checked in')).toBeVisible();
     await expect(canvas.getByText(/Paid · R-58213/)).toBeVisible();
     await userEvent.click(canvas.getByRole('button', { name: 'Next patient' }));
-    await expect(await canvas.findByText('Find or create a patient')).toBeVisible();
+    await expect(
+      await canvas.findByRole('heading', { level: 2, name: 'Find the booking' }),
+    ).toBeVisible();
     await expect(canvas.getByText('Q-034')).toBeVisible();
   },
 };
@@ -384,11 +386,11 @@ export const KhqrPayment: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await userEvent.click(canvas.getByRole('tab', { name: /6 Payment/ }));
+    await userEvent.click(canvas.getByRole('tab', { name: /Payment/ }));
     await userEvent.click(canvas.getByRole('button', { name: 'Generate QR' }));
     await expect(await canvas.findByText(/KHQR waiting for Bakong/)).toBeVisible();
 
-    await expect(canvas.getByRole('button', { name: 'Finish' })).toBeDisabled();
+    await expect(canvas.getByRole('button', { name: 'Finish check-in' })).toBeDisabled();
 
     await userEvent.click(canvas.getByRole('button', { name: 'Simulate webhook confirm' }));
     await expect(await canvas.findByText(/Paid · R-58213/)).toBeVisible();
@@ -429,7 +431,7 @@ export const KhqrLifecycle: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const body = within(canvasElement.ownerDocument.body);
-    await userEvent.click(canvas.getByRole('tab', { name: /6 Payment/ }));
+    await userEvent.click(canvas.getByRole('tab', { name: /Payment/ }));
     await userEvent.click(canvas.getByRole('button', { name: 'Generate QR' }));
 
     // Expiry is terminal for the intent — only a new QR can retry.
@@ -480,7 +482,7 @@ export const SplitCashKhqr: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await userEvent.click(canvas.getByRole('tab', { name: /6 Payment/ }));
+    await userEvent.click(canvas.getByRole('tab', { name: /Payment/ }));
 
     const collect = canvas.getByRole('button', { name: 'Collect cash · show QR' });
     // Zero and full-cover amounts are not splits.
@@ -494,7 +496,7 @@ export const SplitCashKhqr: Story = {
 
     await expect(await canvas.findByText(/Cash collected/)).toBeVisible();
     await expect(canvas.getByText(/KHQR covers the remainder/)).toBeVisible();
-    await expect(canvas.getByRole('button', { name: 'Finish' })).toBeDisabled();
+    await expect(canvas.getByRole('button', { name: 'Finish check-in' })).toBeDisabled();
 
     await userEvent.click(canvas.getByRole('button', { name: 'Simulate webhook confirm' }));
     await expect(await canvas.findByText(/Paid · R-58213/)).toBeVisible();
@@ -554,7 +556,7 @@ export const PrescriberAttribution: Story = {
     await userEvent.click(body.getByRole('option', { name: /Dr. Sok Vanna/ }));
 
     // Forward navigation is one step at a time (census rule).
-    await userEvent.click(canvas.getByRole('tab', { name: /Pre-consult/ }));
+    await userEvent.click(canvas.getByRole('tab', { name: /Intake/ }));
     await userEvent.click(canvas.getByRole('tab', { name: /Payment/ }));
     await expect(
       canvas.queryByText('Resolve blockers before collecting payment'),
@@ -757,7 +759,7 @@ export const KeyboardShortcuts: Story = {
     // Steps 1–3 are done → F1 jumps back to Identity.
     await fireEvent.keyDown(canvasElement.ownerDocument.body, { key: 'F1' });
     await expect(
-      await canvas.findByRole('heading', { level: 2, name: 'Patient selected' }),
+      await canvas.findByRole('heading', { level: 2, name: 'Record selected' }),
     ).toBeVisible();
     // F6 stays locked (no orders yet) — the gate always wins.
     await fireEvent.keyDown(canvasElement.ownerDocument.body, { key: 'F6' });
@@ -784,7 +786,7 @@ export const PromoDiscount: Story = {
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await userEvent.click(canvas.getByRole('tab', { name: /6 Payment/ }));
+    await userEvent.click(canvas.getByRole('tab', { name: /Payment/ }));
 
     // Unknown code fails loudly, applies nothing.
     await userEvent.type(canvas.getByLabelText('Promo code'), 'NOPE');
@@ -829,7 +831,7 @@ export const PricingUnavailableInFlow: Story = {
     await expect(
       await canvas.findByText(/Do not collect payment until the server price is available/),
     ).toBeVisible();
-    await userEvent.click(canvas.getByRole('tab', { name: /6 Payment/ }));
+    await userEvent.click(canvas.getByRole('tab', { name: /Payment/ }));
     await expect(
       await canvas.findByText(/The order total could not be refreshed — retry pricing/),
     ).toBeVisible();
@@ -852,7 +854,7 @@ export const VisitAndVitalsOrderable: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await userEvent.click(canvas.getByRole('tab', { name: /4 Orders/ }));
+    await userEvent.click(canvas.getByRole('tab', { name: /Orders/ }));
     const body = within(canvasElement.ownerDocument.body);
     await userEvent.click(canvas.getByRole('button', { name: 'Additional order types' }));
     await userEvent.click(await body.findByRole('checkbox', { name: 'Clinic visit' }));

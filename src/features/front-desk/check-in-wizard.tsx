@@ -68,12 +68,14 @@ import {
 } from './catalog';
 import { PaymentReceipt } from './payment-receipt';
 import {
-  DEMO_BOOKING_QR_PAYLOAD,
   DEMO_BRANCH_ID,
   DEMO_CASHIER,
   DEMO_CONFIRMED_AT,
+  DEMO_CONFIRMED_IDENTITY_AT,
+  DEMO_DESK_STAFF,
   DEMO_PRESCRIBERS,
   DEMO_RECEIPT_ID,
+  FRONT_DESK_TODAY_ISO,
   IDENTITY_REGISTRY,
   findDemoPromo,
 } from './demo-data';
@@ -86,7 +88,7 @@ import {
   bookingBlockReason,
   orderBlockerMessage,
   orderBlockers,
-  canNavigateToStep,
+  canNavigateToTask,
   cartTotals,
   checkInStatus,
   collisionOverridePinValid,
@@ -103,20 +105,27 @@ import {
   eligiblePrescribers,
   findCollisionCandidates,
   guardianGateBlocks,
+  identityAnswersMatch,
+  identityConfirmationRequired,
   identityEditClearsAcks,
-  inferStep,
+  identityQuestions,
+  inferTask,
+  readBookingQr,
   intakeSections,
   matchedOnLabel,
   maxTatHours,
   mockEligibility,
   paymentAfterPaidEdit,
   paymentDueAmountMinor,
+  payerSplit,
+  linePayer,
   promoLines,
   intakeStatus,
   resolvedRecordPatch,
   resolveIdentity,
   trustSignalsFor,
-  wizardGate,
+  checkInGate,
+  validateIdentityFields,
 } from './logic';
 import {
   compareMinor,
@@ -129,34 +138,32 @@ import { INTAKE_SKIP_REASONS } from './types';
 import type {
   BookingSummary,
   CartItem,
+  CheckInGate,
   CollisionCandidate,
+  DeskTaskId,
   FrontDeskPatient,
+  IdentityFieldIssue,
   InsurancePolicy,
   IntakeFields,
   IntakeSkipReasonCode,
   LineConsent,
   PatientRecordSummary,
   Prescriber,
-  StepId,
 } from './types';
 import styles from './check-in-wizard.module.css';
 
-const STEP_DEFS: Array<{ id: StepId; title: string }> = [
-  { id: 1, title: 'Identity' },
-  { id: 2, title: 'Review' },
-  { id: 3, title: 'Insurance' },
-  { id: 4, title: 'Orders' },
-  { id: 5, title: 'Pre-consult' },
-  { id: 6, title: 'Payment' },
-];
-
-/** Shown next to a blocked Continue so the disabled state explains itself. */
-const STEP_REQUIREMENTS: Record<Exclude<StepId, 6>, string> = {
-  1: 'Select a patient or create a new record to continue.',
-  2: 'Date of birth, sex, and a contact channel are required.',
-  3: 'Attach a policy or choose self-pay to continue.',
-  4: 'Add at least one order to continue.',
-  5: 'Resolve the teleconsult booking to continue.',
+/**
+ * Each task names the job and the outcome of finishing it. A CTA that says
+ * "Continue" tells the desk nothing about what it is about to record, so the
+ * action label is part of the task definition, not a generic footer word.
+ */
+const TASK_DEFS: Record<DeskTaskId, { title: string; action: string }> = {
+  arrival: { title: 'Arrival', action: 'Confirm the patient' },
+  patient: { title: 'Patient', action: 'Record arrival' },
+  orders: { title: 'Orders', action: 'Confirm the order' },
+  payer: { title: 'Payer', action: 'Confirm who pays' },
+  preconsult: { title: 'Intake', action: 'Confirm intake' },
+  payment: { title: 'Payment', action: 'Finish check-in' },
 };
 
 export type CheckInWizardProps = {
@@ -176,11 +183,17 @@ export type CheckInWizardProps = {
   /** Server pricing availability — the rail blocks collection while not ready. */
   pricingStatus?: 'ready' | 'loading' | 'error';
   onRetryPricing?: () => void;
+  /** The desk's working day; date-of-birth validation compares against it. */
+  todayIso?: string;
 };
 
 /**
- * Six-step check-in wizard. The gate engine decides progress; steps never
- * bypass it. Editing a paid cart routes through the void/supplemental choice.
+ * Adaptive check-in. A visit carries only the tasks its own facts require —
+ * a patient with no policy never sees payer resolution, and a cart with no
+ * teleconsult never shows an empty pre-consult step. Task order follows
+ * information dependency: payer cannot resolve before the lines it pays for
+ * exist. The gate engine decides progress; tasks never bypass it. Editing a
+ * paid cart routes through the void/supplemental choice.
  */
 export function CheckInWizard({
   branchId = DEMO_BRANCH_ID,
@@ -193,10 +206,18 @@ export function CheckInWizard({
   fxRate,
   pricingStatus = 'ready',
   onRetryPricing,
+  todayIso = FRONT_DESK_TODAY_ISO,
 }: CheckInWizardProps) {
   const t = useT();
-  const gate = wizardGate(patient);
-  const [step, setStep] = useState<StepId>(() => inferStep(gate));
+  const gate = checkInGate(patient, todayIso);
+  const identityIssues = validateIdentityFields(patient, todayIso);
+  const [task, setTask] = useState<DeskTaskId>(() => inferTask(gate));
+
+  // A task can leave the flow while the desk stands on it — removing the last
+  // teleconsult line, for instance. Landing on a task this visit no longer
+  // carries would strand the desk on a dead screen.
+  const activeTask = gate.tasks.includes(task) ? task : inferTask(gate);
+  const taskIndex = gate.tasks.indexOf(activeTask);
   const [paidEditRequest, setPaidEditRequest] = useState<null | ((mode: 'void' | 'supplemental') => void)>(
     null,
   );
@@ -228,8 +249,8 @@ export function CheckInWizard({
     }
   }
 
-  function goTo(target: StepId) {
-    if (canNavigateToStep(target, step, gate)) setStep(target);
+  function goTo(target: DeskTaskId) {
+    if (canNavigateToTask(target, activeTask, gate)) setTask(target);
   }
 
   const [cheatsheetOpen, setCheatsheetOpen] = useState(false);
@@ -249,8 +270,10 @@ export function CheckInWizard({
   // Suppressed while typing or while any dialog is open. The listener binds
   // once; the ref keeps the handler reading current step/gate state.
   const goToRef = useRef(goTo);
+  const tasksRef = useRef(gate.tasks);
   useEffect(() => {
     goToRef.current = goTo;
+    tasksRef.current = gate.tasks;
   });
   useEffect(() => {
     function onKeyDown(event: globalThis.KeyboardEvent) {
@@ -275,7 +298,8 @@ export function CheckInWizard({
       const match = /^F([1-6])$/.exec(event.key);
       if (match) {
         event.preventDefault();
-        goToRef.current(Number(match[1]) as StepId);
+        const target = tasksRef.current[Number(match[1]) - 1];
+        if (target) goToRef.current(target);
       }
     }
     window.addEventListener('keydown', onKeyDown);
@@ -283,17 +307,20 @@ export function CheckInWizard({
   }, []);
 
   /**
-   * The order rail earns its place only once orders exist: steps 1–3 stay
-   * single-anchor (identity, review, insurance). A non-empty cart keeps the
-   * rail visible when navigating back so paid context is never hidden.
+   * The order rail earns its place only once orders exist. A non-empty cart
+   * keeps the rail visible when navigating back so paid context is never
+   * hidden.
    */
-  const showCartRail = step >= 4 || patient.cart.items.length > 0;
+  const showCartRail =
+    activeTask === 'orders' ||
+    taskIndex > gate.tasks.indexOf('orders') ||
+    patient.cart.items.length > 0;
   const mobileDockAvailable =
-    mobileViewport && (patient.cart.items.length > 0 || gate.step3Done);
+    mobileViewport && (patient.cart.items.length > 0 || gate.done.patient);
   const headerStatus = checkInStatus(patient, gate);
 
   return (
-    <div className={styles.wizard} data-slot="check-in-wizard" data-step={step}>
+    <div className={styles.wizard} data-slot="check-in-wizard" data-task={activeTask}>
       <SubjectHeader
         status={headerStatus ? { ...headerStatus, label: t(headerStatus.label) } : undefined}
         subject={{
@@ -310,20 +337,24 @@ export function CheckInWizard({
             : undefined,
         }}
       />
-      <Stepper className={styles.stepper} onValueChange={(value) => goTo(value as StepId)} value={step}>
+      <Stepper
+        className={styles.stepper}
+        onValueChange={(value) => goTo(gate.tasks[(value as number) - 1])}
+        value={taskIndex + 1}
+      >
         <StepperNav>
-          {STEP_DEFS.map((def, index) => (
+          {gate.tasks.map((id, index) => (
             <StepperItem
-              completed={gate.stepStatus[def.id] === 'done'}
-              disabled={gate.stepStatus[def.id] === 'locked'}
-              key={def.id}
-              step={def.id}
+              completed={gate.status[id] === 'done'}
+              disabled={gate.status[id] === 'locked'}
+              key={id}
+              step={index + 1}
             >
               <StepperTrigger>
-                <StepperIndicator>{def.id}</StepperIndicator>
-                <StepperTitle>{t(def.title)}</StepperTitle>
+                <StepperIndicator>{index + 1}</StepperIndicator>
+                <StepperTitle>{t(TASK_DEFS[id].title)}</StepperTitle>
               </StepperTrigger>
-              {index < STEP_DEFS.length - 1 ? <StepperSeparator /> : null}
+              {index < gate.tasks.length - 1 ? <StepperSeparator /> : null}
             </StepperItem>
           ))}
         </StepperNav>
@@ -333,24 +364,36 @@ export function CheckInWizard({
         className={styles.workspace}
         data-cart-rail={showCartRail ? 'visible' : 'hidden'}
         data-slot="check-in-workspace"
-        data-step={step}
+        data-task={activeTask}
       >
         <div className={styles.stepPanel} data-slot="check-in-step-panel">
-          {step === 1 ? (
+          {activeTask === 'arrival' ? (
             <StepIdentity
               branchId={branchId}
               collisions={collisions}
-              onAdvance={() => setStep(2)}
+              onAdvance={() => setTask('patient')}
               onUpdate={update}
               patient={patient}
               registry={identityRegistry}
             />
           ) : null}
-          {step === 2 ? (
-            <StepReview collisions={collisions} onUpdate={update} patient={patient} />
+          {activeTask === 'patient' ? (
+            <StepReview
+              collisions={collisions}
+              identityIssues={identityIssues}
+              onRestartIdentity={() => {
+                update({
+                  identity: { source: null, lockedFields: [] },
+                  identityConfirmation: null,
+                  boundBookingCode: null,
+                });
+                setTask('arrival');
+              }}
+              onUpdate={update}
+              patient={patient}
+            />
           ) : null}
-          {step === 3 ? <StepInsurance onUpdate={update} patient={patient} /> : null}
-          {step === 4 ? (
+          {activeTask === 'orders' ? (
             <StepOrders
               guardPaidEdit={guardPaidEdit}
               onUpdate={update}
@@ -358,8 +401,11 @@ export function CheckInWizard({
               prescribers={prescribers}
             />
           ) : null}
-          {step === 5 ? <StepPreConsult onUpdate={update} patient={patient} /> : null}
-          {step === 6 ? (
+          {activeTask === 'payer' ? <StepPayer onUpdate={update} patient={patient} /> : null}
+          {activeTask === 'preconsult' ? (
+            <StepPreConsult onUpdate={update} patient={patient} />
+          ) : null}
+          {activeTask === 'payment' ? (
             <StepPayment
               fxRate={fxRate}
               onUpdate={update}
@@ -369,14 +415,16 @@ export function CheckInWizard({
             />
           ) : null}
 
-          <ContinueFooter
-            collisionsBlock={(step === 1 || step === 2) && collisions.length > 0}
+          <TaskFooter
+            collisionsBlock={
+              (activeTask === 'arrival' || activeTask === 'patient') && collisions.length > 0
+            }
             gate={gate}
             mobileDockAvailable={mobileDockAvailable}
-            onBack={() => setStep((step - 1) as StepId)}
-            onContinue={() => setStep((step + 1) as StepId)}
+            onBack={() => setTask(gate.tasks[taskIndex - 1])}
+            onContinue={() => setTask(gate.tasks[taskIndex + 1])}
             onFinish={onCheckIn}
-            step={step}
+            task={activeTask}
           />
         </div>
 
@@ -405,7 +453,7 @@ export function CheckInWizard({
         <MobileDock
           gate={gate}
           onFinish={onCheckIn}
-          onResume={() => setStep(inferStep(gate))}
+          onResume={() => setTask(inferTask(gate))}
           patient={patient}
         />
       ) : null}
@@ -436,9 +484,9 @@ export function CheckInWizard({
           <dl className={styles.shortcutList}>
             <div>
               <dt>
-                <Kbd>F1</Kbd>–<Kbd>F6</Kbd>
+                <Kbd>F1</Kbd>–<Kbd>F{gate.tasks.length}</Kbd>
               </dt>
-              <dd>{t('Jump to a wizard step')}</dd>
+              <dd>{t('Jump to a check-in task')}</dd>
             </div>
             <div>
               <dt>
@@ -461,9 +509,9 @@ export function CheckInWizard({
 // ── Mobile dock ────────────────────────────────────────────
 
 /**
- * Sticky mobile action bar from order selection onward. Before then the step
+ * Sticky mobile action bar from order selection onward. Before then the task
  * itself owns the only available action. The CTA always resumes at the first
- * not-done step — the same landing rule as a reopened patient, never a gate
+ * not-done task — the same landing rule as a reopened patient, never a gate
  * bypass.
  */
 function MobileDock({
@@ -472,7 +520,7 @@ function MobileDock({
   onResume,
   patient,
 }: {
-  gate: ReturnType<typeof wizardGate>;
+  gate: CheckInGate;
   onFinish: () => void;
   onResume: () => void;
   patient: FrontDeskPatient;
@@ -482,7 +530,7 @@ function MobileDock({
   const dueMinor = paymentDueAmountMinor(patient.cart, totals);
   const payment = patient.cart.payment;
   const waiting = payment.status === 'waiting' || payment.status === 'split-cash';
-  const nextStep = inferStep(gate);
+  const nextTask = inferTask(gate);
 
   let info: ReactNode;
   let action: ReactNode;
@@ -498,7 +546,7 @@ function MobileDock({
         {t('View QR')}
       </Button>
     );
-  } else if (gate.step6Done) {
+  } else if (gate.done.payment) {
     info = (
       <span className={styles.dockLabel}>
         {gate.paid
@@ -513,7 +561,7 @@ function MobileDock({
         {t('Finish check-in')}
       </Button>
     );
-  } else if (gate.step5Done) {
+  } else if (nextTask === 'payment') {
     info = (
       <>
         <span className={styles.dockLabel}>{t('Patient due')}</span>
@@ -529,19 +577,18 @@ function MobileDock({
     info = <span className={styles.dockLabel}>{t('No orders yet')}</span>;
     action = (
       <Button onClick={onResume} size="sm" variant="secondary">
-        {nextStep === 4 ? t('Add orders') : t('Continue')}
+        {nextTask === 'orders' ? t('Add orders') : t(TASK_DEFS[nextTask].action)}
       </Button>
     );
   } else {
-    const nextTitle = STEP_DEFS.find((def) => def.id === nextStep)?.title;
     info = (
       <span className={styles.dockLabel}>
-        {t('Step')} {nextStep} {t('of 6')} · {nextTitle ? t(nextTitle) : null}
+        {t('Next')} · {t(TASK_DEFS[nextTask].title)}
       </span>
     );
     action = (
       <Button onClick={onResume} size="sm" variant="secondary">
-        {t('Continue')}
+        {t(TASK_DEFS[nextTask].action)}
       </Button>
     );
   }
@@ -554,37 +601,40 @@ function MobileDock({
   );
 }
 
-// ── Step footer ────────────────────────────────────────────
+// ── Task footer ────────────────────────────────────────────
 
-function ContinueFooter({
+/**
+ * The one action for the task in hand, named by what it records. The blocker
+ * sits beside the action it blocks, not at the top of the screen — a disabled
+ * button whose reason is a scroll away is an unfinished state.
+ */
+function TaskFooter({
   collisionsBlock,
   gate,
   mobileDockAvailable,
   onBack,
   onContinue,
   onFinish,
-  step,
+  task,
 }: {
   collisionsBlock: boolean;
-  gate: ReturnType<typeof wizardGate>;
+  gate: CheckInGate;
   mobileDockAvailable: boolean;
   onBack: () => void;
   onContinue: () => void;
   onFinish: () => void;
-  step: StepId;
+  task: DeskTaskId;
 }) {
   const t = useT();
-  const stepDone = gate[`step${step}Done` as keyof typeof gate] === true;
-  const blocked = !stepDone || collisionsBlock;
+  const taskDone = gate.done[task];
+  const blocked = !taskDone || collisionsBlock;
+  const isLast = gate.tasks.indexOf(task) === gate.tasks.length - 1;
+  const isFirst = gate.tasks.indexOf(task) === 0;
   const reason = collisionsBlock
     ? t('Resolve the possible duplicates above to continue.')
-    : !stepDone
-      ? step === 6
-        ? t('Record payment before finishing this reception flow.')
-        : t(STEP_REQUIREMENTS[step])
+    : !taskDone
+      ? t(gate.blockers[task] ?? 'This task is not finished.')
       : null;
-  const actionLabel =
-    step === 6 ? t('Finish') : step === 1 ? t('Review details') : t('Continue');
 
   return (
     <footer
@@ -594,7 +644,7 @@ function ContinueFooter({
       role="region"
     >
       <div className={styles.stepFooterInner}>
-        {step > 1 ? (
+        {!isFirst ? (
           <Button className={styles.footerBack} onClick={onBack} variant="outline">
             {t('Back')}
           </Button>
@@ -605,10 +655,10 @@ function ContinueFooter({
         <Button
           className={styles.footerPrimary}
           disabled={blocked}
-          onClick={step === 6 ? onFinish : onContinue}
+          onClick={isLast ? onFinish : onContinue}
           variant="primary"
         >
-          {actionLabel}
+          {t(TASK_DEFS[task].action)}
         </Button>
       </div>
     </footer>
@@ -642,18 +692,30 @@ function StepIdentity({
   const [recaptureAsked, setRecaptureAsked] = useState(false);
 
   const captured = patient.identity.source !== null;
-  const resolution = captured ? null : resolveIdentity(query, registry, { branchId });
+  // A payload still arriving from the scanner, or a QR that is not ours, is
+  // not a query: showing candidates for a half-typed URI would be noise.
+  const scan = readBookingQr(query);
+  const resolution =
+    captured || scan !== null ? null : resolveIdentity(query, registry, { branchId });
 
   function captureRecord(record: PatientRecordSummary, booking?: BookingSummary) {
     onUpdate({ ...recordPatch(record), boundBookingCode: booking?.code ?? null });
     onAdvance();
   }
 
-  function captureNewPatient(prefillKind: 'phone' | 'code' | 'name', value: string) {
+  /**
+   * The walk-in door: an explicit decision to provision a patient at the desk,
+   * never something a search string implies. Details typed here come from the
+   * person standing at the counter, so the visit needs no separate identity
+   * confirmation.
+   */
+  function startWalkIn(prefillKind: 'phone' | 'name' | null, value: string) {
     onUpdate({
       name: prefillKind === 'name' ? value : '',
       phoneNumber: prefillKind === 'phone' ? value.replace(/\D/g, '') : patient.phoneNumber,
       identity: { source: 'manual', lockedFields: [] },
+      identityConfirmation: null,
+      boundBookingCode: null,
       collisionAcked: [],
     });
     onAdvance();
@@ -661,22 +723,22 @@ function StepIdentity({
 
   if (captured) {
     const sourceLabel =
-      patient.identity.source === 'qr'
-        ? t('Booking QR')
-        : patient.identity.source === 'existing'
-          ? t('Existing Kura record')
-          : t('Manual entry');
+      patient.identity.source === 'existing'
+        ? t('Existing Kura record')
+        : t('Manual entry');
     // The bound booking rides in the identity strip, which is visible on every
     // step — repeating it inside this card would say it twice on one screen.
     const hasCaptureFacts = patient.identity.lockedFields.length > 0;
     return (
       <section aria-label={t('Identity')} className={styles.step}>
-        <h2 className={styles.stepTitle}>{t('Patient selected')}</h2>
-        <p className={styles.stepSubtitle}>
-          {patient.identity.lockedFields.length > 0
-            ? t('Review details next. Unlock fields before editing.')
-            : t('Review and edit details on the next step.')}
-        </p>
+        <div className={styles.stepHeading}>
+          <h2 className={styles.stepTitle}>{t('Record selected')}</h2>
+          <p className={styles.stepSubtitle}>
+            {patient.identity.source === 'existing'
+              ? t('Confirm this is the person at the desk next.')
+              : t('Review and edit the details next.')}
+          </p>
+        </div>
         <PatientResolutionCard
           variant="captured"
           record={{
@@ -730,6 +792,7 @@ function StepIdentity({
                   setGuardianConfirmed(false);
                   onUpdate({
                     identity: { source: null, lockedFields: [] },
+                    identityConfirmation: null,
                     boundBookingCode: null,
                   });
                 }}
@@ -781,12 +844,10 @@ function StepIdentity({
       className={styles.step}
       data-identity-search-empty={query.length === 0 ? 'true' : undefined}
     >
-      <h2 className={styles.stepTitle}>{t('Find or create a patient')}</h2>
-      <p className={styles.stepSubtitle}>{t('Search by phone, booking code, or name.')}</p>
+      <h2 className={styles.stepTitle}>{t('Find the booking')}</h2>
 
       <IdentitySearch
         autoFocus
-        demoQrPayload={DEMO_BOOKING_QR_PAYLOAD}
         onChange={(next) => {
           setQuery(next);
           setSelectedId(null);
@@ -795,6 +856,17 @@ function StepIdentity({
         }}
         value={query}
       />
+
+      {/* The third reception door. Booking code and phone are lookups; a
+          walk-in is a decision, so it stays an action the desk takes. */}
+      {resolution === null && scan === null ? (
+        <IdentityActionArea helper={t('No booking and no Kura record?')}>
+          <Button onClick={() => startWalkIn(null, '')} variant="outline">
+            {t('Start a walk-in')}
+            <ChevronRightIcon size={14} aria-hidden />
+          </Button>
+        </IdentityActionArea>
+      ) : null}
 
       {resolution?.kind === 'known-here' ? (
         <>
@@ -855,13 +927,16 @@ function StepIdentity({
             variant="booking-linked"
             record={resolution.record}
             bookings={[resolution.booking]}
+            helperText={t('The code identifies the booking, not the person.')}
           />
+          {/* Reading a code is not checking anyone in: the code is redeemed at
+              conversion, and the person is identified on the next step. */}
           <IdentityActionArea>
             <Button
               onClick={() => captureRecord(resolution.record, resolution.booking)}
               variant="primary"
             >
-              {t('Check in booking')} {resolution.booking.code}
+              {t('Continue to confirm patient')}
               <ChevronRightIcon size={14} aria-hidden />
             </Button>
           </IdentityActionArea>
@@ -961,10 +1036,10 @@ function StepIdentity({
           </div>
           <Button
             className={styles.identityCreateNew}
-            onClick={() => captureNewPatient('phone', query)}
+            onClick={() => startWalkIn('phone', query)}
             variant="outline"
           >
-            {t('None of these? Create a new patient')}
+            {t('None of these? Start a walk-in')}
             <ChevronRightIcon size={14} aria-hidden />
           </Button>
           <IdentityActionArea
@@ -987,7 +1062,7 @@ function StepIdentity({
                   variant="primary"
                 >
                   {selectedRecord.bookings?.length
-                    ? `${t('Check in')} ${selectedRecord.name} · ${selectedRecord.bookings[0].code}`
+                    ? `${t('Continue with')} ${selectedRecord.name} · ${selectedRecord.bookings[0].code}`
                     : `${t('Continue with')} ${selectedRecord.name}`}
                   <ChevronRightIcon size={14} aria-hidden />
                 </Button>
@@ -1008,15 +1083,17 @@ function StepIdentity({
                 record={record}
                 matched={{ name: true, nameKhmer: true }}
                 status={
+                  // Identity, named as such: the trust signals below the card
+                  // carry the contact axis separately.
                   record.assurance === 'verified'
-                    ? { label: 'Verified', variant: 'success' }
-                    : { label: 'Unverified', variant: 'warning' }
+                    ? { label: 'Identity verified', variant: 'success' }
+                    : { label: 'Identity provisional', variant: 'warning' }
                 }
                 trustSignals={trustSignalsFor(record)}
                 lastVisitLabel={record.lastVisitLabel}
                 actions={[
                   {
-                    label: 'Use existing',
+                    label: 'Use this record',
                     variant: 'primary',
                     icon: <UserCheckIcon size={14} aria-hidden />,
                     onClick: () => captureRecord(record),
@@ -1032,10 +1109,10 @@ function StepIdentity({
           </div>
           <Button
             className={styles.identityCreateNew}
-            onClick={() => captureNewPatient('name', query)}
+            onClick={() => startWalkIn('name', query)}
             variant="outline"
           >
-            {t('None of these? Create a new patient')}
+            {t('None of these? Start a walk-in')}
             <ChevronRightIcon size={14} aria-hidden />
           </Button>
         </>
@@ -1062,10 +1139,10 @@ function StepIdentity({
           {resolution.queryKind !== 'code' ? (
             <IdentityActionArea>
               <Button
-                onClick={() => captureNewPatient(resolution.queryKind, resolution.query)}
+                onClick={() => startWalkIn(resolution.queryKind === 'phone' ? 'phone' : 'name', resolution.query)}
                 variant="primary"
               >
-                {t('Create a new patient')}
+                {t('Start a walk-in')}
                 <ChevronRightIcon size={14} aria-hidden />
               </Button>
             </IdentityActionArea>
@@ -1215,6 +1292,7 @@ function CollisionAlert({
 
 function LockedOrEditableInput({
   field,
+  error,
   label,
   lockedFields,
   onChange,
@@ -1224,6 +1302,8 @@ function LockedOrEditableInput({
   lang,
 }: {
   field: string;
+  /** Recovery guidance for a value the desk cannot record as it stands. */
+  error?: string;
   label: string;
   lockedFields: string[];
   onChange: (next: string) => void;
@@ -1238,6 +1318,7 @@ function LockedOrEditableInput({
     return (
       <DateInput
         disabled={locked}
+        error={error}
         label={label}
         lang={lang}
         onValueChange={onChange}
@@ -1252,6 +1333,7 @@ function LockedOrEditableInput({
   return (
     <Input
       disabled={locked}
+      error={error}
       label={label}
       lang={lang}
       onChange={(event) => onChange(event.target.value)}
@@ -1263,27 +1345,150 @@ function LockedOrEditableInput({
   );
 }
 
+/**
+ * Positive patient identification. The desk asks open questions and types
+ * what it hears; the answers are compared with the record. Never a leading
+ * question ("are you Sok Phearom?"), and never an editable record — answers
+ * that do not match mean the wrong record is open, not that the record is
+ * wrong. Only a record-led capture needs this: details typed at the desk came
+ * from the person standing there.
+ */
+function IdentityConfirmation({
+  onConfirm,
+  onRestartIdentity,
+  patient,
+}: {
+  onConfirm: (confirmation: FrontDeskPatient['identityConfirmation']) => void;
+  onRestartIdentity: () => void;
+  patient: FrontDeskPatient;
+}) {
+  const t = useT();
+  const [answers, setAnswers] = useState({ name: '', dob: '' });
+  const [mismatch, setMismatch] = useState(false);
+
+  if (!identityConfirmationRequired(patient)) return null;
+
+  const confirmation = patient.identityConfirmation;
+  if (confirmation) {
+    return (
+      <p className={styles.confirmedLine}>
+        <UserCheckIcon size={16} aria-hidden />
+        {t('Patient confirmed')} · {t('answers matched the record')} · {confirmation.atLabel} ·{' '}
+        {confirmation.byLabel}
+      </p>
+    );
+  }
+
+  const questions = identityQuestions(patient);
+  const answered = questions.every((question) =>
+    question === 'name' ? answers.name.trim() !== '' : answers.dob.trim() !== '',
+  );
+
+  return (
+    <div className={styles.formSection}>
+      <div className={styles.sectionHeader}>
+        <h3 className={styles.subTitle}>{t('Ask the patient')}</h3>
+      </div>
+      <p className={styles.hint}>
+        {t('Ask, then type what they answer. Do not read the record out loud.')}
+      </p>
+      <div className={styles.fieldGrid}>
+        {questions.includes('name') ? (
+          <Input
+            label={t('What is your full name?')}
+            onChange={(event) => {
+              setAnswers((previous) => ({ ...previous, name: event.target.value }));
+              setMismatch(false);
+            }}
+            placeholder={t('Type the answer')}
+            value={answers.name}
+          />
+        ) : null}
+        {questions.includes('dob') ? (
+          <DateInput
+            label={t('What is your date of birth?')}
+            onValueChange={(next) => {
+              setAnswers((previous) => ({ ...previous, dob: next }));
+              setMismatch(false);
+            }}
+            placeholder="YYYY-MM-DD"
+            value={answers.dob}
+          />
+        ) : null}
+      </div>
+      {mismatch ? (
+        <Alert tone="warning">
+          <AlertTitle>{t('The answers do not match this record')}</AlertTitle>
+          <AlertDescription>
+            {t(
+              'Do not change the record to match. Open the right record, or start a walk-in instead.',
+            )}
+          </AlertDescription>
+          <AlertAction>
+            <Button onClick={onRestartIdentity} size="sm" variant="primary">
+              {t('This is not the patient')}
+            </Button>
+          </AlertAction>
+        </Alert>
+      ) : null}
+      <IdentityActionArea helper={answered ? undefined : t('Type both answers to confirm.')}>
+        <Button
+          disabled={!answered}
+          onClick={() => {
+            if (identityAnswersMatch(patient, answers)) {
+              setMismatch(false);
+              onConfirm({
+                method: 'open-questions',
+                byLabel: DEMO_DESK_STAFF,
+                atLabel: DEMO_CONFIRMED_IDENTITY_AT,
+              });
+            } else {
+              setMismatch(true);
+            }
+          }}
+          variant="secondary"
+        >
+          {t('Confirm patient')}
+        </Button>
+      </IdentityActionArea>
+    </div>
+  );
+}
+
 function StepReview({
   collisions,
+  identityIssues,
+  onRestartIdentity,
   onUpdate,
   patient,
 }: {
   collisions: CollisionCandidate[];
+  /** Values the desk cannot record as typed — shown on the field, not in a banner. */
+  identityIssues: IdentityFieldIssue[];
+  /** Drop the captured record and go back to the search — never edit it to fit. */
+  onRestartIdentity: () => void;
   onUpdate: (patch: Partial<FrontDeskPatient>) => void;
   patient: FrontDeskPatient;
 }) {
   const t = useT();
   const lockedFields = patient.identity.lockedFields;
   const hasLocks = lockedFields.length > 0;
-  const [unlockAsked, setUnlockAsked] = useState(false);
+  // An empty required field is already marked required; only a value the desk
+  // typed and cannot keep needs an error underneath it.
+  const issueFor = (field: 'name' | 'dob') => {
+    const issue = identityIssues.find((candidate) => candidate.field === field);
+    if (!issue) return undefined;
+    const typed = field === 'name' ? patient.name.trim() : patient.dob.trim();
+    return typed === '' ? undefined : t(issue.message);
+  };
 
   function updateAddress(patch: Partial<FrontDeskPatient['address']>) {
     onUpdate({ address: { ...patient.address, ...patch } });
   }
 
   return (
-    <section aria-label={t('Review and confirm')} className={styles.step}>
-      <h2 className={styles.stepTitle}>{t('Review & confirm')}</h2>
+    <section aria-label={t('Confirm the patient')} className={styles.step}>
+      <h2 className={styles.stepTitle}>{t('Confirm the patient')}</h2>
 
       {/* A blocking duplicate is about the identity below it and gates Continue —
           it leads the step instead of trailing the optional disclosures. */}
@@ -1308,31 +1513,12 @@ function StepReview({
         }
       />
 
-      {unlockAsked ? (
-        <Alert tone="warning">
-          <AlertTitle>{t('Unlock captured fields?')}</AlertTitle>
-          <AlertDescription>
-            {t(
-              'These values were read from the record. Editing may introduce errors and the change is logged.',
-            )}
-          </AlertDescription>
-          <AlertAction>
-            <Button onClick={() => setUnlockAsked(false)} size="sm" variant="outline">
-              {t('Keep locked')}
-            </Button>
-            <Button
-              onClick={() => {
-                setUnlockAsked(false);
-                onUpdate({ identity: { ...patient.identity, lockedFields: [] } });
-              }}
-              size="sm"
-              variant="destructive"
-            >
-              {t('Unlock')}
-            </Button>
-          </AlertAction>
-        </Alert>
-      ) : null}
+      {/* Positive identification gates this step, so it leads it. */}
+      <IdentityConfirmation
+        onConfirm={(confirmation) => onUpdate({ identityConfirmation: confirmation })}
+        onRestartIdentity={onRestartIdentity}
+        patient={patient}
+      />
 
       {/* Identity is a section of this step, not an independent object — it
           groups by heading and spacing, never by a card boundary. */}
@@ -1344,20 +1530,17 @@ function StepReview({
               ? t('From Kura record')
               : t('Entered at the desk')}
           </span>
-          {hasLocks && !unlockAsked ? (
-            <Button
-              className={styles.sectionAction}
-              onClick={() => setUnlockAsked(true)}
-              size="sm"
-              variant="ghost"
-            >
-              <LockKeyIcon size={13} aria-hidden />
-              {t('Unlock fields')}
-            </Button>
-          ) : null}
         </div>
+        {hasLocks ? (
+          <p className={styles.hint}>
+            {t(
+              'Record values are read-only at the desk. If they are wrong, this is not the patient.',
+            )}
+          </p>
+        ) : null}
         <div className={styles.fieldGrid}>
           <LockedOrEditableInput
+            error={issueFor('name')}
             field="name"
             label={t('Full name (Latin)')}
             lockedFields={lockedFields}
@@ -1374,11 +1557,12 @@ function StepReview({
             value={patient.nameKhmer}
           />
           <LockedOrEditableInput
+            error={issueFor('dob')}
             field="dob"
             label={t('Date of birth')}
             lockedFields={lockedFields}
             onChange={(next) => onUpdate({ dob: next, collisionAcked: [] })}
-            placeholder="YYYY-MM-DD"
+            placeholder={t('YYYY-MM-DD, or the year alone')}
             required
             value={patient.dob}
           />
@@ -1421,6 +1605,8 @@ function StepReview({
       <ContactChannels onUpdate={onUpdate} patient={patient} />
 
       <div className={styles.disclosures}>
+        <PolicyDisclosure onUpdate={onUpdate} patient={patient} />
+
         <Collapsible inset="none">
           <CollapsibleTrigger headingLevel={3} meta={t('Optional')}>
             {t('Address')}
@@ -1502,7 +1688,7 @@ function StepReview({
   );
 }
 
-// ── Step 3 · Insurance ─────────────────────────────────────
+// ── Insurance policy (patient profile data) ────────────────
 
 function InsuranceDataPoints({ policy }: { policy: InsurancePolicy }) {
   const t = useT();
@@ -1510,21 +1696,17 @@ function InsuranceDataPoints({ policy }: { policy: InsurancePolicy }) {
   const eligibility = policy.eligibility;
   const coverageScopeLabel =
     policy.coverageScope === 'both'
-      ? t('In + outpatient')
+      ? t('Outpatient and inpatient')
       : policy.coverageScope === 'inpatient'
         ? t('Inpatient')
         : t('Outpatient');
-  const points: Array<{ label: string; value: ReactNode }> = [
-    { label: t('Member ID'), value: policy.memberId ?? policy.policyNumber },
-    { label: t('Group'), value: eligibility.group ?? '—' },
-    {
-      label: t('Coverage'),
-      value: `${coverageScopeLabel} · ${eligibility.coveragePct}%`,
-    },
-    { label: t('Co-pay'), value: <MoneyText currency="USD" minor={eligibility.copayMinor} /> },
+  const points = [
+    { label: t('Policy'), value: policy.policyNumber },
+    { label: t('Member'), value: policy.memberName },
+    { label: t('Coverage'), value: `${eligibility.coveragePct}% · ${coverageScopeLabel}` },
     { label: t('Active until'), value: eligibility.activeUntil },
     {
-      label: t('Pre-auth'),
+      label: t('Pre-authorisation'),
       value: eligibility.preAuth === 'required' ? t('Required') : t('Not required'),
     },
     { label: t('Tier'), value: eligibility.tier },
@@ -1553,7 +1735,13 @@ type PolicyDraft = {
   coverageScope: 'outpatient' | 'inpatient' | 'both';
 };
 
-function StepInsurance({
+/**
+ * A policy is something the patient has, not a step in a visit. It lives with
+ * the rest of the patient record and stays collapsed until the desk needs it,
+ * so a self-pay walk-in never answers an insurance question. Attaching one
+ * here is what makes payer resolution appear later, once the lines exist.
+ */
+function PolicyDisclosure({
   onUpdate,
   patient,
 }: {
@@ -1570,298 +1758,330 @@ function StepInsurance({
     expiry: '',
     coverageScope: 'outpatient',
   });
-  const [checking, setChecking] = useState(false);
-  const [pending, setPending] = useState<InsurancePolicy | null>(null);
-
-  const hasPolicies = patient.insurance.length > 0;
-  const eligiblePolicy = patient.insurance.find(
-    (policy) => policy.eligibility?.kind === 'eligible',
-  );
 
   function patchDraft(patch: Partial<PolicyDraft>) {
     setDraft((previous) => ({ ...previous, ...patch }));
   }
 
-  function checkEligibility() {
-    setChecking(true);
-    setPending(null);
-    window.setTimeout(() => {
-      setChecking(false);
-      setPending({
-        id: `pol-${draft.policyNumber.trim()}`,
-        provider: draft.provider,
-        policyNumber: draft.policyNumber.trim(),
-        memberName: draft.memberName.trim() || patient.name,
-        memberId: draft.memberId.trim() || undefined,
-        coverageScope: draft.coverageScope,
-        expiry: draft.expiry.trim() || undefined,
-        eligibility: mockEligibility(draft.policyNumber),
-      });
-    }, 600);
-  }
-
-  function attach(policy: InsurancePolicy) {
-    onUpdate({ insurance: [...patient.insurance, policy], insuranceAcked: true });
-    setPending(null);
+  function attach() {
+    onUpdate({
+      insurance: [
+        ...patient.insurance,
+        {
+          id: `pol-${draft.policyNumber.trim()}`,
+          provider: draft.provider,
+          policyNumber: draft.policyNumber.trim(),
+          memberName: draft.memberName.trim() || patient.name,
+          memberId: draft.memberId.trim() || undefined,
+          coverageScope: draft.coverageScope,
+          expiry: draft.expiry.trim() || undefined,
+        },
+      ],
+      insuranceAcked: false,
+    });
     setAdding(false);
     setDraft((previous) => ({ ...previous, policyNumber: '', memberId: '', expiry: '' }));
   }
 
   return (
-    <section aria-label={t('Insurance')} className={styles.step}>
-      <div className={styles.stepHeaderRow}>
-        <div>
-          <h2 className={styles.stepTitle}>{t('Insurance')}</h2>
-          <p className={styles.stepSubtitle}>
-            {hasPolicies
-              ? t('Verify the policy and eligibility before pricing the cart.')
-              : t('Add a policy to bill insurance, or continue as direct pay.')}
-          </p>
-        </div>
-        {hasPolicies && !adding ? (
-          <Button onClick={() => setAdding(true)} size="sm" variant="outline">
-            {t('Add policy')}
-          </Button>
+    <Collapsible inset="none">
+      <CollapsibleTrigger
+        headingLevel={3}
+        meta={patient.insurance.length > 0 ? patient.insurance.length : t('Optional')}
+      >
+        {t('Insurance policy')}
+      </CollapsibleTrigger>
+      <CollapsibleContent>
+        {patient.insurance.length > 0 ? (
+          <ul className={styles.policyList}>
+            {patient.insurance.map((policy) => (
+              <li className={styles.policyRow} key={policy.id}>
+                <span className={styles.policyRowText}>
+                  <span className={styles.policyName}>{policy.provider}</span>
+                  <span className={styles.hint}>{policy.policyNumber}</span>
+                </span>
+                <Button
+                  onClick={() =>
+                    onUpdate({
+                      insurance: patient.insurance.filter(
+                        (candidate) => candidate.id !== policy.id,
+                      ),
+                    })
+                  }
+                  size="sm"
+                  variant="ghost"
+                >
+                  {t('Remove')}
+                </Button>
+              </li>
+            ))}
+          </ul>
         ) : null}
-      </div>
 
-      {!hasPolicies && !patient.insuranceAcked && !adding ? (
-        <Card className={styles.insuranceEmptyCard}>
-          <span className={styles.insuranceEmptyIcon}>
-            <ShieldIcon size={20} aria-hidden />
-          </span>
-          <h3 className={styles.subTitle}>{t('No insurance on file')}</h3>
-          <p className={styles.hint}>
-            {t('Add a policy now to bill insurance, or continue as direct pay.')}
-          </p>
-          <div className={styles.insuranceEmptyActions}>
-            <Button onClick={() => setAdding(true)} variant="outline">
+        {adding ? (
+          <>
+            <div className={styles.fieldGrid}>
+              <Select
+                label={t('Provider')}
+                onChange={(event) => patchDraft({ provider: event.target.value })}
+                options={PROVIDERS.map((provider) => ({ value: provider, label: provider }))}
+                required
+                value={draft.provider}
+              />
+              <Input
+                className={styles.monoField}
+                label={t('Policy number')}
+                onChange={(event) => patchDraft({ policyNumber: event.target.value })}
+                placeholder="FRT-887200119"
+                required
+                value={draft.policyNumber}
+              />
+              <Input
+                label={t('Member name')}
+                onChange={(event) => patchDraft({ memberName: event.target.value })}
+                value={draft.memberName}
+              />
+              <Input
+                className={styles.monoField}
+                label={t('Member ID')}
+                onChange={(event) => patchDraft({ memberId: event.target.value })}
+                placeholder="887200119"
+                value={draft.memberId}
+              />
+              <Input
+                label={t('Expiry')}
+                onChange={(event) => patchDraft({ expiry: event.target.value })}
+                placeholder="YYYY-MM"
+                value={draft.expiry}
+              />
+              <Select
+                label={t('Coverage')}
+                onChange={(event) =>
+                  patchDraft({ coverageScope: event.target.value as PolicyDraft['coverageScope'] })
+                }
+                options={[
+                  { value: 'outpatient', label: t('Outpatient') },
+                  { value: 'inpatient', label: t('Inpatient') },
+                  { value: 'both', label: t('Both') },
+                ]}
+                value={draft.coverageScope}
+              />
+            </div>
+            <div className={styles.policyFormActions}>
+              <Button onClick={() => setAdding(false)} variant="ghost">
+                {t('Cancel')}
+              </Button>
+              <Button
+                disabled={draft.policyNumber.trim() === ''}
+                onClick={attach}
+                variant="secondary"
+              >
+                {t('Save policy')}
+              </Button>
+            </div>
+          </>
+        ) : (
+          <div className={styles.refundEmpty}>
+            <p className={styles.hint}>
+              {t(
+                'Add a policy only if this patient may bill insurance. Coverage is worked out after the order is composed.',
+              )}
+            </p>
+            <Button onClick={() => setAdding(true)} size="sm" variant="outline">
+              <ShieldIcon size={13} aria-hidden />
               {t('Add policy')}
             </Button>
-            <Button
-              onClick={() => {
-                // Simulated card scan: OCR autofill, then the normal check.
-                setDraft((previous) => ({
-                  ...previous,
-                  provider: PROVIDERS[0],
-                  policyNumber: 'FRT-88720011',
-                  memberId: 'M-8872001',
-                  expiry: '2027-12',
-                }));
-                setAdding(true);
-              }}
-              variant="outline"
-            >
-              {t('Scan card')}
-            </Button>
-            <Button onClick={() => onUpdate({ insuranceAcked: true })} variant="primary">
-              {t('Continue without insurance')}
-            </Button>
           </div>
-        </Card>
-      ) : null}
+        )}
+      </CollapsibleContent>
+    </Collapsible>
+  );
+}
 
-      {patient.insuranceAcked && !hasPolicies && !adding ? (
-        <Alert tone="neutral">
-          <AlertTitle>{t('Direct pay')}</AlertTitle>
-          <AlertDescription>{t('The patient pays the full amount directly.')}</AlertDescription>
-          <AlertAction>
-            <Button onClick={() => onUpdate({ insuranceAcked: false })} size="sm" variant="ghost">
-              {t('Undo')}
-            </Button>
-            <Button onClick={() => setAdding(true)} size="sm" variant="outline">
-              {t('Add policy instead')}
-            </Button>
-          </AlertAction>
-        </Alert>
-      ) : null}
+// ── Task · Payer ───────────────────────────────────────────
+
+/**
+ * Who pays each line. This task exists only when a policy is on file, and it
+ * runs after ordering because coverage, co-pay, and a mixed basket are facts
+ * about lines — none of them can be answered before the lines exist.
+ */
+function StepPayer({
+  onUpdate,
+  patient,
+}: {
+  onUpdate: (patch: Partial<FrontDeskPatient>) => void;
+  patient: FrontDeskPatient;
+}) {
+  const t = useT();
+  const [checking, setChecking] = useState<string | null>(null);
+  const split = payerSplit(patient.cart, patient.insurance);
+  const checked = patient.insurance.some((policy) => policy.eligibility !== undefined);
+
+  function setLinePayer(itemId: string, payer: 'insurer' | 'direct') {
+    onUpdate({
+      cart: {
+        ...patient.cart,
+        items: patient.cart.items.map((item) =>
+          item.id === itemId ? { ...item, payer } : item,
+        ),
+      },
+      insuranceAcked: false,
+    });
+  }
+
+  function checkEligibility(policy: InsurancePolicy) {
+    setChecking(policy.id);
+    window.setTimeout(() => {
+      setChecking(null);
+      onUpdate({
+        insurance: patient.insurance.map((candidate) =>
+          candidate.id === policy.id
+            ? { ...candidate, eligibility: mockEligibility(candidate.policyNumber) }
+            : candidate,
+        ),
+      });
+    }, 600);
+  }
+
+  return (
+    <section aria-label={t('Who pays')} className={styles.step}>
+      <div className={styles.stepHeading}>
+        <h2 className={styles.stepTitle}>{t('Who pays')}</h2>
+        <p className={styles.stepSubtitle}>
+          {t('Set the payer on each line. The desk collects the patient column.')}
+        </p>
+      </div>
 
       {patient.insurance.map((policy) => (
-        <Card className={styles.sectionCard} key={policy.id}>
-          <div className={styles.policyHeader}>
-            <span className={styles.insurancePolicyIcon}>
-              <ShieldIcon size={18} aria-hidden />
-            </span>
-            <div className={styles.policyHeading}>
-              <div className={styles.policyTitleRow}>
-                <span className={styles.policyName}>{policy.provider}</span>
-                <Badge
-                  size="sm"
-                  variant={policy.eligibility?.kind === 'eligible' ? 'success' : 'warning'}
-                >
-                  {policy.eligibility?.kind === 'eligible' ? t('Eligible') : t('Unverified')}
-                </Badge>
-              </div>
-              <p className={styles.hint}>
-                {policy.eligibility?.kind === 'eligible'
-                  ? t(policy.eligibility.verifiedAtLabel ?? 'Verified')
-                  : t('Added without a live eligibility check.')}
-              </p>
-            </div>
+        <div className={styles.formSection} key={policy.id}>
+          <div className={styles.sectionHeader}>
+            <h3 className={styles.subTitle}>{policy.provider}</h3>
+            {policy.eligibility?.kind === 'eligible' ? (
+              <Badge size="sm" variant="success">
+                {t('Eligible')}
+              </Badge>
+            ) : policy.eligibility?.kind === 'ineligible' ? (
+              <Badge size="sm" variant="danger">
+                {t('Not eligible')}
+              </Badge>
+            ) : policy.eligibility?.kind === 'unreachable' ? (
+              <Badge size="sm" variant="warning">
+                {t('Insurer unreachable')}
+              </Badge>
+            ) : (
+              <Badge size="sm" variant="warning">
+                {t('Not checked')}
+              </Badge>
+            )}
+          </div>
+          <div className={styles.refundEmpty}>
+            <p className={styles.hint}>
+              {policy.eligibility?.kind === 'eligible' ? (
+                <>
+                  {t('Covers')} {policy.eligibility.coveragePct}%{' '}
+                  {t('of assigned lines · co-pay')}{' '}
+                  <MoneyText currency="USD" minor={policy.eligibility.copayMinor} />
+                </>
+              ) : (
+                t('Run the check to see what this policy would cover.')
+              )}
+            </p>
             <Button
-              onClick={() =>
-                onUpdate({
-                  insurance: patient.insurance.map((candidate) =>
-                    candidate.id === policy.id
-                      ? { ...candidate, eligibility: mockEligibility(candidate.policyNumber) }
-                      : candidate,
-                  ),
-                })
-              }
+              disabled={checking === policy.id}
+              onClick={() => checkEligibility(policy)}
               size="sm"
-              variant="ghost"
+              variant="outline"
             >
-              <RefreshIcon size={12} aria-hidden />
-              {t('Re-verify')}
+              {checking === policy.id ? (
+                <SpinnerGapIcon size={13} aria-hidden className={styles.checkingSpinner} />
+              ) : (
+                <RefreshIcon size={13} aria-hidden />
+              )}
+              {policy.eligibility ? t('Check again') : t('Check eligibility')}
             </Button>
           </div>
           <InsuranceDataPoints policy={policy} />
-        </Card>
+        </div>
       ))}
 
-      {eligiblePolicy?.eligibility?.kind === 'eligible' ? (
-        <Alert tone="success">
-          <AlertTitle>
-            <MoneyText currency="USD" minor={eligiblePolicy.eligibility.copayMinor} />{' '}
-            {t('co-pay applies')}
-          </AlertTitle>
-          <AlertDescription>
-            {t('Insurance covers')} {eligiblePolicy.eligibility.coveragePct}%{' '}
-            {t(
-              'of eligible in-cart tests. The direct-pay portion is calculated automatically and shown in the order rail.',
-            )}
-          </AlertDescription>
-        </Alert>
-      ) : null}
+      <div className={styles.formSection}>
+        <div className={styles.sectionHeader}>
+          <h3 className={styles.subTitle}>{t('Payer by line')}</h3>
+          {split.mixed ? (
+            <span className={styles.sectionProvenance}>{t('Mixed payers')}</span>
+          ) : null}
+        </div>
+        <ul className={styles.payerLines}>
+          {patient.cart.items.map((item) => (
+            <li className={styles.payerLine} key={item.id}>
+              <span className={styles.payerLineText}>
+                <span className={styles.payerLineName}>{item.name}</span>
+                <MoneyText
+                  className={styles.payerLinePrice}
+                  currency="USD"
+                  minor={item.priceMinor}
+                />
+              </span>
+              <SegmentedToggle
+                label={`${t('Payer for')} ${item.name}`}
+                onValueChange={(value) => setLinePayer(item.id, value as 'insurer' | 'direct')}
+                options={[
+                  { value: 'insurer', label: t('Insurance') },
+                  { value: 'direct', label: t('Patient') },
+                ]}
+                value={linePayer(item, patient.insurance)}
+              />
+            </li>
+          ))}
+        </ul>
+      </div>
 
-      {adding ? (
-        <Card className={styles.sectionCard}>
-          <div className={styles.sectionCardHeader}>
-            <h3 className={styles.subTitle}>{t('New policy')}</h3>
-          </div>
-          <div className={styles.fieldGrid}>
-            <Select
-              label={t('Provider')}
-              onChange={(event) => patchDraft({ provider: event.target.value })}
-              options={PROVIDERS.map((provider) => ({ value: provider, label: provider }))}
-              required
-              value={draft.provider}
-            />
-            <Input
-              className={styles.monoField}
-              label={t('Policy number')}
-              onChange={(event) => patchDraft({ policyNumber: event.target.value })}
-              placeholder="FRT-887200119"
-              required
-              value={draft.policyNumber}
-            />
-            <Input
-              label={t('Member name')}
-              onChange={(event) => patchDraft({ memberName: event.target.value })}
-              value={draft.memberName}
-            />
-            <Input
-              className={styles.monoField}
-              label={t('Member ID')}
-              onChange={(event) => patchDraft({ memberId: event.target.value })}
-              placeholder="887200119"
-              value={draft.memberId}
-            />
-            <Input
-              label={t('Expiry')}
-              onChange={(event) => patchDraft({ expiry: event.target.value })}
-              placeholder="YYYY-MM"
-              value={draft.expiry}
-            />
-            <Select
-              label={t('Coverage')}
-              onChange={(event) =>
-                patchDraft({ coverageScope: event.target.value as PolicyDraft['coverageScope'] })
-              }
-              options={[
-                { value: 'outpatient', label: t('Outpatient') },
-                { value: 'inpatient', label: t('Inpatient') },
-                { value: 'both', label: t('Both') },
-              ]}
-              value={draft.coverageScope}
-            />
-          </div>
-          <div className={styles.policyFormActions}>
-            <Button
-              onClick={() => {
-                setAdding(false);
-                setPending(null);
-                setChecking(false);
-              }}
-              variant="ghost"
-            >
-              {t('Cancel')}
-            </Button>
-            <Button
-              disabled={draft.policyNumber.trim() === '' || checking}
-              onClick={checkEligibility}
-              variant="secondary"
-            >
-              {t('Check eligibility')}
-            </Button>
-          </div>
-        </Card>
-      ) : null}
+      <div className={styles.payerSummary}>
+        <div className={styles.payerSummarySlot}>
+          <span className={styles.payerSummaryLabel}>{t('Patient pays today')}</span>
+          <MoneyText
+            className={styles.payerSummaryAmount}
+            currency="USD"
+            minor={split.patientMinor}
+          />
+        </div>
+        <div className={styles.payerSummarySlot}>
+          <span className={styles.payerSummaryLabel}>{t('Insurer share, preview')}</span>
+          <MoneyText
+            className={styles.payerSummaryPreview}
+            currency="USD"
+            minor={split.insurerPreviewMinor}
+          />
+        </div>
+      </div>
 
-      {checking ? (
-        <Card className={styles.sectionCard} data-tone="brand" variant="outline">
-          <div className={styles.checkingRow} role="status">
-            <SpinnerGapIcon size={18} aria-hidden className={styles.checkingSpinner} />
-            <div>
-              <p className={styles.checkingTitle}>
-                {t('Checking eligibility with')} {draft.provider}…
-              </p>
-              <p className={styles.hint}>{t('This usually takes a few seconds.')}</p>
-            </div>
-          </div>
-        </Card>
-      ) : null}
+      {/* A capability the clinic does not have is shown as a target, never as
+          a button that quietly completes a check-in nobody can honour. */}
+      <Alert tone="neutral">
+        <AlertTitle>{t('Claims are not connected')}</AlertTitle>
+        <AlertDescription>
+          {t(
+            'Kura captures cash only today, so no claim is filed and the insurer share above is a preview. Collect the patient column and reconcile the rest outside Kura.',
+          )}
+        </AlertDescription>
+        <AlertAction>
+          <Button disabled size="sm" variant="outline">
+            {t('File a claim')}
+          </Button>
+        </AlertAction>
+      </Alert>
 
-      {pending ? (
-        <Alert
-          tone={
-            pending.eligibility?.kind === 'eligible'
-              ? 'success'
-              : pending.eligibility?.kind === 'unreachable'
-                ? 'warning'
-                : 'danger'
-          }
-        >
-          <AlertTitle>
-            {pending.eligibility?.kind === 'eligible'
-              ? `${t('Eligible')} — ${pending.eligibility.coveragePct}% ${t('of eligible services')}`
-              : pending.eligibility?.kind === 'unreachable'
-                ? t('Insurer unreachable')
-                : t('Not eligible')}
-          </AlertTitle>
-          <AlertDescription>
-            {pending.provider} · {pending.policyNumber}
-            {pending.eligibility?.kind === 'eligible' ? (
-              <>
-                {' '}
-                · {t('Tier')} {pending.eligibility.tier} · {t('co-pay')}{' '}
-                <MoneyText currency="USD" minor={pending.eligibility.copayMinor} /> ·{' '}
-                {t('active until')} {pending.eligibility.activeUntil}
-              </>
-            ) : null}
-          </AlertDescription>
-          <AlertAction>
-            {pending.eligibility?.kind !== 'ineligible' ? (
-              <Button onClick={() => attach(pending)} size="sm" variant="primary">
-                {pending.eligibility?.kind === 'eligible' ? t('Save policy') : t('Add anyway')}
-              </Button>
-            ) : (
-              <Button onClick={() => setPending(null)} size="sm" variant="outline">
-                {t('Retry')}
-              </Button>
-            )}
-          </AlertAction>
-        </Alert>
+      {!patient.insuranceAcked ? (
+        <div className={styles.refundEmpty}>
+          <p className={styles.hint}>
+            {checked
+              ? t('Confirm this split to move on to payment.')
+              : t('You can confirm without an eligibility check — the split stays a preview.')}
+          </p>
+          <Button onClick={() => onUpdate({ insuranceAcked: true })} variant="secondary">
+            {t('Confirm this split')}
+          </Button>
+        </div>
       ) : null}
     </section>
   );
@@ -2231,7 +2451,7 @@ function StepPreConsult({
   }
 
   return (
-    <section aria-label={t('Pre-consult')} className={styles.step}>
+    <section aria-label={t('Intake')} className={styles.step}>
       <div className={styles.intakeHeader}>
         <div className={styles.intakeHeaderText}>
           <h2 className={styles.stepTitle}>{t('Intake')}</h2>
@@ -2597,9 +2817,6 @@ function StepPayment({
   const staleQuote = patient.cart.pricing?.state === 'stale';
   const composition = orderBlockers(patient.cart, ORDER_CATALOG);
   const unresolvedConsent = consentBlockers(patient.cart, ORDER_CATALOG);
-  const claimPolicy = patient.insurance.find(
-    (policy) => policy.eligibility?.kind === 'eligible',
-  );
   const pricingUnavailable = pricingStatus !== 'ready';
   const placementBlocked =
     attribution !== null ||
@@ -3011,14 +3228,6 @@ function StepPayment({
             </CardContent>
           </Card>
           <div className={styles.payFooter}>
-            {claimPolicy ? (
-              <Button
-                onClick={() => setPayment({ ...payment, status: 'pending-claim', method: null })}
-                variant="ghost"
-              >
-                {t('Route to insurer claim')}
-              </Button>
-            ) : null}
             <Button
               onClick={() => setPayment({ ...payment, status: 'deferred', method: null })}
               variant="ghost"
@@ -3028,29 +3237,6 @@ function StepPayment({
           </div>
         </>
       )}
-
-      {payment.status === 'pending-claim' ? (
-        <Alert tone="warning">
-          <AlertTitle>
-            {t('Insurance claim pending')}
-            {claimPolicy ? ` · ${claimPolicy.provider}` : ''}
-          </AlertTitle>
-          <AlertDescription>
-            {t(
-              'The balance routes to the insurer; collect only the copay at the desk. PROTOTYPE: the platform captures cash only — no claim is actually filed.',
-            )}
-          </AlertDescription>
-          <AlertAction>
-            <Button
-              onClick={() => setPayment({ ...payment, status: 'idle' })}
-              size="sm"
-              variant="ghost"
-            >
-              {t('Undo')}
-            </Button>
-          </AlertAction>
-        </Alert>
-      ) : null}
 
       {payment.status === 'deferred' ? (
         <Alert tone="warning">

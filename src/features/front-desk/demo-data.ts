@@ -53,6 +53,7 @@ export function blankWalkIn(id: string, queueNumber: number): FrontDeskPatient {
     preferredChannel: null,
     unverifiedReason: null,
     identity: { source: null, lockedFields: [] },
+    identityConfirmation: null,
     insurance: [],
     insuranceAcked: false,
     collisionAcked: [],
@@ -89,6 +90,9 @@ export const EXISTING_PATIENTS: FrontDeskPatient[] = [
 
 export const DEMO_OTP = '123456';
 export const DEMO_CASHIER = 'Linh Nguyen';
+/** Receptionist on the desk — recorded as the actor on a patient confirmation. */
+export const DEMO_DESK_STAFF = 'Sothea Ly';
+export const DEMO_CONFIRMED_IDENTITY_AT = '08:33';
 export const DEMO_CONFIRMED_AT = '09:42';
 export const DEMO_RECEIPT_ID = 'R-58213';
 
@@ -104,6 +108,12 @@ import type {
 
 /** The desk's own branch; codes issued elsewhere cannot be redeemed here. */
 export const DEMO_BRANCH_ID = 'bkk1';
+
+/**
+ * The desk's working day, injected. Date validation compares against this
+ * instead of the wall clock so a story renders the same result every run.
+ */
+export const FRONT_DESK_TODAY_ISO = '2026-07-23';
 
 function booking(
   code: string,
@@ -136,23 +146,25 @@ export const IDENTITY_REGISTRY: PatientRecordSummary[] = [
     phoneVerifiedMonthsAgo: 6,
     lastVisitLabel: 'Last visit 3 weeks ago · PSC BKK1 · Dr. Lim Cabinet',
     bookings: [
-      booking('GW87430', 'scheduled', 'Today, 09:45', 'HbA1c, TSH', {
+      booking('PSC-A82Q7K3M', 'scheduled', 'Today, 09:45', 'HbA1c, TSH', {
         locationLabel: 'PSC BKK1',
         providerLabel: 'Dr. Lim Cabinet',
         branchId: DEMO_BRANCH_ID,
         creatorLabel: 'Reception · Sothea',
         payment: { state: 'paid', amountMinor: '1850' },
       }),
-      booking('GW87431', 'issued', 'Today, 10:30', 'Lipid panel', {
+      booking('PSC-B41M9T27', 'issued', 'Today, 10:30', 'Lipid panel', {
         branchId: DEMO_BRANCH_ID,
         creatorLabel: 'Patient self-booked',
         payment: { state: 'pending', amountMinor: '1200' },
       }),
-      // Blocked lifecycle branches — every canonical non-redeemable state.
-      booking('GW87510', 'expired', 'Issued 9 days ago', 'CBC', { branchId: DEMO_BRANCH_ID }),
-      booking('GW87511', 'redeemed', 'Today, 08:05', 'Glucose', { branchId: DEMO_BRANCH_ID }),
-      booking('GW87512', 'cancelled', 'Yesterday, 16:20', 'TSH', { branchId: DEMO_BRANCH_ID }),
-      booking('GW87513', 'scheduled', 'Today, 11:00', 'Vitamin D', {
+      // An old code the patient never used. Codes do not lapse, so this one
+      // still redeems — age is not a reason to turn a patient away.
+      booking('PSC-E52N4Q18', 'issued', 'Issued 9 days ago', 'CBC', { branchId: DEMO_BRANCH_ID }),
+      // Blocked lifecycle branches — every state that genuinely blocks.
+      booking('PSC-F63R8W25', 'redeemed', 'Today, 08:05', 'Glucose', { branchId: DEMO_BRANCH_ID }),
+      booking('PSC-G74T5Y36', 'cancelled', 'Yesterday, 16:20', 'TSH', { branchId: DEMO_BRANCH_ID }),
+      booking('PSC-H85V6Z47', 'scheduled', 'Today, 11:00', 'Vitamin D', {
         branchId: 'tuol-kork',
         locationLabel: 'PSC Tuol Kork',
       }),
@@ -179,7 +191,7 @@ export const IDENTITY_REGISTRY: PatientRecordSummary[] = [
     assurance: 'verified',
     registeredHere: true,
     bookings: [
-      booking('GW87440', 'scheduled', 'Today, 09:15', 'CBC, Lipid', { branchId: DEMO_BRANCH_ID }),
+      booking('PSC-C77H2X54', 'scheduled', 'Today, 09:15', 'CBC, Lipid', { branchId: DEMO_BRANCH_ID }),
     ],
   },
   {
@@ -194,7 +206,7 @@ export const IDENTITY_REGISTRY: PatientRecordSummary[] = [
     guardianName: 'Lina Prum',
     registeredHere: true,
     bookings: [
-      booking('GW87441', 'scheduled', 'Today, 09:30', 'Vaccines · MMR', { branchId: DEMO_BRANCH_ID }),
+      booking('PSC-D19K6B83', 'scheduled', 'Today, 09:30', 'Vaccines · MMR', { branchId: DEMO_BRANCH_ID }),
     ],
   },
   {
@@ -224,7 +236,7 @@ export const IDENTITY_REGISTRY: PatientRecordSummary[] = [
   },
 ];
 
-export const DEMO_BOOKING_QR_PAYLOAD = 'kura://booking/GW87430';
+export const DEMO_BOOKING_QR_PAYLOAD = 'kura://booking/PSC-A82Q7K3M';
 
 // ── Promotions (PROTOTYPE: no upstream promo engine) ───────
 
@@ -303,73 +315,164 @@ export const DESK_VISITS: DeskVisit[] = [
   {
     id: 'v-1',
     queueNumber: 27,
+    ticket: 'W-027',
     patientName: 'Sok Phearom',
     nameKhmer: 'សុខ ភារ៉ុម',
     arrivedLabel: '08:55',
     waitMinutes: 12,
+    arrivalClass: 'walk-in',
+    call: { state: 'waiting' },
     stage: 'arrived',
-    assurance: 'verified',
+    assurance: 'unverified',
+    contact: 'confirmed',
     payment: 'pending',
-    resumeStep: 4,
+    resumeTask: 'orders',
   },
   {
     id: 'v-2',
     queueNumber: 28,
+    ticket: 'W-028',
     patientName: 'Chenda Sreymom',
     nameKhmer: 'ចិន្តា ស្រីមុំ',
     arrivedLabel: '08:40',
     waitMinutes: 27,
+    arrivalClass: 'walk-in',
+    call: { state: 'waiting' },
     stage: 'arrived',
     assurance: 'unverified',
+    contact: 'unconfirmed',
     payment: 'deferred',
-    resumeStep: 2,
+    resumeTask: 'patient',
   },
   {
+    // Urgent draw: shortest wait in the room, first at the chair.
+    id: 'v-stat',
+    queueNumber: 29,
+    ticket: 'S-029',
+    patientName: 'Ratanak Chhun',
+    nameKhmer: 'រតនៈ ឈុន',
+    arrivedLabel: '09:02',
+    waitMinutes: 4,
+    arrivalClass: 'stat',
+    call: { state: 'waiting' },
+    stage: 'identity-resolved',
+    assurance: 'verified',
+    contact: 'confirmed',
+    payment: 'deferred',
+  },
+  {
+    // Booked slot, due now: ahead of walk-ins who arrived earlier.
     id: 'v-3',
     queueNumber: 25,
+    ticket: 'B-025',
     patientName: 'Lina Prum',
     nameKhmer: 'លីណា ព្រំ',
     arrivedLabel: '08:20',
     waitMinutes: 47,
+    arrivalClass: 'appointment',
+    appointmentLabel: '09:15',
+    appointmentMinutesAway: 8,
+    call: { state: 'waiting' },
     stage: 'identity-resolved',
     assurance: 'verified',
+    contact: 'confirmed',
     payment: 'collected',
   },
   {
+    // Longest wait in the room, but no booking and no urgency.
     id: 'v-4',
     queueNumber: 24,
+    ticket: 'W-024',
     patientName: 'Vibol Keo',
     arrivedLabel: '08:05',
     waitMinutes: 62,
+    arrivalClass: 'walk-in',
+    call: { state: 'waiting' },
     stage: 'identity-resolved',
     assurance: 'verified',
+    contact: 'unconfirmed',
     payment: 'waiting',
-    queuedForDraw: true,
+  },
+  {
+    // Called and did not answer: rejoins behind its band, with the reason.
+    id: 'v-skipped',
+    queueNumber: 26,
+    ticket: 'W-026',
+    patientName: 'Sreyneang Ouk',
+    nameKhmer: 'ស្រីនាង អ៊ុក',
+    arrivedLabel: '08:34',
+    waitMinutes: 33,
+    arrivalClass: 'walk-in',
+    recalls: 1,
+    call: { state: 'skipped', atLabel: '09:01', reason: 'no-answer' },
+    stage: 'identity-resolved',
+    assurance: 'verified',
+    contact: 'confirmed',
+    payment: 'collected',
+  },
+  {
+    // Booked for later this morning: waits with everyone who is here now.
+    id: 'v-early',
+    queueNumber: 30,
+    ticket: 'B-030',
+    patientName: 'Chanthou Meng',
+    arrivedLabel: '09:04',
+    waitMinutes: 3,
+    arrivalClass: 'appointment',
+    appointmentLabel: '11:00',
+    appointmentMinutesAway: 113,
+    call: { state: 'waiting' },
+    stage: 'identity-resolved',
+    assurance: 'verified',
+    contact: 'confirmed',
+    payment: 'collected',
   },
   {
     id: 'v-5',
     queueNumber: 21,
+    ticket: 'W-021',
     patientName: 'Dara Phan',
     arrivedLabel: '07:45',
     waitMinutes: 82,
+    arrivalClass: 'walk-in',
+    call: { state: 'serving', deskLabel: 'Bay 1' },
     stage: 'draw-complete',
     assurance: 'verified',
+    contact: 'confirmed',
     payment: 'collected',
-    queuedForDraw: true,
   },
   {
     id: 'v-6',
     queueNumber: 19,
+    ticket: 'B-019',
     patientName: 'Sokha Chan',
     nameKhmer: 'សុខា ចាន់',
     arrivedLabel: '07:30',
     waitMinutes: 96,
+    arrivalClass: 'appointment',
+    appointmentLabel: '07:45',
+    appointmentMinutesAway: -111,
+    call: { state: 'serving', deskLabel: 'Bay 1' },
     stage: 'completed',
     assurance: 'verified',
+    contact: 'confirmed',
     payment: 'collected',
-    queuedForDraw: true,
   },
 ];
+
+/** The same room with a draw underway — the waiting room's now-serving state. */
+export const DESK_VISITS_SERVING: DeskVisit[] = DESK_VISITS.map((visit) =>
+  visit.id === 'v-stat'
+    ? { ...visit, call: { state: 'serving', deskLabel: 'Bay 2' }, stage: 'in-draw' }
+    : visit,
+);
+
+/** One patient called and walking up; the desk cannot call a second. */
+export const DESK_VISITS_CALLED: DeskVisit[] = DESK_VISITS.map((visit) =>
+  visit.id === 'v-stat'
+    ? { ...visit, call: { state: 'called', atLabel: '09:06', deskLabel: 'Bay 2' } }
+    : visit,
+);
 
 export const DESK_VISITS_LONG_WAIT: DeskVisit[] = DESK_VISITS.map((visit, index) =>
   index < 3 ? { ...visit, waitMinutes: visit.waitMinutes + 58 } : visit,
@@ -378,6 +481,8 @@ export const DESK_VISITS_LONG_WAIT: DeskVisit[] = DESK_VISITS.map((visit, index)
 export type FrontDeskQueueDemoVariant =
   | 'queue-default'
   | 'queue-long-wait'
+  | 'queue-called'
+  | 'queue-serving'
   | 'queue-empty'
   | 'queue-loading'
   | 'queue-error'
@@ -397,6 +502,8 @@ export const FRONT_DESK_QUEUE_DEMO_SCENARIOS: Record<
 > = {
   'queue-default': { visits: DESK_VISITS },
   'queue-long-wait': { visits: DESK_VISITS_LONG_WAIT },
+  'queue-called': { visits: DESK_VISITS_CALLED },
+  'queue-serving': { visits: DESK_VISITS_SERVING },
   'queue-empty': { visits: [] },
   'queue-loading': { visits: [], state: 'loading' },
   'queue-error': { visits: [], state: 'error' },

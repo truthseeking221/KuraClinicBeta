@@ -2,6 +2,7 @@
 .narrowFlow,
 .loadingStack,
 .section,
+.hero,
 .settlementDetails,
 .linkInstructions {
   display: flex;
@@ -29,16 +30,23 @@
   width: fit-content;
 }
 
-.metricLabel,
+.heroLabel,
+.heroNote,
+.balanceLabel,
 .metricHelp,
 .sectionTitle,
 .sectionDescription,
 .quietCopy,
+.projectedLine,
+.floorWarning,
+.nextStepSentence,
+.gateAllow,
 .activityTitle,
 .objectTitle,
 .objectDescription,
 .instructionTitle,
 .notificationDetail,
+.notificationChannels,
 .notificationTime {
   margin: 0;
 }
@@ -66,13 +74,45 @@
   object-fit: contain;
 }
 
-.balanceCard {
+/* Earnings hero: the loudest number on the page, on the bare white canvas. */
+.hero {
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.heroLabel {
+  color: var(--color-text-secondary);
+  font-size: var(--type-base);
+  font-weight: var(--weight-medium);
+}
+
+.heroValue {
+  display: inline-flex;
+  color: var(--color-text-primary);
+  font-size: var(--type-4xl);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-none);
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.heroNote {
+  margin-top: var(--space-1);
+  max-width: 34rem;
+  color: var(--color-text-tertiary);
+  font-size: var(--type-xs);
+  line-height: var(--leading-relaxed);
+}
+
+/* Who owes whom. The heading carries the meaning; colour only confirms it. */
+.balanceRow {
   display: flex;
-  min-height: 9rem;
+  min-width: 0;
   align-items: flex-start;
   justify-content: space-between;
   gap: var(--space-4);
-  padding: var(--space-5);
+  padding-block-start: var(--space-5);
+  border-block-start: 1px solid var(--color-border);
 }
 
 .balanceMain {
@@ -83,7 +123,7 @@
   flex-shrink: 0;
 }
 
-.metricLabel {
+.balanceLabel {
   color: var(--color-text-secondary);
   font-size: var(--type-sm);
   font-weight: var(--weight-semibold);
@@ -100,18 +140,20 @@
   font-variant-numeric: tabular-nums;
 }
 
-.balanceCard[data-tone='positive'] .balanceValue {
+.balanceRow[data-tone='positive'] .balanceValue {
   color: var(--color-status-success-fg);
 }
 
-.balanceCard[data-tone='danger'] .balanceValue {
+.balanceRow[data-tone='danger'] .balanceValue {
   color: var(--color-status-danger-fg);
 }
 
 .metricHelp,
 .quietCopy,
+.projectedLine,
 .objectDescription,
 .notificationDetail,
+.notificationChannels,
 .notificationTime {
   color: var(--color-text-tertiary);
   font-size: var(--type-xs);
@@ -120,6 +162,7 @@
 
 .metricHelp {
   margin-top: var(--space-3);
+  max-width: 34rem;
 }
 
 .signedMoney {
@@ -133,26 +176,35 @@
   min-width: 0;
 }
 
-.overviewMetrics {
+/* In progress: one tray for the three amounts that are not settled yet. */
+.progressTray {
   display: flex;
+  min-width: 0;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: var(--space-4);
+  padding: var(--space-5);
 }
 
-.collectionFacts,
-.objectFacts {
+.progressFacts,
+.objectFacts,
+.inlineFacts,
+.notificationFacts {
   display: grid;
   margin: 0;
 }
 
-.collectionFacts dt,
-.objectFacts dt {
+.progressFacts dt,
+.objectFacts dt,
+.inlineFacts dt,
+.notificationFacts dt {
   color: var(--color-text-tertiary);
   font-size: var(--type-xs);
 }
 
-.collectionFacts dd,
-.objectFacts dd {
+.progressFacts dd,
+.objectFacts dd,
+.inlineFacts dd,
+.notificationFacts dd {
   margin: var(--space-1) 0 0;
   color: var(--color-text-primary);
   font-size: var(--type-sm);
@@ -160,41 +212,46 @@
   font-variant-numeric: tabular-nums;
 }
 
-.metricCard {
-  min-height: 9rem;
-  justify-content: space-between;
-  padding: var(--space-5);
-}
-
-.metricValue {
-  margin: var(--space-2) 0 0;
-  color: var(--color-text-primary);
-  font-size: var(--type-2xl);
-  font-weight: var(--weight-semibold);
-  line-height: var(--leading-tight);
-  font-variant-numeric: tabular-nums;
-}
-
-.statNote {
-  margin: 0;
-  max-width: 48rem;
-  color: var(--color-text-tertiary);
-  font-size: var(--type-xs);
-  line-height: var(--leading-relaxed);
-}
-
-.collectionFacts {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: var(--space-4) var(--space-4);
-}
-
-.collectionTray {
-  display: flex;
-  min-width: 0;
-  padding: var(--space-5);
+.progressFacts {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--space-4);
 }
 
+.progressFacts dd {
+  font-size: var(--type-md);
+}
+
+.projectedLine {
+  padding-block-start: var(--space-3);
+  border-block-start: 1px solid var(--color-border);
+}
+
+.floorWarning {
+  margin: 0;
+  color: var(--color-status-warning-fg);
+  font-size: var(--type-xs);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-relaxed);
+}
+
+.inlineFacts {
+  grid-template-columns: repeat(auto-fit, minmax(9rem, max-content));
+  gap: var(--space-4) var(--space-8);
+}
+
+.nextStepHeading {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.nextStepSentence {
+  max-width: 40rem;
+  color: var(--color-text-primary);
+  font-size: var(--type-base);
+  line-height: var(--leading-relaxed);
+}
 
 .sectionHeader,
 .objectHeader {
@@ -332,16 +389,50 @@
   border-bottom: 1px solid var(--color-border);
 }
 
+.notificationBody {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.notificationHeading {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
 .notificationTitle[data-tone='danger'] {
   color: var(--color-status-danger-fg);
 }
 
 .notificationDetail {
-  margin-top: var(--space-1);
+  margin: 0;
+}
+
+.notificationFacts {
+  grid-template-columns: repeat(auto-fit, minmax(8rem, max-content));
+  gap: var(--space-2) var(--space-6);
+}
+
+.notificationChannels[data-tone='warning'] {
+  color: var(--color-status-warning-fg);
 }
 
 .notificationTime {
   white-space: nowrap;
+}
+
+.gateAllow {
+  color: var(--color-text-secondary);
+  font-size: var(--type-sm);
+  line-height: var(--leading-relaxed);
+}
+
+.gateSpinner {
+  margin-inline-end: var(--space-1-5);
+  vertical-align: text-bottom;
 }
 
 .linkSession,
@@ -394,8 +485,8 @@
   width: 100%;
 }
 
-.skeletonHero { min-height: 9rem; }
-.skeletonStrip { min-height: 6rem; }
+.skeletonHero { min-height: 6rem; }
+.skeletonStrip { min-height: 9rem; }
 .skeletonTable { min-height: 24rem; }
 
 .srOnly {
@@ -410,18 +501,10 @@
   border: 0;
 }
 
-@media (max-width: 64rem) {
-  .collectionFacts {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    row-gap: var(--space-4);
-  }
-}
-
 @media (max-width: 48rem) {
-  .balanceCard {
+  .balanceRow {
     align-items: stretch;
     flex-direction: column;
-    padding: var(--space-5);
   }
 
   .balanceAction {
@@ -455,24 +538,18 @@
   }
 
   .objectFacts,
-  .collectionFacts,
   .linkSession,
   .settlementObject {
     grid-template-columns: 1fr;
   }
 
+  .progressFacts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .objectHeader {
     align-items: flex-start;
     flex-direction: column;
-  }
-
-  .collectionTray .sectionHeader {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
-  .collectionTray .sectionHeader :global([data-slot='button']) {
-    width: fit-content;
   }
 
   .notificationItem {
@@ -489,6 +566,15 @@
 }
 
 @media (max-width: 30rem) {
+  .progressFacts {
+    grid-template-columns: 1fr;
+    gap: var(--space-3);
+  }
+
+  .heroValue {
+    font-size: var(--type-3xl);
+  }
+
   .activityMobileFacts {
     display: flex;
     min-width: 0;

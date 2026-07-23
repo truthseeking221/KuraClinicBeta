@@ -155,7 +155,11 @@ export const EmptyClinic: Story = {
   },
 };
 
-/** First home after a new doctor has set up their cabinet. */
+/**
+ * First home after a new doctor has set up their cabinet: one primary action,
+ * the demo record demoted beside it, and the whole licence permission truth —
+ * what works now and what does not — stated in one place.
+ */
 export const NewDoctorFirstHome: Story = {
   args: { data: demo.newDoctorFirstHome },
   play: async ({ canvasElement, args }) => {
@@ -166,17 +170,14 @@ export const NewDoctorFirstHome: Story = {
       }),
     ).toBeVisible();
     await expect(
-      canvas.getByText("Start with a booking for your first patient."),
-    ).toBeVisible();
-    await expect(
       canvas.getByText(
-        "You can start booking patients before your licence is verified.",
+        "Pick the tests, choose how the sample is collected, and the results come back here.",
       ),
     ).toBeVisible();
     await expect(canvas.getByText("Not started")).toBeVisible();
     await expect(
       canvas.getByText(
-        "You’ll need a verified licence to collect payments, issue legal documents, submit claims and appear in the doctor directory.",
+        "You can book patients now. A verified licence is required to place orders under your own attribution, collect payments, issue legal documents, submit claims and appear in the doctor directory.",
       ),
     ).toBeVisible();
     await expect(canvas.queryByText("No patients")).not.toBeInTheDocument();
@@ -198,14 +199,13 @@ export const NewDoctorFirstHome: Story = {
     const firstUseCenter = firstUseBounds.left + firstUseBounds.width / 2;
     expect(Math.abs(workspaceCenter - firstUseCenter)).toBeLessThanOrEqual(1);
 
-    const setupTray = firstUse!.querySelector<HTMLElement>(
-      '[data-slot="card"]:not([data-variant])',
-    );
-    expect(setupTray).not.toBeNull();
-    await expect(setupTray!).toBeVisible();
+    // One tray for the setup region, and never a tile drawn inside it.
     expect(
-      setupTray!.querySelectorAll('[data-slot="card"][data-variant="tile"]'),
-    ).toHaveLength(2);
+      firstUse!.querySelectorAll('[data-slot="card"]:not([data-variant])'),
+    ).toHaveLength(1);
+    expect(
+      firstUse!.querySelectorAll('[data-slot="card"][data-variant="tile"]'),
+    ).toHaveLength(0);
 
     await userEvent.click(
       canvas.getByRole("button", { name: "Create booking" }),
@@ -221,15 +221,12 @@ export const NewDoctorFirstHome: Story = {
     await expect(args.onOpenLicence).toHaveBeenCalled();
 
     await expect(
-      canvas.getByRole("heading", { name: "Take a quick tour" }),
-    ).toBeVisible();
-    await expect(
       canvas.getByText(
-        "Follow a sample patient from booking to results. Your records will not change.",
+        "Sokha Chann — results already back. Your records will not change.",
       ),
     ).toBeVisible();
     await userEvent.click(
-      canvas.getByRole("button", { name: "Open sample patient" }),
+      canvas.getByRole("button", { name: "Open demo patient" }),
     );
     await expect(args.onOpenDemoPatient).toHaveBeenCalled();
   },
@@ -249,14 +246,17 @@ export const FirstHomeWithoutDemoPatient: Story = {
       }),
     ).toBeVisible();
     await expect(
-      canvas.queryByRole("heading", { name: "Take a quick tour" }),
+      canvas.queryByRole("button", { name: "Open demo patient" }),
+    ).not.toBeInTheDocument();
+    await expect(
+      canvas.queryByText(/results already back/),
     ).not.toBeInTheDocument();
     await expect(
       canvas.getByRole("button", { name: "Create booking" }),
     ).toBeVisible();
     expect(
       canvasElement.querySelectorAll(
-        '[data-slot="first-use-home"] [data-slot="card"][data-variant="tile"]',
+        '[data-slot="first-use-home"] [data-slot="card"]',
       ),
     ).toHaveLength(1);
   },
@@ -456,8 +456,8 @@ export const OfflineReadOnly: Story = {
   },
 };
 
-/** No payment capability: the earnings signal is omitted from Home, never greyed.
- *  Scoped to the workspace because the shell keeps its own Earnings nav item. */
+/** No payment capability: the balance signal is omitted from Home, never greyed.
+ *  Scoped to the workspace because the shell keeps its own Balance nav item. */
 export const ReducedCapabilities: Story = {
   args: { data: demo.reducedCapabilities },
   play: async ({ canvasElement }) => {
@@ -466,7 +466,7 @@ export const ReducedCapabilities: Story = {
         '[data-slot="home-workspace"]',
       ) as HTMLElement,
     );
-    await expect(home.queryByText(/^Earnings/)).not.toBeInTheDocument();
+    await expect(home.queryByText(/^Balance/)).not.toBeInTheDocument();
     await expect(home.getByText("Tube pickup")).toBeVisible();
   },
 };

@@ -25,6 +25,18 @@ export function subtractMinorFloor(value: string, subtract: string): string {
   return (result > BigInt(0) ? result : BigInt(0)).toString();
 }
 
+/**
+ * A whole-percent share of a minor-unit amount, floored. Flooring puts the
+ * rounding remainder on the insurer rather than the patient — the clinic never
+ * quietly charges a cent more than the split says.
+ */
+export function percentOfMinor(value: string, percent: number): string {
+  if (!Number.isInteger(percent) || percent < 0 || percent > 100) {
+    throw new Error(`Invalid percent: ${percent}`);
+  }
+  return ((asMinor(value) * BigInt(percent)) / BigInt(100)).toString();
+}
+
 export function compareMinor(a: string, b: string): -1 | 0 | 1 {
   const left = asMinor(a);
   const right = asMinor(b);

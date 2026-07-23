@@ -153,7 +153,7 @@ export function CommunicationsSection({
 
 export type BillingSectionProps = { firstUse?: boolean };
 
-/** Workspace payment collection only. Person-owned balances and ABA mandates belong to Earnings. */
+/** Workspace payment collection only. Person-owned balances and ABA mandates belong to Balance. */
 export function BillingSection({ firstUse = false }: BillingSectionProps) {
   const t = useT();
 
@@ -165,19 +165,19 @@ export function BillingSection({ firstUse = false }: BillingSectionProps) {
         </Badge>
       }
       sub={t(
-        'Workspace payment methods and insurer panels. Your balance is managed in Earnings.',
+        'Workspace payment methods and insurer panels. Your own balance is managed in Balance.',
       )}
       title={t('Payments')}
     >
       <SettingsRows>
         <SettingsRow
-          label={t('Earnings')}
+          label={t('Balance')}
           sub={t(
             'Person-owned balance, statements, KHQR settlement, and optional ABA authorization',
           )}
           value={
             <Badge size="sm" variant="info">
-              {t('Managed in Earnings')}
+              {t('Managed in Balance')}
             </Badge>
           }
         />

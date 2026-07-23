@@ -13,7 +13,7 @@ export const ROUTES: readonly RouteEntry[] = [
   { mode: 'clinical', key: 'home', path: '/home' },
   { mode: 'clinical', key: 'results', path: '/results' },
   { mode: 'clinical', key: 'patients', path: '/patients' },
-  { mode: 'clinical', key: 'earnings', path: '/earnings' },
+  { mode: 'clinical', key: 'balance', path: '/balance' },
   { mode: 'clinical', key: 'catalog', path: '/catalog' },
 
   // Front desk.

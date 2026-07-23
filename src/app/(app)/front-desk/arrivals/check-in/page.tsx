@@ -1,8 +1,10 @@
 'use client';
 
 /**
- * Walk-in check-in: the canonical six-step wizard. A confirmed check-in
- * stores its receipt and returns to arrivals.
+ * Walk-in check-in: the adaptive desk flow. A confirmed check-in puts the
+ * visit on the queue and returns the desk to arrivals, where the same staffer
+ * calls the patient and starts the draw. Payment already happened inside the
+ * flow — routing to the payments list here would send the desk in a circle.
  */
 
 import { useRouter } from 'next/navigation';
@@ -44,7 +46,7 @@ export default function CheckInPage() {
       onCheckIn={() => {
         completeCheckIn();
         toast.success(`${patient.name || 'Walk-in'} checked in`);
-        router.push('/front-desk/payments');
+        router.push('/front-desk/arrivals');
       }}
       onPatientChange={setPatient}
       patient={patient}

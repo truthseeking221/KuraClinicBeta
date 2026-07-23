@@ -6,6 +6,7 @@ import {
   DoctorSettlePage,
   DoctorStatementsPage,
 } from './doctor-banking';
+import type { ActivityQuery } from './logic';
 import type {
   DoctorBankingFixture,
   DoctorBankingViewState,
@@ -13,19 +14,19 @@ import type {
   MandateLinkSession,
 } from './types';
 
-export type EarningsRoute = 'overview' | 'activity' | 'settle' | 'auto-pay';
+export type BalanceRoute = 'overview' | 'activity' | 'settle' | 'auto-pay';
 
-export type DoctorEarningsWorkspaceProps = {
+export type DoctorBalanceWorkspaceProps = {
   data: DoctorBankingFixture;
-  route: EarningsRoute;
+  route: BalanceRoute;
   state?: DoctorBankingViewState;
   intent?: KhqrIntent | null;
   linkSession?: MandateLinkSession | null;
   downloadState?: 'idle' | 'loading' | 'success' | 'error';
-  onNavigate: (route: EarningsRoute) => void;
+  onNavigate: (route: BalanceRoute) => void;
   onBeginLink?: () => void;
   onCreateKhqr?: () => void;
-  onDownload?: (format: 'pdf' | 'xlsx') => void;
+  onDownload?: (format: 'pdf' | 'xlsx', query: ActivityQuery) => void;
   onOpenLicence?: () => void;
   onRegenerate?: () => void;
   onRegenerateLink?: () => void;
@@ -35,8 +36,8 @@ export type DoctorEarningsWorkspaceProps = {
   onUnlink?: () => void;
 };
 
-/** Canonical person-owned Earnings composition shared by Storybook and the app. */
-export function DoctorEarningsWorkspace({
+/** Canonical doctor-owned Balance composition shared by Storybook and the app. */
+export function DoctorBalanceWorkspace({
   data,
   downloadState,
   intent,
@@ -54,7 +55,7 @@ export function DoctorEarningsWorkspace({
   onUnlink,
   route,
   state,
-}: DoctorEarningsWorkspaceProps) {
+}: DoctorBalanceWorkspaceProps) {
   const returnToOverview = () => onNavigate('overview');
 
   if (route === 'activity') {
@@ -90,6 +91,7 @@ export function DoctorEarningsWorkspace({
   if (route === 'auto-pay') {
     return (
       <DoctorPaymentsPage
+        licence={data.overview.licence}
         linkSession={linkSession}
         mandate={data.overview.mandate}
         onBack={returnToOverview}
@@ -99,6 +101,7 @@ export function DoctorEarningsWorkspace({
         onRenew={onRenew}
         onRetry={onRetry}
         onUnlink={onUnlink}
+        remainingBalance={data.overview.settledBalance}
         state={state}
       />
     );

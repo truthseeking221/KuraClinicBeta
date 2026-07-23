@@ -10,7 +10,8 @@ import { useState } from 'react';
 
 import { toast } from '../../../../components/ui';
 import { DrawWorksheet, ScanGate } from '../../../../features/collection';
-import type { CollectionPatient, Sample } from '../../../../features/collection';
+import type { CollectionDraft, CollectionPatient } from '../../../../features/collection';
+import { emptyDraft } from '../../../../features/collection';
 import { demoOnboardingScenarioById } from '../../../../features/auth/demo-data';
 import {
   COLLECTION_DEMO_SCENARIOS,
@@ -32,9 +33,9 @@ export default function CollectionScanPage() {
   const initialPatient =
     configured.view === 'worksheet' ? configured.patient : null;
   const [patient, setPatient] = useState<CollectionPatient | null>(initialPatient);
-  const [samples, setSamples] = useState<Sample[]>(
-    initialPatient?.samples ?? [],
-  );
+  // Only the mid-draw scenario seeds a draft; everything else starts empty.
+  const seeded = (configured as { draft?: () => CollectionDraft }).draft;
+  const [draft, setDraft] = useState<CollectionDraft>(() => seeded?.() ?? emptyDraft());
   const queue = configured.queue;
   const now = configured.view === 'worksheet' ? configured.now : DEMO_NOW;
 
@@ -43,7 +44,7 @@ export default function CollectionScanPage() {
       <ScanGate
         onMatch={(matched) => {
           setPatient(matched);
-          setSamples(matched.samples);
+          setDraft(emptyDraft());
         }}
         queue={queue}
         role="phlebotomy"
@@ -53,24 +54,24 @@ export default function CollectionScanPage() {
 
   return (
     <DrawWorksheet
+      draft={draft}
       now={now}
-      onMarkVitalsDone={() => toast.success('Vitals recorded')}
+      onComplete={() => {
+        toast.success(`${patient.name} — samples handed over`);
+        setPatient(null);
+        setDraft(emptyDraft());
+      }}
+      onDraftChange={setDraft}
       onNotify={(tone, text) => {
         if (tone === 'success') toast.success(text);
         else if (tone === 'danger') toast.error(text);
         else if (tone === 'warn') toast.warning(text);
         else toast(text);
       }}
-      onSaveDraft={() => toast('Draft saved')}
-      onSubmit={() => {
-        toast.success(`${patient.name} — samples submitted to lab`);
-        setPatient(null);
-        setSamples([]);
-      }}
-      onUpdateSamples={setSamples}
+      onSaveDraft={() => toast('Saved — the patient stays in the queue')}
+      onSendToVitals={() => toast('Sent to the vital signs booth')}
       operatorName={DEMO_OPERATOR}
       patient={patient}
-      samples={samples}
     />
   );
 }

@@ -428,7 +428,10 @@ export function PatientChart({
                 {status.kind === "terminal" ? (
                   <Badge variant="neutral">{t(status.label)}</Badge>
                 ) : status.assurance === "unverified" ? (
-                  <Badge variant="warning">{t("Unverified")}</Badge>
+                  // The chart is where the record is acted on and where the
+                  // verify affordance lives, so the identity axis is marked
+                  // here even though the registry keeps it quiet in a list.
+                  <Badge variant="warning">{t(status.label)}</Badge>
                 ) : null}
                 {onSwitchPatient && patients ? (
                   <PatientSwitcher
@@ -507,22 +510,21 @@ export function PatientChart({
                 <TabsContent value="overview">
                   {/* MRN lives in the workbar; repeating it here would say nothing new. */}
                   <dl className={styles.facts}>
+                    {/* Two axes, two facts. A masked number exists only for a
+                        verified primary phone, so its absence is stated. The
+                        workbar already carries the identity badge; repeating
+                        the badge here would mark the same fact twice. */}
                     <Fact
-                      label={t("Phone")}
-                      value={
-                        patient.phoneMasked || <span aria-hidden="true">—</span>
-                      }
+                      label={t("Verified phone")}
+                      value={patient.phoneMasked || t("None")}
                     />
                     <Fact
                       label={t("Identity")}
-                      value={
-                        status.kind === "assurance" &&
-                        status.assurance === "unverified" ? (
-                          <Badge variant="warning">{t("Unverified")}</Badge>
-                        ) : (
-                          t("Verified")
-                        )
-                      }
+                      value={t(
+                        patient.assurance === "unverified"
+                          ? "Provisional"
+                          : "Verified",
+                      )}
                     />
                   </dl>
                   {status.kind === "assurance" &&

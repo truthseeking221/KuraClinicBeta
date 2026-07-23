@@ -1,6 +1,8 @@
 export type SignedUsdMinor = string;
 export type AmountUsdMinor = string;
 export type IsoDateTime = string;
+/** Date-only value, `YYYY-MM-DD`. */
+export type IsoDate = string;
 
 export type SignedMoney = {
   minor: SignedUsdMinor;
@@ -44,20 +46,40 @@ export type MandateSummary = {
   firstLinkCreditGranted: boolean;
 };
 
+/**
+ * Licence state is separate from the view state on purpose. A doctor whose
+ * licence lapses keeps an existing ledger: balance, activity, settlement, and
+ * unlink stay available; only new linking and new ordering are blocked. Only a
+ * doctor who never had a ledger renders the `not-eligible` view state.
+ */
+export type LicenceState = 'verified' | 'lapsed';
+
+export type SweepNotice = {
+  date: IsoDate;
+  maximumAmount: Amount;
+  noticeState: 'not_due' | 'due' | 'sent';
+  /** Cap at the time the notice was sent; a manual payment lowers `maximumAmount` only. */
+  noticedAmount: Amount | null;
+};
+
 export type DoctorBankingOverview = {
   doctorRef: string;
+  /** First day of the earnings month. Labels the hero; never inferred from `now`. */
+  periodStart: IsoDate;
+  /**
+   * Settled positive `completion_credit` since `periodStart`. Pending earnings
+   * are never included — they have not been earned yet.
+   */
+  earnedThisMonth: Amount;
   settledBalance: SignedMoney;
   pendingDebit: Amount;
   pendingCredit: Amount;
   reservedDebit: Amount;
+  /** Projected balance if every in-progress order completes. Domain name: exposure. */
   exposure: SignedMoney;
   creditFloor: SignedMoney;
-  earnedThisPeriod: Amount;
-  nextSweep: null | {
-    date: string;
-    maximumAmount: Amount;
-    noticeState: 'not_due' | 'due' | 'sent';
-  };
+  licence: LicenceState;
+  nextSweep: SweepNotice | null;
   mandate: MandateSummary;
 };
 
@@ -71,33 +93,42 @@ export type LedgerEntry = {
   detail: string;
   orderRef: string | null;
   workspaceLabel: string | null;
+  /** Set when this entry reverses another. The reversed entry is never mutated. */
+  reversalOfEntryRef: string | null;
+};
+
+export type NotificationChannel = 'in_app' | 'sms' | 'email';
+export type NotificationChannelState = 'pending' | 'accepted' | 'failed';
+
+export type NotificationDelivery = {
+  channel: NotificationChannel;
+  state: NotificationChannelState;
+};
+
+type NotificationBase = {
+  notificationRef: string;
+  audience: 'doctor';
+  occurredAt: IsoDateTime;
+  channels: NotificationDelivery[];
 };
 
 export type DoctorFinancialNotification =
-  | {
-      notificationRef: string;
-      audience: 'doctor';
+  | (NotificationBase & {
       kind: 'pre_notice';
-      occurredAt: IsoDateTime;
-      sweepDate: string;
+      sweepDate: IsoDate;
       originalCap: Amount;
       remainingCap: Amount;
       state: 'pending_record' | 'sent' | 'partly_collected' | 'collected' | 'expired';
-    }
-  | {
-      notificationRef: string;
-      audience: 'doctor';
+    })
+  | (NotificationBase & {
       kind: 'receipt';
-      occurredAt: IsoDateTime;
       source: 'khqr' | PullTrigger;
       amount: Amount;
       balanceAfter: SignedMoney;
-    }
-  | {
-      notificationRef: string;
-      audience: 'doctor';
+      receiptRef: string;
+    })
+  | (NotificationBase & {
       kind: 'pull_failed';
-      occurredAt: IsoDateTime;
       pullRef: string;
       trigger: PullTrigger;
       retrySlot: 1 | 2 | 3 | null;
@@ -105,27 +136,22 @@ export type DoctorFinancialNotification =
       failureReason: string;
       retryState: 'retry_pending' | 'retries_exhausted' | 'not_retryable';
       nextAction: 'retry_tomorrow' | 'settle_now' | 'relink' | 'wait_next_sweep';
-    }
-  | {
-      notificationRef: string;
-      audience: 'doctor';
+      retryDate: IsoDate | null;
+    })
+  | (NotificationBase & {
       kind: 'mandate';
-      occurredAt: IsoDateTime;
       event: 'linked' | 'renewal_required' | 'expired' | 'unlinked';
       maskedAccount: string | null;
       expiresAt: IsoDateTime | null;
       connectCredit: Amount | null;
       remainingBalance: SignedMoney | null;
-    }
-  | {
-      notificationRef: string;
-      audience: 'doctor';
+    })
+  | (NotificationBase & {
       kind: 'adjustment';
-      occurredAt: IsoDateTime;
       entryRef: string;
       amount: SignedMoney;
       reason: string;
-    };
+    });
 
 export type KhqrIntent = {
   settlementRef: string;
@@ -134,6 +160,9 @@ export type KhqrIntent = {
   qrPayload: string;
   expiresAt: IsoDateTime;
   state: 'pending' | 'confirmed' | 'expired';
+  /** Present only once the provider confirms. */
+  receiptRef: string | null;
+  balanceAfter: SignedMoney | null;
 };
 
 export type MandateLinkSession = {
@@ -141,7 +170,8 @@ export type MandateLinkSession = {
   desktopQrPayload: string;
   mobileDeepLink: string;
   expiresAt: IsoDateTime;
-  state: 'pending' | 'confirmed' | 'expired';
+  /** `long_running` keeps the pending contract while telling the doctor how to recover. */
+  state: 'pending' | 'long_running' | 'confirmed' | 'expired';
 };
 
 export type PullTrigger =
@@ -175,6 +205,22 @@ export type Pull = {
   };
 };
 
+/**
+ * Order funding gate decisions. Composing an order consults the ledger; intake
+ * conversion never does, so a patient is never blocked by a doctor's balance.
+ */
+export type OrderFundingDecision =
+  | { kind: 'allow'; headroom: SignedMoney }
+  | {
+      kind: 'khqr_settled_red';
+      amount: Amount;
+      reason: 'mandate_unavailable' | 'jit_failed';
+    }
+  | { kind: 'khqr_pending_shortfall'; amount: Amount; floor: SignedMoney }
+  | { kind: 'jit_processing'; amount: Amount }
+  | { kind: 'jit_succeeded'; amount: Amount; balanceAfter: SignedMoney }
+  | { kind: 'prescriber_action_required'; reason: string };
+
 export type DoctorLedgerSummary = {
   doctorRef: string;
   displayName: string;
@@ -189,7 +235,7 @@ export type DoctorLedgerSummary = {
 
 export type DoctorLedgerDetail = DoctorLedgerSummary & {
   pendingCredit: Amount;
-  earnedThisPeriod: Amount;
+  earnedThisMonth: Amount;
   maskedAccount: string | null;
   mandateExpiresAt: IsoDateTime | null;
 };
@@ -202,6 +248,10 @@ export type FloorChange = {
   changedAt: IsoDateTime;
 };
 
+/**
+ * `not-eligible` is the doctor who never had a ledger. A lapsed licence on an
+ * existing ledger is `ready` plus `overview.licence === 'lapsed'`.
+ */
 export type DoctorBankingViewState =
   | 'ready'
   | 'loading'

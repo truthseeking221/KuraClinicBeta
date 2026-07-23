@@ -7,15 +7,23 @@ import {
   collectionCodeStatusMeta,
   detectQueryKind,
   guardianGateBlocks,
-  parseBookingQrPayload,
+  identityAnswersMatch,
+  identityConfirmationRequired,
+  readBookingQr,
+  checkInGate,
   resolveIdentity,
 } from './logic';
 import { blankWalkIn } from './demo-data';
 
 describe('detectQueryKind', () => {
-  it('classifies booking codes', () => {
-    expect(detectQueryKind('GW87430')).toBe('code');
-    expect(detectQueryKind('gw87430')).toBe('code');
+  it('classifies collection codes in the platform shape', () => {
+    expect(detectQueryKind('PSC-A82Q7K3M')).toBe('code');
+    expect(detectQueryKind('psc-a82q7k3m')).toBe('code');
+  });
+
+  it('rejects code-shaped strings outside the contract', () => {
+    expect(detectQueryKind('GW87430')).toBe('name');
+    expect(detectQueryKind('PSC-A82Q7K3')).toBe('name');
   });
 
   it('classifies phones (8+ digits, separators allowed)', () => {
@@ -30,23 +38,66 @@ describe('detectQueryKind', () => {
   });
 });
 
-describe('parseBookingQrPayload', () => {
-  it('extracts the code from a QR payload', () => {
-    expect(parseBookingQrPayload('kura://booking/GW87430')).toBe('GW87430');
+describe('readBookingQr', () => {
+  it('reads the code behind the canonical prefix', () => {
+    expect(readBookingQr('kura://booking/PSC-A82Q7K3M')).toEqual({
+      kind: 'code',
+      code: 'PSC-A82Q7K3M',
+    });
   });
 
-  it('returns null when no code is present', () => {
-    expect(parseBookingQrPayload('hello world')).toBeNull();
+  it('reports a scan still arriving from the desk scanner as partial', () => {
+    expect(readBookingQr('kura://booki')).toEqual({ kind: 'partial' });
+    expect(readBookingQr('kura://booking/PSC-A82')).toEqual({ kind: 'partial' });
+  });
+
+  it('never mines a code out of a payload that is not a Kura booking QR', () => {
+    expect(readBookingQr('https://example.test/PSC-A82Q7K3M')).toEqual({ kind: 'foreign' });
+    expect(readBookingQr('kura://booking/NOT-A-CODE!')).toEqual({ kind: 'foreign' });
+  });
+
+  it('leaves typed text alone', () => {
+    expect(readBookingQr('Sok Phearom')).toBeNull();
+    expect(readBookingQr('   ')).toBeNull();
+  });
+});
+
+describe('patient confirmation', () => {
+  const record = IDENTITY_REGISTRY.find((candidate) => candidate.id === 'rec-sok-phearom')!;
+  const captured = { ...blankWalkIn('p-confirm', 4), ...resolvedRecordPatch(record) };
+
+  it('requires confirmation for a record-led capture only', () => {
+    expect(identityConfirmationRequired(captured)).toBe(true);
+    expect(
+      identityConfirmationRequired({ identity: { source: 'manual', lockedFields: [] } }),
+    ).toBe(false);
+  });
+
+  it('matches only when every answerable question matches', () => {
+    expect(identityAnswersMatch(captured, { name: 'sok  phearom', dob: '1974-03-15' })).toBe(true);
+    expect(identityAnswersMatch(captured, { name: 'Sok Phearom', dob: '1974-03-16' })).toBe(false);
+    expect(identityAnswersMatch(captured, { name: 'Sok Heng', dob: '1974-03-15' })).toBe(false);
+  });
+
+  it('holds the patient task until the person is confirmed', () => {
+    const verified = { ...captured, otpVerified: true };
+    expect(checkInGate(verified).done.patient).toBe(false);
+    expect(
+      checkInGate({
+        ...verified,
+        identityConfirmation: { method: 'open-questions', byLabel: 'Sothea Ly', atLabel: '08:33' },
+      }).done.patient,
+    ).toBe(true);
   });
 });
 
 describe('resolveIdentity', () => {
   it('binds a booking code to exactly one booking', () => {
-    const result = resolveIdentity('GW87430', IDENTITY_REGISTRY);
+    const result = resolveIdentity('PSC-A82Q7K3M', IDENTITY_REGISTRY);
     expect(result?.kind).toBe('booking-linked');
     if (result?.kind === 'booking-linked') {
       expect(result.record.name).toBe('Sok Phearom');
-      expect(result.booking.code).toBe('GW87430');
+      expect(result.booking.code).toBe('PSC-A82Q7K3M');
     }
   });
 
@@ -112,23 +163,25 @@ describe('booking-code lifecycle branches', () => {
     resolveIdentity(code, IDENTITY_REGISTRY, { branchId: DEMO_BRANCH_ID });
 
   it('redeemable states resolve to booking-linked', () => {
-    expect(resolve('GW87430')?.kind).toBe('booking-linked'); // scheduled
-    expect(resolve('GW87431')?.kind).toBe('booking-linked'); // issued
+    expect(resolve('PSC-A82Q7K3M')?.kind).toBe('booking-linked'); // scheduled
+    expect(resolve('PSC-B41M9T27')?.kind).toBe('booking-linked'); // issued
   });
 
-  it('blocks every canonical non-redeemable state with its reason', () => {
-    const expired = resolve('GW87510');
-    const redeemed = resolve('GW87511');
-    const cancelled = resolve('GW87512');
-    expect(expired).toMatchObject({ kind: 'booking-blocked', reason: 'expired' });
-    expect(redeemed).toMatchObject({ kind: 'booking-blocked', reason: 'redeemed' });
-    expect(cancelled).toMatchObject({ kind: 'booking-blocked', reason: 'cancelled' });
+  it('blocks every state that genuinely cannot be redeemed', () => {
+    expect(resolve('PSC-F63R8W25')).toMatchObject({ kind: 'booking-blocked', reason: 'redeemed' });
+    expect(resolve('PSC-G74T5Y36')).toMatchObject({ kind: 'booking-blocked', reason: 'cancelled' });
+  });
+
+  it('never turns an old code away: collection codes do not lapse', () => {
+    // Issued nine days ago and still unused — age is not a block reason,
+    // because nothing upstream ever produces an expired code.
+    expect(resolve('PSC-E52N4Q18')?.kind).toBe('booking-linked');
   });
 
   it('blocks a code issued for another branch even while its lifecycle is fine', () => {
-    expect(resolve('GW87513')).toMatchObject({ kind: 'booking-blocked', reason: 'wrong-branch' });
+    expect(resolve('PSC-H85V6Z47')).toMatchObject({ kind: 'booking-blocked', reason: 'wrong-branch' });
     // Without desk branch context the same code stays redeemable.
-    expect(resolveIdentity('GW87513', IDENTITY_REGISTRY)?.kind).toBe('booking-linked');
+    expect(resolveIdentity('PSC-H85V6Z47', IDENTITY_REGISTRY)?.kind).toBe('booking-linked');
   });
 
   it('derives display meta from the canonical status only', () => {
@@ -138,7 +191,7 @@ describe('booking-code lifecycle branches', () => {
   });
 
   it('bookingBlockReason prefers lifecycle over branch', () => {
-    const expired = IDENTITY_REGISTRY[0].bookings!.find((b) => b.code === 'GW87510')!;
-    expect(bookingBlockReason(expired, 'other-branch')).toBe('expired');
+    const cancelled = IDENTITY_REGISTRY[0].bookings!.find((b) => b.code === 'PSC-G74T5Y36')!;
+    expect(bookingBlockReason(cancelled, 'other-branch')).toBe('cancelled');
   });
 });

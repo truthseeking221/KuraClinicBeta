@@ -56,7 +56,7 @@ function PreConsultPlayground({ initial }: { initial: FrontDeskPatient }) {
 }
 
 const meta = {
-  title: 'Clinic/Front Desk/Check-In Wizard/Step 5 Pre-Consult',
+  title: 'Clinic/Front Desk/Check-In/Intake',
   component: CheckInWizard,
   tags: ['autodocs', 'adapted-kura'],
   parameters: {
@@ -64,7 +64,7 @@ const meta = {
     kura: {
       readiness: READINESS.frontDesk,
       intake: {
-        decision: 'EXTEND (front-desk Step 5) — intake delivery + TAT-coupled teleconsult',
+        decision: 'EXTEND (front-desk pre-consult task) — intake delivery + TAT-coupled teleconsult',
         owner: 'src/features/front-desk',
         evidence:
           'Ported from the legacy receptionist prototype: send-intake-link vs fill-on-behalf with per-section author provenance, teleconsult specialty auto-mapped from ordered tests, day picker coupled to the longest internal turnaround (pre-TAT days warn, booking early needs an explicit override), skip removes the teleconsult line while remove re-blocks the step. PROTOTYPE: telehealth_call is an enum with no behavior upstream; no intake-link service exists.',
@@ -86,7 +86,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'Step 5 captures intake while the patient is present and books the results consult. The intake link needs a verified channel; the desk can fill sections on behalf with visible provenance. Teleconsult slots follow the longest result turnaround — pre-TAT days warn and booking early is an explicit, recorded override.',
+          'The pre-consult task captures intake while the patient is present and books the results consult. The intake link needs a verified channel; the desk can fill sections on behalf with visible provenance. Teleconsult slots follow the longest result turnaround — pre-TAT days warn and booking early is an explicit, recorded override.',
       },
     },
   },
@@ -108,7 +108,7 @@ export const TatPreselectAndEarlyOverride: Story = {
   render: () => <PreConsultPlayground initial={preConsultReady('pre-tat')} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await userEvent.click(canvas.getByRole('tab', { name: /5 Pre-consult/ }));
+    await userEvent.click(canvas.getByRole('tab', { name: /Intake/ }));
     // HbA1c = 24h TAT → Tomorrow preselected, Today carries the warning mark.
     await expect(await canvas.findByText(/Estimated results in ~24h/)).toBeVisible();
     await expect(canvas.getByRole('button', { name: 'Tomorrow' })).toHaveAttribute(
@@ -137,7 +137,7 @@ export const SkipRemovesConsultLine: Story = {
   render: () => <PreConsultPlayground initial={preConsultReady('pre-skip')} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await userEvent.click(canvas.getByRole('tab', { name: /5 Pre-consult/ }));
+    await userEvent.click(canvas.getByRole('tab', { name: /Intake/ }));
     await userEvent.click(await canvas.findByRole('button', { name: 'Skip consult' }));
     await expect(
       await canvas.findByText('Skipped — results go out without a consult'),
@@ -146,7 +146,7 @@ export const SkipRemovesConsultLine: Story = {
     await expect(
       canvas.queryByRole('button', { name: 'Remove Teleconsultation' }),
     ).not.toBeInTheDocument();
-    await expect(canvas.getByRole('button', { name: 'Continue' })).toBeEnabled();
+    await expect(canvas.getByRole('button', { name: 'Confirm intake' })).toBeEnabled();
   },
 };
 
@@ -158,7 +158,7 @@ export const IntakeLinkNeedsVerifiedChannel: Story = {
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await userEvent.click(canvas.getByRole('tab', { name: /5 Pre-consult/ }));
+    await userEvent.click(canvas.getByRole('tab', { name: /Intake/ }));
     await expect(
       await canvas.findByRole('button', { name: 'Send link' }),
     ).toBeDisabled();
@@ -172,7 +172,7 @@ export const FillOnBehalfProvenance: Story = {
   render: () => <PreConsultPlayground initial={preConsultReady('pre-fill')} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await userEvent.click(canvas.getByRole('tab', { name: /5 Pre-consult/ }));
+    await userEvent.click(canvas.getByRole('tab', { name: /Intake/ }));
     await userEvent.click(await canvas.findByRole('button', { name: 'Send link' }));
     await expect(await canvas.findByText(/Intake link sent · just now/)).toBeVisible();
 
@@ -196,7 +196,7 @@ export const Mobile: Story = {
   render: () => <PreConsultPlayground initial={preConsultReady('pre-mobile')} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await userEvent.click(canvas.getByRole('tab', { name: /5 Pre-consult/ }));
+    await userEvent.click(canvas.getByRole('tab', { name: /Intake/ }));
     await expect(await canvas.findByText(/Estimated results in ~24h/)).toBeVisible();
   },
 };
@@ -207,7 +207,7 @@ export const IntakeStatusMachine: Story = {
   render: () => <PreConsultPlayground initial={preConsultReady('pre-status')} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await userEvent.click(canvas.getByRole('tab', { name: /5 Pre-consult/ }));
+    await userEvent.click(canvas.getByRole('tab', { name: /Intake/ }));
     // One counter carries the progress; no badge repeats it. The consent section
     // starts satisfied because this cart holds no sensitive tests.
     await expect(await canvas.findByText(/1 of 8 answered/)).toBeVisible();
@@ -236,15 +236,15 @@ export const SkipIntakeWithReason: Story = {
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await userEvent.click(canvas.getByRole('tab', { name: /Pre-consult/ }));
+    await userEvent.click(canvas.getByRole('tab', { name: /Intake/ }));
     await userEvent.click(await canvas.findByRole('button', { name: 'Skip' }));
     // Default reason is preselected; recording is one deliberate action.
     await userEvent.click(canvas.getByRole('button', { name: 'Record skip' }));
     await expect(
       await canvas.findByText(/Intake skipped · Patient declined/),
     ).toBeVisible();
-    // Never a gate: the step still continues.
-    await expect(canvas.getByRole('button', { name: 'Continue' })).toBeEnabled();
+    // Never a gate: the task still continues.
+    await expect(canvas.getByRole('button', { name: 'Confirm intake' })).toBeEnabled();
     // The skip is reversible while the patient is still at the desk.
     await userEvent.click(canvas.getByRole('button', { name: 'Resume intake' }));
     await expect(await canvas.findByText(/1 of 8 answered/)).toBeVisible();
@@ -257,7 +257,7 @@ export const RescheduleTeleconsult: Story = {
   render: () => <PreConsultPlayground initial={preConsultReady('pre-reschedule')} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await userEvent.click(canvas.getByRole('tab', { name: /5 Pre-consult/ }));
+    await userEvent.click(canvas.getByRole('tab', { name: /Intake/ }));
     // Book the preselected post-TAT day.
     await userEvent.click(await canvas.findByRole('button', { name: '09:30' }));
     await expect(await canvas.findByText(/Booked · Tomorrow · 09:30/)).toBeVisible();

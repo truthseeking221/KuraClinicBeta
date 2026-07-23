@@ -18,7 +18,7 @@ export function DoctorBankingStoryFrame({
 }) {
   return (
     <AppShell
-      activeKey="earnings"
+      activeKey="balance"
       availableModes={['clinical']}
       mode="clinical"
       notificationCount={2}

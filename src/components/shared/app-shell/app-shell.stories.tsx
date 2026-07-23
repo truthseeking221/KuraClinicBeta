@@ -315,7 +315,7 @@ export const ExistingDestinationsOnly: Story = {
       'Home',
       'Results',
       'Patients',
-      'Earnings',
+      'Balance',
       'Catalog',
     ]) {
       await expect(canvas.getByRole('button', { name: label })).toBeVisible();
@@ -541,12 +541,12 @@ export const WithBadgeCounts: Story = {
   },
 };
 
-/** Person-owned Earnings appears only with self-ledger access and keeps one active nav item. */
-export const EarningsPersonGlobalScope: Story = {
+/** The doctor-owned Balance appears only with self-ledger access and keeps one active nav item. */
+export const BalanceDoctorGlobalScope: Story = {
   args: requiredArgs,
   render: () => (
     <ShellPlayground
-      activeKey="earnings"
+      activeKey="balance"
       initialMode="clinical"
       permissions={[...SHELL_DEMO_ACCESS_PROFILES['full-clinic'].permissions]}
       scopeLabel="All Kura workspaces"
@@ -555,7 +555,7 @@ export const EarningsPersonGlobalScope: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getByLabelText('Scope: All Kura workspaces')).toBeVisible();
-    await expect(canvas.getByRole('button', { name: 'Earnings' })).toHaveAttribute(
+    await expect(canvas.getByRole('button', { name: 'Balance' })).toHaveAttribute(
       'aria-current',
       'page',
     );
@@ -563,15 +563,15 @@ export const EarningsPersonGlobalScope: Story = {
   },
 };
 
-/** Delegated clinical access never exposes the person-owned Earnings destination. */
-export const EarningsHiddenWithoutSelfAccess: Story = {
+/** Delegated clinical access never exposes the doctor-owned Balance destination. */
+export const BalanceHiddenWithoutSelfAccess: Story = {
   args: requiredArgs,
   render: () => (
     <ShellPlayground initialMode="clinical" permissions={['patient.read']} />
   ),
   play: async ({ canvasElement }) => {
     await expect(
-      within(canvasElement).queryByRole('button', { name: 'Earnings' }),
+      within(canvasElement).queryByRole('button', { name: 'Balance' }),
     ).not.toBeInTheDocument();
   },
 };

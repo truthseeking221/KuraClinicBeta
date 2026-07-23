@@ -14,6 +14,11 @@ export type VerifiedPhoneLineProps = {
   verified?: boolean;
   /** Keep send destination as supporting context within the code-entry task. */
   inline?: boolean;
+  /**
+   * The identity axis, stated in words on the same tray. Without it a green
+   * check next to a verified number reads as a verified patient.
+   */
+  note?: string;
   onChange: () => void;
 };
 
@@ -25,6 +30,7 @@ export type VerifiedPhoneLineProps = {
  */
 export function VerifiedPhoneLine({
   label,
+  note,
   onChange,
   value,
   inline = false,
@@ -42,6 +48,7 @@ export function VerifiedPhoneLine({
         {inline ? <span className={styles.phoneLineInlineLabel}>{label}</span> : null}
         <span className={styles.phoneLineNumber}>{value}</span>
       </span>
+      {note ? <span className={styles.phoneLineNote}>{note}</span> : null}
       <Button
         aria-label={t(PHONE_GATE_COPY.changePhoneLabel)}
         onClick={onChange}

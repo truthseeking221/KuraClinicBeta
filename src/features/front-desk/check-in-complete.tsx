@@ -19,7 +19,6 @@ function paymentLabel(patient: FrontDeskPatient, t: Translate): string {
   const payment = patient.cart.payment;
   if (payment.status === 'confirmed') return `${t('Paid')} · ${payment.receiptId ?? ''}`.trim();
   if (payment.status === 'no-charge') return t('No charge');
-  if (payment.status === 'pending-claim') return t('Insurance claim pending');
   if (payment.status === 'deferred') return t('Pay later');
   if (payment.status === 'waiting' || payment.status === 'split-cash') {
     return t('Waiting for Bakong confirmation');

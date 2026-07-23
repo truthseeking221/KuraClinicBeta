@@ -2,14 +2,18 @@ import { describe, expect, it } from 'vitest';
 
 import { blankWalkIn, EXISTING_PATIENTS } from './demo-data';
 import {
-  canNavigateToStep,
+  canNavigateToTask,
   cartTotals,
+  checkInGate,
+  deskTasksFor,
   findCollisionCandidates,
+  linePayer,
+  payerSplit,
   paymentAfterPaidEdit,
   phonesMatch,
-  wizardGate,
+  validateIdentityFields,
 } from './logic';
-import { acceptReprice, attributionBlocker, deskNextAction, deskWaitIsActive, eligiblePrescribers, orderBlockerMessage, orderBlockers, orderDeskVisits, waitTone } from './logic';
+import { acceptReprice, attributionBlocker, callNextVisit, deskNextAction, deskWaitIsActive, drawBlockedReason, eligiblePrescribers, nowServing, orderBlockerMessage, orderBlockers, orderDeskVisits, skipVisit, waitTone } from './logic';
 import {
   collisionOverridePinValid,
   identityEditClearsAcks,
@@ -35,22 +39,34 @@ import {
 } from './logic';
 import { maxTatHours, tatDayOffset, teleconsultSpecialtyFor } from './logic';
 import { ORDER_CATALOG } from './catalog';
+import type { DeskVisit } from './types';
 
-describe('wizard gate engine', () => {
-  it('locks later steps until the current step is done', () => {
+describe('check-in gate engine', () => {
+  const TODAY = '2026-07-23';
+
+  const contactable = () => ({
+    ...blankWalkIn('gate-test', 1),
+    name: 'Bopha Kim',
+    identity: { source: 'manual' as const, lockedFields: [] },
+    dob: '1990-01-01',
+    sexAtBirth: 'Female' as const,
+    otpVerified: true,
+  });
+
+  it('locks later tasks until the current task is done', () => {
     const blank = blankWalkIn('gate-test', 1);
-    let gate = wizardGate(blank);
-    expect(gate.stepStatus[1]).toBe('active');
-    expect(gate.stepStatus[2]).toBe('locked');
+    let gate = checkInGate(blank, TODAY);
+    expect(gate.status.arrival).toBe('active');
+    expect(gate.status.patient).toBe('locked');
 
     const named = {
       ...blank,
       name: 'Bopha Kim',
       identity: { source: 'manual' as const, lockedFields: [] },
     };
-    gate = wizardGate(named);
-    expect(gate.step1Done).toBe(true);
-    expect(gate.stepStatus[2]).toBe('active');
+    gate = checkInGate(named, TODAY);
+    expect(gate.done.arrival).toBe(true);
+    expect(gate.status.patient).toBe('active');
   });
 
   it('does not deadlock a phone-only capture that has no name yet', () => {
@@ -59,31 +75,64 @@ describe('wizard gate engine', () => {
       phoneNumber: '12345678',
       identity: { source: 'manual' as const, lockedFields: [] },
     };
-    const gate = wizardGate(phoneOnly);
-    expect(gate.step1Done).toBe(true);
-    expect(gate.stepStatus[2]).toBe('active');
+    const gate = checkInGate(phoneOnly, TODAY);
+    expect(gate.done.arrival).toBe(true);
+    expect(gate.status.patient).toBe('active');
   });
 
-  it('requires a non-auto order before step 4 is done', () => {
-    const contactable = {
-      ...blankWalkIn('gate-test', 1),
-      name: 'Bopha Kim',
-      identity: { source: 'manual' as const, lockedFields: [] },
-      dob: '1990-01-01',
-      sexAtBirth: 'Female' as const,
-      otpVerified: true,
-      insuranceAcked: true,
+  it('resolves payer after orders, never before', () => {
+    const withPolicy = {
+      ...contactable(),
+      insurance: [
+        { id: 'pol-1', provider: 'Forte Insurance', policyNumber: 'FRT-1', memberName: 'Bopha Kim' },
+      ],
     };
-    let gate = wizardGate(contactable);
-    expect(gate.step3Done).toBe(true);
-    expect(gate.step4Done).toBe(false);
+    const gate = checkInGate(withPolicy, TODAY);
+    expect(gate.tasks).toEqual(['arrival', 'patient', 'orders', 'payer', 'payment']);
+    expect(gate.tasks.indexOf('payer')).toBeGreaterThan(gate.tasks.indexOf('orders'));
+    // No lines yet, so the payer task cannot be done either.
+    expect(gate.done.orders).toBe(false);
+    expect(gate.done.payer).toBe(false);
+  });
+
+  it('drops the payer task when the patient has no policy', () => {
+    expect(deskTasksFor(contactable())).toEqual(['arrival', 'patient', 'orders', 'payment']);
+  });
+
+  it('adds the pre-consult task only when a teleconsult is in the cart', () => {
+    const base = contactable();
+    expect(deskTasksFor(base)).not.toContain('preconsult');
+    const withTele = {
+      ...base,
+      cart: {
+        ...base.cart,
+        items: [
+          {
+            id: 'tele',
+            kind: 'telecon' as const,
+            name: 'Teleconsult',
+            priceMinor: '900',
+            currencyCode: 'USD' as const,
+            qty: 1,
+          },
+        ],
+      },
+    };
+    expect(deskTasksFor(withTele)).toContain('preconsult');
+  });
+
+  it('requires an order before the orders task is done', () => {
+    const base = contactable();
+    let gate = checkInGate(base, TODAY);
+    expect(gate.done.patient).toBe(true);
+    expect(gate.done.orders).toBe(false);
 
     const withOrder = {
-      ...contactable,
+      ...base,
       cart: {
-        ...contactable.cart,
+        ...base.cart,
         items: [
-          ...contactable.cart.items,
+          ...base.cart.items,
           {
             id: 'cbc',
             kind: 'lab' as const,
@@ -95,9 +144,9 @@ describe('wizard gate engine', () => {
         ],
       },
     };
-    gate = wizardGate(withOrder);
-    expect(gate.step5Done).toBe(true); // no telecon in cart → tele resolved
-    expect(gate.step6Done).toBe(false);
+    gate = checkInGate(withOrder, TODAY);
+    expect(gate.done.orders).toBe(true);
+    expect(gate.done.payment).toBe(false);
 
     const paid = {
       ...withOrder,
@@ -106,21 +155,56 @@ describe('wizard gate engine', () => {
         payment: { ...withOrder.cart.payment, status: 'confirmed' as const },
       },
     };
-    expect(wizardGate(paid).isReadyToCheckIn).toBe(true);
+    expect(checkInGate(paid, TODAY).isReadyToCheckIn).toBe(true);
   });
 
-  it('allows forward navigation only one step ahead and only when current is done', () => {
-    const contactable = {
-      ...blankWalkIn('gate-test', 1),
-      name: 'Bopha Kim',
-      identity: { source: 'manual' as const, lockedFields: [] },
-      dob: '1990-01-01',
-      sexAtBirth: 'Female' as const,
-      otpVerified: true,
-      insuranceAcked: true,
-    };
-    expect(canNavigateToStep(3, 2, wizardGate(contactable))).toBe(true);
-    expect(canNavigateToStep(5, 2, wizardGate(contactable))).toBe(false);
+  it('allows forward navigation only one task ahead and only when current is done', () => {
+    const gate = checkInGate(contactable(), TODAY);
+    expect(canNavigateToTask('orders', 'patient', gate)).toBe(true);
+    expect(canNavigateToTask('payment', 'patient', gate)).toBe(false);
+  });
+
+  it('blocks the patient task on an impossible date of birth', () => {
+    const nonsense = { ...contactable(), name: '2312312', dob: '1991-23-23' };
+    const gate = checkInGate(nonsense, TODAY);
+    expect(gate.done.patient).toBe(false);
+    expect(gate.blockers.patient).toBeDefined();
+  });
+});
+
+describe('identity field validation', () => {
+  const TODAY = '2026-07-23';
+
+  it('rejects a date the calendar does not contain', () => {
+    const issues = validateIdentityFields({ name: 'Bopha Kim', dob: '1991-23-23' }, TODAY);
+    expect(issues.map((issue) => issue.field)).toEqual(['dob']);
+  });
+
+  it('rejects a name with no letters', () => {
+    const issues = validateIdentityFields({ name: '2312312', dob: '1991-02-03' }, TODAY);
+    expect(issues.map((issue) => issue.field)).toEqual(['name']);
+  });
+
+  it('rejects a birth date in the future', () => {
+    const issues = validateIdentityFields({ name: 'Bopha Kim', dob: '2027-01-01' }, TODAY);
+    expect(issues).toHaveLength(1);
+  });
+
+  it('rejects an implausible age', () => {
+    const issues = validateIdentityFields({ name: 'Bopha Kim', dob: '1850-01-01' }, TODAY);
+    expect(issues).toHaveLength(1);
+  });
+
+  it('accepts a year alone when the patient does not know the day', () => {
+    expect(validateIdentityFields({ name: 'Bopha Kim', dob: '1991' }, TODAY)).toEqual([]);
+  });
+
+  it('accepts a real leap day', () => {
+    expect(validateIdentityFields({ name: 'Bopha Kim', dob: '1992-02-29' }, TODAY)).toEqual([]);
+  });
+
+  it('rejects a leap day in a non-leap year', () => {
+    expect(validateIdentityFields({ name: 'Bopha Kim', dob: '1991-02-29' }, TODAY)).toHaveLength(1);
   });
 });
 
@@ -260,15 +344,19 @@ describe('acceptReprice', () => {
 });
 
 describe('desk queue', () => {
-  const visit = (overrides: object) => ({
+  const visit = (overrides: Partial<DeskVisit> & { id?: string }): DeskVisit => ({
     id: 'v',
     queueNumber: 1,
+    ticket: 'W-001',
     patientName: 'A',
     arrivedLabel: '08:00',
     waitMinutes: 10,
-    stage: 'arrived' as const,
-    assurance: 'verified' as const,
-    payment: 'pending' as const,
+    arrivalClass: 'walk-in',
+    call: { state: 'waiting' },
+    stage: 'arrived',
+    assurance: 'verified',
+    contact: 'confirmed',
+    payment: 'pending',
     ...overrides,
   });
 
@@ -279,47 +367,143 @@ describe('desk queue', () => {
     expect(waitTone(61)).toBe('escalate');
   });
 
-  it('stops reception wait pressure after the visit is handed off', () => {
+  it('stops reception wait pressure once the draw starts', () => {
     expect(deskWaitIsActive(visit({ stage: 'arrived' }))).toBe(true);
     expect(deskWaitIsActive(visit({ stage: 'identity-resolved' }))).toBe(true);
-    expect(
-      deskWaitIsActive(visit({ stage: 'identity-resolved', queuedForDraw: true })),
-    ).toBe(false);
+    expect(deskWaitIsActive(visit({ stage: 'in-draw' }))).toBe(false);
     expect(deskWaitIsActive(visit({ stage: 'draw-complete' }))).toBe(false);
     expect(deskWaitIsActive(visit({ stage: 'completed' }))).toBe(false);
   });
 
   it('derives exactly one next action from independent axes', () => {
-    expect(deskNextAction(visit({ resumeStep: 4 }))).toEqual({
+    expect(deskNextAction(visit({ resumeTask: 'orders' }))).toEqual({
       kind: 'resume',
-      label: 'Resume check-in · Step 4',
+      label: 'Resume check-in',
     });
-    expect(deskNextAction(visit({ stage: 'identity-resolved' }))).toEqual({
-      kind: 'queue-draw',
-      label: 'Queue for phlebotomy',
+    expect(deskNextAction(visit({ stage: 'identity-resolved', ticket: 'W-014' }))).toEqual({
+      kind: 'call',
+      label: 'Call W-014',
     });
-    expect(deskNextAction(visit({ stage: 'identity-resolved', queuedForDraw: true }))).toBeNull();
+    expect(
+      deskNextAction(
+        visit({
+          stage: 'identity-resolved',
+          ticket: 'W-014',
+          call: { state: 'skipped', atLabel: '09:01', reason: 'no-answer' },
+        }),
+      ),
+    ).toEqual({ kind: 'recall', label: 'Recall W-014' });
     expect(deskNextAction(visit({ stage: 'draw-complete' }))).toBeNull();
     // Paid does NOT advance the visit axis — payment is never an arrival proxy.
     expect(deskNextAction(visit({ payment: 'collected' }))?.kind).toBe('resume');
   });
 
-  it('keeps unfinished check-ins first, longest wait first within a stage', () => {
-    const ordered = orderDeskVisits([
-      visit({ id: 'done', stage: 'completed', waitMinutes: 99 }),
-      visit({ id: 'short', waitMinutes: 5 }),
-      visit({ id: 'long', waitMinutes: 50 }),
-      visit({ id: 'ready', stage: 'identity-resolved', waitMinutes: 70 }),
-    ]);
-    expect(ordered.map((v) => v.id)).toEqual(['long', 'short', 'ready', 'done']);
+  it('blocks a draw until money is collected or explicitly deferred', () => {
+    const called = {
+      stage: 'identity-resolved' as const,
+      call: { state: 'called' as const, atLabel: '09:01', deskLabel: 'Bay 1' },
+    };
+    expect(drawBlockedReason(visit({ ...called, payment: 'pending' }))).not.toBeNull();
+    expect(drawBlockedReason(visit({ ...called, payment: 'waiting' }))).not.toBeNull();
+    expect(drawBlockedReason(visit({ ...called, payment: 'collected' }))).toBeNull();
+    expect(drawBlockedReason(visit({ ...called, payment: 'deferred' }))).toBeNull();
   });
 
-  it('keeps reception actions above handed-off visits', () => {
+  it('orders urgent, then appointments that are due, then walk-ins', () => {
     const ordered = orderDeskVisits([
-      visit({ id: 'handed-off', stage: 'identity-resolved', queuedForDraw: true, waitMinutes: 80 }),
-      visit({ id: 'ready', stage: 'identity-resolved', waitMinutes: 20 }),
+      visit({ id: 'walkin-long', waitMinutes: 60 }),
+      visit({
+        id: 'appointment-due',
+        arrivalClass: 'appointment',
+        appointmentMinutesAway: 5,
+        waitMinutes: 10,
+      }),
+      visit({ id: 'stat', arrivalClass: 'stat', waitMinutes: 2 }),
     ]);
-    expect(ordered.map((v) => v.id)).toEqual(['ready', 'handed-off']);
+    expect(ordered.map((v) => v.id)).toEqual(['stat', 'appointment-due', 'walkin-long']);
+  });
+
+  it('keeps an appointment that is not due behind the walk-ins already waiting', () => {
+    const ordered = orderDeskVisits([
+      visit({
+        id: 'appointment-early',
+        arrivalClass: 'appointment',
+        appointmentMinutesAway: 90,
+        waitMinutes: 2,
+      }),
+      visit({ id: 'walkin', waitMinutes: 20 }),
+    ]);
+    expect(ordered.map((v) => v.id)).toEqual(['walkin', 'appointment-early']);
+  });
+
+  it('keeps first-come-first-served inside a class', () => {
+    const ordered = orderDeskVisits([
+      visit({ id: 'short', waitMinutes: 5 }),
+      visit({ id: 'long', waitMinutes: 50 }),
+      visit({ id: 'mid', waitMinutes: 20 }),
+    ]);
+    expect(ordered.map((v) => v.id)).toEqual(['long', 'mid', 'short']);
+  });
+
+  it('orders appointments by their booked slot, not by arrival', () => {
+    const ordered = orderDeskVisits([
+      visit({
+        id: 'later-slot',
+        arrivalClass: 'appointment',
+        appointmentMinutesAway: 10,
+        waitMinutes: 40,
+      }),
+      visit({
+        id: 'earlier-slot',
+        arrivalClass: 'appointment',
+        appointmentMinutesAway: -5,
+        waitMinutes: 3,
+      }),
+    ]);
+    expect(ordered.map((v) => v.id)).toEqual(['earlier-slot', 'later-slot']);
+  });
+
+  it('sends an unanswered call behind its own class, with the reason kept', () => {
+    const skipped = skipVisit(
+      visit({ id: 'skipped', stage: 'identity-resolved', waitMinutes: 50 }),
+      'no-answer',
+      '09:01',
+    );
+    expect(skipped.call).toEqual({ state: 'skipped', atLabel: '09:01', reason: 'no-answer' });
+    const ordered = orderDeskVisits([
+      skipped,
+      visit({ id: 'waiting', stage: 'identity-resolved', waitMinutes: 10 }),
+    ]);
+    expect(ordered.map((v) => v.id)).toEqual(['waiting', 'skipped']);
+  });
+
+  it('calls the next finished check-in, and only one at a time', () => {
+    const room = [
+      visit({ id: 'unfinished', stage: 'arrived', waitMinutes: 80 }),
+      visit({ id: 'ready', stage: 'identity-resolved', waitMinutes: 30 }),
+    ];
+    expect(callNextVisit(room)?.id).toBe('ready');
+
+    const withCall = room.map((v) =>
+      v.id === 'ready'
+        ? { ...v, call: { state: 'called' as const, atLabel: '09:05', deskLabel: 'Bay 1' } }
+        : v,
+    );
+    expect(callNextVisit(withCall)).toBeNull();
+
+    const inChair = room.map((v) =>
+      v.id === 'ready' ? { ...v, stage: 'in-draw' as const } : v,
+    );
+    expect(callNextVisit(inChair)).toBeNull();
+    expect(nowServing(inChair)?.id).toBe('ready');
+  });
+
+  it('keeps the visit in the chair above the room still waiting', () => {
+    const ordered = orderDeskVisits([
+      visit({ id: 'stat', arrivalClass: 'stat', waitMinutes: 2 }),
+      visit({ id: 'drawing', stage: 'in-draw', waitMinutes: 1 }),
+    ]);
+    expect(ordered.map((v) => v.id)).toEqual(['drawing', 'stat']);
   });
 });
 
@@ -602,7 +786,6 @@ describe('check-in terminal outcome', () => {
     expect(visitPaymentFact({ ...paid.cart.payment, status: 'confirmed' })).toBe('collected');
     expect(visitPaymentFact({ ...paid.cart.payment, status: 'no-charge' })).toBe('collected');
     expect(visitPaymentFact({ ...paid.cart.payment, status: 'deferred' })).toBe('deferred');
-    expect(visitPaymentFact({ ...paid.cart.payment, status: 'pending-claim' })).toBe('deferred');
     expect(visitPaymentFact({ ...paid.cart.payment, status: 'waiting' })).toBe('waiting');
     expect(visitPaymentFact(paid.cart.payment)).toBe('pending');
   });
@@ -611,9 +794,32 @@ describe('check-in terminal outcome', () => {
     const visit = checkedInVisit(paid);
     expect(visit.stage).toBe('identity-resolved');
     expect(visit.queueNumber).toBe(27);
+    expect(visit.ticket).toBe('W-027');
     expect(visit.arrivedLabel).toBe('08:24');
-    expect(visit.assurance).toBe('verified');
     expect(visit.payment).toBe('pending');
+    expect(visit.call).toEqual({ state: 'waiting' });
+  });
+
+  it('never treats a verified phone as a checked identity', () => {
+    const visit = checkedInVisit(paid);
+    expect(visit.contact).toBe('confirmed');
+    expect(visit.assurance).toBe('unverified');
+
+    const identified = checkedInVisit({
+      ...paid,
+      identityConfirmation: {
+        method: 'open-questions' as const,
+        byLabel: 'Sothea',
+        atLabel: '08:26',
+      },
+    });
+    expect(identified.assurance).toBe('verified');
+  });
+
+  it('tickets a booking-led arrival as an appointment', () => {
+    const visit = checkedInVisit({ ...paid, boundBookingCode: 'PSC-A82Q7K3M' });
+    expect(visit.arrivalClass).toBe('appointment');
+    expect(visit.ticket).toBe('B-027');
   });
 
   it('spawns the next blank slot number after check-in', () => {
@@ -622,7 +828,72 @@ describe('check-in terminal outcome', () => {
   });
 });
 
-describe('an open check-in survives leaving the wizard', () => {
+describe('payer resolution', () => {
+  const policy = {
+    id: 'pol-1',
+    provider: 'Forte Insurance',
+    policyNumber: 'FRT-887200111',
+    memberName: 'Sok Phearom',
+    eligibility: {
+      kind: 'eligible' as const,
+      tier: 'Gold',
+      coveragePct: 80,
+      copayMinor: '500',
+      activeUntil: '2027-12-31',
+    },
+  };
+  const line = (id: string, kind: 'lab' | 'imaging', priceMinor: string) => ({
+    id,
+    kind,
+    name: id,
+    priceMinor,
+    currencyCode: 'USD' as const,
+    qty: 1,
+  });
+  const payment = {
+    status: 'idle' as const,
+    method: null,
+    tendered: '',
+    changeMinor: '0',
+    receiptId: null,
+    confirmedAt: null,
+    amountMinor: null,
+  };
+
+  it('suggests the insurer for covered kinds and the patient for the rest', () => {
+    expect(linePayer(line('cbc', 'lab', '1000'), [policy])).toBe('insurer');
+    expect(linePayer(line('xray', 'imaging', '2000'), [policy])).toBe('direct');
+  });
+
+  it('leaves every line direct when no policy is eligible', () => {
+    expect(linePayer(line('cbc', 'lab', '1000'), [])).toBe('direct');
+  });
+
+  it('honours a desk override on a single line', () => {
+    const overridden = { ...line('cbc', 'lab', '1000'), payer: 'direct' as const };
+    expect(linePayer(overridden, [policy])).toBe('direct');
+  });
+
+  it('splits a mixed basket per line and keeps the insurer share a preview', () => {
+    const cart = { items: [line('cbc', 'lab', '1000'), line('xray', 'imaging', '2000')], payment };
+    const split = payerSplit(cart, [policy]);
+    expect(split.mixed).toBe(true);
+    // 80% of the covered $10 line is previewed for the insurer.
+    expect(split.insurerPreviewMinor).toBe('800');
+    // Patient carries the $20 scan, the $2 uncovered remainder, and the $5 co-pay.
+    expect(split.patientMinor).toBe('2700');
+  });
+
+  it('charges no co-pay when nothing is assigned to the insurer', () => {
+    const cart = { items: [line('xray', 'imaging', '2000')], payment };
+    const split = payerSplit(cart, [policy]);
+    expect(split.copayMinor).toBe('0');
+    expect(split.patientMinor).toBe('2000');
+    expect(split.mixed).toBe(false);
+  });
+});
+
+describe('an open check-in survives leaving the flow', () => {
   const touched = {
     ...blankWalkIn('open', 14),
     name: 'Sok Phearom',
@@ -634,26 +905,25 @@ describe('an open check-in survives leaving the wizard', () => {
     expect(inProgressVisit(blankWalkIn('blank', 14))).toBeNull();
   });
 
-  it('carries the step the desk resumes at', () => {
+  it('carries the task the desk resumes at', () => {
     const visit = inProgressVisit(touched)!;
     expect(visit.stage).toBe('arrived');
-    // Identity captured, details not yet — resume at Review.
-    expect(visit.resumeStep).toBe(2);
+    // Identity captured, details not yet — resume on the patient task.
+    expect(visit.resumeTask).toBe('patient');
     expect(deskNextAction(visit)).toEqual({
       kind: 'resume',
-      label: 'Resume check-in · Step 2',
+      label: 'Resume check-in',
     });
   });
 
-  it('moves the resume point forward as the wizard progresses', () => {
+  it('moves the resume point forward as the flow progresses', () => {
     const contactable = {
       ...touched,
       dob: '1974-03-15',
       sexAtBirth: 'Male' as const,
       otpVerified: true,
-      insuranceAcked: true,
     };
-    expect(inProgressVisit(contactable)?.resumeStep).toBe(4);
+    expect(inProgressVisit(contactable)?.resumeTask).toBe('orders');
   });
 
   it('stops being an open check-in once it is ready to finish', () => {
@@ -662,7 +932,6 @@ describe('an open check-in survives leaving the wizard', () => {
       dob: '1974-03-15',
       sexAtBirth: 'Male' as const,
       otpVerified: true,
-      insuranceAcked: true,
       cart: {
         ...touched.cart,
         items: [
@@ -671,7 +940,7 @@ describe('an open check-in survives leaving the wizard', () => {
         payment: { ...touched.cart.payment, status: 'deferred' as const },
       },
     };
-    expect(wizardGate(ready).isReadyToCheckIn).toBe(true);
+    expect(checkInGate(ready).isReadyToCheckIn).toBe(true);
     expect(inProgressVisit(ready)).toBeNull();
   });
 });

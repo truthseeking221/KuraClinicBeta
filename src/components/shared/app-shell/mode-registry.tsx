@@ -41,8 +41,8 @@ export const MODE_REGISTRY: Record<ClinicMode, ModeDefinition> = {
           { key: 'results', label: 'Results', icon: <ChartAnalysisIcon size={ICON_SIZE} /> },
           { key: 'patients', label: 'Patients', icon: <UserMultipleIcon size={ICON_SIZE} /> },
           {
-            key: 'earnings',
-            label: 'Earnings',
+            key: 'balance',
+            label: 'Balance',
             icon: <WalletIcon size={ICON_SIZE} />,
             requiredAny: ['doctor.banking.view.self'],
           },

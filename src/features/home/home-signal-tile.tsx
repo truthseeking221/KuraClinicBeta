@@ -30,7 +30,7 @@ const SIGNAL_ICON: Record<string, ReactNode> = {
   bookings: <AppointmentIcon aria-hidden="true" size={18} />,
   patients: <UserMultipleIcon aria-hidden="true" size={18} />,
   pickup: <TestTubesIcon aria-hidden="true" size={18} />,
-  earnings: <WalletIcon aria-hidden="true" size={18} />,
+  balance: <WalletIcon aria-hidden="true" size={18} />,
 };
 
 export type HomeSignalTileProps = {

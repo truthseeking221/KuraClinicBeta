@@ -26,10 +26,10 @@
   grid-template-columns: minmax(0, 1fr) calc(var(--space-16) * 5);
 }
 
-/* The first two focused steps use the available canvas; order steps retain
- * their left reading edge beside the order rail. */
-.workspace[data-cart-rail='hidden'][data-step='1'],
-.workspace[data-cart-rail='hidden'][data-step='2'] {
+/* The two identity tasks use the available canvas; order tasks retain their
+ * left reading edge beside the order rail. */
+.workspace[data-cart-rail='hidden'][data-task='arrival'],
+.workspace[data-cart-rail='hidden'][data-task='patient'] {
   justify-content: center;
 }
 
@@ -38,23 +38,23 @@
  * reading edge so long matches can grow downward without competing with the
  * stepper or persistent action bar. */
 @media (min-width: 768px) {
-  .wizard[data-step='1'] {
+  .wizard[data-task='arrival'] {
     box-sizing: border-box;
     min-block-size: calc(100dvh - (var(--space-inset-panel) * 2));
   }
 
-  .wizard[data-step='1'] .workspace {
+  .wizard[data-task='arrival'] .workspace {
     min-block-size: 0;
     flex: 1 1 auto;
   }
 
-  .workspace[data-cart-rail='hidden'][data-step='1']:has(
+  .workspace[data-cart-rail='hidden'][data-task='arrival']:has(
       [data-identity-search-empty='true']
     ) {
     grid-template-rows: minmax(0, 1fr);
   }
 
-  .workspace[data-cart-rail='hidden'][data-step='1']:has(
+  .workspace[data-cart-rail='hidden'][data-task='arrival']:has(
       [data-identity-search-empty='true']
     ) .stepPanel {
     align-self: center;
@@ -77,6 +77,12 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
+}
+
+.stepHeading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
 }
 
 .stepTitle {
@@ -106,6 +112,15 @@
   font-size: var(--type-sm);
   line-height: var(--leading-normal);
   color: var(--color-text-secondary);
+}
+
+.confirmedLine {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  font-size: var(--type-sm);
+  color: var(--color-status-success-fg);
 }
 
 .fieldGrid {
@@ -421,8 +436,10 @@
 
 /* ── Step 1 · identity resolution ─────────────────────────── */
 
+/* The subtitle belongs to the title above it. A negative top margin pulled
+   the two into each other; the flow gap between them is the whole spacing. */
 .stepSubtitle {
-  margin: calc(var(--space-2) * -1) 0 0;
+  margin: 0;
   font-size: var(--type-sm);
   color: var(--color-text-secondary);
 }
@@ -641,6 +658,107 @@
   gap: 8px;
   flex-wrap: wrap;
   margin-top: var(--space-3, 12px);
+}
+
+/* Policies are rows in a disclosure, not objects with boxes around them. */
+.policyList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0 0 var(--space-3);
+  padding: 0;
+  list-style: none;
+}
+
+.policyRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-inline: calc(var(--space-2) * -1);
+  padding: var(--space-2);
+  border-radius: var(--radius-control-compact);
+}
+
+.policyRow:hover {
+  background: var(--color-background-secondary-hover);
+}
+
+.policyRowText {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--space-0-5);
+}
+
+/* One row per order line: the name, its price, and who carries it. */
+.payerLines {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.payerLine {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-4);
+}
+
+.payerLineText {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--space-0-5);
+}
+
+.payerLineName {
+  color: var(--color-text-primary);
+  font-size: var(--type-sm);
+}
+
+.payerLinePrice {
+  color: var(--color-text-tertiary);
+  font-size: var(--type-xs);
+}
+
+/* The two payer columns, side by side, so a mixed basket is visible at once.
+   Only the amount the desk can actually collect is loud. */
+.payerSummary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-6);
+}
+
+.payerSummarySlot {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--space-0-5);
+}
+
+.payerSummaryLabel {
+  color: var(--color-text-secondary);
+  font-size: var(--type-sm);
+}
+
+.payerSummaryAmount {
+  color: var(--color-text-primary);
+  font-size: var(--type-xl);
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-tight);
+}
+
+.payerSummaryPreview {
+  color: var(--color-text-tertiary);
+  font-size: var(--type-md);
+  font-variant-numeric: tabular-nums;
+  line-height: var(--leading-tight);
 }
 
 .policyFormActions {
@@ -954,11 +1072,6 @@
 .sectionProvenance {
   font-size: var(--type-xs);
   color: var(--color-text-tertiary);
-}
-
-.sectionAction {
-  margin-left: auto;
-  align-self: center;
 }
 
 /* Optional disclosures share one continuous surface; a divider separates the

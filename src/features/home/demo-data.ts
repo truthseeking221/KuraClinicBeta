@@ -127,16 +127,16 @@ const pickupSignal: HomeSignal = {
   action: { label: 'View orders', targetKey: 'bookings' },
 };
 
-const earningsSignal: HomeSignal = {
-  key: 'earnings',
+const balanceSignal: HomeSignal = {
+  key: 'balance',
   kind: 'info',
-  title: 'Earnings',
+  title: 'Balance',
   moneyMinor: '3450',
   currency: 'USD',
   detail: '3 orders · settles twice monthly',
   tone: 'neutral',
   state: 'ready',
-  action: { label: 'Open earnings', targetKey: 'earnings' },
+  action: { label: 'Open balance', targetKey: 'balance' },
 };
 
 const NEXT_ACTIONS: HomeData['nextActions'] = [
@@ -153,7 +153,7 @@ const BASE: HomeData = {
   scopeLabel: 'Mekong Clinic · BKK1 · 184 patients in view',
   licence: { state: 'verified' },
   freshness: { kind: 'live' },
-  signals: [resultsSignal, bookingsSignal, patientsSignal, pickupSignal, earningsSignal],
+  signals: [resultsSignal, bookingsSignal, patientsSignal, pickupSignal, balanceSignal],
   nextActions: NEXT_ACTIONS,
 };
 
@@ -182,7 +182,7 @@ export const criticalDay: HomeData = {
     bookingsSignal,
     patientsSignal,
     pickupSignal,
-    earningsSignal,
+    balanceSignal,
   ],
 };
 
@@ -201,7 +201,7 @@ export const allCaughtUp: HomeData = {
     { ...bookingsSignal, count: 0, detail: 'No bookings need attention.', workItems: [] },
     { ...patientsSignal, count: 0, detail: 'All on target.', workItems: [] },
     pickupSignal,
-    earningsSignal,
+    balanceSignal,
   ],
   nextActions: [
     { time: '16:40', label: 'Hand 8 tubes to Sok S.', meta: 'Pickup code required', targetKey: 'bookings' },
@@ -227,7 +227,7 @@ export const afternoonHandover: HomeData = {
       workItems: [],
     },
     { ...patientsSignal, count: 8 },
-    earningsSignal,
+    balanceSignal,
   ],
   closedToday: { resultLoops: 12, bookings: 9, earnedMinor: '8600' },
   nextActions: [
@@ -310,7 +310,7 @@ export const partialData: HomeData = {
     bookingsSignal,
     patientsSignal,
     pickupSignal,
-    earningsSignal,
+    balanceSignal,
   ],
 };
 
@@ -332,7 +332,7 @@ export const offline: HomeData = {
 export const soloDoctor: HomeData = {
   ...BASE,
   scopeLabel: 'Cabinet Médical Chann · 42 patients in view',
-  signals: [resultsSignal, bookingsSignal, patientsSignal, earningsSignal],
+  signals: [resultsSignal, bookingsSignal, patientsSignal, balanceSignal],
 };
 
 export const reducedCapabilities: HomeData = {
@@ -396,7 +396,7 @@ export const longContent: HomeData = {
     },
     { ...patientsSignal, count: 256, detail: 'HbA1c, LDL and BP rising in chronic cohorts' },
     { ...pickupSignal, detail: '64 ready · Sopheap Thongsavanh · urgent dispatch' },
-    { ...earningsSignal, moneyMinor: '12845000', currency: 'KHR', detail: '96 orders · settles twice monthly' },
+    { ...balanceSignal, moneyMinor: '12845000', currency: 'KHR', detail: '96 orders · settles twice monthly' },
   ],
   nextActions: [
     {

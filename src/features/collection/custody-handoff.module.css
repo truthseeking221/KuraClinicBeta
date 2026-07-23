@@ -1,0 +1,85 @@
+.handoff {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-inset-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card-surface);
+  background: var(--color-surface);
+}
+
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.title {
+  margin: 0;
+  color: var(--color-text-primary);
+  font-size: var(--type-sm);
+  font-weight: var(--weight-semibold);
+}
+
+/* The exact samples changing hands. A count would let a missing tube pass as
+   a miscount, which is how a lost sample becomes untraceable. */
+.manifest {
+  display: flex;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--space-1);
+  list-style: none;
+}
+
+.manifest li {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.mono {
+  color: var(--color-text-primary);
+  font-family: var(--font-family-mono);
+  font-size: var(--type-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+.form {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--space-3);
+}
+
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.consequence {
+  margin: 0;
+  min-width: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--type-xs);
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 639px) {
+  .form {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .footer > :global([data-slot='button']) {
+    width: 100%;
+  }
+}

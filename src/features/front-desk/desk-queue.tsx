@@ -9,7 +9,6 @@ import {
   AlertAction,
   AlertDescription,
   AlertTitle,
-  Badge,
   Button,
   Card,
   Collapsible,
@@ -17,6 +16,11 @@ import {
   CollapsibleTrigger,
   DataGrid,
   DataGridTable,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
   Item,
   ItemActions,
   ItemContent,
@@ -38,38 +42,85 @@ import {
 } from '../../components/shared';
 import { useT } from '../../components/foundations/i18n';
 
-import { deskNextAction, deskWaitIsActive, orderDeskVisits, waitTone } from './logic';
-import type { DeskQueueState, DeskVisit, VisitPaymentFact } from './types';
+import {
+  appointmentIsDue,
+  appointmentLateMinutes,
+  callNextVisit,
+  deskNextAction,
+  deskWaitIsActive,
+  nowCalled,
+  nowServing,
+  orderDeskVisits,
+  waitTone,
+} from './logic';
+import { QUEUE_SKIP_REASONS } from './types';
+import type {
+  DeskQueueState,
+  DeskVisit,
+  QueueSkipReasonCode,
+  VisitPaymentFact,
+} from './types';
 import styles from './desk-queue.module.css';
 
 type StatusTone = 'neutral' | 'success' | 'warning';
 
 const PAYMENT_META: Record<VisitPaymentFact, { label: string; tone: StatusTone }> = {
-  pending: { label: 'Payment pending', tone: 'neutral' },
+  pending: { label: 'Not collected', tone: 'warning' },
   collected: { label: 'Paid', tone: 'success' },
-  deferred: { label: 'Pay later', tone: 'warning' },
+  deferred: { label: 'Pay later', tone: 'neutral' },
   waiting: { label: 'KHQR waiting', tone: 'warning' },
 };
 
-function stageMeta(visit: DeskVisit): {
-  label: string;
-  variant: 'info' | 'success' | 'neutral';
-} {
-  if (visit.stage === 'arrived') return { label: 'Checking in', variant: 'info' };
-  if (visit.stage === 'identity-resolved' && visit.queuedForDraw) {
-    return { label: 'With phlebotomy', variant: 'neutral' };
+const SKIP_REASON_LABEL: Record<QueueSkipReasonCode, string> = Object.fromEntries(
+  QUEUE_SKIP_REASONS.map((reason) => [reason.code, reason.label]),
+) as Record<QueueSkipReasonCode, string>;
+
+/**
+ * Why this row sits where it sits. Order is a promise the desk makes to the
+ * room, so the reason for the promise is on the row, not in a tooltip.
+ */
+function positionLabel(visit: DeskVisit): { primary: string; tone?: 'urgent' } {
+  if (visit.arrivalClass === 'stat') return { primary: 'Urgent', tone: 'urgent' };
+  if (visit.arrivalClass === 'appointment') {
+    const late = appointmentLateMinutes(visit);
+    if (late > 0) return { primary: `Booked ${visit.appointmentLabel} · ${late}m late` };
+    if (!appointmentIsDue(visit)) return { primary: `Booked ${visit.appointmentLabel} · early` };
+    return { primary: `Booked ${visit.appointmentLabel}` };
   }
-  if (visit.stage === 'identity-resolved') {
-    return { label: 'Identity resolved', variant: 'success' };
+  return { primary: 'Walk-in' };
+}
+
+/**
+ * The state beyond simply waiting in line. A row that is plainly waiting says
+ * nothing here — its position already says it, and repeating it would push the
+ * rows that need attention into the noise.
+ */
+function activityLabel(visit: DeskVisit): { label: string; tone: StatusTone } | null {
+  if (visit.stage === 'arrived') return { label: 'Check-in unfinished', tone: 'warning' };
+  if (visit.stage === 'in-draw') {
+    const bay = visit.call.state === 'serving' ? ` · ${visit.call.deskLabel}` : '';
+    return { label: `In draw${bay}`, tone: 'success' };
   }
-  if (visit.stage === 'draw-complete') return { label: 'Draw complete', variant: 'neutral' };
-  return { label: 'Completed', variant: 'neutral' };
+  if (visit.stage === 'draw-complete') return { label: 'Draw complete', tone: 'neutral' };
+  if (visit.stage === 'completed') return { label: 'Completed', tone: 'neutral' };
+  if (visit.call.state === 'called') {
+    return { label: `Called ${visit.call.atLabel} · ${visit.call.deskLabel}`, tone: 'success' };
+  }
+  if (visit.call.state === 'skipped') {
+    return {
+      label: `${SKIP_REASON_LABEL[visit.call.reason]} · ${visit.call.atLabel}`,
+      tone: 'warning',
+    };
+  }
+  return null;
 }
 
 function PatientIdentity({ visit }: { visit: DeskVisit }) {
   return (
     <div className={styles.patientIdentity}>
-      <span className={styles.queueNumber}>#{visit.queueNumber}</span>
+      <span className={styles.ticket} data-class={visit.arrivalClass}>
+        {visit.ticket}
+      </span>
       <span className={styles.patientNames}>
         <span className={styles.name}>{visit.patientName}</span>
         {visit.nameKhmer ? (
@@ -82,52 +133,60 @@ function PatientIdentity({ visit }: { visit: DeskVisit }) {
   );
 }
 
-function ReceptionTiming({ visit }: { visit: DeskVisit }) {
+function QueuePosition({ visit }: { visit: DeskVisit }) {
   const t = useT();
   const isActive = deskWaitIsActive(visit);
   const tone = isActive ? waitTone(visit.waitMinutes) : 'normal';
+  const position = positionLabel(visit);
 
   return (
     <span className={styles.timing}>
-      <span
-        className={styles.timingPrimary}
-        data-tone={tone === 'normal' ? undefined : tone}
-      >
-        {isActive ? (
-          <>
-            {t('waiting')} {visit.waitMinutes}m
-            {tone === 'warn' ? ` — ${t('needs attention')}` : ''}
-            {tone === 'escalate' ? ` — ${t('escalate')}` : ''}
-          </>
-        ) : (
-          t('Handoff complete')
-        )}
+      <span className={styles.positionPrimary} data-tone={position.tone}>
+        {t(position.primary)}
       </span>
-      <span className={styles.timingSecondary}>
-        {t('Arrived')} {visit.arrivedLabel}
+      <span className={styles.timingSecondary} data-tone={tone === 'normal' ? undefined : tone}>
+        {isActive
+          ? `${t('Waiting')} ${visit.waitMinutes}m${
+              tone === 'warn' ? ` — ${t('needs attention')}` : ''
+            }${tone === 'escalate' ? ` — ${t('escalate')}` : ''}`
+          : `${t('Arrived')} ${visit.arrivedLabel}`}
       </span>
     </span>
   );
 }
 
-function StageFact({ visit }: { visit: DeskVisit }) {
+function ActivityFact({ visit }: { visit: DeskVisit }) {
   const t = useT();
-  const stage = stageMeta(visit);
-
+  const activity = activityLabel(visit);
+  if (!activity) return null;
   return (
-    <Badge appearance="outline" size="sm" variant={stage.variant}>
-      {t(stage.label)}
-    </Badge>
+    <span className={styles.fact} data-tone={activity.tone}>
+      {t(activity.label)}
+    </span>
   );
 }
 
+/**
+ * Identity assurance and contact ownership are two different truths and never
+ * collapse into one badge: a code sent to a phone proves the phone, never the
+ * person holding it.
+ */
 function IdentityFact({ visit }: { visit: DeskVisit }) {
   const t = useT();
   const verified = visit.assurance === 'verified';
-
   return (
-    <span className={styles.fact} data-tone={verified ? 'success' : 'neutral'}>
-      {verified ? t('ID verified') : t('ID unverified')}
+    <span className={styles.fact} data-tone={verified ? 'success' : 'warning'}>
+      {verified ? t('ID checked') : t('ID not checked')}
+    </span>
+  );
+}
+
+function ContactFact({ visit }: { visit: DeskVisit }) {
+  const t = useT();
+  const confirmed = visit.contact === 'confirmed';
+  return (
+    <span className={styles.fact} data-tone={confirmed ? 'success' : 'neutral'}>
+      {confirmed ? t('Confirmed') : t('Not confirmed')}
     </span>
   );
 }
@@ -135,7 +194,6 @@ function IdentityFact({ visit }: { visit: DeskVisit }) {
 function PaymentFact({ visit }: { visit: DeskVisit }) {
   const t = useT();
   const payment = PAYMENT_META[visit.payment];
-
   return (
     <span className={styles.fact} data-tone={payment.tone}>
       {t(payment.label)}
@@ -143,43 +201,107 @@ function PaymentFact({ visit }: { visit: DeskVisit }) {
   );
 }
 
-function DeskAction({
-  fullWidth = false,
-  onQueueForDraw,
-  onResumeVisit,
+type VisitActionProps = {
+  fullWidth?: boolean;
+  onCallVisit?: (visitId: string) => void;
+  onResumeVisit?: (visitId: string) => void;
+  onSkipVisit?: (visitId: string, reason: QueueSkipReasonCode) => void;
+  onStartDraw?: (visitId: string) => void;
+  visit: DeskVisit;
+};
+
+function SkipMenu({
+  onSkipVisit,
   visit,
 }: {
-  fullWidth?: boolean;
-  onQueueForDraw?: (visitId: string) => void;
-  onResumeVisit?: (visitId: string) => void;
+  onSkipVisit: (visitId: string, reason: QueueSkipReasonCode) => void;
   visit: DeskVisit;
 }) {
   const t = useT();
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button size="sm" variant="ghost">
+          {t('No answer')}
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuLabel>{t('Why is the patient not here?')}</DropdownMenuLabel>
+        {QUEUE_SKIP_REASONS.map((reason) => (
+          <DropdownMenuItem key={reason.code} onClick={() => onSkipVisit(visit.id, reason.code)}>
+            {t(reason.label)}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+/** True when this row offers the desk something to do right now. */
+function rowHasAction(visit: DeskVisit): boolean {
+  const action = deskNextAction(visit);
+  return action !== null && action.kind !== 'call';
+}
+
+function DeskAction({
+  fullWidth = false,
+  onCallVisit,
+  onResumeVisit,
+  onSkipVisit,
+  onStartDraw,
+  visit,
+}: VisitActionProps) {
+  const t = useT();
   const action = deskNextAction(visit);
 
-  if (!action) return <span className={styles.noAction}>{t('None')}</span>;
+  // A row that is simply waiting its turn offers nothing: the order is the
+  // desk's promise to the room, and one Call next button keeps it. Calling
+  // out of turn goes through a recorded skip, not a quieter button on
+  // every row.
+  if (!action || action.kind === 'call') return null;
+
+  if (action.kind === 'start-draw') {
+    return (
+      <span className={styles.actionStack} data-full={fullWidth ? '' : undefined}>
+        <span className={styles.actionRow}>
+          <Button
+            className={fullWidth ? styles.rowAction : undefined}
+            disabled={action.blockedReason !== null}
+            onClick={() => onStartDraw?.(visit.id)}
+            size="sm"
+            variant="primary"
+          >
+            {t(action.label)}
+          </Button>
+          {onSkipVisit && visit.call.state === 'called' ? (
+            <SkipMenu onSkipVisit={onSkipVisit} visit={visit} />
+          ) : null}
+        </span>
+        {action.blockedReason ? (
+          <span className={styles.actionReason}>{t(action.blockedReason)}</span>
+        ) : null}
+      </span>
+    );
+  }
 
   return (
     <Button
       className={fullWidth ? styles.rowAction : undefined}
-      onClick={() =>
-        action.kind === 'resume'
-          ? onResumeVisit?.(visit.id)
-          : onQueueForDraw?.(visit.id)
-      }
+      onClick={() => {
+        if (action.kind === 'resume') onResumeVisit?.(visit.id);
+        else onCallVisit?.(visit.id);
+      }}
       size="sm"
       variant="outline"
     >
-      {action.kind === 'resume'
-        ? `${t('Resume check-in')} · ${t('Step')} ${visit.resumeStep ?? 1}`
-        : t(action.label)}
+      {t(action.label)}
     </Button>
   );
 }
 
 type DeskVisitGridProps = Pick<
   DeskQueueProps,
-  'onQueueForDraw' | 'onResumeVisit'
+  'onCallVisit' | 'onResumeVisit' | 'onSkipVisit' | 'onStartDraw'
 > & {
   ariaLabel: string;
   loading?: boolean;
@@ -189,8 +311,10 @@ type DeskVisitGridProps = Pick<
 function DeskVisitGrid({
   ariaLabel,
   loading = false,
-  onQueueForDraw,
+  onCallVisit,
   onResumeVisit,
+  onSkipVisit,
+  onStartDraw,
   visits,
 }: DeskVisitGridProps) {
   const t = useT();
@@ -200,22 +324,22 @@ function DeskVisitGrid({
         id: 'patient',
         header: t('Patient'),
         cell: ({ row }) => <PatientIdentity visit={row.original} />,
-        size: 280,
+        size: 260,
         meta: { headerTitle: t('Patient') },
       },
       {
-        id: 'timing',
-        header: t('At reception'),
-        cell: ({ row }) => <ReceptionTiming visit={row.original} />,
-        size: 185,
-        meta: { headerTitle: t('At reception') },
+        id: 'position',
+        header: t('Position'),
+        cell: ({ row }) => <QueuePosition visit={row.original} />,
+        size: 180,
+        meta: { headerTitle: t('Position') },
       },
       {
-        id: 'stage',
-        header: t('Stage'),
-        cell: ({ row }) => <StageFact visit={row.original} />,
-        size: 160,
-        meta: { headerTitle: t('Stage') },
+        id: 'activity',
+        header: t('Activity'),
+        cell: ({ row }) => <ActivityFact visit={row.original} />,
+        size: 190,
+        meta: { headerTitle: t('Activity') },
       },
       {
         id: 'identity',
@@ -225,31 +349,40 @@ function DeskVisitGrid({
         meta: { headerTitle: t('Identity') },
       },
       {
+        id: 'contact',
+        header: t('Phone'),
+        cell: ({ row }) => <ContactFact visit={row.original} />,
+        size: 115,
+        meta: { headerTitle: t('Phone') },
+      },
+      {
         id: 'payment',
         header: t('Payment'),
         cell: ({ row }) => <PaymentFact visit={row.original} />,
-        size: 135,
+        size: 130,
         meta: { headerTitle: t('Payment') },
       },
       {
         id: 'action',
-        header: t('Desk action'),
+        header: t('Next'),
         cell: ({ row }) => (
           <DeskAction
-            onQueueForDraw={onQueueForDraw}
+            onCallVisit={onCallVisit}
             onResumeVisit={onResumeVisit}
+            onSkipVisit={onSkipVisit}
+            onStartDraw={onStartDraw}
             visit={row.original}
           />
         ),
-        size: 215,
+        size: 230,
         meta: {
           cellClassName: styles.actionCell,
           headerClassName: styles.actionHeader,
-          headerTitle: t('Desk action'),
+          headerTitle: t('Next'),
         },
       },
     ],
-    [onQueueForDraw, onResumeVisit, t],
+    [onCallVisit, onResumeVisit, onSkipVisit, onStartDraw, t],
   );
 
   // The queue order is authoritative; user sorting could bury an escalation.
@@ -277,8 +410,10 @@ function DeskVisitGrid({
 function MobileVisitList({
   ariaLabel,
   loading = false,
-  onQueueForDraw,
+  onCallVisit,
   onResumeVisit,
+  onSkipVisit,
+  onStartDraw,
   visits,
 }: DeskVisitGridProps) {
   const t = useT();
@@ -306,7 +441,9 @@ function MobileVisitList({
                 {index > 0 ? <ItemSeparator aria-hidden="true" /> : null}
                 <Item data-stage={visit.stage} role="listitem" size="sm">
                   <ItemMedia>
-                    <span className={styles.mobileQueueNumber}>#{visit.queueNumber}</span>
+                    <span className={styles.mobileTicket} data-class={visit.arrivalClass}>
+                      {visit.ticket}
+                    </span>
                   </ItemMedia>
                   <ItemContent>
                     <ItemTitle className={styles.nameLine}>
@@ -318,20 +455,23 @@ function MobileVisitList({
                       ) : null}
                     </ItemTitle>
                     <ItemDescription>
-                      <ReceptionTiming visit={visit} />
+                      <QueuePosition visit={visit} />
                     </ItemDescription>
                     <span className={styles.mobileFacts}>
-                      <StageFact visit={visit} />
+                      <ActivityFact visit={visit} />
                       <IdentityFact visit={visit} />
+                      <ContactFact visit={visit} />
                       <PaymentFact visit={visit} />
                     </span>
                   </ItemContent>
-                  {deskNextAction(visit) ? (
+                  {rowHasAction(visit) ? (
                     <ItemActions className={styles.mobileActions}>
                       <DeskAction
                         fullWidth
-                        onQueueForDraw={onQueueForDraw}
+                        onCallVisit={onCallVisit}
                         onResumeVisit={onResumeVisit}
+                        onSkipVisit={onSkipVisit}
+                        onStartDraw={onStartDraw}
                         visit={visit}
                       />
                     </ItemActions>
@@ -358,13 +498,55 @@ function DeskVisitWorklist(props: DeskVisitGridProps) {
   );
 }
 
+/**
+ * What the waiting-room screen is showing right now. The desk and the room
+ * must never disagree about which ticket was called, so the same derived fact
+ * drives both.
+ */
+function NowServingStrip({ visits }: { visits: DeskVisit[] }) {
+  const t = useT();
+  const serving = nowServing(visits);
+  const called = nowCalled(visits);
+  if (!serving && !called) return null;
+
+  return (
+    <Card aria-label={t('Now serving')} className={styles.nowServing}>
+      {called ? (
+        <div className={styles.nowServingSlot}>
+          <span className={styles.nowServingLabel}>{t('Now calling')}</span>
+          <span className={styles.nowServingTicket}>{called.ticket}</span>
+          <span className={styles.nowServingMeta}>
+            {called.patientName} ·{' '}
+            {called.call.state === 'called' ? called.call.deskLabel : ''}
+          </span>
+        </div>
+      ) : null}
+      {serving ? (
+        <div className={styles.nowServingSlot}>
+          <span className={styles.nowServingLabel}>{t('In the chair')}</span>
+          <span className={styles.nowServingTicket}>{serving.ticket}</span>
+          <span className={styles.nowServingMeta}>
+            {serving.patientName} ·{' '}
+            {serving.call.state === 'serving' ? serving.call.deskLabel : ''}
+          </span>
+        </div>
+      ) : null}
+    </Card>
+  );
+}
+
 export type DeskQueueProps = {
   visits: DeskVisit[];
   state?: DeskQueueState;
   /** Shown with stale/offline states: when the list was last synced. */
   asOf?: string;
   onResumeVisit?: (visitId: string) => void;
-  onQueueForDraw?: (visitId: string) => void;
+  /** Call one ticket to the desk. The desk calls one patient at a time. */
+  onCallVisit?: (visitId: string) => void;
+  /** Record a call that went unanswered, with its reason. */
+  onSkipVisit?: (visitId: string, reason: QueueSkipReasonCode) => void;
+  /** The same staffer starts the draw — no handoff to another role. */
+  onStartDraw?: (visitId: string) => void;
   onNewWalkIn?: () => void;
   onRetry?: () => void;
   onRefresh?: () => void;
@@ -375,15 +557,20 @@ export type DeskQueueProps = {
  * the grid anatomy; Kura owns the queue order, lifecycle facts, actions,
  * responsive item composition, state coverage, and visual tokens.
  *
+ * One PSC staffer works this list end to end: receive, call, draw. Nothing
+ * here hands a visit to a second role.
+ *
  * PROTOTYPE SURFACE: no queue/visit engine exists in kura-platform today.
  */
 export function DeskQueue({
   asOf,
+  onCallVisit,
   onNewWalkIn,
-  onQueueForDraw,
   onRefresh,
   onResumeVisit,
   onRetry,
+  onSkipVisit,
+  onStartDraw,
   state = 'ready',
   visits,
 }: DeskQueueProps) {
@@ -391,6 +578,8 @@ export function DeskQueue({
   const ordered = orderDeskVisits(visits);
   const active = ordered.filter((visit) => visit.stage !== 'completed');
   const completed = ordered.filter((visit) => visit.stage === 'completed');
+  const next = callNextVisit(visits);
+  const blocked = nowCalled(visits) ?? nowServing(visits);
 
   if (state === 'denied') {
     return (
@@ -409,6 +598,8 @@ export function DeskQueue({
     );
   }
 
+  const callable = state === 'ready' || state === 'stale';
+
   return (
     <section aria-label={t('Arrivals')} className={styles.queue}>
       <header className={styles.header}>
@@ -417,15 +608,35 @@ export function DeskQueue({
           <p className={styles.subtitle}>
             {state === 'loading'
               ? t('Loading today’s visits…')
-              : `${active.length} ${t('in progress')} · ${completed.length} ${t('completed today')}`}
+              : `${active.length} ${t('in the room')} · ${completed.length} ${t('completed today')}`}
           </p>
         </div>
-        {onNewWalkIn ? (
-          <Button onClick={onNewWalkIn} variant="primary">
-            <UserAddIcon aria-hidden="true" size={16} />
-            {t('New walk-in')}
-          </Button>
-        ) : null}
+        <div className={styles.headerActions}>
+          {onNewWalkIn ? (
+            <Button onClick={onNewWalkIn} variant="outline">
+              <UserAddIcon aria-hidden="true" size={16} />
+              {t('New walk-in')}
+            </Button>
+          ) : null}
+          {onCallVisit ? (
+            <span className={styles.callNext}>
+              <Button
+                disabled={!callable || next === null}
+                onClick={() => next && onCallVisit(next.id)}
+                variant="primary"
+              >
+                {next ? `${t('Call next')} · ${next.ticket}` : t('Call next')}
+              </Button>
+              {callable && next === null ? (
+                <span className={styles.callNextReason}>
+                  {blocked
+                    ? `${t('Finish with')} ${blocked.ticket} ${t('first')}`
+                    : t('Nobody is ready to be called')}
+                </span>
+              ) : null}
+            </span>
+          ) : null}
+        </div>
       </header>
 
       {state === 'offline' ? (
@@ -468,12 +679,16 @@ export function DeskQueue({
         </Alert>
       ) : null}
 
+      {state !== 'loading' && state !== 'error' ? <NowServingStrip visits={visits} /> : null}
+
       {state === 'loading' ? (
         <DeskVisitWorklist
           ariaLabel={t('Loading visits')}
           loading
-          onQueueForDraw={onQueueForDraw}
+          onCallVisit={onCallVisit}
           onResumeVisit={onResumeVisit}
+          onSkipVisit={onSkipVisit}
+          onStartDraw={onStartDraw}
           visits={[]}
         />
       ) : null}
@@ -501,8 +716,10 @@ export function DeskQueue({
           {active.length > 0 ? (
             <DeskVisitWorklist
               ariaLabel={t('Active visits')}
-              onQueueForDraw={onQueueForDraw}
+              onCallVisit={onCallVisit}
               onResumeVisit={onResumeVisit}
+              onSkipVisit={onSkipVisit}
+              onStartDraw={onStartDraw}
               visits={active}
             />
           ) : (
@@ -517,8 +734,10 @@ export function DeskQueue({
               <CollapsibleContent className={styles.completedContent}>
                 <DeskVisitWorklist
                   ariaLabel={t('Completed visits')}
-                  onQueueForDraw={onQueueForDraw}
+                  onCallVisit={onCallVisit}
                   onResumeVisit={onResumeVisit}
+                  onSkipVisit={onSkipVisit}
+                  onStartDraw={onStartDraw}
                   visits={completed}
                 />
               </CollapsibleContent>

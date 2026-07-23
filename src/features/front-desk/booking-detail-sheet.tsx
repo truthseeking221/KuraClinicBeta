@@ -135,8 +135,13 @@ export function BookingDetailSheet({
                   <p className={styles.patientNameKhmer} lang="km">{patient.nameKhmer}</p>
                 ) : null}
               </div>
+              {/* The identity axis, named. A bare "Verified" beside a name
+                  reads as the whole record being confirmed, including the
+                  phone below it, which is a separate fact. */}
               <Badge size="sm" variant={patient.assurance === 'verified' ? 'success' : 'warning'}>
-                {patient.assurance === 'verified' ? t('Verified') : t('Unverified')}
+                {patient.assurance === 'verified'
+                  ? t('Identity verified')
+                  : t('Identity provisional')}
               </Badge>
             </div>
             {patient.phone ? <p className={styles.patientMeta}>{patient.phone}</p> : null}

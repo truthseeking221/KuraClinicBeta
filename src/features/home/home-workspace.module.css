@@ -39,8 +39,6 @@
 .bookingDescription,
 .licenceTitle,
 .licenceDescription,
-.demoTitle,
-.demoDescription,
 .bookingNote {
   margin: 0;
 }
@@ -53,8 +51,7 @@
   text-wrap: balance;
 }
 
-.licenceTitle,
-.demoTitle {
+.licenceTitle {
   color: var(--color-text-primary);
   font-size: var(--type-lg);
   font-weight: var(--weight-semibold);
@@ -62,8 +59,7 @@
 }
 
 .bookingDescription,
-.licenceDescription,
-.demoDescription {
+.licenceDescription {
   max-width: 36rem;
   color: var(--color-text-secondary);
   font-size: var(--type-base);
@@ -74,7 +70,7 @@
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: var(--space-4);
+  gap: var(--space-3);
 }
 
 .bookingNote {
@@ -83,22 +79,15 @@
   line-height: var(--leading-normal);
 }
 
-.setupTray {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  padding: var(--space-4);
-}
-
-/* The setup tray groups optional follow-up work. Its white tiles are the
-   intentional second surface level: each has its own context and action. */
-.demoPatient,
+/* One tray, no tiles inside it. Setup work the doctor can finish later is a
+   distinct functional region; a single item in that region needs no second
+   surface drawn around it. */
 .licenceSetup {
   display: grid;
   grid-template-columns: 4rem minmax(0, 1fr) auto;
   align-items: center;
   gap: var(--space-4);
-  padding: var(--space-4);
+  padding: var(--space-inset-card);
 }
 
 .firstUseIllustration {
@@ -106,13 +95,6 @@
   width: 4rem;
   height: 4rem;
   object-fit: contain;
-}
-
-.demoCopy {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-  gap: var(--space-2);
 }
 
 .licenceCopy {
@@ -280,7 +262,6 @@ a.dayRow:hover .dayChevron {
     gap: var(--space-6);
   }
 
-  .demoPatient,
   .licenceSetup {
     grid-template-columns: 3.5rem minmax(0, 1fr);
     align-items: start;
@@ -293,7 +274,6 @@ a.dayRow:hover .dayChevron {
     height: 3.5rem;
   }
 
-  .demoPatient > :global([data-slot="button"]),
   .licenceSetup > :global([data-slot="button"]) {
     grid-column: 2;
     justify-self: start;
@@ -314,8 +294,7 @@ a.dayRow:hover .dayChevron {
 
   /* Keep the title paired with its illustration, then give the explanation
      and action the full measure. A narrow content column would otherwise
-     make the setup tiles harder to scan and clip their actions. */
-  .demoPatient,
+     make the setup region harder to scan and clip its action. */
   .licenceSetup {
     grid-template-areas:
       "illustration title"
@@ -326,7 +305,6 @@ a.dayRow:hover .dayChevron {
     gap: var(--space-3);
   }
 
-  .demoCopy,
   .licenceCopy {
     display: contents;
   }
@@ -337,18 +315,15 @@ a.dayRow:hover .dayChevron {
     height: 3rem;
   }
 
-  .demoTitle,
   .licenceHeading {
     grid-area: title;
     align-self: center;
   }
 
-  .demoDescription,
   .licenceDescription {
     grid-area: description;
   }
 
-  .demoPatient > :global([data-slot="button"]),
   .licenceSetup > :global([data-slot="button"]) {
     grid-column: 1 / -1;
     grid-row: 3;

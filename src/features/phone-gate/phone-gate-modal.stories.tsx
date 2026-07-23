@@ -20,12 +20,13 @@ const meta = {
         decision: 'COMPOSE',
         owner: 'src/features/phone-gate',
         evidence:
-          'Built against kura-platform docs/design/phone-gate/phone-gate-ui-spec.md (canonical, Figma 742:52132) with clinic-phone-gate-mf as the behavior reference. Composed from Dialog (header/body/footer, mobile full presentation, built-in close), PhoneInput, OtpInput, RadioGroup, Input, Alert, Button, AlertDialog; spec pixel values mapped to Kura tokens.',
+          'Built against kura-platform docs/design/phone-gate/phone-gate-ui-spec.md (canonical, Figma 742:52132) with clinic-phone-gate-mf as the behavior reference. Composed from Dialog (header/body/footer, mobile full presentation, built-in close), PhoneInput, OtpInput, DateInput, Checkbox, RadioGroup, Input, Alert, Button, AlertDialog; spec pixel values mapped to Kura tokens.',
         exclusions: [
           'recentPatients chooser (reference-MF addition outside the canonical modal spec scope)',
           'Per-digit “Digit 1 of 6” inputs (OtpInput renders one logical input with equivalent autofill/paste/SR behavior)',
           'Persistent BEFORE YOU SEND pane (identical in every state; its one safety fact now appears on the two steps that bind a person)',
           'Per-candidate Choose buttons (replaced by one radio set and one primary action so a shared phone needs a deliberate selection)',
+          'In-modal success receipt (the surface behind already states the provisional identity and the PSC step; a receipt would repeat it behind an extra click)',
         ],
       },
       journeys: [
@@ -33,12 +34,13 @@ const meta = {
         'phone-gate-shared-phone-select',
         'phone-gate-different-patient',
         'phone-gate-no-match-temporary',
+        'phone-gate-duplicate-preflight',
       ],
     },
     docs: {
       description: {
         component:
-          'Safety checkpoint before a booking code is sent: verify a Cambodia phone by OTP, detect an existing patient, attach it or create a provisional patient. One column, one question per step; the destination stays inline with Change on the code step, while the checked number remains visible afterward. “Phone checked” never claims identity. PSC confirms it later. Demo scaffolding: code 123456; 070 123 496 → known match (Sokha Chann); 070 123 497 → shared phone (three candidates); numbers ending 000 → lookup error; ending 999 → OTP rate limit; anything else → no match.',
+          'Safety checkpoint before a booking code is sent: verify a Cambodia phone by OTP, detect an existing patient, attach it or add a new one. Two axes stay separate everywhere — the phone is verified by SMS, the patient identity is not confirmed until PSC sees the person. A phone that matches nothing is not proof the patient is new, so adding one runs a demographic duplicate check first and creates nothing while that check is unresolved. Demo scaffolding: code 123456; 070 123 496 → known match (Sokha Chann); 070 123 497 → shared phone (three candidates); numbers ending 000 → lookup error; ending 999 → OTP rate limit; anything else → no match. Duplicate preflight keys off the entered name: “Chann” → possible match, “Khem” → concurrent create, “Offline” → check unavailable, anything else → clear.',
       },
     },
   },
@@ -46,6 +48,7 @@ const meta = {
     open: true,
     onClose: fn(),
     onOutcome: fn(),
+    duplicateCheckDelayMs: 0,
   },
 } satisfies Meta<typeof PhoneGateModal>;
 
@@ -54,6 +57,17 @@ type Story = StoryObj<typeof meta>;
 
 function body(canvasElement: HTMLElement) {
   return within(canvasElement.ownerDocument.body);
+}
+
+/** Fills the three identity fields with an exact date of birth. */
+async function fillIdentity(
+  screen: ReturnType<typeof body>,
+  name = 'Pierre',
+  dob = '19940912',
+) {
+  await userEvent.type(await screen.findByLabelText(/Full name/), name);
+  await userEvent.type(screen.getByLabelText(/Date of birth/), dob);
+  await userEvent.click(screen.getByRole('radio', { name: 'Female' }));
 }
 
 /** State 1 — enter phone: the title names the step, Send SMS code validates. */
@@ -98,7 +112,18 @@ export const VerifyOtp: Story = {
   },
 };
 
-/** State 3 — known match: the checked number stays on screen beside the record. */
+/** Verification pends on the action, so the step never blanks out. */
+export const VerifyingOtp: Story = {
+  args: { initial: { state: 'verifyingOtp', phone: '+85599111222' } },
+  play: async ({ canvasElement }) => {
+    const screen = body(canvasElement);
+    const pending = await screen.findByRole('button', { name: 'Checking code…' });
+    await expect(pending).toHaveAttribute('aria-busy', 'true');
+    await expect(screen.getByRole('textbox', { name: 'SMS code' })).toBeVisible();
+  },
+};
+
+/** State 3 — known match: what SMS proved is named, and it is not the person. */
 export const KnownMatch: Story = {
   args: { initial: { state: 'knownMatch', phone: '+85570123496' } },
   play: async ({ canvasElement, args }) => {
@@ -106,7 +131,7 @@ export const KnownMatch: Story = {
     await expect(
       await screen.findByRole('heading', { name: 'Is this the patient?' }),
     ).toBeVisible();
-    await expect(screen.getByText('Phone checked')).toBeVisible();
+    await expect(screen.getByText('Phone verified by SMS')).toBeVisible();
     await expect(screen.getByText('070 123 496')).toBeVisible();
     await expect(
       screen.getByText('SMS confirms the number, not who is being tested.'),
@@ -117,7 +142,7 @@ export const KnownMatch: Story = {
     await userEvent.click(screen.getByRole('button', { name: 'Use this patient' }));
     await waitFor(() =>
       expect(args.onOutcome).toHaveBeenCalledWith(
-        expect.objectContaining({ kind: 'existing' }),
+        expect.objectContaining({ kind: 'existing', matchReason: 'verified_phone' }),
       ),
     );
     await expect(args.onClose).toHaveBeenCalledWith('completed');
@@ -165,73 +190,245 @@ export const SharedPhoneMatches: Story = {
   },
 };
 
-/** Verification pends on the action, so the step never blanks out. */
-export const VerifyingOtp: Story = {
-  args: { initial: { state: 'verifyingOtp', phone: '+85599111222' } },
-  play: async ({ canvasElement }) => {
-    const screen = body(canvasElement);
-    const pending = await screen.findByRole('button', { name: 'Checking code…' });
-    await expect(pending).toHaveAttribute('aria-busy', 'true');
-    await expect(screen.getByRole('textbox', { name: 'SMS code' })).toBeVisible();
-  },
-};
-
-/** State 4 — different patient: warning banner, audit-flagged creation. */
-export const DifferentPatient: Story = {
-  args: { initial: { state: 'knownMatch', phone: '+85570123496' }, createDelayMs: 0 },
-  play: async ({ canvasElement, args }) => {
-    const screen = body(canvasElement);
-    await userEvent.click(await screen.findByRole('button', { name: 'Someone else' }));
-    await expect(await screen.findByText('This may be a different patient')).toBeVisible();
-    await expect(screen.getByText('070 123 496')).toBeVisible();
-
-    await userEvent.click(
-      screen.getByRole('button', { name: 'Create provisional patient' }),
-    );
-    await expect(await screen.findByText('Enter the full name.')).toBeVisible();
-    await expect(screen.getByText('Enter a date of birth or estimated age.')).toBeVisible();
-    await expect(screen.getByText('Select a sex.')).toBeVisible();
-
-    await userEvent.type(screen.getByLabelText(/Full name/), 'Pierre');
-    await userEvent.type(screen.getByLabelText(/Date of birth or age/), '32');
-    await userEvent.click(screen.getByRole('radio', { name: 'Female' }));
-    await userEvent.click(
-      screen.getByRole('button', { name: 'Create provisional patient' }),
-    );
-
-    await waitFor(() =>
-      expect(args.onOutcome).toHaveBeenCalledWith(
-        expect.objectContaining({ kind: 'temporary', knownPhoneOverride: true }),
-      ),
-    );
-  },
-};
-
-/** State 5 — no match: the fact is a description line, not a tinted banner. */
+/**
+ * State 5 — no match by phone. The title names the goal, the description says
+ * what was and was not established, and the action stays unavailable until the
+ * three identity answers exist.
+ */
 export const NoMatch: Story = {
   args: { initial: { state: 'noMatch', phone: '+85599111222' }, createDelayMs: 0 },
   play: async ({ canvasElement, args }) => {
     const screen = body(canvasElement);
     await expect(
-      await screen.findByRole('heading', { name: 'Patient details' }),
+      await screen.findByRole('heading', { name: 'Add a new patient' }),
     ).toBeVisible();
+    await expect(screen.getByText(/No patient matched this phone/)).toBeVisible();
+    await expect(screen.getByText('Phone verified by SMS')).toBeVisible();
+    await expect(screen.getByText('Patient identity not yet confirmed')).toBeVisible();
+
+    const add = screen.getByRole('button', { name: 'Create provisional patient' });
+    await expect(add).toBeDisabled();
+    await expect(screen.getByText('Complete the required fields to continue.')).toBeVisible();
+
+    await fillIdentity(screen);
+    await expect(add).toBeEnabled();
     await expect(
-      screen.getByText('No patient matches this phone number. PSC confirms identity.'),
-    ).toBeVisible();
-    await expect(
-      screen.getByText('Use age only if date of birth is unknown.'),
+      screen.getByText(
+        'Creates a provisional record. PSC staff confirm identity before collection.',
+      ),
     ).toBeVisible();
 
-    await userEvent.type(screen.getByLabelText(/Full name/), 'Pierre');
-    await userEvent.type(screen.getByLabelText(/Date of birth or age/), '32');
-    await userEvent.click(screen.getByRole('radio', { name: 'Female' }));
-    await userEvent.click(
-      screen.getByRole('button', { name: 'Create provisional patient' }),
+    await userEvent.click(add);
+    await waitFor(() =>
+      expect(args.onOutcome).toHaveBeenCalledWith(
+        expect.objectContaining({
+          kind: 'temporary',
+          knownPhoneOverride: false,
+          duplicateOverride: false,
+          draft: expect.objectContaining({ dob: '1994-09-12', dobUnknown: false }),
+        }),
+      ),
     );
+  },
+};
+
+/**
+ * An unknown date of birth is recorded as an estimated age, never as a
+ * fabricated date: the age field appears only on that declaration, and the
+ * outcome carries no `dob`.
+ */
+export const EstimatedAge: Story = {
+  args: { initial: { state: 'noMatch', phone: '+85599111222' }, createDelayMs: 0 },
+  play: async ({ canvasElement, args }) => {
+    const screen = body(canvasElement);
+    await expect(await screen.findByLabelText(/Date of birth/)).toBeVisible();
+    await expect(screen.queryByLabelText(/Age in years/)).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('checkbox', { name: /Exact date is unknown/ }));
+    await expect(await screen.findByLabelText(/Age in years/)).toBeVisible();
+    await expect(screen.queryByLabelText(/Date of birth/)).not.toBeInTheDocument();
+    await expect(screen.getByText('Kura records this as an estimated age.')).toBeVisible();
+
+    await userEvent.type(screen.getByLabelText(/Full name/), 'Pierre');
+    await userEvent.type(screen.getByLabelText(/Age in years/), '32');
+    await userEvent.click(screen.getByRole('radio', { name: 'Female' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Create provisional patient' }));
 
     await waitFor(() =>
       expect(args.onOutcome).toHaveBeenCalledWith(
-        expect.objectContaining({ kind: 'temporary', knownPhoneOverride: false }),
+        expect.objectContaining({
+          kind: 'temporary',
+          draft: expect.objectContaining({ dob: '', dobUnknown: true, ageYears: '32' }),
+        }),
+      ),
+    );
+  },
+};
+
+/** Filled but wrong: each message lands on the field that carries the problem. */
+export const InvalidDetails: Story = {
+  args: { initial: { state: 'noMatch', phone: '+85599111222' } },
+  play: async ({ canvasElement, args }) => {
+    const screen = body(canvasElement);
+    await userEvent.type(await screen.findByLabelText(/Full name/), 'Pierre');
+    await userEvent.type(screen.getByLabelText(/Date of birth/), '19940230');
+    await userEvent.click(screen.getByRole('radio', { name: 'Female' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Create provisional patient' }));
+
+    await expect(await screen.findByText('Enter a real date, as YYYY-MM-DD.')).toBeVisible();
+    await expect(args.onOutcome).not.toHaveBeenCalled();
+  },
+};
+
+/** The preflight runs on the action, with the entered details still on screen. */
+export const CheckingDuplicates: Story = {
+  args: {
+    initial: { state: 'noMatch', phone: '+85599111222' },
+    duplicateCheckDelayMs: 60000,
+  },
+  play: async ({ canvasElement }) => {
+    const screen = body(canvasElement);
+    await fillIdentity(screen);
+    await userEvent.click(screen.getByRole('button', { name: 'Create provisional patient' }));
+
+    const pending = await screen.findByRole('button', { name: 'Checking patient records…' });
+    await expect(pending).toHaveAttribute('aria-busy', 'true');
+    await expect(screen.getByDisplayValue('Pierre')).toBeVisible();
+    await expect(screen.getByLabelText(/Full name/)).toBeDisabled();
+  },
+};
+
+/**
+ * A phone that matched nothing is not proof the patient is new. Details that
+ * resemble an existing record stop the create and offer that record first.
+ */
+export const PossibleDuplicateFound: Story = {
+  args: { initial: { state: 'noMatch', phone: '+85599111222' }, createDelayMs: 0 },
+  play: async ({ canvasElement, args }) => {
+    const screen = body(canvasElement);
+    await fillIdentity(screen, 'Sokha Chann');
+    await userEvent.click(screen.getByRole('button', { name: 'Create provisional patient' }));
+
+    await expect(
+      await screen.findByRole('heading', { name: 'Possible patient found' }),
+    ).toBeVisible();
+    await expect(
+      screen.getByText('Review the match before creating a new record.'),
+    ).toBeVisible();
+    await expect(args.onOutcome).not.toHaveBeenCalled();
+
+    await userEvent.click(screen.getByRole('radio', { name: 'Sokha Chann' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Use selected patient' }));
+    await waitFor(() =>
+      expect(args.onOutcome).toHaveBeenCalledWith(
+        expect.objectContaining({ kind: 'existing', matchReason: 'demographic_match' }),
+      ),
+    );
+  },
+};
+
+/** Rejecting the candidates still creates — recorded as a duplicate override. */
+export const DuplicateOverride: Story = {
+  args: {
+    initial: { state: 'possibleDuplicates', phone: '+85599111222' },
+    createDelayMs: 0,
+  },
+  play: async ({ canvasElement, args }) => {
+    const screen = body(canvasElement);
+    await userEvent.click(await screen.findByRole('button', { name: 'None of these' }));
+    await waitFor(() =>
+      expect(args.onOutcome).toHaveBeenCalledWith(
+        expect.objectContaining({ kind: 'temporary', duplicateOverride: true }),
+      ),
+    );
+  },
+};
+
+/** Someone else created the record first: review it, never duplicate it. */
+export const ConcurrentPatientAdded: Story = {
+  args: { initial: { state: 'noMatch', phone: '+85599111222' } },
+  play: async ({ canvasElement, args }) => {
+    const screen = body(canvasElement);
+    await fillIdentity(screen, 'Rithy Khem');
+    await userEvent.click(screen.getByRole('button', { name: 'Create provisional patient' }));
+
+    await expect(
+      await screen.findByRole('heading', { name: 'A matching patient was just added' }),
+    ).toBeVisible();
+    await expect(screen.getByText(/Added by someone else while you were entering these details/)).toBeVisible();
+    await expect(
+      screen.queryByRole('button', { name: 'Create provisional patient' }),
+    ).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Review patient' }));
+    await waitFor(() =>
+      expect(args.onOutcome).toHaveBeenCalledWith(
+        expect.objectContaining({ kind: 'existing', matchReason: 'concurrent_create' }),
+      ),
+    );
+  },
+};
+
+/** The check failed, so nothing was created — and the modal says exactly that. */
+export const DuplicateCheckUnavailable: Story = {
+  args: { initial: { state: 'noMatch', phone: '+85599111222' }, createDelayMs: 0 },
+  play: async ({ canvasElement, args }) => {
+    const screen = body(canvasElement);
+    await fillIdentity(screen, 'Offline Test');
+    await userEvent.click(screen.getByRole('button', { name: 'Create provisional patient' }));
+
+    await expect(
+      await screen.findByText('Couldn’t check for existing patients'),
+    ).toBeVisible();
+    await expect(
+      screen.getByText('No patient record was created. Check the connection and try again.'),
+    ).toBeVisible();
+    await expect(args.onOutcome).not.toHaveBeenCalled();
+
+    // Retrying blind is not recovery: the details stay on screen and editable,
+    // and the retry runs the same validated path as the primary action.
+    await expect(screen.getByDisplayValue('Offline Test')).toBeEnabled();
+    await userEvent.clear(screen.getByLabelText(/Full name/));
+    await userEvent.type(screen.getByLabelText(/Full name/), 'Pierre');
+    await userEvent.click(screen.getByRole('button', { name: 'Try again' }));
+
+    await waitFor(() =>
+      expect(args.onOutcome).toHaveBeenCalledWith(
+        expect.objectContaining({ kind: 'temporary' }),
+      ),
+    );
+  },
+};
+
+/**
+ * State 4 — the phone already belongs to someone. Rejecting that record is a
+ * declaration, not a side effect of filling the form below it.
+ */
+export const DifferentPatient: Story = {
+  args: { initial: { state: 'knownMatch', phone: '+85570123496' }, createDelayMs: 0 },
+  play: async ({ canvasElement, args }) => {
+    const screen = body(canvasElement);
+    await userEvent.click(await screen.findByRole('button', { name: 'Someone else' }));
+    await expect(
+      await screen.findByText('This phone is already linked to another Kura patient'),
+    ).toBeVisible();
+    await expect(screen.getByText('070 123 496')).toBeVisible();
+
+    await fillIdentity(screen);
+    await userEvent.click(screen.getByRole('button', { name: 'Create provisional patient' }));
+    await expect(
+      await screen.findByText('Confirm this is a different person to continue.'),
+    ).toBeVisible();
+    await expect(args.onOutcome).not.toHaveBeenCalled();
+
+    await userEvent.click(
+      screen.getByRole('checkbox', { name: /none of the matched patients/ }),
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'Create provisional patient' }));
+
+    await waitFor(() =>
+      expect(args.onOutcome).toHaveBeenCalledWith(
+        expect.objectContaining({ kind: 'temporary', knownPhoneOverride: true }),
       ),
     );
   },
@@ -251,19 +448,15 @@ export const ChangeVerifiedPhone: Story = {
   },
 };
 
-/** Submitting — the form stays put; the action carries the pending state. */
-export const SubmittingTemporaryPatient: Story = {
+/** Creating — the form stays put; the action carries the pending state. */
+export const CreatingPatient: Story = {
   args: { initial: { state: 'noMatch', phone: '+85599111222' }, createDelayMs: 60000 },
   play: async ({ canvasElement }) => {
     const screen = body(canvasElement);
-    await userEvent.type(await screen.findByLabelText(/Full name/), 'Pierre');
-    await userEvent.type(screen.getByLabelText(/Date of birth or age/), '32');
-    await userEvent.click(screen.getByRole('radio', { name: 'Female' }));
-    await userEvent.click(
-      screen.getByRole('button', { name: 'Create provisional patient' }),
-    );
+    await fillIdentity(screen);
+    await userEvent.click(screen.getByRole('button', { name: 'Create provisional patient' }));
 
-    const pending = await screen.findByRole('button', { name: 'Creating provisional patient…' });
+    const pending = await screen.findByRole('button', { name: 'Adding the patient…' });
     await expect(pending).toHaveAttribute('aria-busy', 'true');
     await expect(screen.getByDisplayValue('Pierre')).toBeVisible();
   },
@@ -320,8 +513,8 @@ export const UnsavedDataGuard: Story = {
   },
 };
 
-/** Full journey — fresh phone to provisional patient, end to end. */
-export const FullJourneyTemporary: Story = {
+/** Full journey — fresh phone through the duplicate check to a new patient. */
+export const FullJourneyNewPatient: Story = {
   args: { createDelayMs: 0 },
   play: async ({ canvasElement, args }) => {
     const screen = body(canvasElement);
@@ -334,14 +527,10 @@ export const FullJourneyTemporary: Story = {
     await userEvent.click(screen.getByRole('button', { name: 'Verify code' }));
 
     await expect(
-      await screen.findByText('No patient matches this phone number. PSC confirms identity.'),
+      await screen.findByText(/No patient matched this phone/),
     ).toBeVisible();
-    await userEvent.type(screen.getByLabelText(/Full name/), 'Pierre');
-    await userEvent.type(screen.getByLabelText(/Date of birth or age/), '32');
-    await userEvent.click(screen.getByRole('radio', { name: 'Female' }));
-    await userEvent.click(
-      screen.getByRole('button', { name: 'Create provisional patient' }),
-    );
+    await fillIdentity(screen);
+    await userEvent.click(screen.getByRole('button', { name: 'Create provisional patient' }));
 
     await waitFor(() => expect(args.onClose).toHaveBeenCalledWith('completed'));
   },
@@ -402,7 +591,9 @@ export const MobileNoMatchLongContent: Story = {
       phone: '+85599111222',
       draft: {
         name: 'Sreymom Nguyễn Thị Hồng Phương',
-        dobOrAge: '12-09-1994',
+        dob: '1994-09-12',
+        dobUnknown: false,
+        ageYears: '',
         sex: 'Female',
       },
     },

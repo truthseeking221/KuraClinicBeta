@@ -228,7 +228,7 @@ function BookingsList({
               key={booking.code}
               type="button"
               className={styles.bookingRow}
-              aria-label={`${t('Check in against booking')} ${booking.code}`}
+              aria-label={`${t('Use booking')} ${booking.code}`}
               onClick={(event) => {
                 event.stopPropagation();
                 onBookingSelect(booking);

@@ -1,5 +1,6 @@
-import { EarningsPage } from '../../../_demo/earnings-page';
+import { redirect } from 'next/navigation';
 
+/** Kept so existing `/earnings` links survive the rename to Balance. */
 export default function Page() {
-  return <EarningsPage route="auto-pay" />;
+  redirect('/balance/auto-pay');
 }

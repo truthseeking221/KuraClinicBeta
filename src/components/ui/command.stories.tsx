@@ -216,10 +216,10 @@ export const AuthorisedRecordSearch: Story = {
                 <span className="text-sm text-muted-foreground">Exact match · opens phone-gate</span>
               </span>
             </CommandItem>
-            <CommandItem value="door-booking-gw87430" keywords={['GW87430', 'booking', 'code']}>
+            <CommandItem value="door-booking-gw87430" keywords={['PSC-A82Q7K3M', 'booking', 'code']}>
               <CalendarIcon aria-hidden="true" />
               <span className="grid min-w-0 gap-1">
-                <span>Open booking GW87430</span>
+                <span>Open booking PSC-A82Q7K3M</span>
                 <span className="text-sm text-muted-foreground">Exact booking code · today 09:30</span>
               </span>
             </CommandItem>

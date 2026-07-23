@@ -65,7 +65,7 @@ const MASKING_RULES: readonly GrammarRule[] = [
   {
     rule: 'Masking is not verification',
     detail:
-      'A masked match ("Is this the patient?") never claims identity. Copy stays at "Phone checked"; identity confirmation belongs to PSC.',
+      'A masked match ("Is this the patient?") never claims identity. Copy stays at "Phone verified by SMS"; identity confirmation belongs to PSC.',
   },
 ];
 

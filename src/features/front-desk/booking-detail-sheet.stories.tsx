@@ -99,7 +99,7 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 const baseArgs = {
-  booking: bookingOf('GW87430'),
+  booking: bookingOf('PSC-A82Q7K3M'),
   patient: sokPhearom,
   open: true,
   onOpenChange: () => {},
@@ -108,7 +108,7 @@ const baseArgs = {
 export const ScheduledPaid: Story = {
   name: 'Scheduled · paid — ready to check in',
   args: baseArgs,
-  render: () => <SheetPlayground booking={bookingOf('GW87430')} />,
+  render: () => <SheetPlayground booking={bookingOf('PSC-A82Q7K3M')} />,
   play: async ({ canvasElement }) => {
     const body = within(canvasElement.ownerDocument.body);
     await waitFor(async () => {
@@ -118,9 +118,9 @@ export const ScheduledPaid: Story = {
     await expect(body.getByText('Paid')).toBeVisible();
     await expect(body.getByText('$18.50')).toBeVisible();
 
-    await userEvent.click(body.getByRole('button', { name: 'Check in booking GW87430' }));
+    await userEvent.click(body.getByRole('button', { name: 'Check in booking PSC-A82Q7K3M' }));
     await waitFor(async () => {
-      await expect(body.getByRole('status', { name: 'Action log' })).toHaveTextContent('check-in:GW87430');
+      await expect(body.getByRole('status', { name: 'Action log' })).toHaveTextContent('check-in:PSC-A82Q7K3M');
     });
   },
 };
@@ -128,7 +128,7 @@ export const ScheduledPaid: Story = {
 export const IssuedPendingPayment: Story = {
   name: 'Issued · payment pending — resend available',
   args: baseArgs,
-  render: () => <SheetPlayground booking={bookingOf('GW87431')} />,
+  render: () => <SheetPlayground booking={bookingOf('PSC-B41M9T27')} />,
   play: async ({ canvasElement }) => {
     const body = within(canvasElement.ownerDocument.body);
     await waitFor(async () => {
@@ -136,108 +136,62 @@ export const IssuedPendingPayment: Story = {
     });
     await userEvent.click(body.getByRole('button', { name: 'Resend code' }));
     await waitFor(async () => {
-      await expect(body.getByRole('status', { name: 'Action log' })).toHaveTextContent('resend:GW87431');
+      await expect(body.getByRole('status', { name: 'Action log' })).toHaveTextContent('resend:PSC-B41M9T27');
     });
   },
 };
 
-export const ExpiredCode: Story = {
-  name: 'Expired — walk-in recovery door',
+export const CancelledCode: Story = {
+  name: 'Cancelled — walk-in recovery door',
   args: baseArgs,
-  render: () => <SheetPlayground booking={bookingOf('GW87510')} />,
+  render: () => <SheetPlayground booking={bookingOf('PSC-G74T5Y36')} />,
   play: async ({ canvasElement }) => {
     const body = within(canvasElement.ownerDocument.body);
     await waitFor(async () => {
-      await expect(body.getByText('Booking code expired')).toBeVisible();
+      await expect(body.getAllByText('Booking cancelled')[0]).toBeVisible();
     });
-    await expect(body.getByText('Code expired')).toBeVisible();
-    await expect(body.getByRole('button', { name: 'Continue as walk-in' })).toBeVisible();
-
-    await userEvent.click(body.getByRole('button', { name: 'Continue as walk-in' }));
+    // A cancellation may have been deliberate, so the recovery is a confirm.
+    await userEvent.click(body.getByRole('button', { name: 'Confirm walk-in' }));
     await waitFor(async () => {
       await expect(body.getByRole('status', { name: 'Action log' })).toHaveTextContent('walk-in');
     });
   },
 };
 
-export const AlreadyRedeemed: Story = {
-  name: 'Already redeemed — duplicate-visit guard',
+/**
+ * A code issued nine days ago and never used. Collection codes do not lapse,
+ * so age is not a reason to turn a patient away — the sheet still checks in.
+ */
+export const OldCodeStillRedeems: Story = {
+  name: 'An old code still redeems — codes do not expire',
   args: baseArgs,
-  render: () => <SheetPlayground booking={bookingOf('GW87511')} />,
+  render: () => <SheetPlayground booking={bookingOf('PSC-E52N4Q18')} />,
   play: async ({ canvasElement }) => {
     const body = within(canvasElement.ownerDocument.body);
     await waitFor(async () => {
-      await expect(body.getByText('Code already redeemed')).toBeVisible();
+      await expect(body.getByText('Issued 9 days ago')).toBeVisible();
     });
-    await expect(body.getByText(/check the desk queue/)).toBeVisible();
-    await userEvent.click(body.getByRole('button', { name: 'Check desk queue' }));
-    await waitFor(async () => {
-      await expect(body.getByRole('status', { name: 'Action log' })).toHaveTextContent('desk-queue');
-    });
-  },
-};
-
-export const CancelledBooking: Story = {
-  name: 'Cancelled — terminal state',
-  args: baseArgs,
-  render: () => <SheetPlayground booking={bookingOf('GW87512')} />,
-  play: async ({ canvasElement }) => {
-    const body = within(canvasElement.ownerDocument.body);
-    await waitFor(async () => {
-      await expect(body.getByText('Booking cancelled', { selector: 'h3' })).toBeVisible();
-    });
-    await userEvent.click(body.getByRole('button', { name: 'Confirm walk-in' }));
-    await waitFor(async () => {
-      await expect(body.getByRole('status', { name: 'Action log' })).toHaveTextContent('walk-in-confirmed');
-    });
-  },
-};
-
-export const WrongBranch: Story = {
-  name: 'Issued for another branch',
-  args: baseArgs,
-  render: () => <SheetPlayground booking={bookingOf('GW87513')} deskBranchId={DEMO_BRANCH_ID} />,
-  play: async ({ canvasElement }) => {
-    const body = within(canvasElement.ownerDocument.body);
-    await waitFor(async () => {
-      await expect(body.getByText('Issued for another branch')).toBeVisible();
-    });
-    await expect(body.getByText(/Direct the patient there/)).toBeVisible();
-  },
-};
-
-export const EscapeRestoresFocus: Story = {
-  name: 'Escape closes and restores focus',
-  args: baseArgs,
-  render: () => <SheetPlayground booking={bookingOf('GW87430')} initialOpen={false} />,
-  play: async ({ canvasElement }) => {
-    const body = within(canvasElement.ownerDocument.body);
-    await userEvent.click(body.getByRole('button', { name: 'Open booking GW87430' }));
-    await waitFor(async () => {
-      await expect(body.getByText('Visit scheduled')).toBeVisible();
-    });
-    await userEvent.keyboard('{Escape}');
-    await waitFor(async () => {
-      await expect(body.queryByText('Visit scheduled')).not.toBeVisible();
-    });
-    await expect(body.getByRole('button', { name: 'Open booking GW87430' })).toHaveFocus();
+    await expect(body.queryByText(/expired/i)).not.toBeInTheDocument();
+    await expect(
+      body.queryByRole('button', { name: 'Continue as walk-in' }),
+    ).not.toBeInTheDocument();
   },
 };
 
 export const Mobile: Story = {
   args: baseArgs,
   globals: { viewport: { value: 'kura390' } },
-  render: () => <SheetPlayground booking={bookingOf('GW87430')} />,
+  render: () => <SheetPlayground booking={bookingOf('PSC-A82Q7K3M')} />,
 };
 
 export const ReadOnlyBlocked: Story = {
   name: 'Blocked — read-only with no recovery action',
   args: baseArgs,
-  render: () => <SheetPlayground booking={bookingOf('GW87510')} readOnly />,
+  render: () => <SheetPlayground booking={bookingOf('PSC-G74T5Y36')} readOnly />,
   play: async ({ canvasElement }) => {
     const body = within(canvasElement.ownerDocument.body);
     await waitFor(async () => {
-      await expect(body.getByText('Booking code expired')).toBeVisible();
+      await expect(body.getAllByText('Booking cancelled')[0]).toBeVisible();
     });
     await expect(body.getByText('Check-in unavailable for this booking.')).toBeVisible();
   },
@@ -250,7 +204,7 @@ export const LongContent320: Story = {
   render: () => (
     <SheetPlayground
       booking={{
-        ...bookingOf('GW87430'),
+        ...bookingOf('PSC-A82Q7K3M'),
         itemsLabel: 'HbA1c, Lipoprotein(a), CMP (metabolic panel), Glucose (fasting)',
       }}
       patient={{

@@ -67,7 +67,7 @@ function firstUseLicenceContent(
       return {
         actionLabel: "Start verification",
         description:
-          "You’ll need a verified licence to collect payments, issue legal documents, submit claims and appear in the doctor directory.",
+          "You can book patients now. A verified licence is required to place orders under your own attribution, collect payments, issue legal documents, submit claims and appear in the doctor directory.",
         status: "Not started",
         tone: "warning",
       };
@@ -75,7 +75,7 @@ function firstUseLicenceContent(
       return {
         actionLabel: "View submission",
         description:
-          "Your documents are being reviewed. We will notify you when a decision is ready.",
+          "You can book patients now. Your documents are being reviewed and we will notify you when a decision is ready.",
         status: "Under review",
         tone: "info",
       };
@@ -83,7 +83,7 @@ function firstUseLicenceContent(
       return {
         actionLabel: "Update verification",
         description:
-          "Review the decision and replace the document that could not be verified.",
+          "You can book patients now. Review the decision and replace the document that could not be verified.",
         status: "Needs update",
         tone: "danger",
       };
@@ -137,6 +137,7 @@ function FirstUseHome({
 >) {
   const t = useT();
   const licence = firstUseLicenceContent(data.licence.state);
+  const demoPatient = data.demoPatient;
 
   return (
     <div className={styles.firstUse} data-slot="first-use-home">
@@ -146,9 +147,14 @@ function FirstUseHome({
             {t("You’re in. Your cabinet is ready.")}
           </h1>
           <p className={styles.bookingDescription}>
-            {t("Start with a booking for your first patient.")}
+            {t(
+              "Pick the tests, choose how the sample is collected, and the results come back here.",
+            )}
           </p>
         </div>
+        {/* One primary action. The demo record is an alternative way to start,
+            not a second setup task, so it sits beside the booking as a
+            secondary action instead of competing from its own tile. */}
         <div className={styles.bookingActions}>
           <Button
             onClick={() =>
@@ -158,79 +164,55 @@ function FirstUseHome({
           >
             {t("Create booking")}
           </Button>
-        </div>
-        {data.licence.state === "verified" ? null : (
-          <p className={styles.bookingNote}>
-            {t("You can start booking patients before your licence is verified.")}
-          </p>
-        )}
-      </header>
-
-      <Card as="section" className={styles.setupTray}>
-        {data.demoPatient ? (
-          <Card
-            as="section"
-            aria-labelledby="first-use-demo-title"
-            className={styles.demoPatient}
-            variant="tile"
-          >
-            <Image
-              alt=""
-              aria-hidden="true"
-              className={styles.firstUseIllustration}
-              height={96}
-              sizes="64px"
-              src="/generated/kura-demo-patient-card-v1.png"
-              width={96}
-            />
-            <div className={styles.demoCopy}>
-              <h2 className={styles.demoTitle} id="first-use-demo-title">
-                {t("Take a quick tour")}
-              </h2>
-              <p className={styles.demoDescription}>
-                {t(
-                  "Follow a sample patient from booking to results. Your records will not change.",
-                )}
-              </p>
-            </div>
+          {demoPatient ? (
             <Button onClick={() => onOpenDemoPatient?.()} variant="outline">
-              {t("Open sample patient")}
-            </Button>
-          </Card>
-        ) : null}
-
-        <Card
-          as="section"
-          aria-labelledby="first-use-licence-title"
-          className={styles.licenceSetup}
-          variant="tile"
-        >
-          <Image
-            alt=""
-            aria-hidden="true"
-            className={styles.firstUseIllustration}
-            height={96}
-            sizes="64px"
-            src="/generated/kura-medical-licence-clean-v1.png"
-            width={96}
-          />
-          <div className={styles.licenceCopy}>
-            <div className={styles.licenceHeading}>
-              <h2 className={styles.licenceTitle} id="first-use-licence-title">
-                {t("Medical licence")}
-              </h2>
-              <Badge size="sm" variant={licence.tone}>
-                {t(licence.status)}
-              </Badge>
-            </div>
-            <p className={styles.licenceDescription}>{t(licence.description)}</p>
-          </div>
-          {licence.actionLabel ? (
-            <Button onClick={() => onOpenLicence?.()} variant="outline">
-              {t(licence.actionLabel)}
+              {t("Open demo patient")}
             </Button>
           ) : null}
-        </Card>
+        </div>
+        {/* What the demo record already holds, so opening it is a known offer
+            rather than a blind tour, and that opening it is safe. */}
+        {demoPatient ? (
+          <p className={styles.bookingNote}>
+            {`${demoPatient.name} — ${t(demoPatient.summary)}. `}
+            {t("Your records will not change.")}
+          </p>
+        ) : null}
+      </header>
+
+      {/* Setup work the doctor can finish later reads as its own region. It
+          carries the whole permission truth — what works now and what does
+          not — so the two halves can never contradict each other. */}
+      <Card
+        as="section"
+        aria-labelledby="first-use-licence-title"
+        className={styles.licenceSetup}
+      >
+        <Image
+          alt=""
+          aria-hidden="true"
+          className={styles.firstUseIllustration}
+          height={96}
+          sizes="64px"
+          src="/generated/kura-medical-licence-clean-v1.png"
+          width={96}
+        />
+        <div className={styles.licenceCopy}>
+          <div className={styles.licenceHeading}>
+            <h2 className={styles.licenceTitle} id="first-use-licence-title">
+              {t("Medical licence")}
+            </h2>
+            <Badge size="sm" variant={licence.tone}>
+              {t(licence.status)}
+            </Badge>
+          </div>
+          <p className={styles.licenceDescription}>{t(licence.description)}</p>
+        </div>
+        {licence.actionLabel ? (
+          <Button onClick={() => onOpenLicence?.()} variant="outline">
+            {t(licence.actionLabel)}
+          </Button>
+        ) : null}
       </Card>
     </div>
   );

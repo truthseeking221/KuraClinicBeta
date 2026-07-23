@@ -54,7 +54,10 @@ const meta = {
           "Phone verification remains a delivery-channel check; it never claims patient identity verification.",
           "The patient surface excludes clinic navigation, internal timelines, role badges, and medical record identifiers.",
           "SMS delivery, patient persistence, and intake writes are deterministic Storybook fixtures.",
-          "Skip for now remains disabled until a backend skip reason, audit, and recovery contract exists.",
+          "No baseline order set. Ordering tests is a clinical decision after the review, never the completion condition of creating a patient or receiving an intake.",
+          "Reviewing confirms an answer as read; it cannot correct or annotate one. Amending patient-reported data needs a clinical-note and amendment contract that does not exist, and a correction that lived only in this prototype would read as a chart write.",
+          "The review provenance names the clinician but carries no timestamp or signature: no audit or signing contract exists.",
+          "Guardian, guarantor, and proxy authority are still an open design gap. The gate accepts a guardian's phone, but who is being tested is not yet modelled separately from who holds the number.",
         ],
       },
       journeys: [
@@ -67,7 +70,7 @@ const meta = {
     docs: {
       description: {
         component:
-          "Executable clinic-side journey from an empty list through phone verification, provisional patient creation, and intake into the canonical patient-aware lab-order workspace. Patient answers remain explicitly patient-reported; delivery, persistence, and order mutations are target-contract fixtures. Demo SMS code: 123456.",
+          "Executable clinic-side journey from an empty list through phone verification, provisional patient creation, and intake into the canonical patient-aware lab-order workspace. Three separate objects chain here without any of them being the completion condition of the one before: a patient record is a finished outcome, an intake is a preparation the doctor may take together, send, or decline, and a lab order is a clinical decision made after someone has read what came back. Patient answers stay patient-reported until a clinician confirms them item by item, so a check mark never means a receipt. Delivery, persistence, and order mutations are target-contract fixtures. Demo SMS code: 123456.",
       },
     },
   },
@@ -123,7 +126,12 @@ export const ClinicJourneyToIntakeHandoff: Story = {
       await screen.findByLabelText(/Full name/),
       "Sok Nimol",
     );
-    await userEvent.type(screen.getByLabelText(/Date of birth or age/), "32");
+    // A walk-in rarely knows an exact date, so the journey takes the
+    // estimated-age branch: the record carries an age, never an invented date.
+    await userEvent.click(
+      screen.getByRole("checkbox", { name: /Exact date is unknown/ }),
+    );
+    await userEvent.type(await screen.findByLabelText(/Age in years/), "32");
     await userEvent.click(screen.getByRole("radio", { name: "Male" }));
     await userEvent.click(
       screen.getByRole("button", { name: "Create provisional patient" }),
@@ -131,7 +139,7 @@ export const ClinicJourneyToIntakeHandoff: Story = {
 
     await waitFor(async () => {
       await expect(
-        canvas.getByText(/We don’t know enough about Sok Nimol yet/),
+        canvas.getByText(/Prepare the visit for Sok Nimol/),
       ).toBeVisible();
     });
     await expect(
@@ -150,9 +158,17 @@ export const ClinicJourneyToIntakeHandoff: Story = {
     await expect(
       canvas.getByRole("button", { name: "Sending" }),
     ).toBeDisabled();
+    // What arrived is patient-reported and unread. Ordering is not offered
+    // until a clinician has been through it.
     await expect(
-      await canvas.findByText("Intake received for Sok Nimol"),
+      await canvas.findByText("Patient-reported intake"),
     ).toBeVisible();
+    await expect(
+      canvas.getByText(/Not yet reviewed by a clinician/),
+    ).toBeVisible();
+    await expect(
+      canvas.queryByRole("button", { name: "Order lab tests" }),
+    ).not.toBeInTheDocument();
     await expect(
       canvas.getAllByText(CARE_LOOP_DEMO_INTAKE_RECORD.reasonForVisit)[0],
     ).toBeVisible();
@@ -162,12 +178,32 @@ export const ClinicJourneyToIntakeHandoff: Story = {
     await expect(
       canvas.getByRole("button", { name: /^Past history/ }),
     ).toHaveAttribute("aria-expanded", "true");
-    await userEvent.click(
-      canvas.getByRole("button", { name: "Order baseline tests" }),
+
+    await userEvent.click(canvas.getByRole("button", { name: "Review intake" }));
+    // Each answer is its own control, and the review is not finished until
+    // every one of them has been read.
+    const panel = within(
+      canvas.getByRole("region", { name: "Patient intake status" }),
     );
     await expect(
-      canvas.getByRole("heading", { name: "Lab order" }),
+      canvas.getByRole("button", { name: "Mark intake reviewed" }),
+    ).toBeDisabled();
+    for (const row of panel.getAllByRole("button", { pressed: false })) {
+      await userEvent.click(row);
+    }
+    await userEvent.click(
+      canvas.getByRole("button", { name: "Mark intake reviewed" }),
+    );
+    await expect(canvas.getByText("Intake reviewed")).toBeVisible();
+    await expect(canvas.getByText(/Reviewed by Dr\./)).toBeVisible();
+
+    await userEvent.click(
+      canvas.getByRole("button", { name: "Order lab tests" }),
+    );
+    await expect(
+      canvas.getByRole("heading", { name: "Order lab tests" }),
     ).toBeVisible();
+    await expect(canvas.getByText("For Sok Nimol")).toBeVisible();
     await expect(canvas.getByText("Nothing here yet")).toBeVisible();
     await expect(
       canvas.getByLabelText("Patient context for Sok Nimol"),
@@ -175,6 +211,11 @@ export const ClinicJourneyToIntakeHandoff: Story = {
   },
 };
 
+/**
+ * Three real paths, because a new patient is not automatically an intake:
+ * take the answers together while the patient is here, send a link, or
+ * continue without one and carry the missing context openly.
+ */
 export const IntakeUnknown: Story = {
   args: { initialStage: "intake-unknown" },
   play: async ({ canvasElement }) => {
@@ -186,11 +227,85 @@ export const IntakeUnknown: Story = {
       canvas.getByText("Allergy status not yet confirmed"),
     ).toBeVisible();
     await expect(
-      canvas.getByRole("button", { name: "Skip for now" }),
-    ).toBeDisabled();
+      canvas.getByRole("button", { name: "Complete with patient" }),
+    ).toBeEnabled();
     await expect(
       canvas.getByRole("button", { name: "Send intake link" }),
     ).toBeEnabled();
+    await expect(
+      canvas.getByRole("button", { name: "Continue without intake" }),
+    ).toBeEnabled();
+    await expect(
+      canvas.getByText("Allergies, medicines and history stay unknown."),
+    ).toBeVisible();
+  },
+};
+
+/**
+ * Declining is a decision, not a dead end. The record continues with its gaps
+ * stated, and ordering tests is still a choice rather than the only exit.
+ */
+export const ContinueWithoutIntake: Story = {
+  args: { initialStage: "intake-unknown" },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(
+      canvas.getByRole("button", { name: "Continue without intake" }),
+    );
+    await expect(canvas.getByText("Continuing without intake")).toBeVisible();
+    await expect(
+      canvas.getByText("Allergies, medicines and history stay unknown."),
+    ).toBeVisible();
+    await expect(
+      canvas.getByRole("button", { name: "Order lab tests" }),
+    ).toBeEnabled();
+    await expect(
+      canvas.getByRole("button", { name: "Done for now" }),
+    ).toBeEnabled();
+  },
+};
+
+/**
+ * Answers taken with the patient in the room already had a clinician present,
+ * so they carry that provenance instead of being handed back for a review of
+ * the four lines just typed.
+ */
+export const CompleteIntakeWithPatient: Story = {
+  args: { initialStage: "intake-unknown" },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(
+      canvas.getByRole("button", { name: "Complete with patient" }),
+    );
+    await expect(
+      await canvas.findByRole("heading", { name: "Tell us about your health" }),
+    ).toBeVisible();
+    // This record has an exact date, so the row is a date of birth. A record
+    // created from an estimated age shows "Age" instead — never both in one
+    // combined field.
+    await expect(canvas.getByText("Date of birth")).toBeVisible();
+    await expect(canvas.getByText("1994-02-18")).toBeVisible();
+
+    await userEvent.click(
+      canvas.getByRole("checkbox", {
+        name: /I confirm these personal details are correct/,
+      }),
+    );
+    await userEvent.type(canvas.getByLabelText(/^Allergies/), "None known");
+    await userEvent.type(canvas.getByLabelText(/^Current medicines/), "None");
+    await userEvent.type(
+      canvas.getByLabelText(/^Current symptoms/),
+      "Tired for 2 weeks",
+    );
+    await userEvent.type(canvas.getByLabelText(/^Family history/), "None known");
+    await userEvent.click(
+      canvas.getByRole("button", { name: "Submit medical history" }),
+    );
+
+    await expect(
+      await canvas.findByText("Intake recorded with the patient"),
+    ).toBeVisible();
+    await expect(canvas.getByText(/Recorded by Dr\./)).toBeVisible();
   },
 };
 
@@ -213,16 +328,12 @@ export const IntakeArrival: Story = {
     await userEvent.click(
       canvas.getByRole("button", { name: "Send intake link" }),
     );
-    const order = await canvas.findByRole("button", {
-      name: "Order baseline tests",
-    });
-    await expect(
-      canvas.getByText("Intake received for Sok Nimol"),
-    ).toBeVisible();
+    const review = await canvas.findByRole("button", { name: "Review intake" });
+    await expect(canvas.getByText("Patient-reported intake")).toBeVisible();
     await expect(
       canvas.getAllByText(CARE_LOOP_DEMO_INTAKE_RECORD.allergies)[0],
     ).toBeVisible();
-    await expect(order).toHaveFocus();
+    await expect(review).toHaveFocus();
   },
 };
 
@@ -348,9 +459,7 @@ export const IntakeComplete: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(
-      canvas.getByText("Intake received for Sok Nimol"),
-    ).toBeVisible();
+    await expect(canvas.getByText("Patient-reported intake")).toBeVisible();
     await expect(
       canvas.getByText("Patient reports no known allergies"),
     ).toBeVisible();
@@ -379,11 +488,21 @@ export const IntakeComplete: Story = {
       "aria-expanded",
       "false",
     );
+    await userEvent.click(canvas.getByRole("button", { name: "Review intake" }));
+    const panel = within(
+      canvas.getByRole("region", { name: "Patient intake status" }),
+    );
+    for (const row of panel.getAllByRole("button", { pressed: false })) {
+      await userEvent.click(row);
+    }
     await userEvent.click(
-      canvas.getByRole("button", { name: "Order baseline tests" }),
+      canvas.getByRole("button", { name: "Mark intake reviewed" }),
+    );
+    await userEvent.click(
+      canvas.getByRole("button", { name: "Order lab tests" }),
     );
     await expect(
-      canvas.getByRole("heading", { name: "Lab order" }),
+      canvas.getByRole("heading", { name: "Order lab tests" }),
     ).toBeVisible();
     await expect(canvas.getByText("Nothing here yet")).toBeVisible();
     await userEvent.click(canvas.getByRole("checkbox", { name: "HbA1c" }));
@@ -394,6 +513,67 @@ export const IntakeComplete: Story = {
       orderCart.getByRole("heading", { name: "Selected tests" }),
     ).toBeVisible();
     await expect(orderCart.getByText("HbA1c")).toBeVisible();
+  },
+};
+
+/**
+ * The review is the work, not a receipt. Each answer is one control, the
+ * marks stay empty until a clinician reads them, and the review cannot be
+ * finished on a partial pass.
+ */
+export const IntakeReview: Story = {
+  args: {
+    initialIntakeRecord: CARE_LOOP_DEMO_INTAKE_RECORD,
+    initialStage: "intake-review",
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const panel = within(
+      canvas.getByRole("region", { name: "Patient intake status" }),
+    );
+    await expect(
+      canvas.getByRole("heading", { name: "Review patient-reported intake" }),
+    ).toBeVisible();
+    await expect(canvas.getByText("0 of 4 confirmed")).toBeVisible();
+
+    const rows = panel.getAllByRole("button", { pressed: false });
+    await expect(rows).toHaveLength(4);
+    await userEvent.click(rows[0]);
+    await expect(canvas.getByText("1 of 4 confirmed")).toBeVisible();
+    // A partly read intake is not a reviewed one.
+    await expect(
+      canvas.getByRole("button", { name: "Mark intake reviewed" }),
+    ).toBeDisabled();
+
+    // Confirming is reversible: a misread answer can be put back.
+    await userEvent.click(rows[0]);
+    await expect(canvas.getByText("0 of 4 confirmed")).toBeVisible();
+  },
+};
+
+/**
+ * After the review, ordering tests is one option among the clinical decisions
+ * a visit can end with — including ordering nothing.
+ */
+export const ReviewedNextStep: Story = {
+  args: {
+    initialIntakeRecord: CARE_LOOP_DEMO_INTAKE_RECORD,
+    initialStage: "next-step",
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText("Intake reviewed")).toBeVisible();
+    await expect(
+      canvas.getByRole("button", { name: "Done for now" }),
+    ).toBeEnabled();
+    await userEvent.click(
+      canvas.getByRole("button", { name: "Order lab tests" }),
+    );
+    await expect(
+      canvas.getByRole("heading", { name: "Order lab tests" }),
+    ).toBeVisible();
+    // The doctor's decision, not step 1 of someone else's five-step wizard.
+    await expect(canvas.queryByText(/Step 1 of/)).not.toBeInTheDocument();
   },
 };
 

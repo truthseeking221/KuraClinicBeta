@@ -85,8 +85,8 @@ export const READINESS = {
   },
   collection: {
     area: 'Clinic/Collection',
-    level: 'partial',
-    note: 'Sample lifecycle states match the canonical gRPC enums, but the clinic REST layer does not expose sample operations yet.',
+    level: 'gap',
+    note: 'The whole PSC journey runs on fixtures and local state. Draw registration, label printing and verification, custody handoff, and collection-attempt outcomes have no clinic REST endpoints — the clinic layer exposes no sample operations at all, and tubes, containers, in_transit, printer pairing and offline mutation queues are still open contract seams. The flow models the target contract, not live behavior.',
     owner: 'src/features/collection',
   },
   journey: {
@@ -140,13 +140,13 @@ export const READINESS = {
   settings: {
     area: 'Clinic/Settings',
     level: 'partial',
-    note: 'Workspace, membership, and credential context are real platform concepts. Section actions follow the legacy prototype contract: local state plus toast, no persistence except device preferences. Person-owned doctor balances and ABA authorizations are excluded and owned by Earnings.',
+    note: 'Workspace, membership, and credential context are real platform concepts. Section actions follow the legacy prototype contract: local state plus toast, no persistence except device preferences. Doctor-owned balances and ABA authorizations are excluded and owned by Balance.',
     owner: 'src/features/settings',
   },
   doctorBanking: {
-    area: 'Clinic/Finance/Earnings',
+    area: 'Clinic/Finance/Balance',
     level: 'gap',
-    note: 'Stories map the signed person-global ledger, doctor-audience notifications, statements, KHQR, and mandate lifecycle to the pinned kura-platform contract. The Storybook owner uses deterministic fixtures; KHQR and ABA mandate browser actions are not live at the inspected clinic BFF boundary.',
+    note: 'Balance covers the signed doctor-global ledger, month earnings, eleven ledger kinds, doctor-audience notices and receipts, statements, KHQR settlement, the seven mandate states, and the order funding gate. Reads have a clinic BFF boundary; KHQR, ABA linking, unlink, and just-in-time collection are target contract on deterministic fixtures and must not be presented as live.',
     owner: 'src/features/doctor-banking',
   },
   adminDoctorBanking: {

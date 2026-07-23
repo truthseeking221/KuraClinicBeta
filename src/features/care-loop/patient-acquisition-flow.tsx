@@ -27,6 +27,7 @@ import {
   EmptyStateTitle,
 } from "../../components/shared/empty-state";
 import { PhoneGateModal } from "../phone-gate/phone-gate-modal";
+import { draftAgeYears, draftDob } from "../phone-gate/logic";
 import type { PhoneGateOutcome, PhoneLookupResult } from "../phone-gate/logic";
 import { PatientContextRail } from "../patient-context/patient-context-rail";
 import type {
@@ -42,6 +43,14 @@ import {
 import { CARE_LOOP_PATIENT, type CareLoopPatientManifest } from "./demo-data";
 import styles from "./care-loop.module.css";
 
+/**
+ * Three separate objects, not one funnel: a patient record, a clinical intake,
+ * and a lab order. Creating a patient is a complete outcome; an intake is a
+ * preparation the doctor may run, send, or decline; ordering tests is a
+ * clinical decision that only exists once someone has read what came back.
+ * The stages below chain, but no stage is the completion condition of the one
+ * before it.
+ */
 export type PatientAcquisitionStage =
   | "patients-empty"
   | "phone-gate"
@@ -50,7 +59,12 @@ export type PatientAcquisitionStage =
   | "intake-error"
   | "intake-requested"
   | "intake-form"
+  /** Submitted by the patient and unread: patient-reported, not clinical fact. */
   | "intake-complete"
+  /** The doctor is reading it, item by item. */
+  | "intake-review"
+  /** Reviewed, or deliberately skipped. The clinical decision happens here. */
+  | "next-step"
   | "ready-to-order";
 
 /** Where the phone gate appears before a patient has been resolved. */
@@ -63,11 +77,29 @@ export type PatientAcquisitionPatient = {
   sex?: "F" | "M";
   sexLabel: string;
   age?: number;
+  /** `YYYY-MM-DD`, present only when an exact date was recorded. */
   dob?: string;
-  dobOrAge: string;
+  /**
+   * The age is an estimate because no exact date of birth exists. Age and date
+   * never share one field: a shared string is how the same record reads as
+   * "26 years" on one screen and "23 years estimated" on another, and age
+   * drives reference ranges.
+   */
+  ageEstimated?: boolean;
   phone?: string;
   status?: string;
 };
+
+/** One rendering of age everywhere, with the estimate never presented as exact. */
+export function patientAgeLabel(
+  patient: Pick<PatientAcquisitionPatient, "age" | "ageEstimated">,
+  t: Translate,
+): string {
+  if (patient.age === undefined) return "";
+  return patient.ageEstimated
+    ? `${patient.age} ${t("years (estimated)")}`
+    : `${patient.age} ${t("years")}`;
+}
 
 export type PatientIntakeRecord = {
   reasonForVisit: string;
@@ -93,7 +125,6 @@ const INITIAL_PATIENT: PatientAcquisitionPatient = {
   sexLabel: CARE_LOOP_PATIENT.sexLabel,
   age: CARE_LOOP_PATIENT.age,
   dob: CARE_LOOP_PATIENT.dob,
-  dobOrAge: `${CARE_LOOP_PATIENT.age} years`,
   phone: CARE_LOOP_PATIENT.phone,
   status: "Provisional · PSC verifies",
 };
@@ -127,11 +158,6 @@ function initialsFor(name: string) {
     .join("");
 }
 
-function ageFrom(value: string) {
-  const age = Number.parseInt(value, 10);
-  return Number.isFinite(age) ? age : 0;
-}
-
 function provisionalPatientId(phone: string, name: string) {
   const phoneSuffix = phone.replace(/\D/g, "").slice(-8);
   const fallback = initialsFor(name).toLowerCase() || "patient";
@@ -153,7 +179,7 @@ function labOrderPatient(patient: PatientAcquisitionPatient): CareLoopPatientMan
     initials: initialsFor(patient.name),
     sex: patient.sex,
     sexLabel: patient.sexLabel,
-    age: patient.age ?? ageFrom(patient.dobOrAge),
+    age: patient.age ?? 0,
     dob: patient.dob,
     phone: patient.phone,
     orderId: isJourneyPatient
@@ -250,12 +276,17 @@ function patientContextSections(
   ];
 }
 
+/**
+ * A check mark is a clinician's confirmation, never a receipt. An answer that
+ * has only arrived gets a neutral mark: four green ticks under "Intake
+ * received" is how patient-reported data starts reading as clinical fact.
+ */
 function IntakeItemList({
   items,
   state,
 }: {
   items: readonly IntakeDisplayItem[];
-  state: "unknown" | "waiting" | "filling" | "complete";
+  state: "unknown" | "waiting" | "filling" | "reported" | "reviewed";
 }) {
   const t = useT();
 
@@ -263,19 +294,20 @@ function IntakeItemList({
     <ol className={styles.intakeStatusList}>
       {items.map((item, index) => {
         const answered = Boolean(item.answer);
-        const complete =
-          state === "complete" || (state === "filling" && answered);
+        const shown = state === "reported" || state === "reviewed" || answered;
+        const reviewed = state === "reviewed";
         const waiting =
           state === "waiting" || (state === "filling" && !answered);
 
         return (
           <li
             className={styles.intakeStatusRow}
-            data-answered={complete || undefined}
+            data-answered={shown || undefined}
+            data-reviewed={reviewed || undefined}
             key={item.label}
           >
             <span className={styles.intakeStatusMarker} aria-hidden="true">
-              {complete ? (
+              {reviewed ? (
                 <CheckIcon className={styles.intakeStatusCheck} size={14} />
               ) : (
                 index + 1
@@ -305,96 +337,180 @@ function IntakeItemList({
   );
 }
 
-function UnavailableSkipAction() {
+/**
+ * The review itself. One control per row, because a badge column plus a
+ * per-row button says the same thing twice; the mark carries the state and
+ * the row carries the action.
+ */
+function IntakeReviewList({
+  confirmed,
+  items,
+  onToggle,
+}: {
+  confirmed: readonly string[];
+  items: readonly IntakeDisplayItem[];
+  onToggle: (label: string) => void;
+}) {
   const t = useT();
 
   return (
-    <>
-      <Button
-        aria-describedby="intake-skip-unavailable"
-        disabled
-        variant="outline"
-      >
-        {t("Skip for now")}
-      </Button>
-      <span className={styles.srOnly} id="intake-skip-unavailable">
-        {t("Skipping intake is not connected to the current backend contract.")}
-      </span>
-    </>
+    <ul className={styles.intakeStatusList}>
+      {items.map((item) => {
+        const isConfirmed = confirmed.includes(item.label);
+        return (
+          <li key={item.label}>
+            <button
+              aria-pressed={isConfirmed}
+              className={styles.intakeReviewRow}
+              data-confirmed={isConfirmed || undefined}
+              onClick={() => onToggle(item.label)}
+              type="button"
+            >
+              <span className={styles.intakeStatusMarker} aria-hidden="true">
+                {isConfirmed ? (
+                  <CheckIcon className={styles.intakeStatusCheck} size={14} />
+                ) : null}
+              </span>
+              <span className={styles.intakeStatusCopy}>
+                <span className={styles.intakeStatusLabel}>{t(item.label)}</span>
+                <strong>{item.answer}</strong>
+              </span>
+              <span className={styles.intakeReviewAction}>
+                {isConfirmed ? t("Confirmed") : t("Confirm")}
+              </span>
+            </button>
+          </li>
+        );
+      })}
+    </ul>
   );
 }
 
+type IntakeCardStage = Exclude<
+  PatientAcquisitionStage,
+  "patients-empty" | "phone-gate" | "intake-form" | "ready-to-order"
+>;
+
+/**
+ * How the answers came to be trusted. Answers the patient submitted alone are
+ * unread until a clinician reads them; answers recorded together already had
+ * a clinician in the room, so asking them to confirm the same four lines again
+ * is ceremony, not safety. Declining leaves the record honestly empty.
+ */
+export type IntakeProvenance = "reviewed" | "recorded-together" | "none";
+
 function IntakeStatusCard({
   answeredCount,
+  clinicianName,
+  confirmed,
   items,
   live,
+  onCompleteTogether,
+  onConfirmItem,
+  onDecline,
+  onDone,
+  onOrder,
+  onReview,
+  onReviewed,
+  onSend,
   openedLabel,
   patientName,
+  provenance,
   stage,
-  onOrder,
-  onSend,
 }: {
   answeredCount: number;
+  /** Named provenance for the review; no signature or audit contract exists. */
+  clinicianName: string;
+  confirmed: readonly string[];
   items: readonly IntakeDisplayItem[];
   /**
    * The stage changed while the clinician was watching, so the card
    * choreographs the change. A direct mount renders the settled state.
    */
   live: boolean;
+  onCompleteTogether: () => void;
+  onConfirmItem: (label: string) => void;
+  onDecline: () => void;
+  onDone: () => void;
+  onOrder: () => void;
+  onReview: () => void;
+  onReviewed: () => void;
+  onSend: () => void;
   openedLabel?: string;
   patientName: string;
-  stage: Exclude<
-    PatientAcquisitionStage,
-    "patients-empty" | "phone-gate" | "intake-form" | "ready-to-order"
-  >;
-  onOrder: () => void;
-  onSend: () => void;
+  provenance: IntakeProvenance;
+  stage: IntakeCardStage;
 }) {
   const t = useT();
   const filling = stage === "intake-requested" && answeredCount > 0;
+  const reviewing = stage === "intake-review";
+  const decided = stage === "next-step";
   const cardState =
     stage === "intake-complete"
       ? "complete"
-      : filling
-        ? "filling"
-        : stage === "intake-requested"
-          ? "waiting"
-          : "unknown";
+      : reviewing
+        ? "review"
+        : decided
+          ? "decided"
+          : filling
+            ? "filling"
+            : stage === "intake-requested"
+              ? "waiting"
+              : "unknown";
+  const allConfirmed = confirmed.length === items.length;
 
-  const title =
-    stage === "intake-complete"
-      ? `${t("Intake received for")} ${patientName}`
-      : filling
-        ? `${patientName} ${t("is filling in the intake")}`
-        : stage === "intake-requested"
-          ? `${t("Intake sent, waiting for")} ${patientName}`
-          : stage === "intake-sending"
-            ? t("Sending intake link")
-            : stage === "intake-error"
-              ? t("Intake link was not sent")
-              : `${t("We don’t know enough about")} ${patientName} ${t("yet")}`;
+  const title = decided
+    ? provenance === "reviewed"
+      ? t("Intake reviewed")
+      : provenance === "recorded-together"
+        ? t("Intake recorded with the patient")
+        : t("Continuing without intake")
+    : reviewing
+      ? t("Review patient-reported intake")
+      : stage === "intake-complete"
+        ? t("Patient-reported intake")
+        : filling
+          ? `${patientName} ${t("is filling in the intake")}`
+          : stage === "intake-requested"
+            ? `${t("Intake sent, waiting for")} ${patientName}`
+            : stage === "intake-sending"
+              ? t("Sending intake link")
+              : stage === "intake-error"
+                ? t("Intake link was not sent")
+                : `${t("Prepare the visit for")} ${patientName}`;
 
-  const description =
-    stage === "intake-complete"
-      ? t("4 of 4 answered. Confirm what matters during the visit.")
-      : filling
-        ? `${answeredCount} ${t("of")} ${items.length} ${t("answered")}${openedLabel ? ` · ${t("opened")} ${openedLabel}` : ""}`
-        : stage === "intake-error"
-          ? t(
-              "The patient context is saved. Check the delivery channel, then try again.",
-            )
-          : t(
-              "Help the patient complete their medical history before the visit, so the clinical conversation can focus on care.",
-            );
+  const description = decided
+    ? provenance === "reviewed"
+      ? `${t("Reviewed by")} ${clinicianName}`
+      : provenance === "recorded-together"
+        ? `${t("Recorded by")} ${clinicianName}`
+        : t("Allergies, medicines and history stay unknown.")
+    : reviewing
+      ? `${confirmed.length} ${t("of")} ${items.length} ${t("confirmed")}`
+      : stage === "intake-complete"
+        ? // Two facts the four answers cannot state on their own: how much
+          // arrived, and that nobody clinical has read it yet.
+          `${answeredCount} ${t("of")} ${items.length} ${t("questions answered")} · ${t("Not yet reviewed by a clinician")}`
+        : filling
+          ? `${answeredCount} ${t("of")} ${items.length} ${t("answered")}${openedLabel ? ` · ${t("opened")} ${openedLabel}` : ""}`
+          : stage === "intake-error"
+            ? t(
+                "The patient context is saved. Check the delivery channel, then try again.",
+              )
+            : t("Collect the information needed for safe care.");
 
   const listState =
     stage === "intake-complete"
-      ? "complete"
-      : filling
-        ? "filling"
-        : stage === "intake-requested"
-          ? "waiting"
-          : "unknown";
+      ? "reported"
+      : decided
+        ? provenance === "none"
+          ? "unknown"
+          : "reviewed"
+        : filling
+          ? "filling"
+          : stage === "intake-requested"
+            ? "waiting"
+            : "unknown";
 
   // Sending replaces the button that had focus, so focus would otherwise fall
   // back to the document body and the next action would have to be hunted for.
@@ -427,26 +543,69 @@ function IntakeStatusCard({
         </div>
       </CardHeader>
       <CardContent>
-        <IntakeItemList items={items} state={listState} />
+        {reviewing ? (
+          <IntakeReviewList
+            confirmed={confirmed}
+            items={items}
+            onToggle={onConfirmItem}
+          />
+        ) : (
+          <IntakeItemList items={items} state={listState} />
+        )}
       </CardContent>
       {filling ? null : (
         <CardFooter className={styles.intakeCardActions}>
-          {stage === "intake-complete" ? (
+          {decided ? (
+            <>
+              {/* Ordering tests is one clinical option, not the exit. A visit
+                  can close with nothing ordered, so the flow can end here. */}
+              <Button onClick={onDone} variant="outline">
+                {t("Done for now")}
+              </Button>
+              <Button onClick={onOrder} variant="primary">
+                {t("Order lab tests")}
+              </Button>
+            </>
+          ) : reviewing ? (
+            <>
+              <span
+                className={styles.srOnly}
+                id="intake-review-incomplete"
+              >
+                {t("Confirm every answer to finish the review.")}
+              </span>
+              <Button
+                aria-describedby={
+                  allConfirmed ? undefined : "intake-review-incomplete"
+                }
+                disabled={!allConfirmed}
+                fullWidth
+                onClick={onReviewed}
+                variant="primary"
+              >
+                {t("Mark intake reviewed")}
+              </Button>
+            </>
+          ) : stage === "intake-complete" ? (
             <Button
               fullWidth
-              onClick={onOrder}
+              onClick={onReview}
               ref={adoptFocusOnArrival}
               variant="primary"
             >
-              {t("Order baseline tests")}
+              {t("Review intake")}
             </Button>
           ) : (
             <>
-              <UnavailableSkipAction />
+              {stage === "intake-unknown" ? (
+                <Button onClick={onCompleteTogether} variant="primary">
+                  {t("Complete with patient")}
+                </Button>
+              ) : null}
               <Button
                 disabled={stage === "intake-sending"}
                 onClick={onSend}
-                variant="primary"
+                variant={stage === "intake-unknown" ? "outline" : "primary"}
               >
                 {stage === "intake-sending" ? (
                   <Spinner label={t("Sending")} showLabel size="sm" />
@@ -458,6 +617,14 @@ function IntakeStatusCard({
                   t("Send intake link")
                 )}
               </Button>
+              {/* The third path is a real clinical choice, so it says what it
+                  costs instead of being disabled or hidden. */}
+              <div className={styles.intakeDecline}>
+                <Button onClick={onDecline} size="sm" variant="ghost">
+                  {t("Continue without intake")}
+                </Button>
+                <p>{t("Allergies, medicines and history stay unknown.")}</p>
+              </div>
             </>
           )}
         </CardFooter>
@@ -485,7 +652,11 @@ function IntakeContextWorkspace({
   const allergyAnswer = items[1]?.answer?.trim();
   const reasonForVisit = items[0]?.answer?.trim();
   const answeredCount = items.filter((item) => item.answer).length;
-  const demographics = [patient.dobOrAge, t(patient.sexLabel), patient.pid]
+  const demographics = [
+    patientAgeLabel(patient, t),
+    t(patient.sexLabel),
+    patient.pid,
+  ]
     .filter(Boolean)
     .join(" · ");
 
@@ -577,6 +748,8 @@ export type PatientAcquisitionFlowProps = {
     openedLabel: string;
     items: readonly { label: string; answer?: string }[];
   };
+  /** Named on the review provenance line. No signer or audit contract exists. */
+  clinicianName?: string;
   /** Returns to the surface that launched the phone gate when it is dismissed. */
   onExit?: () => void;
   onJourneyChange?: (journey: PatientAcquisitionJourneySnapshot) => void;
@@ -587,6 +760,7 @@ export type PatientAcquisitionFlowProps = {
 };
 
 export function PatientAcquisitionFlow({
+  clinicianName = "Dr. Phong Tuy",
   demoIntakeRecord,
   entryPresentation = "standalone",
   initialJourney,
@@ -640,6 +814,16 @@ export function PatientAcquisitionFlow({
   // A restored or directly opened stage is already settled; only a send the
   // clinician just triggered earns the transition choreography.
   const [liveSend, setLiveSend] = useState(false);
+  /**
+   * How this intake was collected. A link the patient answered alone is
+   * unread; answers taken together already had a clinician present.
+   */
+  const [intakeSource, setIntakeSource] = useState<"sent" | "together">("sent");
+  /**
+   * Per-item confirmations, deliberately not persisted: resuming a half-read
+   * review restarts it, and re-reading four answers is never the unsafe move.
+   */
+  const [confirmedItems, setConfirmedItems] = useState<string[]>([]);
   const emittedJourneyRef = useRef("");
   const [expandedContextSections, setExpandedContextSections] = useState<
     PatientContextSectionId[]
@@ -696,6 +880,8 @@ export function PatientAcquisitionFlow({
     setExpandedContextSections([]);
     setLabOrderJourney(undefined);
     setLiveSend(false);
+    setIntakeSource("sent");
+    setConfirmedItems([]);
   }
 
   function acceptPatient(outcome: PhoneGateOutcome) {
@@ -706,17 +892,16 @@ export function PatientAcquisitionFlow({
           : outcome.draft.sex === "Male"
             ? "M"
             : undefined;
-      const dob = /^\d{4}-\d{2}-\d{2}$/.test(outcome.draft.dobOrAge.trim())
-        ? outcome.draft.dobOrAge.trim()
-        : undefined;
+      // An unknown date of birth stays unknown: the record carries the
+      // estimated age and no invented date.
       setPatient({
         id: provisionalPatientId(outcome.phone, outcome.draft.name),
         name: outcome.draft.name.trim(),
         sex,
         sexLabel: outcome.draft.sex ?? "Not recorded",
-        age: ageFrom(outcome.draft.dobOrAge),
-        dob,
-        dobOrAge: outcome.draft.dobOrAge.trim(),
+        age: draftAgeYears(outcome.draft),
+        dob: draftDob(outcome.draft),
+        ageEstimated: outcome.draft.dobUnknown,
         phone: outcome.phone,
         status: "Provisional · PSC verifies",
       });
@@ -734,7 +919,6 @@ export function PatientAcquisitionFlow({
         sex,
         sexLabel: outcome.patient.sex,
         age: outcome.patient.age,
-        dobOrAge: `${outcome.patient.age} years`,
       });
     }
     setStage("intake-unknown");
@@ -743,6 +927,7 @@ export function PatientAcquisitionFlow({
 
   function sendIntake() {
     window.clearTimeout(sendTimer.current);
+    setIntakeSource("sent");
     setLiveSend(true);
     setStage("intake-sending");
     sendTimer.current = window.setTimeout(() => {
@@ -772,6 +957,25 @@ export function PatientAcquisitionFlow({
     medicines.trim().length > 0 &&
     symptoms.trim().length > 0 &&
     familyHistory.trim().length > 0;
+
+  /** Where a submitted intake lands, and how much trust it carries there. */
+  function finishIntakeForm() {
+    setExpandedContextSections([...INTAKE_CONTEXT_SECTION_IDS]);
+    if (intakeSource === "together") {
+      // A clinician took these answers in the room. Asking them to confirm the
+      // four lines they just typed is ceremony, so the decision comes next.
+      setConfirmedItems([...INTAKE_ITEM_LABELS]);
+      setStage("next-step");
+      return;
+    }
+    setStage("intake-complete");
+  }
+
+  const intakeProvenance: IntakeProvenance = !intakeComplete
+    ? "none"
+    : intakeSource === "together"
+      ? "recorded-together"
+      : "reviewed";
 
   if (stage === "intake-form" && patient) {
     return (
@@ -808,9 +1012,12 @@ export function PatientAcquisitionFlow({
                 <dt>{t("Name")}</dt>
                 <dd>{patient.name}</dd>
               </div>
+              {/* One field per fact. A record either has a date of birth or
+                  an estimated age; a combined row lets an estimate be read
+                  back as exact. */}
               <div>
-                <dt>{t("Date of birth or age")}</dt>
-                <dd>{patient.dobOrAge}</dd>
+                <dt>{patient.dob ? t("Date of birth") : t("Age")}</dt>
+                <dd>{patient.dob ?? patientAgeLabel(patient, t)}</dd>
               </div>
               <div>
                 <dt>{t("Sex")}</dt>
@@ -822,10 +1029,7 @@ export function PatientAcquisitionFlow({
               className={styles.patientIntakeForm}
               onSubmit={(event) => {
                 event.preventDefault();
-                if (intakeComplete) {
-                  setExpandedContextSections([...INTAKE_CONTEXT_SECTION_IDS]);
-                  setStage("intake-complete");
-                }
+                if (intakeComplete) finishIntakeForm();
               }}
             >
               <Checkbox
@@ -901,7 +1105,11 @@ export function PatientAcquisitionFlow({
     stage !== "intake-form"
   ) {
     const submittedRecord =
-      stage === "intake-complete" || stage === "ready-to-order"
+      intakeComplete &&
+      (stage === "intake-complete" ||
+        stage === "intake-review" ||
+        stage === "next-step" ||
+        stage === "ready-to-order")
         ? {
             allergies,
             familyHistory,
@@ -929,7 +1137,7 @@ export function PatientAcquisitionFlow({
             key={patient.id ?? patient.pid ?? patient.name}
             onClose={() => {
               if (onExit) onExit();
-              else setStage("intake-complete");
+              else setStage("next-step");
             }}
             onJourneyChange={setLabOrderJourney}
             onReviewResults={
@@ -941,12 +1149,33 @@ export function PatientAcquisitionFlow({
         ) : (
           <IntakeStatusCard
             answeredCount={answeredCount}
+            clinicianName={clinicianName}
+            confirmed={confirmedItems}
             items={intakeItems}
             live={liveSend}
-            openedLabel={intakeProgress?.openedLabel}
+            onCompleteTogether={() => {
+              setIntakeSource("together");
+              setStage("intake-form");
+            }}
+            onConfirmItem={(label) =>
+              setConfirmedItems((previous) =>
+                previous.includes(label)
+                  ? previous.filter((entry) => entry !== label)
+                  : [...previous, label],
+              )
+            }
+            onDecline={() => setStage("next-step")}
+            onDone={() => {
+              if (onExit) onExit();
+              else restart();
+            }}
             onOrder={() => setStage("ready-to-order")}
+            onReview={() => setStage("intake-review")}
+            onReviewed={() => setStage("next-step")}
             onSend={sendIntake}
+            openedLabel={intakeProgress?.openedLabel}
             patientName={patient.name}
+            provenance={intakeProvenance}
             stage={stage}
           />
         )}
@@ -957,6 +1186,7 @@ export function PatientAcquisitionFlow({
   const phoneGate = (
     <PhoneGateModal
       createDelayMs={phoneGateDelayMs}
+      duplicateCheckDelayMs={phoneGateDelayMs}
       lookup={lookup}
       onClose={(reason) => {
         if (reason !== "dismissed") return;

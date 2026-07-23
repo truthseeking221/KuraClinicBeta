@@ -27,12 +27,16 @@ export type PatientSwitcherProps = {
   onSwitchPatient: (patientId: string) => void;
 };
 
+/**
+ * Exceptions only. A verified identity is the routine case here, and a badge
+ * on every row marks nothing — worse, a green "Verified" beside a name reads
+ * as the whole record being confirmed when it states one axis.
+ */
 function badgeFor(patient: PatientSummary) {
   const status = statusViewOf(patient);
   if (status.kind === "terminal") return { label: status.label, variant: "neutral" as const };
-  return status.assurance === "verified"
-    ? { label: status.label, variant: "success" as const }
-    : { label: status.label, variant: "warning" as const };
+  if (status.assurance === "verified") return undefined;
+  return { label: status.label, variant: "warning" as const };
 }
 
 /**
@@ -104,9 +108,11 @@ export function PatientSwitcher({ patient, patients, onSwitchPatient }: PatientS
                     <span className={styles.name}>{displayNameOf(candidate, t)}</span>
                     {meta ? <span className={styles.meta}>{meta}</span> : null}
                   </span>
-                  <Badge size="sm" variant={badge.variant}>
-                    {t(badge.label)}
-                  </Badge>
+                  {badge ? (
+                    <Badge size="sm" variant={badge.variant}>
+                      {t(badge.label)}
+                    </Badge>
+                  ) : null}
                 </button>
               </li>
             );

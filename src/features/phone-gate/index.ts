@@ -4,10 +4,17 @@ export { PatientIdentity, patientMeta } from './patient-identity';
 export { PatientDetailsForm } from './patient-details-form';
 export { SharedPhoneMatches } from './shared-phone-matches';
 export { VerifiedPhoneLine } from './verified-phone-line';
-export { temporaryPatientContext, PHONE_GATE_COPY } from './logic';
+export {
+  draftAgeLabel,
+  draftAgeYears,
+  draftDob,
+  temporaryPatientContext,
+  PHONE_GATE_COPY,
+} from './logic';
 export type {
   DraftPatient,
   DraftPatientErrors,
+  DuplicateCheckResult,
   MatchedPatient,
   PhoneGateOutcome,
   PhoneGateState,

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { EARNINGS_DEMO_SCENARIOS } from '../doctor-banking/demo-data';
+import { BALANCE_DEMO_SCENARIOS } from '../doctor-banking/demo-data';
 import { HOME_DEMO_SCENARIOS } from '../home/demo-data';
 import {
   PATIENT_CHART_DEMO_SCENARIOS,
@@ -65,7 +65,7 @@ describe('onboarding-driven demo scenario registry', () => {
   });
 
   it('covers the source-backed routed scenario set', () => {
-    expect(DEMO_ONBOARDING_SCENARIOS).toHaveLength(90);
+    expect(DEMO_ONBOARDING_SCENARIOS).toHaveLength(96);
     expect(new Set(DEMO_ONBOARDING_SCENARIOS.map((scenario) => scenario.surface))).toEqual(
       new Set([
         'onboarding',
@@ -73,7 +73,7 @@ describe('onboarding-driven demo scenario registry', () => {
         'patients',
         'patient-chart',
         'results',
-        'earnings',
+        'balance',
         'front-desk-queue',
         'front-desk-check-in',
         'front-desk-payments',
@@ -140,8 +140,8 @@ describe('onboarding-driven demo scenario registry', () => {
       if (scenario.surface === 'results') {
         expect(scenario.variant in RESULTS_DEMO_SCENARIOS).toBe(true);
       }
-      if (scenario.surface === 'earnings') {
-        expect(scenario.variant in EARNINGS_DEMO_SCENARIOS).toBe(true);
+      if (scenario.surface === 'balance') {
+        expect(scenario.variant in BALANCE_DEMO_SCENARIOS).toBe(true);
       }
       if (scenario.surface === 'front-desk-queue') {
         expect(scenario.variant in FRONT_DESK_QUEUE_DEMO_SCENARIOS).toBe(true);

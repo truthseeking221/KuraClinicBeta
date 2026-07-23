@@ -22,9 +22,9 @@ describe('app shell route map', () => {
       mode: 'clinical',
       key: 'patients',
     });
-    expect(navStateForPath('/earnings/activity')).toEqual({
+    expect(navStateForPath('/balance/activity')).toEqual({
       mode: 'clinical',
-      key: 'earnings',
+      key: 'balance',
     });
     expect(navStateForPath('/front-desk/arrivals/check-in')).toEqual({
       mode: 'front-desk',

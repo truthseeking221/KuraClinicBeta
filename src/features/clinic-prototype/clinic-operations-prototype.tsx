@@ -17,9 +17,10 @@ import {
   DEMO_QUEUE,
   DrawWorksheet,
   ScanGate,
+  emptyDraft,
   queueForRole,
 } from '../collection';
-import type { CollectionPatient, Sample } from '../collection';
+import type { CollectionDraft, CollectionPatient } from '../collection';
 import {
   CheckInWizard,
   EXISTING_PATIENTS,
@@ -58,7 +59,7 @@ export function ClinicOperationsPrototype() {
   const [receptionComplete, setReceptionComplete] = useState(false);
 
   const [collectionPatient, setCollectionPatient] = useState<CollectionPatient | null>(null);
-  const [samples, setSamples] = useState<Sample[]>([]);
+  const [collectionDraft, setCollectionDraft] = useState<CollectionDraft>(emptyDraft);
   const [collectionComplete, setCollectionComplete] = useState(false);
 
   function changeMode(nextMode: ClinicMode) {
@@ -73,7 +74,7 @@ export function ClinicOperationsPrototype() {
 
   function resetCollection() {
     setCollectionPatient(null);
-    setSamples([]);
+    setCollectionDraft(emptyDraft());
     setCollectionComplete(false);
   }
 
@@ -160,32 +161,26 @@ export function ClinicOperationsPrototype() {
         </Alert>
       ) : collectionPatient ? (
         <DrawWorksheet
+          draft={collectionDraft}
           now={DEMO_NOW}
-          onMarkVitalsDone={() =>
-            setCollectionPatient((current) =>
-              current
-                ? {
-                    ...current,
-                    journey: { ...current.journey, vitals: 'done' },
-                  }
-                : current,
-            )
-          }
+          onComplete={() => setCollectionComplete(true)}
+          onDraftChange={setCollectionDraft}
           onSaveDraft={() => {
             setCollectionPatient(null);
-            setSamples([]);
+            setCollectionDraft(emptyDraft());
           }}
-          onSubmit={() => setCollectionComplete(true)}
-          onUpdateSamples={setSamples}
+          onSendToVitals={() => {
+            setCollectionPatient(null);
+            setCollectionDraft(emptyDraft());
+          }}
           operatorName={DEMO_OPERATOR}
           patient={collectionPatient}
-          samples={samples}
         />
       ) : (
         <ScanGate
           onMatch={(patient) => {
             setCollectionPatient(patient);
-            setSamples(patient.samples);
+            setCollectionDraft(emptyDraft());
           }}
           queue={PHLEBOTOMY_QUEUE}
           role="phlebotomy"

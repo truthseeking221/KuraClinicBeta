@@ -61,6 +61,6 @@ export const SHELL_KM: KhmerDictionary = {
   // Nav destinations
   Arrivals: 'អ្នកមកដល់',
   Catalog: 'បញ្ជីតេស្ត',
-  Earnings: 'ប្រាក់ចំណូល',
+  Balance: 'សមតុល្យ',
   Scan: 'ស្កេន',
 };

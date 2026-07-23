@@ -14,9 +14,16 @@ export const PATIENTS_KM: KhmerDictionary = {
   'Add patient': 'បន្ថែមអ្នកជំងឺ',
   All: 'ទាំងអស់',
   // The identity axis is shared with front-desk, which also states it at the
-  // door. 'Verified' matches that file; 'Unverified' is left to it, so the two
-  // surfaces cannot drift. Both belong in common.ts.
+  // door. 'Verified' matches that file, so the two surfaces cannot drift; both
+  // belong in common.ts. 'Provisional' is owned by journey.ts and 'None' by
+  // front-desk.ts — the merged dictionary is global, so neither is redefined.
   Verified: 'បានផ្ទៀងផ្ទាត់',
+  // Each axis is named wherever it is read: the column header for sighted
+  // readers, the row summary for assistive tech. 'Verified phone' is owned by
+  // auth.ts and 'Identity verified' by front-desk.ts, which state the same two
+  // axes at the other doors.
+  'Identity provisional': 'អត្តសញ្ញាណបណ្តោះអាសន្ន',
+  'No verified phone': 'គ្មានទូរស័ព្ទដែលបានផ្ទៀងផ្ទាត់',
   'Why now': 'ហេតុអ្វីឥឡូវ',
   'Demo patient': 'អ្នកជំងឺគំរូ',
   'Filter by identity status': 'ត្រងតាមស្ថានភាពអត្តសញ្ញាណ',
@@ -26,8 +33,9 @@ export const PATIENTS_KM: KhmerDictionary = {
 
   // Registry: empty and error states
   'No patients yet': 'មិនទាន់មានអ្នកជំងឺ',
-  'No unverified patients': 'គ្មានអ្នកជំងឺមិនទាន់ផ្ទៀងផ្ទាត់',
-  'No verified patients': 'គ្មានអ្នកជំងឺដែលបានផ្ទៀងផ្ទាត់',
+  'No provisional patients': 'គ្មានអ្នកជំងឺបណ្តោះអាសន្ន',
+  'No patients with a verified identity':
+    'គ្មានអ្នកជំងឺដែលបានផ្ទៀងផ្ទាត់អត្តសញ្ញាណ',
   'Check the patient’s phone number before creating their record.':
     'ពិនិត្យលេខទូរស័ព្ទអ្នកជំងឺមុននឹងបង្កើតកំណត់ត្រា។',
   'Patients appear after their first booking or check-in.':

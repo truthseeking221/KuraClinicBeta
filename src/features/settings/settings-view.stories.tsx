@@ -253,13 +253,13 @@ export const PatientMessages: Story = {
   },
 };
 
-/** Workspace payments stay separate from person-owned Earnings. */
+/** Workspace payments stay separate from the doctor-owned Balance. */
 export const Payments: Story = {
   args: { section: 'billing' },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getByText('Workspace scope')).toBeVisible();
-    await expect(canvas.getByText('Managed in Earnings')).toBeVisible();
+    await expect(canvas.getByText('Managed in Balance')).toBeVisible();
     await expect(canvas.getByText('Patient KHQR collection')).toBeVisible();
     await expect(canvas.queryByText(/Auto pay cap/i)).not.toBeInTheDocument();
   },

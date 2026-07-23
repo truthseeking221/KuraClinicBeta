@@ -287,7 +287,7 @@ export const CLINIC_FLOW_STAGES: readonly ClinicFlowStage[] = [
       { id: 'FIN-05', label: 'Claim submission and reconciliation', status: 'DEFERRED' },
       { id: 'FIN-14', label: 'Automated payout or debt collection', status: 'DEFERRED' },
     ],
-    surfaceLabel: 'Open Earnings',
+    surfaceLabel: 'Open Balance',
   },
   {
     id: 'settings',

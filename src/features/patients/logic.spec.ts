@@ -5,6 +5,7 @@ import {
   displayNameOf,
   filterByAssurance,
   formatAgeSex,
+  hasVerifiedPhone,
   initialsOf,
   rowLabelOf,
   statusViewOf,
@@ -63,13 +64,28 @@ describe('statusViewOf', () => {
       kind: 'terminal',
       status: 'deceased',
       label: 'Deceased',
+      rowLabel: 'Deceased',
     });
     expect(statusViewOf(patient({ status: 'merged' })).label).toBe('Merged');
   });
 
   it('falls back to the two-value assurance axis', () => {
     expect(statusViewOf(patient()).label).toBe('Verified');
-    expect(statusViewOf(patient({ assurance: 'unverified' })).label).toBe('Unverified');
+    expect(statusViewOf(patient({ assurance: 'unverified' })).label).toBe('Provisional');
+  });
+
+  it('names the identity axis wherever no column header does', () => {
+    expect(statusViewOf(patient()).rowLabel).toBe('Identity verified');
+    expect(statusViewOf(patient({ assurance: 'unverified' })).rowLabel).toBe(
+      'Identity provisional',
+    );
+  });
+});
+
+describe('hasVerifiedPhone', () => {
+  it('reads the contact axis independently of assurance', () => {
+    expect(hasVerifiedPhone(patient({ assurance: 'unverified' }))).toBe(true);
+    expect(hasVerifiedPhone(patient({ phoneMasked: '' }))).toBe(false);
   });
 });
 
@@ -100,13 +116,22 @@ describe('filterByAssurance / countByAssurance', () => {
 describe('rowLabelOf', () => {
   it('summarises the row for assistive tech', () => {
     expect(rowLabelOf(patient(), 'Results to review')).toBe(
-      'Open Sok Nimol. 52 · F. Verified. Results to review',
+      'Open Sok Nimol. 52 · F. Identity verified. Results to review',
     );
   });
 
   it('omits unknown parts instead of announcing placeholders', () => {
     expect(rowLabelOf(patient({ hasAge: false, age: 0, sexAtBirth: 'Unknown' }))).toBe(
-      'Open Sok Nimol. Verified',
+      'Open Sok Nimol. Identity verified',
+    );
+  });
+
+  it('announces a missing verified phone, and stays silent when one exists', () => {
+    expect(rowLabelOf(patient({ assurance: 'unverified', phoneMasked: '' }))).toBe(
+      'Open Sok Nimol. 52 · F. Identity provisional. No verified phone',
+    );
+    expect(rowLabelOf(patient({ assurance: 'unverified' }))).toBe(
+      'Open Sok Nimol. 52 · F. Identity provisional',
     );
   });
 });

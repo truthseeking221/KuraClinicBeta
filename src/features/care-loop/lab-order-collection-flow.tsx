@@ -34,12 +34,11 @@ import { CameraIcon, CheckIcon, QrCodeIcon } from "../../components/ui/icons";
 import { useT } from "../../components/foundations/i18n";
 import { DrawWorksheet } from "../collection/draw-worksheet";
 import { ScanGate } from "../collection/scan-gate";
-import { TubeLabeling } from "../collection/tube-labeling";
 import { TUBE_CATALOG } from "../collection/catalog";
+import { readyDraft } from "../collection/demo-data";
 import type {
-  Sample,
-  TubeLabelMethod,
-  TubeLabelPhotoCheck,
+  CollectionDraft,
+  ExpectedSpecimenPlanItem,
 } from "../collection/types";
 import {
   LAB_CATALOG_CATEGORIES,
@@ -59,6 +58,8 @@ import type {
 } from "../order-cart/types";
 
 import { CareLoopFrame } from "./care-loop-frame";
+import { DoctorTubeLabeling } from "./doctor-tube-labeling";
+import type { TubeLabelMethod, TubeLabelPhotoCheck } from "./doctor-tube-labeling";
 import {
   LabJourneyProgress,
   labJourneyStatusFromCollectionStage,
@@ -287,7 +288,9 @@ const DOCTOR_COLLECTION_STEPS = [
 ] as const;
 
 function workspaceTitle(stage: LabOrderCollectionStage, route: LabOrderRoute) {
-  if (stage === "ordering") return "Lab order";
+  // The heading names the doctor's task, not the object. "Lab order" under an
+  // actor eyebrow read as a section label with the work hidden inside it.
+  if (stage === "ordering") return "Order lab tests";
   if (route !== "self") return "Lab order";
   if (stage === "prepare-tubes") return "Prepare collection tubes";
   if (stage === "label-tubes") return "Label collected samples";
@@ -377,10 +380,15 @@ function LabOrderFlowShell({
       <header className={styles.labOrderWorkspaceHeader}>
         <div className={styles.labOrderWorkspaceHeading}>
           <div>
-            {stage === "ordering" ? (
-              <p className={styles.eyebrow}>{t(actor)}</p>
-            ) : null}
             <h2 id="lab-order-workspace-title">{t(title)}</h2>
+            {/* Who this order is for, instead of which role is speaking: the
+                doctor is the one reading it, and the patient is the fact that
+                changes what may be ordered. */}
+            {stage === "ordering" ? (
+              <p className={styles.labOrderWorkspaceMeta}>
+                {t("For")} {patient.name}
+              </p>
+            ) : null}
             {route === "self" && stage !== "ordering" ? (
               <p className={styles.labOrderWorkspaceMeta}>
                 {patient.name} · {patient.pid ?? t("Pending verification")} ·{" "}
@@ -396,7 +404,11 @@ function LabOrderFlowShell({
             />
           ) : null}
         </div>
-        {isLogisticsStage(stage) ? null : route === "self" && stage !== "ordering" ? (
+        {/* No progress bar while ordering. The bar counted PSC, phlebotomy and
+            lab stages the doctor does not perform, so "Step 1 of 5" turned one
+            clinical decision into the opening of someone else's wizard. */}
+        {isLogisticsStage(stage) || stage === "ordering" ? null : route ===
+            "self" ? (
           <DoctorCollectionStepper value={Math.max(1, currentStep - 1)} />
         ) : (
           <Progress
@@ -424,22 +436,22 @@ function initialReceptionWorkflow(): ReceptionistOrderCartWorkflow {
   });
 }
 
-function samplesForSelectedTests(
-  availableSamples: readonly Sample[],
+function planForSelectedTests(
+  availablePlan: readonly ExpectedSpecimenPlanItem[],
   selectedTestIds: readonly string[],
 ) {
-  if (selectedTestIds.length === 0) return [...availableSamples];
+  if (selectedTestIds.length === 0) return [...availablePlan];
   const selectedNames = new Set(
     CARE_LOOP_CART_ITEMS.filter((item) => selectedTestIds.includes(item.id)).map(
       (item) => item.name,
     ),
   );
-  return availableSamples
-    .map((sample) => ({
-      ...sample,
-      tests: sample.tests.filter((test) => selectedNames.has(test)),
+  return availablePlan
+    .map((item) => ({
+      ...item,
+      tests: item.tests.filter((test) => selectedNames.has(test)),
     }))
-    .filter((sample) => sample.tests.length > 0);
+    .filter((item) => item.tests.length > 0);
 }
 
 export function LabOrderSampleCollectionFlow({
@@ -480,12 +492,14 @@ export function LabOrderSampleCollectionFlow({
   const [reception, setReception] = useState<ReceptionistOrderCartWorkflow>(
     initialReceptionWorkflow,
   );
-  const [samples, setSamples] = useState<Sample[]>(() =>
-    samplesForSelectedTests(
-      collectionPatient.samples,
+  const [plan, setPlan] = useState<ExpectedSpecimenPlanItem[]>(() =>
+    planForSelectedTests(
+      collectionPatient.plan,
       initialJourney?.selectedTestIds ?? [],
     ),
   );
+  // The worksheet owns what was actually drawn; this flow only owns the plan.
+  const [collectionDraft, setCollectionDraft] = useState<CollectionDraft>(() => readyDraft());
   const [patientLoaded, setPatientLoaded] = useState(
     restoredStage === "draw" ||
       restoredStage === "handoff" ||
@@ -519,12 +533,12 @@ export function LabOrderSampleCollectionFlow({
       CARE_LOOP_CART_ITEMS.filter((item) => selectedTestIds.includes(item.id)),
     [selectedTestIds],
   );
-  const plannedSamples = useMemo(() => {
-    return samplesForSelectedTests(collectionPatient.samples, selectedTestIds);
-  }, [collectionPatient.samples, selectedTestIds]);
+  const plannedSpecimens = useMemo(() => {
+    return planForSelectedTests(collectionPatient.plan, selectedTestIds);
+  }, [collectionPatient.plan, selectedTestIds]);
   const plannedTestNames = useMemo(
-    () => new Set(collectionPatient.samples.flatMap((sample) => sample.tests)),
-    [collectionPatient.samples],
+    () => new Set(collectionPatient.plan.flatMap((item) => item.tests)),
+    [collectionPatient.plan],
   );
   const testsWithoutTubePlan = useMemo(
     () => selectedItems.filter((item) => !plannedTestNames.has(item.name)),
@@ -606,7 +620,8 @@ export function LabOrderSampleCollectionFlow({
     setSelectedTestIds([]);
     setDoctor(initialDoctorWorkflow(initialDecisions));
     setReception(initialReceptionWorkflow());
-    setSamples(collectionPatient.samples);
+    setPlan(collectionPatient.plan);
+    setCollectionDraft(readyDraft());
     setPatientLoaded(false);
     setLabelMethod("sticker");
     setLabelPhotoChecks({
@@ -629,7 +644,7 @@ export function LabOrderSampleCollectionFlow({
       onOrderPlaced?.({ orderId: patient.orderId, selectedTestIds });
       orderPlacedRef.current = true;
     }
-    setSamples(plannedSamples);
+    setPlan(plannedSpecimens);
     const nextStage = stageAfterOrdering(doctor.decisions);
     setStage(nextStage);
   }
@@ -764,7 +779,7 @@ export function LabOrderSampleCollectionFlow({
 
       {stage === "prepare-tubes" ? (
         <div className={styles.workflowRail}>
-          <TubeLabeling
+          <DoctorTubeLabeling
             method={labelMethod}
             onConfirm={() => setStage("label-tubes")}
             onMethodChange={setLabelMethod}
@@ -772,7 +787,7 @@ export function LabOrderSampleCollectionFlow({
             patientLabelLine={careLoopTubeLabelLine(patient)}
             photoChecks={labelPhotoChecks}
             stage="collect"
-            tubeKeys={samples.map((sample) => sample.tube)}
+            tubeKeys={plan.map((item) => item.tube)}
           />
         </div>
       ) : null}
@@ -791,7 +806,7 @@ export function LabOrderSampleCollectionFlow({
               </p>
             </section>
           )}
-          <TubeLabeling
+          <DoctorTubeLabeling
             method={labelMethod}
             onConfirm={() =>
               setStage(route === "self" ? "verify-labels" : "handoff")
@@ -801,7 +816,7 @@ export function LabOrderSampleCollectionFlow({
             patientLabelLine={careLoopTubeLabelLine(patient)}
             photoChecks={labelPhotoChecks}
             stage="label"
-            tubeKeys={samples.map((sample) => sample.tube)}
+            tubeKeys={plan.map((item) => item.tube)}
             verificationRequired={route === "self"}
           />
         </div>
@@ -857,18 +872,18 @@ export function LabOrderSampleCollectionFlow({
                       </p>
                     </div>
                     <Badge size="sm" variant="success">
-                      {capturedTubeIds.length}/{samples.length}{" "}
+                      {capturedTubeIds.length}/{plan.length}{" "}
                       {t("photos captured")}
                     </Badge>
                   </div>
                   <ul className={styles.photoRows}>
-                    {samples.map((sample, index) => {
+                    {plan.map((item: ExpectedSpecimenPlanItem, index: number) => {
                       const tube = TUBE_CATALOG.find(
-                        (entry) => entry.key === sample.tube,
+                        (entry) => entry.key === item.tube,
                       );
-                      const captured = capturedTubeIds.includes(sample.id);
+                      const captured = capturedTubeIds.includes(item.id);
                       return (
-                        <li key={sample.id}>
+                        <li key={item.id}>
                           <span className={styles.sampleIndex}>
                             {index + 1}
                           </span>
@@ -878,8 +893,8 @@ export function LabOrderSampleCollectionFlow({
                             style={{ background: tube?.color }}
                           />
                           <span className={styles.sampleCopy}>
-                            <strong>{tube?.short ?? sample.container}</strong>
-                            <span>{sample.tests.join(" · ")}</span>
+                            <strong>{tube?.short ?? item.container}</strong>
+                            <span>{item.tests.join(" · ")}</span>
                           </span>
                           <Button
                             disabled={captured}
@@ -893,7 +908,7 @@ export function LabOrderSampleCollectionFlow({
                             onClick={() =>
                               setCapturedTubeIds((current) => [
                                 ...current,
-                                sample.id,
+                                item.id,
                               ])
                             }
                             size="sm"
@@ -912,8 +927,8 @@ export function LabOrderSampleCollectionFlow({
               <CardFooter>
                 <Button
                   disabled={
-                    samples.length === 0 ||
-                    capturedTubeIds.length !== samples.length
+                    plan.length === 0 ||
+                    capturedTubeIds.length !== plan.length
                   }
                   onClick={() => setStage("handoff")}
                   variant="primary"
@@ -937,7 +952,7 @@ export function LabOrderSampleCollectionFlow({
               setPatientLoaded(true);
               setStage("draw");
             }}
-            queue={[{ ...collectionPatient, samples }]}
+            queue={[{ ...collectionPatient, plan }]}
             role="phlebotomy"
           />
         )
@@ -945,11 +960,12 @@ export function LabOrderSampleCollectionFlow({
 
       {stage === "draw" ? (
         <DrawWorksheet
+          draft={collectionDraft}
           now={CARE_LOOP_NOW}
-          onMarkVitalsDone={() => {}}
+          onComplete={() => setStage("label-tubes")}
+          onDraftChange={setCollectionDraft}
           onSaveDraft={() => setStage("scan")}
-          onSubmit={() => setStage("label-tubes")}
-          onUpdateSamples={setSamples}
+          onSendToVitals={() => {}}
           operatorName={
             route === "self"
               ? t("Ordering clinician")
@@ -958,7 +974,6 @@ export function LabOrderSampleCollectionFlow({
                 : CARE_LOOP_OPERATOR
           }
           patient={collectionPatient}
-          samples={samples}
         />
       ) : null}
 
@@ -967,7 +982,7 @@ export function LabOrderSampleCollectionFlow({
           <Alert tone="success">
             <AlertTitle>{t("All samples prepared")}</AlertTitle>
             <AlertDescription>
-              {samples.length} {t("tubes collected")} · {samples.length}{" "}
+              {plan.length} {t("tubes collected")} · {plan.length}{" "}
               {t("labels verified")} · {capturedTubeIds.length}{" "}
               {t("photos captured")}
             </AlertDescription>
@@ -1040,7 +1055,7 @@ export function LabOrderSampleCollectionFlow({
               <div>
                 <dt>{t("Collected")}</dt>
                 <dd>
-                  {samples.length} {t("tubes")}
+                  {plan.length} {t("tubes")}
                 </dd>
               </div>
               <div>

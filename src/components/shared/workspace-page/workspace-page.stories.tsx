@@ -32,7 +32,7 @@ const meta = {
         owner: 'src/components/shared/workspace-page',
         hierarchy: 'Pattern',
         evidence:
-          'Home, Results, Patients, Catalog and Earnings repeated page measure, header and split-grid CSS. This owner centralizes only that geometry while Card, Button, Badge and each feature retain their canonical responsibilities.',
+          'Home, Results, Patients, Catalog and Balance repeated page measure, header and split-grid CSS. This owner centralizes only that geometry while Card, Button, Badge and each feature retain their canonical responsibilities.',
         exclusions: [
           'Domain fields, statuses and actions remain feature-owned.',
           'Station and clinical-detail surfaces may opt into full width.',
@@ -65,7 +65,7 @@ const metrics = [
   { label: 'Results', value: '3', meta: '1 critical', icon: ChartAnalysisIcon },
   { label: 'Bookings', value: '3', meta: '1 missed', icon: AppointmentIcon },
   { label: 'Patients', value: '8', meta: '2 rising trends', icon: UserMultipleIcon },
-  { label: 'Earnings', value: '$34.50', meta: '3 orders', icon: WalletIcon },
+  { label: 'Balance', value: '$34.50', meta: '3 orders', icon: WalletIcon },
 ] as const;
 
 function WorkspaceExample({ onCreate = fn() }: { onCreate?: () => void }) {

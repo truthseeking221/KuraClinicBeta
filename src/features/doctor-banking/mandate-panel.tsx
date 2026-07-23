@@ -28,8 +28,9 @@ import {
 } from '../../components/ui';
 import { useT } from '../../components/foundations/i18n';
 
-import { formatBankingDateTime } from './logic';
-import type { MandateLinkSession, MandateState, MandateSummary } from './types';
+import { balanceDirection, formatBankingDateTime, mandateCapabilities } from './logic';
+import { SignedMoneyText } from './money';
+import type { MandateLinkSession, MandateState, MandateSummary, SignedMoney } from './types';
 import styles from './doctor-banking.module.css';
 
 /**
@@ -43,32 +44,32 @@ export const MANDATE_COPY: Record<
   unlinked: {
     label: 'Not linked',
     variant: 'neutral',
-    description: 'KHQR remains available. Link ABA only if you want optional scheduled collections.',
+    description: 'KHQR already works. Link ABA only if you want Kura to collect for you.',
   },
   link_pending: {
     label: 'Waiting for ABA',
     variant: 'warning',
-    description: 'The authorization is not active until ABA confirms it.',
+    description: 'Nothing is authorized until ABA confirms it.',
   },
   linked: {
     label: 'Auto-pay active',
     variant: 'success',
-    description: 'Scheduled collections use the linked ABA authorization after the required notice.',
+    description: 'Kura collects what you owe after sending you a notice.',
   },
   renewal_required: {
     label: 'Renewal required',
     variant: 'warning',
-    description: 'Renew the authorization before the next eligible scheduled collection.',
+    description: 'Renew before the next scheduled collection, or Kura cannot collect.',
   },
   expired: {
     label: 'Authorization expired',
     variant: 'danger',
-    description: 'Scheduled collections are unavailable. KHQR remains available.',
+    description: 'Kura cannot collect. KHQR still works.',
   },
   frozen: {
     label: 'Collection frozen',
     variant: 'danger',
-    description: 'Kura has paused collection actions while the account state is reviewed.',
+    description: 'Kura has paused collections while your account state is reviewed.',
   },
   deleted: {
     label: 'Authorization deleted',
@@ -79,7 +80,9 @@ export const MANDATE_COPY: Record<
 
 export type MandatePanelProps = {
   mandate: MandateSummary;
+  capabilities?: ReturnType<typeof mandateCapabilities>;
   linkSession?: MandateLinkSession | null;
+  remainingBalance?: SignedMoney;
   onBeginLink?: () => void;
   onRenew?: () => void;
   onRegenerateLink?: () => void;
@@ -99,7 +102,7 @@ function LinkSessionContent({
     return (
       <Alert tone="info">
         <AlertTitle>{t('Starting secure ABA link')}</AlertTitle>
-        <AlertDescription>{t('Waiting for a provider link session. No authorization is active yet.')}</AlertDescription>
+        <AlertDescription>{t('Waiting for a provider link session. Nothing is authorized yet.')}</AlertDescription>
       </Alert>
     );
   }
@@ -118,7 +121,7 @@ function LinkSessionContent({
     return (
       <Alert tone="success">
         <AlertTitle>{t('ABA confirmed the authorization')}</AlertTitle>
-        <AlertDescription>{t('The linked account will appear after the balance overview refreshes.')}</AlertDescription>
+        <AlertDescription>{t('The linked account appears once your balance refreshes.')}</AlertDescription>
       </Alert>
     );
   }
@@ -129,6 +132,15 @@ function LinkSessionContent({
         <QrCodeIcon aria-hidden="true" size={96} />
       </div>
       <div className={styles.linkInstructions}>
+        {session.state === 'long_running' ? (
+          <Alert tone="warning">
+            <AlertTitle>{t('ABA is taking longer than usual')}</AlertTitle>
+            <AlertDescription>
+              {t('Your account is not linked yet. Keep this open, or create a new link if ABA never responds.')}
+            </AlertDescription>
+            <Button onClick={onRegenerate} variant="outline">{t('Create new link')}</Button>
+          </Alert>
+        ) : null}
         <p className={styles.instructionTitle}>{t('Confirm in ABA Mobile')}</p>
         <ol className={styles.steps}>
           <li>{t('Open ABA Mobile on your phone.')}</li>
@@ -148,19 +160,21 @@ function LinkSessionContent({
 }
 
 export function MandatePanel({
+  capabilities,
   linkSession,
   mandate,
   onBeginLink,
   onRegenerateLink,
   onRenew,
   onUnlink,
+  remainingBalance,
 }: MandatePanelProps) {
   const t = useT();
   const [linkOpen, setLinkOpen] = useState(Boolean(linkSession));
   const copy = MANDATE_COPY[mandate.state];
-  const canLink = mandate.state === 'unlinked' || mandate.state === 'expired';
-  const canRenew = mandate.state === 'renewal_required';
-  const canUnlink = mandate.state === 'linked' || mandate.state === 'renewal_required';
+  const rules = capabilities ?? mandateCapabilities(mandate.state, 'verified');
+  const owesOnUnlink =
+    remainingBalance && balanceDirection(remainingBalance.minor) === 'doctor-owes';
 
   const begin = () => {
     onBeginLink?.();
@@ -194,19 +208,25 @@ export function MandatePanel({
           <AlertTitle>{t(copy.label)}</AlertTitle>
           <AlertDescription>
             {mandate.state === 'frozen'
-              ? t('No collection or account change can be started while this state is active.')
+              ? t('No collection can run while this state is active. Unlinking still works.')
               : t('Contact Kura support if you need to link another eligible account.')}
           </AlertDescription>
         </Alert>
       ) : null}
 
       <div className={styles.objectActions}>
-        {canLink ? <Button onClick={begin}>{mandate.state === 'expired' ? t('Link ABA again') : t('Link ABA')}</Button> : null}
-        {canRenew ? <Button onClick={() => { onRenew?.(); setLinkOpen(true); }}>{t('Renew authorization')}</Button> : null}
+        {rules.canLink ? (
+          <Button onClick={begin}>
+            {mandate.state === 'unlinked' ? t('Link ABA') : t('Link ABA again')}
+          </Button>
+        ) : null}
+        {rules.canRenew ? (
+          <Button onClick={() => { onRenew?.(); setLinkOpen(true); }}>{t('Renew authorization')}</Button>
+        ) : null}
         {mandate.state === 'link_pending' ? (
           <Button onClick={() => setLinkOpen(true)} variant="secondary">{t('View link session')}</Button>
         ) : null}
-        {canUnlink ? (
+        {rules.canUnlink ? (
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button variant="ghost">{t('Unlink ABA')}</Button>
@@ -215,7 +235,15 @@ export function MandatePanel({
               <AlertDialogHeader>
                 <AlertDialogTitle>{t('Unlink this ABA authorization?')}</AlertDialogTitle>
                 <AlertDialogDescription>
-                  {t('Scheduled collections will stop. Any remaining balance you owe may require a final collection or KHQR settlement.')}
+                  {owesOnUnlink ? (
+                    <>
+                      {t('Kura tries one final collection, then stops. You still owe')}{' '}
+                      <SignedMoneyText value={remainingBalance} />{' '}
+                      {t('and can settle it by KHQR. Unlinking always completes, even if that collection fails.')}
+                    </>
+                  ) : (
+                    t('Scheduled collections stop. You can settle by KHQR at any time and link again later.')
+                  )}
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>

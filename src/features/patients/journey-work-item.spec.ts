@@ -32,4 +32,22 @@ describe('resumable patient work', () => {
 
     expect(workItem).toEqual({ action, label });
   });
+
+  it.each([
+    ['intake-complete', 'Intake to review'],
+    ['intake-review', 'Intake to review'],
+    ['next-step', 'Ready for the next step'],
+    ['ready-to-order', 'Ready to order tests'],
+  ] as const)(
+    'names %s as work the doctor still has to do',
+    (stage, label) => {
+      const workItem = workItemFromJourney({
+        ...DEMO_RESUMABLE_PATIENT_JOURNEY,
+        labOrder: undefined,
+        stage,
+      });
+
+      expect(workItem).toEqual({ action: 'continue', label });
+    },
+  );
 });

@@ -12,106 +12,109 @@ import {
   TableRow,
 } from '../../components/ui';
 
-import { tubeByKey } from './catalog';
-import { formatCountdown, remainingClotMs, sortByDrawOrder, timerTone } from './logic';
-import type { Sample } from './types';
+import { SAMPLE_ISSUE_REASONS, tubeByKey } from './catalog';
+import { formatCountdown, labelResolved, sampleTiming, timingTone } from './logic';
+import type { ActualSample } from './types';
 import styles from './sample-table.module.css';
 
 export type SampleTableProps = {
-  samples: Sample[];
+  /** Tubes that physically exist. An empty list is the honest pre-draw state. */
+  samples: readonly ActualSample[];
   now: number;
   focusedSampleId?: string | null;
   onFocusSample?: (id: string | null) => void;
-  /** Collect stays disabled until the safety checklist is complete. */
-  collectEnabled: boolean;
-  onCollect: (id: string) => void;
-  onDefer: (id: string, trigger: HTMLButtonElement) => void;
-  onReset: (id: string) => void;
-  onMarkInverted: (id: string) => void;
+  onLabel: (sampleId: string) => void;
+  onMarkInverted: (sampleId: string) => void;
+  onReportIssue: (sampleId: string, trigger: HTMLButtonElement) => void;
+  /** Read-only stations see every fact and change none of them. */
+  readOnly?: boolean;
 };
 
-const STATUS_LABEL: Record<Sample['status'], string> = {
-  awaiting_collection: 'Awaiting collection',
-  collected: 'Collected',
-  deferred: 'Deferred',
+const LABEL_LABEL: Record<ActualSample['label']['state'], string> = {
+  not_printed: 'Not labelled',
+  printed: 'Printed, not verified',
+  verified: 'Verified',
+  manual_fallback: 'Handwritten',
 };
 
+/**
+ * The tubes that exist. Every row here was created by a backend registration
+ * and carries the identity the backend issued — which is why no row has a
+ * "reset" or "undo": a drawn tube cannot be un-drawn by a UI action. A tube
+ * that turns out to be unusable gets a reason and keeps its history.
+ */
 export function SampleTable({
-  collectEnabled,
   focusedSampleId,
   now,
-  onCollect,
-  onDefer,
   onFocusSample,
+  onLabel,
   onMarkInverted,
-  onReset,
+  onReportIssue,
+  readOnly = false,
   samples,
 }: SampleTableProps) {
   const t = useT();
-  const ordered = sortByDrawOrder(samples);
 
   return (
     <Table density="compact">
       <TableHeader>
         <TableRow>
-          <TableHead aria-label={t('Draw order')}>#</TableHead>
           <TableHead>{t('Tube')}</TableHead>
           <TableHead>{t('Sample ID')}</TableHead>
-          <TableHead>{t('Tests')}</TableHead>
-          <TableHead numeric>{t('Vol')}</TableHead>
-          <TableHead>{t('Priority')}</TableHead>
+          <TableHead>{t('Drawn')}</TableHead>
           <TableHead>{t('Inversion')}</TableHead>
-          <TableHead>{t('Clot time')}</TableHead>
-          <TableHead>{t('Status')}</TableHead>
+          <TableHead>{t('Processing')}</TableHead>
+          <TableHead>{t('Label')}</TableHead>
           <TableHead aria-label={t('Actions')} />
         </TableRow>
       </TableHeader>
       <TableBody>
-        {ordered.map((sample) => {
+        {samples.map((sample) => {
           const tube = tubeByKey(sample.tube);
-          const remaining = remainingClotMs(sample, now);
+          const timing = sampleTiming(sample, now);
+          const tone = timingTone(timing);
 
           return (
             <TableRow
+              className={styles.row}
               interactive
-              key={sample.id}
-              onClick={() => onFocusSample?.(sample.id)}
-              selected={sample.id === focusedSampleId}
+              key={sample.sampleId}
+              onClick={() => onFocusSample?.(sample.sampleId)}
+              selected={sample.sampleId === focusedSampleId}
             >
-              <TableCell numeric>{tube?.order ?? '—'}</TableCell>
-              <TableCell>
+              <TableCell data-label={t('Tube')}>
                 <span className={styles.tubeCell}>
-                  <span
-                    aria-hidden="true"
-                    className={styles.tubeDot}
-                    data-tube={sample.tube}
-                  />
+                  <span aria-hidden="true" className={styles.tubeDot} data-tube={sample.tube} />
                   {tube?.stopperLabel ?? sample.tube}
+                  {sample.stat ? <Badge size="sm" variant="danger">STAT</Badge> : null}
                 </span>
               </TableCell>
-              <TableCell>
-                <span className={styles.mono}>{sample.id}</span>
-              </TableCell>
-              <TableCell>
-                {sample.tests.slice(0, 2).join(', ')}
-                {sample.tests.length > 2 ? (
-                  <span className={styles.overflow}> +{sample.tests.length - 2}</span>
+              <TableCell data-label={t('Sample ID')}>
+                <span className={styles.mono}>{sample.sampleId}</span>
+                {sample.issue ? (
+                  <span className={styles.issue}>
+                    {t(
+                      SAMPLE_ISSUE_REASONS.find((reason) => reason.id === sample.issue?.reason)
+                        ?.label ?? sample.issue.reason,
+                    )}
+                  </span>
                 ) : null}
               </TableCell>
-              <TableCell numeric>{sample.volumeMl} mL</TableCell>
-              <TableCell>{sample.stat ? <Badge variant="danger">STAT</Badge> : '—'}</TableCell>
-              <TableCell>
+              <TableCell data-label={t('Drawn')}>
+                {sample.drawnAtLabel}
+                <span className={styles.by}>{sample.drawnBy}</span>
+              </TableCell>
+              <TableCell data-label={t('Inversion')}>
                 {(tube?.inversions ?? 0) === 0 ? (
                   '—'
-                ) : sample.status !== 'collected' ? (
-                  <span className={styles.hint}>×{tube?.inversions} {t('after draw')}</span>
                 ) : sample.inverted ? (
                   <Badge variant="success">✓ ×{tube?.inversions}</Badge>
                 ) : (
                   <Button
+                    disabled={readOnly}
                     onClick={(event) => {
                       event.stopPropagation();
-                      onMarkInverted(sample.id);
+                      onMarkInverted(sample.sampleId);
                     }}
                     size="xs"
                     variant="outline"
@@ -120,72 +123,62 @@ export function SampleTable({
                   </Button>
                 )}
               </TableCell>
-              <TableCell>
-                {remaining != null ? (
+              {/* Resting and overdue are different facts, so they never share a
+                  countdown: a tube that has just finished clotting is ready,
+                  not late. */}
+              <TableCell data-label={t('Processing')}>
+                {timing.phase === 'resting' ? (
+                  <span className={styles.hint}>
+                    {t('Ready in')} {formatCountdown(timing.remainingMs)}
+                  </span>
+                ) : timing.phase === 'overdue' ? (
+                  <Badge variant="danger">{t('Past deadline')}</Badge>
+                ) : timing.phase === 'ready' && timing.remainingMs != null ? (
                   <Badge
-                    variant={
-                      timerTone(remaining) === 'danger'
-                        ? 'danger'
-                        : timerTone(remaining) === 'warn'
-                          ? 'warning'
-                          : 'success'
-                    }
+                    variant={tone === 'danger' ? 'danger' : tone === 'warn' ? 'warning' : 'success'}
                   >
-                    {remaining <= 0 ? t('Exceeded') : formatCountdown(remaining)}
+                    {t('Process within')} {formatCountdown(timing.remainingMs)}
                   </Badge>
-                ) : tube?.timeLimitMin && sample.status !== 'collected' ? (
-                  <span className={styles.hint}>{tube.timeLimitMin}m</span>
                 ) : (
                   '—'
                 )}
               </TableCell>
-              <TableCell>
+              <TableCell data-label={t('Label')}>
                 <Badge
                   variant={
-                    sample.status === 'collected'
+                    sample.label.state === 'verified'
                       ? 'success'
-                      : sample.status === 'deferred'
+                      : sample.label.state === 'manual_fallback'
                         ? 'warning'
                         : 'neutral'
                   }
                 >
-                  {t(STATUS_LABEL[sample.status])}
-                  {sample.status === 'collected' && sample.collectedAt
-                    ? ` · ${sample.collectedAt}`
-                    : ''}
+                  {t(LABEL_LABEL[sample.label.state])}
                 </Badge>
-                {sample.status === 'deferred' && sample.deferReason ? (
-                  <span className={styles.deferReason}>{t(sample.deferReason)}</span>
-                ) : null}
               </TableCell>
-              <TableCell onClick={(event) => event.stopPropagation()}>
+              <TableCell
+                className={styles.actionCell}
+                onClick={(event) => event.stopPropagation()}
+              >
                 <span className={styles.actions}>
-                  {sample.status === 'awaiting_collection' ? (
-                    <>
-                      <Button
-                        disabled={!collectEnabled}
-                        onClick={() => onCollect(sample.id)}
-                        size="xs"
-                        title={
-                          collectEnabled
-                            ? undefined
-                            : t('Complete the safety checklist first')
-                        }
-                        variant="primary"
-                      >
-                        {t('Collect')}
-                      </Button>
-                      <Button
-                        onClick={(event) => onDefer(sample.id, event.currentTarget)}
-                        size="xs"
-                        variant="ghost"
-                      >
-                        {t('Defer')}
-                      </Button>
-                    </>
-                  ) : (
-                    <Button onClick={() => onReset(sample.id)} size="xs" variant="ghost">
-                      {t('Reset')}
+                  {labelResolved(sample) ? null : (
+                    <Button
+                      disabled={readOnly}
+                      onClick={() => onLabel(sample.sampleId)}
+                      size="xs"
+                      variant="primary"
+                    >
+                      {t('Label')}
+                    </Button>
+                  )}
+                  {sample.issue ? null : (
+                    <Button
+                      disabled={readOnly}
+                      onClick={(event) => onReportIssue(sample.sampleId, event.currentTarget)}
+                      size="xs"
+                      variant="ghost"
+                    >
+                      {t('Report a problem')}
                     </Button>
                   )}
                 </span>

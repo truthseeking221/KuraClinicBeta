@@ -8,6 +8,7 @@ import {
   DEMO_TOUR_PATIENTS,
   DEMO_TRIAGE,
   LONG_NAME_PATIENT,
+  NEW_PROVISIONAL_PATIENT,
 } from './demo-data';
 import { PATIENTS_STORYBOOK_KURA } from './storybook-metadata';
 
@@ -21,7 +22,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'The workspace patient registry: who this workspace has seen, most recent first, opening into the chart. The row shape mirrors the ListWorkspacePatients contract (masked phone and MRN, two-value assurance, terminal states). There is no name search: names are stored encrypted with no searchable index, so patients resolve through the reception doors instead. The "Why now" column is a target-contract triage layer and hides entirely when no triage data is supplied.',
+          'The workspace patient registry: who this workspace has seen, most recent first, opening into the chart. The row shape mirrors the ListWorkspacePatients contract (masked phone and MRN, two-value assurance, terminal states). Identity and contact stay two columns: "Identity" carries the assurance axis (Verified means a sighted document, never a verified phone), and "Verified phone" carries the contact axis, because the wire record populates a masked phone only for a verified primary number. A closed record (deceased, merged) carries its badge next to the name, where a narrow screen cannot scroll it out of view. There is no name search: names are stored encrypted with no searchable index, so patients resolve through the reception doors instead. The "Why now" column is a target-contract triage layer and hides entirely when no triage data is supplied.',
       },
     },
   },
@@ -72,15 +73,57 @@ export const OpensPatientOnRowClick: Story = {
   },
 };
 
-export const FilterToUnverified: Story = {
+export const FilterToProvisional: Story = {
   tags: ['play-fn'],
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await userEvent.click(canvas.getByRole('radio', { name: /Unverified/ }));
+    await userEvent.click(canvas.getByRole('radio', { name: /Provisional/ }));
     await expect(canvas.queryByText('Sok Nimol')).not.toBeInTheDocument();
     await expect(canvas.getByText('Lina Prum')).toBeInTheDocument();
     // Terminal records live only under All: they are facts, not a bucket.
     await expect(canvas.queryByText('Chan Thoeun')).not.toBeInTheDocument();
+  },
+};
+
+/**
+ * Identity and contact are separate facts, and every combination is real: a
+ * provisional record can hold a verified phone, and a verified identity can
+ * have no reachable number. One "Verified" badge could not say either.
+ */
+export const IdentityAndContactAreSeparate: Story = {
+  tags: ['play-fn'],
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    // Verified phone, identity still provisional until PSC sights a document.
+    const provisional = canvas.getByRole('row', { name: /Open Lina Prum/ });
+    await expect(within(provisional).getByText('Provisional')).toBeVisible();
+    await expect(within(provisional).getByText('+85*****9034')).toBeVisible();
+
+    // Identity verified at the desk, but no number the results link can reach.
+    const noPhone = canvas.getByRole('row', { name: /Open Name unavailable/ });
+    await expect(within(noPhone).getByText('Verified')).toBeVisible();
+    await expect(within(noPhone).getByText('None')).toBeVisible();
+    await expect(noPhone).toHaveAccessibleName(/No verified phone/);
+  },
+};
+
+/**
+ * The outcome of the phone gate on its own: one provisional record, phone
+ * verified, identity not. The registry states what is true and claims no next
+ * step — an intake or a lab order is a later clinical decision, not the
+ * completion condition of creating a patient.
+ */
+export const NewProvisionalPatient: Story = {
+  args: { patients: [NEW_PROVISIONAL_PATIENT] },
+  tags: ['play-fn'],
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const row = canvas.getByRole('row', { name: /Open Chariya Som/ });
+    await expect(within(row).getByText('Provisional')).toBeVisible();
+    await expect(within(row).getByText('+85*****6108')).toBeVisible();
+    // A single-bucket registry offers no filter: there is nothing to narrow.
+    await expect(canvas.queryByRole('radio', { name: /Provisional/ })).not.toBeInTheDocument();
   },
 };
 

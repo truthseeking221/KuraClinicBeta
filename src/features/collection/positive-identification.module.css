@@ -1,0 +1,78 @@
+.block {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.header {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--space-0-5);
+}
+
+.title {
+  margin: 0;
+  color: var(--color-text-primary);
+  font-size: var(--type-sm);
+  font-weight: var(--weight-semibold);
+}
+
+.hint {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--type-xs);
+  line-height: var(--leading-normal);
+}
+
+.questions {
+  display: flex;
+  margin: 0;
+  padding: 0;
+  flex-direction: column;
+  gap: var(--space-3);
+  list-style: none;
+}
+
+.question {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+/* The words the collector says out loud, not a label for a control. */
+.prompt {
+  margin: 0;
+  color: var(--color-text-primary);
+  font-size: var(--type-sm);
+  line-height: var(--leading-normal);
+}
+
+.answers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+/* The order's value appears only after an answer is recorded, so it cannot be
+   read to the patient instead of asked of them. */
+.expected {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--type-xs);
+}
+
+.expectedValue {
+  color: var(--color-text-primary);
+  font-weight: var(--weight-medium);
+}
+
+.exception {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+}

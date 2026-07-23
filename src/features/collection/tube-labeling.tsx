@@ -1,174 +1,234 @@
-"use client";
+'use client';
 
-import { useT } from "../../components/foundations/i18n";
+import { useEffect, useRef, useState } from 'react';
+import type { KeyboardEvent } from 'react';
+
+import { useT } from '../../components/foundations/i18n';
 import {
-  Badge,
+  Alert,
+  AlertDescription,
+  AlertTitle,
   Button,
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
+  Dialog,
+  DialogBody,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  Input,
   Radio,
   RadioGroup,
-} from "../../components/ui";
-import { EditIcon, PrintIcon } from "../../components/ui/icons";
+} from '../../components/ui';
 
-import { TUBE_CATALOG } from "./catalog";
-import styles from "./tube-labeling.module.css";
-import type { TubeLabelMethod, TubeLabelPhotoCheck } from "./types";
+import { MANUAL_LABEL_REASONS, tubeByKey } from './catalog';
+import { resolveLabelScan } from './logic';
+import type { ActualSample, CollectionPatient, LabelPrintResult, LabelScanResult } from './types';
+import styles from './tube-labeling.module.css';
 
 export type TubeLabelingProps = {
-  /** Identity written on every tube, e.g. "SOKHA · F · 1974". */
-  patientLabelLine: string;
-  /** Tube keys drawn for this order, in catalog order. */
-  tubeKeys: readonly string[];
-  method: TubeLabelMethod;
-  onMethodChange: (method: TubeLabelMethod) => void;
-  /** Sticker route only: the photo evidence the courier will check against. */
-  photoChecks: TubeLabelPhotoCheck;
-  onPhotoChecksChange: (checks: TubeLabelPhotoCheck) => void;
-  /** Doctor self-collection separates confirming the draw from confirming labels. */
-  stage?: "collect" | "label";
-  /** The doctor route verifies labels on a phone; staffed collection hands off directly. */
-  verificationRequired?: boolean;
-  onConfirm: () => void;
+  /** The tube being labelled; null closes the dialog. */
+  sample: ActualSample | null;
+  /** Every registered sample, so a scan of the wrong tube can be named. */
+  samples: readonly ActualSample[];
+  patient: CollectionPatient;
+  now: number;
+  onPrint: () => LabelPrintResult;
+  onPrinted: () => void;
+  onVerified: () => void;
+  onManualFallback: (reason: string) => void;
+  onClose: () => void;
 };
 
 /**
- * Labelling the tubes after a draw.
+ * Labelling one tube, at the chair, immediately after it was drawn.
  *
- * The two routes are not equivalent and the interface says so: a printed
- * Kura sticker carries the order identity a courier and the lab can both
- * read, while handwriting depends on whoever held the pen. Handwriting stays
- * available because a clinic without stickers still has to send blood, but it
- * is the second option and it names what the courier will check.
+ * The label is printed for a specific sample identity and then scanned back:
+ * scanning is what proves the right label went on the right tube, and it is
+ * the same barcode custody will scan later. A label that is printed but never
+ * verified is not evidence of anything, so it does not close this step.
+ *
+ * Handwriting stays available because a clinic whose printer is down still has
+ * to send blood — but it is recorded as a fallback with a reason, because
+ * nothing downstream can machine-read a pen stroke and accession has to
+ * relabel the tube.
  */
-export function TubeLabeling({
-  method,
-  onConfirm,
-  onMethodChange,
-  patientLabelLine,
-  stage = "label",
-  tubeKeys,
-  verificationRequired = true,
-}: TubeLabelingProps) {
-  const t = useT();
-  const tubes = tubeKeys
-    .map((key) => TUBE_CATALOG.find((tube) => tube.key === key))
-    .filter((tube): tube is (typeof TUBE_CATALOG)[number] => Boolean(tube));
+export function TubeLabeling(props: TubeLabelingProps) {
+  return (
+    <Dialog
+      onOpenChange={(open) => (!open ? props.onClose() : undefined)}
+      open={props.sample !== null}
+    >
+      {props.sample ? <TubeLabelingBody {...props} sample={props.sample} /> : null}
+    </Dialog>
+  );
+}
 
-  const canConfirm = tubes.length > 0;
-  const title =
-    stage === "collect" ? t("Required tubes") : t("Label the tubes");
+function TubeLabelingBody({
+  onManualFallback,
+  onPrint,
+  onPrinted,
+  onVerified,
+  patient,
+  sample,
+  samples,
+}: TubeLabelingProps & { sample: ActualSample }) {
+  const t = useT();
+  const [printError, setPrintError] = useState(false);
+  const [scanValue, setScanValue] = useState('');
+  const [scanResult, setScanResult] = useState<LabelScanResult | null>(null);
+  const [manualReason, setManualReason] = useState('');
+  const [manualOpen, setManualOpen] = useState(false);
+  const scanRef = useRef<HTMLInputElement>(null);
+  const tube = tubeByKey(sample.tube);
+  const printed = sample.label.state === 'printed';
+
+  useEffect(() => {
+    if (printed) scanRef.current?.focus();
+  }, [printed]);
+
+  function handlePrint() {
+    const result = onPrint();
+    if (result.kind === 'printer_offline') {
+      setPrintError(true);
+      setManualOpen(true);
+      return;
+    }
+    setPrintError(false);
+    onPrinted();
+  }
+
+  function handleScan(event: KeyboardEvent<HTMLInputElement>) {
+    if (event.key !== 'Enter') return;
+    event.preventDefault();
+    const result = resolveLabelScan(samples, sample.sampleId, scanValue);
+    setScanResult(result);
+    setScanValue('');
+    if (result.kind === 'verified') onVerified();
+  }
 
   return (
-    <Card as="section" aria-label={title} className={styles.card}>
-      <CardHeader>
-        <CardTitle>{title}</CardTitle>
-        <p className={styles.subtitle}>
-          {stage === "collect" ? (
-            <>
-              {tubes.length} {t(tubes.length === 1 ? "tube" : "tubes")}{" "}
-              {t("for this order")}
-            </>
-          ) : (
-            <>
-              {tubes.length} {t(tubes.length === 1 ? "sample" : "samples")}{" "}
-              {t("collected")}
-            </>
-          )}
-        </p>
-      </CardHeader>
+    <DialogContent size="sm">
+      <DialogHeader>
+        <DialogTitle>{t('Label this tube')}</DialogTitle>
+        <DialogDescription>
+          {t('Print, attach at the chair, then scan the label back to confirm it.')}
+        </DialogDescription>
+      </DialogHeader>
 
-      <CardContent className={styles.content}>
-        <Card as="section" aria-label={t("Collected tubes")} size="sm" variant="tile">
-          <CardContent>
-            <ul className={styles.tubes}>
-              {tubes.map((tube) => (
-                <li className={styles.tube} key={tube.key}>
-                  <span aria-hidden="true" className={styles.tubeGlyph}>
-                    <span
-                      className={styles.stopper}
-                      style={{
-                        background: tube.color,
-                        borderColor: tube.stripeColor,
-                      }}
-                    />
-                    <span className={styles.tubeBody} />
-                  </span>
-                  <span className={styles.tubeLabel}>{tube.stopperLabel}</span>
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
+      <DialogBody className={styles.body}>
+        {/* What the label must carry: the full patient name and the sample
+            identity the lab and the courier both read. */}
+        <div className={styles.preview}>
+          <span className={styles.previewName}>{patient.name}</span>
+          <span className={styles.previewMeta}>
+            {patient.dob} · {patient.sex} · {patient.pid}
+          </span>
+          <span className={styles.previewSample}>{sample.sampleId}</span>
+          <span className={styles.previewTube}>
+            {tube?.stopperLabel} · {sample.tests.join(', ')}
+          </span>
+        </div>
 
-        <RadioGroup
-          className={styles.methods}
-          legend={t("How will you label them?")}
-          onValueChange={(next) => onMethodChange(next as TubeLabelMethod)}
-          value={method}
-        >
-          <Radio
-            appearance="card"
-            helpText={t(
-              "The order identity stays machine-readable for the courier and the lab.",
-            )}
-            value="sticker"
-          >
-            <span className={styles.methodTitle}>
-              <PrintIcon aria-hidden="true" size={18} />
-              {t("Use the Kura sticker pad")}
-              <Badge size="sm" variant="success">
-                {t("Recommended")}
-              </Badge>
-            </span>
-          </Radio>
-
-          <Radio
-            appearance="card"
-            helpText={t(
-              "Write clearly on every tube. The courier checks the labels before pickup, and an unreadable tube is rejected at the lab.",
-            )}
-            value="pen"
-          >
-            <span className={styles.methodTitle}>
-              <EditIcon aria-hidden="true" size={18} />
-              {t("Write with a pen")}
-            </span>
-          </Radio>
-        </RadioGroup>
-
-        {stage === "label" && method === "pen" ? (
-          <Card as="section" aria-label={t("Write on each tube")} size="sm" variant="tile">
-            <CardHeader>
-              <CardTitle>{t("Write on each tube")}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className={styles.templateLine}>{patientLabelLine}</p>
-            </CardContent>
-          </Card>
+        {printError ? (
+          <Alert tone="warning">
+            <AlertTitle>{t('Printer did not respond')}</AlertTitle>
+            <AlertDescription>
+              {t('Try again, or write the label by hand and record why.')}
+            </AlertDescription>
+          </Alert>
         ) : null}
-      </CardContent>
 
-      <footer className={styles.footer}>
-        {canConfirm ? null : (
-          <p className={styles.blocked}>
-            {t("No collection tube plan is available for these tests.")}
-          </p>
+        {scanResult?.kind === 'wrong_sample' ? (
+          <Alert tone="danger">
+            <AlertTitle>{t('That label belongs to another tube')}</AlertTitle>
+            <AlertDescription>
+              {t('Remove it. A label on the wrong tube sends a result to the wrong patient.')}
+            </AlertDescription>
+          </Alert>
+        ) : null}
+
+        {scanResult?.kind === 'unknown' ? (
+          <Alert tone="warning">
+            <AlertTitle>{t('Label not recognised')}</AlertTitle>
+            <AlertDescription>
+              {t('Scan the label on this tube, or reprint it.')}
+            </AlertDescription>
+          </Alert>
+        ) : null}
+
+        <ol className={styles.steps}>
+          <li className={styles.step} data-done={printed || undefined}>
+            <span className={styles.stepCopy}>
+              <strong>{t('Print the label')}</strong>
+              <span>{t('Printed at the draw point, for this sample only.')}</span>
+            </span>
+            <Button onClick={handlePrint} size="sm" variant={printed ? 'outline' : 'primary'}>
+              {printed ? t('Reprint') : t('Print label')}
+            </Button>
+          </li>
+
+          <li className={styles.step} data-disabled={!printed || undefined}>
+            <span className={styles.stepCopy}>
+              <strong>{t('Attach it, then scan it back')}</strong>
+              <span>{t('The scan is the proof, not the print.')}</span>
+            </span>
+            <Input
+              aria-label={t('Scan the attached label')}
+              disabled={!printed}
+              onChange={(event) => setScanValue(event.target.value)}
+              onKeyDown={handleScan}
+              placeholder={t('Scan label barcode')}
+              ref={scanRef}
+              value={scanValue}
+            />
+          </li>
+        </ol>
+
+        {/* Radios, not a dropdown: three fixed reasons, and a listbox portal
+            inside a modal dialog is unreachable behind the dialog's pointer
+            lock. */}
+        {manualOpen ? (
+          <div className={styles.manual}>
+            <RadioGroup
+              legend={t('Why is this label handwritten?')}
+              onValueChange={setManualReason}
+              required
+              value={manualReason || undefined}
+            >
+              {MANUAL_LABEL_REASONS.map((reason) => (
+                <Radio key={reason} value={reason}>
+                  {t(reason)}
+                </Radio>
+              ))}
+            </RadioGroup>
+            <p className={styles.manualNote}>
+              {t('Recorded on the sample. Accession relabels it on arrival.')}
+            </p>
+          </div>
+        ) : null}
+      </DialogBody>
+
+      <DialogFooter>
+        {manualOpen ? (
+          <>
+            <Button onClick={() => setManualOpen(false)} variant="ghost">
+              {t('Back')}
+            </Button>
+            <Button
+              disabled={!manualReason}
+              onClick={() => onManualFallback(manualReason)}
+              variant="primary"
+            >
+              {t('Record handwritten label')}
+            </Button>
+          </>
+        ) : (
+          <Button onClick={() => setManualOpen(true)} variant="ghost">
+            {t('No printer — write by hand')}
+          </Button>
         )}
-        <Button disabled={!canConfirm} onClick={onConfirm}>
-          {stage === "collect"
-            ? tubes.length === 1
-              ? t("I have collected the tube")
-              : `${t("I have collected all")} ${tubes.length} ${t("tubes")}`
-            : verificationRequired
-              ? t("Next: Scan QR to verify labels")
-              : tubes.length === 1
-                ? t("I have labelled the tube")
-                : `${t("I have labelled all")} ${tubes.length} ${t("tubes")}`}
-        </Button>
-      </footer>
-    </Card>
+      </DialogFooter>
+    </DialogContent>
   );
 }

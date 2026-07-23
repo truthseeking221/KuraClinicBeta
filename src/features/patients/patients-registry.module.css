@@ -84,8 +84,24 @@
   white-space: nowrap;
 }
 
-.statusQuiet {
+/*
+ * Identity axis. Neither value is an alarm, so neither is coloured: the record
+ * still waiting on the PSC check simply reads first, and the settled one
+ * recedes. Colour here would fire on every provisional record the phone gate
+ * creates, which is the ordinary case.
+ */
+.identityValue {
   color: var(--color-text-secondary);
+}
+
+.identityValue[data-assurance='unverified'] {
+  color: var(--color-text-primary);
+  font-weight: var(--weight-medium);
+}
+
+/* A fact, not a gap: no verified phone means no results or payment link. */
+.absent {
+  color: var(--color-text-tertiary);
 }
 
 .workItem {

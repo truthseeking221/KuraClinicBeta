@@ -1,4 +1,4 @@
-import type { MatchedPatient, PhoneLookupResult } from './logic';
+import type { DraftPatient, DuplicateCheckResult, MatchedPatient, PhoneLookupResult } from './logic';
 
 /** Demo OTP accepted by every phone-gate story. */
 export const DEMO_OTP = '123456';
@@ -61,4 +61,25 @@ export function demoLookup(e164: string): PhoneLookupResult {
 /** Numbers ending 999 simulate the OTP rate limit (route-level throttle). */
 export function demoRateLimited(e164: string): boolean {
   return e164.endsWith('999');
+}
+
+/**
+ * Demo duplicate preflight, run on the entered details before anything is
+ * created. A phone that matched nothing does not mean the patient is new:
+ * the number may have changed, or belong to a relative.
+ *
+ * Names containing “Chann” → possible match · “Khem” → a record created
+ * concurrently by someone else · “Offline” → the check itself failed ·
+ * anything else → clear.
+ */
+export function demoCheckDuplicates(input: { draft: DraftPatient }): DuplicateCheckResult {
+  const name = input.draft.name.trim().toLowerCase();
+  if (name.includes('offline')) return { kind: 'error' };
+  if (name.includes('chann')) {
+    return { kind: 'possible_matches', candidates: [DEMO_MATCH_PATIENT] };
+  }
+  if (name.includes('khem')) {
+    return { kind: 'concurrent_match', patient: DEMO_SHARED_PHONE_PATIENTS[1] };
+  }
+  return { kind: 'clear' };
 }

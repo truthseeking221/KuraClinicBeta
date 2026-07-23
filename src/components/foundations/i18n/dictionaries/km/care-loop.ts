@@ -25,26 +25,24 @@ export const CARE_LOOP_KM: KhmerDictionary = {
   'Provisional · PSC verifies': 'បណ្តោះអាសន្ន · PSC ផ្ទៀងផ្ទាត់',
   'Not recorded': 'មិនបានកត់ត្រា',
 
+  // Intake: preparing the visit
+  'Prepare the visit for': 'រៀបចំការពិនិត្យសម្រាប់',
+  'Collect the information needed for safe care.':
+    'ប្រមូលព័ត៌មានដែលចាំបាច់សម្រាប់ការថែទាំដោយសុវត្ថិភាព។',
+  'Complete with patient': 'បំពេញជាមួយអ្នកជំងឺ',
+  'Continue without intake': 'បន្តដោយគ្មានព័ត៌មានចូល',
+  'Allergies, medicines and history stay unknown.':
+    'អាឡែស៊ី ថ្នាំ និងប្រវត្តិនឹងនៅតែមិនដឹង។',
+
   // Intake handoff
-  'Intake received for': 'បានទទួលព័ត៌មានចូលសម្រាប់',
   'is filling in the intake': 'កំពុងបំពេញព័ត៌មានចូល',
   'Intake sent, waiting for': 'បានផ្ញើព័ត៌មានចូល កំពុងរង់ចាំ',
   'Sending intake link': 'កំពុងផ្ញើតំណព័ត៌មានចូល',
   'Intake link was not sent': 'តំណព័ត៌មានចូលមិនត្រូវបានផ្ញើទេ',
-  'We don’t know enough about': 'យើងមិនទាន់ដឹងព័ត៌មានគ្រប់គ្រាន់អំពី',
-  yet: 'នៅឡើយទេ',
-  '4 of 4 answered. Confirm what matters during the visit.':
-    'បានឆ្លើយ 4 ក្នុងចំណោម 4។ បញ្ជាក់អ្វីដែលសំខាន់ក្នុងពេលពិនិត្យ។',
   answered: 'បានឆ្លើយ',
   opened: 'បានបើក',
   'The patient context is saved. Check the delivery channel, then try again.':
     'បរិបទអ្នកជំងឺត្រូវបានរក្សាទុក។ ពិនិត្យបណ្តាញផ្ញើ រួចព្យាយាមម្តងទៀត។',
-  'Help the patient complete their medical history before the visit, so the clinical conversation can focus on care.':
-    'ជួយអ្នកជំងឺបំពេញប្រវត្តិវេជ្ជសាស្ត្រមុនពេលមកពិនិត្យ ដើម្បីឱ្យការសន្ទនាព្យាបាលផ្តោតលើការថែទាំ។',
-  'Order baseline tests': 'បញ្ជាតេស្តមូលដ្ឋាន',
-  'Skip for now': 'រំលងសិន',
-  'Skipping intake is not connected to the current backend contract.':
-    'ការរំលងព័ត៌មានចូលមិនទាន់ភ្ជាប់ជាមួយកិច្ចសន្យាខាងក្រោយបច្ចុប្បន្នទេ។',
   Sending: 'កំពុងផ្ញើ',
   Resend: 'ផ្ញើម្តងទៀត',
   'Send intake link': 'ផ្ញើតំណព័ត៌មានចូល',
@@ -53,6 +51,30 @@ export const CARE_LOOP_KM: KhmerDictionary = {
   'intake answers received': 'ចម្លើយព័ត៌មានចូលបានទទួល',
   'Patient lab order journey': 'ដំណើរបញ្ជាតេស្តអ្នកជំងឺ',
   'Patient intake status': 'ស្ថានភាពព័ត៌មានចូលអ្នកជំងឺ',
+
+  // Intake: submitted, read, and decided on. Patient-reported answers only
+  // become clinical context once a clinician has read them, so the wording
+  // separates what arrived from what was confirmed.
+  'Patient-reported intake': 'ព័ត៌មានចូលដែលអ្នកជំងឺរាយការណ៍',
+  'questions answered': 'សំណួរបានឆ្លើយ',
+  'Not yet reviewed by a clinician': 'មិនទាន់ត្រូវបានពិនិត្យដោយវេជ្ជបណ្ឌិត',
+  'Review intake': 'ពិនិត្យព័ត៌មានចូល',
+  'Review patient-reported intake': 'ពិនិត្យព័ត៌មានចូលដែលអ្នកជំងឺរាយការណ៍',
+  confirmed: 'បានបញ្ជាក់',
+  'Mark intake reviewed': 'សម្គាល់ថាបានពិនិត្យព័ត៌មានចូល',
+  'Confirm every answer to finish the review.':
+    'បញ្ជាក់រាល់ចម្លើយ ដើម្បីបញ្ចប់ការពិនិត្យ។',
+  'Intake reviewed': 'បានពិនិត្យព័ត៌មានចូល',
+  'Reviewed by': 'ពិនិត្យដោយ',
+  'Intake recorded with the patient': 'បានកត់ត្រាព័ត៌មានចូលជាមួយអ្នកជំងឺ',
+  'Recorded by': 'កត់ត្រាដោយ',
+  'Continuing without intake': 'បន្តដោយគ្មានព័ត៌មានចូល',
+  'Done for now': 'បញ្ចប់សិន',
+
+  // Age is rendered from one field, so an estimate can never read as exact.
+  years: 'ឆ្នាំ',
+  'years (estimated)': 'ឆ្នាំ (ប៉ាន់ស្មាន)',
+  For: 'សម្រាប់',
 
   // Intake items and context rail. `Reason for visit` is owned by the
   // assessment dictionary: both surfaces ask the same question, so one English
@@ -85,7 +107,6 @@ export const CARE_LOOP_KM: KhmerDictionary = {
   'Your care team will review your answers before continuing your care.':
     'ក្រុមថែទាំរបស់អ្នកនឹងពិនិត្យចម្លើយរបស់អ្នក មុនពេលបន្តការថែទាំ។',
   'Your details': 'ព័ត៌មានរបស់អ្នក',
-  'Date of birth or age': 'ថ្ងៃខែឆ្នាំកំណើត ឬអាយុ',
   'I confirm these personal details are correct.':
     'ខ្ញុំបញ្ជាក់ថាព័ត៌មានផ្ទាល់ខ្លួនទាំងនេះត្រឹមត្រូវ។',
   'Enter allergies or none known': 'បញ្ចូលអាឡែស៊ី ឬសរសេរថាគ្មានដែលដឹង',

@@ -109,21 +109,28 @@ export function careLoopCollectionPatient(
     orderId: patient.orderId,
     checkInAt: "09:42",
     waitingMinutes: 30,
+    stat: false,
     journey: { identity: "done", vitals: "done", phlebo: "pending" },
     fasting: "Fasting 8–12h",
     allergies: ["No known allergies"],
-    samples: [
+    gates: {
+      bookingRedeemed: true,
+      orderPlaced: true,
+      payment: { required: true, settled: true },
+    },
+    // The expected specimen plan. These ids belong to the order, never to a
+    // tube: no sample exists until a draw is registered.
+    plan: [
       {
-        id: "884201001",
+        id: "plan-884201-1",
         tube: "light-blue",
         tests: ["PT / INR"],
         volumeMl: 2.7,
         container: "Sodium citrate tube",
         stat: false,
-        status: "awaiting_collection",
       },
       {
-        id: "884201002",
+        id: "plan-884201-2",
         tube: "gold-sst",
         tests: [
           "Lipid panel",
@@ -137,25 +144,22 @@ export function careLoopCollectionPatient(
         volumeMl: 5,
         container: "Serum separator tube",
         stat: false,
-        status: "awaiting_collection",
       },
       {
-        id: "884201003",
+        id: "plan-884201-3",
         tube: "lavender",
         tests: ["Complete blood count", "HbA1c"],
         volumeMl: 4,
         container: "EDTA tube",
         stat: false,
-        status: "awaiting_collection",
       },
       {
-        id: "884201004",
+        id: "plan-884201-4",
         tube: "dark-gray",
         tests: ["Fasting glucose"],
         volumeMl: 4,
         container: "Fluoride tube",
         stat: false,
-        status: "awaiting_collection",
       },
     ],
     vitals: {

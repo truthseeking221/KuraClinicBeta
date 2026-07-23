@@ -47,6 +47,7 @@ import {
   rowLabelOf,
   statusViewOf,
 } from './logic';
+import type { PatientStatusView } from './logic';
 import type {
   AssuranceFilter,
   PatientSummary,
@@ -59,21 +60,27 @@ import styles from './patients-registry.module.css';
 const column = createColumnHelper<PatientSummary>();
 const NO_DEMO_PATIENT_IDS: readonly string[] = [];
 
-/**
- * Terminal states carry a neutral badge so they read as facts, not alarms;
- * unverified carries warning because it is the one actionable status here.
- * Verified is the normal case and stays quiet text.
- */
-function StatusCell({ patient }: { patient: PatientSummary }) {
-  const t = useT();
+/** Terminal state, or nothing: the identity axis is a separate column. */
+function terminalViewOf(patient: PatientSummary) {
   const view = statusViewOf(patient);
-  if (view.kind === 'terminal') {
-    return <Badge variant="neutral">{t(view.label)}</Badge>;
-  }
-  if (view.assurance === 'unverified') {
-    return <Badge variant="warning">{t(view.label)}</Badge>;
-  }
-  return <span className={styles.statusQuiet}>{t(view.label)}</span>;
+  return view.kind === 'terminal' ? view : undefined;
+}
+
+/**
+ * The identity axis under a header that names it, so "Verified" can only be
+ * read as identity — never as the phone. Neither value is an alarm: a
+ * provisional record is the ordinary result of the phone gate, and PSC
+ * confirms identity at collection. The record still waiting on that check
+ * reads first; the settled one recedes.
+ */
+function IdentityCell({ view }: { view: PatientStatusView }) {
+  const t = useT();
+  if (view.kind === 'terminal') return <span aria-hidden="true">—</span>;
+  return (
+    <span className={styles.identityValue} data-assurance={view.assurance}>
+      {t(view.label)}
+    </span>
+  );
 }
 
 /** Tone dot + label; never color alone. */
@@ -108,6 +115,11 @@ export type PatientsRegistryProps = {
  * The workspace patient registry: who this workspace has seen, most recent
  * first, opening into the chart. Mirrors the ListWorkspacePatients contract;
  * deliberately has no name search (see storybook-metadata exclusions).
+ *
+ * Identity and contact are two columns, never one verdict. The wire record
+ * carries both facts already — `assurance` is the identity axis, and
+ * `phone_masked` is populated only for a verified primary phone — so the
+ * registry names each axis instead of collapsing them into one "Verified".
  */
 export function PatientsRegistry({
   demoPatientIds = NO_DEMO_PATIENT_IDS,
@@ -139,6 +151,10 @@ export function PatientsRegistry({
           const patient = row.original;
           const unavailable = patient.displayName.trim() === '';
           const identity = formatAgeSex(patient);
+          // A closed record travels with the name: the status columns scroll
+          // out of view on a narrow screen, and this is the one fact that must
+          // never be missed before acting on the wrong record.
+          const terminal = terminalViewOf(patient);
           return (
             <span className={styles.patientCell}>
               <Avatar shape="circle" size="sm">
@@ -151,6 +167,11 @@ export function PatientsRegistry({
                   <span className={unavailable ? styles.nameUnavailable : styles.name}>
                     {displayNameOf(patient, t)}
                   </span>
+                  {terminal ? (
+                    <Badge size="sm" variant="neutral">
+                      {t(terminal.label)}
+                    </Badge>
+                  ) : null}
                   {demoPatients.has(patient.userId) ? (
                     <Badge appearance="outline" size="sm" variant="neutral">
                       {t('Demo patient')}
@@ -170,15 +191,17 @@ export function PatientsRegistry({
           );
         },
       }),
+      // The contact axis. The header states what the number proves, so the
+      // identity column beside it cannot absorb the meaning.
       column.accessor('phoneMasked', {
-        header: t('Phone'),
+        header: t('Verified phone'),
         size: 150,
         cell: ({ getValue }) => {
           const value = getValue();
           return value ? (
             <span className={styles.masked}>{value}</span>
           ) : (
-            <span aria-hidden="true">—</span>
+            <span className={styles.absent}>{t('None')}</span>
           );
         },
       }),
@@ -196,9 +219,9 @@ export function PatientsRegistry({
         },
       }),
       column.accessor('assurance', {
-        header: t('Status'),
+        header: t('Identity'),
         size: 120,
-        cell: ({ row }) => <StatusCell patient={row.original} />,
+        cell: ({ row }) => <IdentityCell view={statusViewOf(row.original)} />,
       }),
     ];
     const withWork = workItems
@@ -348,8 +371,8 @@ export function PatientsRegistry({
                 {activeAssurance === 'all'
                   ? t('No patients yet')
                   : activeAssurance === 'unverified'
-                    ? t('No unverified patients')
-                    : t('No verified patients')}
+                    ? t('No provisional patients')
+                    : t('No patients with a verified identity')}
               </EmptyStateTitle>
               <EmptyStateDescription>
                 {activeAssurance === 'all'
@@ -387,7 +410,7 @@ export function PatientsRegistry({
               onValueChange={(value) => setAssurance(value as AssuranceFilter)}
               options={[
                 { value: 'all', label: `${t('All')} ${counts.all}` },
-                { value: 'unverified', label: `${t('Unverified')} ${counts.unverified}` },
+                { value: 'unverified', label: `${t('Provisional')} ${counts.unverified}` },
                 { value: 'verified', label: `${t('Verified')} ${counts.verified}` },
               ]}
               value={assurance}

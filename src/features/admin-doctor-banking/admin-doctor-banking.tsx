@@ -249,7 +249,7 @@ function LedgerSummary({ ledger }: { ledger: DoctorLedgerDetail }) {
         <div><dt>{t('Settled balance')}</dt><dd><SignedMoneyText value={ledger.settledBalance} /></dd></div>
         <div><dt>{t('Exposure')}</dt><dd><SignedMoneyText value={ledger.exposure} /></dd></div>
         <div><dt>{t('Credit floor')}</dt><dd><SignedMoneyText value={ledger.creditFloor} /></dd></div>
-        <div><dt>{t('Earned this period')}</dt><dd><AmountText value={ledger.earnedThisPeriod} /></dd></div>
+        <div><dt>{t('Earned this month')}</dt><dd><AmountText value={ledger.earnedThisMonth} /></dd></div>
       </dl>
     </section>
   );

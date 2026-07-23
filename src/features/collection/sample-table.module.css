@@ -58,8 +58,10 @@
   font-size: var(--type-xs);
 }
 
-.overflow {
+.by {
+  display: block;
   color: var(--color-text-tertiary);
+  font-size: var(--type-2xs);
 }
 
 .hint {
@@ -68,15 +70,61 @@
   white-space: nowrap;
 }
 
-.deferReason {
+/* A reported problem stays attached to the sample it belongs to; the row is
+   never removed, so accession can reconcile what physically arrives. */
+.issue {
   display: block;
   margin-top: var(--space-0-5);
+  color: var(--color-status-warning-fg);
   font-size: var(--type-2xs);
-  color: var(--color-text-tertiary);
 }
 
 .actions {
   display: inline-flex;
   gap: var(--space-1);
   white-space: nowrap;
+}
+
+
+/* Below the tablet breakpoint a seven-column table becomes a horizontal scroll
+   with the actions off screen, so each sample becomes its own card and every
+   value carries the header it lost. One DOM, no duplicated content for screen
+   readers — the header row is hidden only where the labels replace it. */
+@media (max-width: 767px) {
+  .row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-1);
+    padding: var(--space-3) 0;
+  }
+
+  .row :global([data-slot='table-cell']) {
+    display: grid;
+    min-width: 0;
+    grid-template-columns: minmax(0, 8rem) minmax(0, 1fr);
+    gap: var(--space-2);
+    align-items: center;
+    padding: 0;
+    border: 0;
+  }
+
+  .row :global([data-slot='table-cell'])::before {
+    content: attr(data-label);
+    color: var(--color-text-tertiary);
+    font-size: var(--type-xs);
+  }
+
+  .row .actionCell {
+    grid-template-columns: minmax(0, 1fr);
+    padding-top: var(--space-2);
+  }
+
+  .row .actionCell::before {
+    content: none;
+  }
+
+  .actions {
+    flex-wrap: wrap;
+    white-space: normal;
+  }
 }

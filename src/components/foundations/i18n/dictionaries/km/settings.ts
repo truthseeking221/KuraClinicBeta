@@ -247,11 +247,11 @@ export const SETTINGS_KM: KhmerDictionary = {
 
   /* -------------------------------- payments ----------------------------- */
   'Workspace scope': 'វិសាលភាពកន្លែងធ្វើការ',
-  'Workspace payment methods and insurer panels. Your balance is managed in Earnings.':
+  'Workspace payment methods and insurer panels. Your own balance is managed in Balance.':
     'វិធីទូទាត់ និងក្រុមហ៊ុនធានារ៉ាប់រងរបស់កន្លែងធ្វើការ។ សមតុល្យរបស់អ្នកគ្រប់គ្រងក្នុងផ្នែកប្រាក់ចំណូល។',
   'Person-owned balance, statements, KHQR settlement, and optional ABA authorization':
     'សមតុល្យផ្ទាល់ខ្លួន របាយការណ៍ ការទូទាត់ KHQR និងការអនុញ្ញាត ABA (ស្រេចចិត្ត)',
-  'Managed in Earnings': 'គ្រប់គ្រងក្នុងផ្នែកប្រាក់ចំណូល',
+  'Managed in Balance': 'គ្រប់គ្រងក្នុងផ្នែកសមតុល្យ',
   'Patient KHQR collection': 'ការទទួលប្រាក់ពីអ្នកជំងឺតាម KHQR',
   'Insurer panels': 'ក្រុមហ៊ុនធានារ៉ាប់រង',
   'None configured': 'មិនទាន់កំណត់',

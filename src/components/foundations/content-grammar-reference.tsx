@@ -121,7 +121,7 @@ const SAFETY_RULES: readonly GrammarRule[] = [
   {
     rule: 'Never overclaim verification',
     detail:
-      '"Phone checked" never becomes "Identity verified" — the phone gate verifies a channel; PSC confirms identity. Copy states exactly what was proven.',
+      '"Phone verified by SMS" never becomes "Identity verified" — the gate verifies a channel; PSC confirms identity. Name what was proven, and state the unproven axis beside it: "Patient identity not yet confirmed".',
   },
   {
     rule: 'Abnormal is never softened',
@@ -270,7 +270,7 @@ export function ContentGrammarReference() {
             Words carry clinical liability. These rules outrank style — a violation blocks the change.
           </SectionHeader>
           <div className="mb-4 flex flex-wrap items-center gap-2">
-            <Badge size="sm" variant="success">Phone checked</Badge>
+            <Badge size="sm" variant="success">Phone verified by SMS</Badge>
             <span className="k-caption text-[var(--color-text-secondary)]">
               — never “Identity verified”. The gate proved a channel, not a person.
             </span>

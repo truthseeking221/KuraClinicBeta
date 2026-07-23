@@ -38,17 +38,37 @@ import type { Filter, FilterFieldConfig } from '../../components/shared';
 
 import {
   balanceDirection,
+  EMPTY_ACTIVITY_QUERY,
   filterLedgerEntries,
   formatLedgerDateTime,
   recentLedgerEntries,
 } from './logic';
+import type { ActivityQuery } from './logic';
 import { SignedMoneyText } from './money';
 import type { DoctorBankingViewState, LedgerEntry, LedgerEntryKind, LedgerEntryState } from './types';
 import styles from './doctor-banking.module.css';
 
 const column = createColumnHelper<LedgerEntry>();
 
-/** English labels stay the stable dictionary keys; `useFilterFields` translates. */
+/**
+ * All eleven contract kinds. A filter that cannot express a kind hides money
+ * movements from the doctor who owns them.
+ */
+export const LEDGER_KIND_LABELS: Record<LedgerEntryKind, string> = {
+  pending_debit: 'Reserved for an order',
+  pending_credit: 'Earnings in progress',
+  pending_adjustment: 'Reserved amount corrected',
+  pending_void: 'Reservation released',
+  completion_debit: 'Laboratory cost',
+  completion_credit: 'Doctor share',
+  physical_settlement_offset: 'Cash collected at the clinic',
+  khqr_credit: 'KHQR payment',
+  aba_pull_credit: 'ABA collection',
+  connect_credit: 'First-link credit',
+  admin_adjustment: 'Correction by Kura',
+};
+
+/** English labels stay the stable dictionary keys; `filterFields` translates. */
 const FILTER_FIELDS: readonly FilterFieldConfig<string>[] = [
   {
     key: 'state',
@@ -65,16 +85,10 @@ const FILTER_FIELDS: readonly FilterFieldConfig<string>[] = [
     label: 'Activity type',
     type: 'select',
     searchable: true,
-    options: [
-      { label: 'Pending debit', value: 'pending_debit' },
-      { label: 'Pending credit', value: 'pending_credit' },
-      { label: 'Completion debit', value: 'completion_debit' },
-      { label: 'Completion credit', value: 'completion_credit' },
-      { label: 'KHQR credit', value: 'khqr_credit' },
-      { label: 'ABA collection credit', value: 'aba_pull_credit' },
-      { label: 'First-link credit', value: 'connect_credit' },
-      { label: 'Admin adjustment', value: 'admin_adjustment' },
-    ],
+    options: (Object.keys(LEDGER_KIND_LABELS) as LedgerEntryKind[]).map((kind) => ({
+      label: LEDGER_KIND_LABELS[kind],
+      value: kind,
+    })),
   },
 ];
 
@@ -120,12 +134,18 @@ export type ActivityLedgerProps = {
   description?: string;
   /** 'recent' renders the newest entries without search, filters, or pagination. */
   variant?: 'full' | 'recent';
+  /**
+   * Emitted whenever search, filters, or dates change. The owning page keeps
+   * the latest query so a statement export carries exactly what is on screen.
+   */
+  onQueryChange?: (query: ActivityQuery) => void;
   onViewAll?: () => void;
 };
 
 export function ActivityLedger({
   description,
   entries,
+  onQueryChange,
   onViewAll,
   state = 'ready',
   title,
@@ -133,28 +153,22 @@ export function ActivityLedger({
 }: ActivityLedgerProps) {
   const t = useT();
   const recent = variant === 'recent';
+  const [query, setQueryState] = useState<ActivityQuery>(EMPTY_ACTIVITY_QUERY);
+  const [filters, setFilters] = useState<Filter<string>[]>([]);
+  const setQuery = (next: ActivityQuery) => {
+    setQueryState(next);
+    onQueryChange?.(next);
+  };
+
   const resolvedTitle = t(title ?? (recent ? 'Recent activity' : 'Activity'));
   const rawDescription =
     description ??
-    (recent ? undefined : 'Search and filter immutable balance movements across your Kura workspaces.');
+    (recent ? undefined : 'Every balance movement across your Kura workspaces. Entries are never edited.');
   const resolvedDescription = rawDescription ? t(rawDescription) : undefined;
-  const [query, setQuery] = useState('');
-  const [from, setFrom] = useState('');
-  const [to, setTo] = useState('');
-  const [filters, setFilters] = useState<Filter<string>[]>([]);
 
-  const stateFilter = filters.find((filter) => filter.field === 'state')?.values[0] as
-    | LedgerEntryState
-    | undefined;
-  const kindFilter = filters.find((filter) => filter.field === 'kind')?.values[0] as
-    | LedgerEntryKind
-    | undefined;
   const visibleEntries = useMemo(
-    () =>
-      recent
-        ? recentLedgerEntries(entries, RECENT_LIMIT)
-        : filterLedgerEntries(entries, { query, state: stateFilter, kind: kindFilter, from, to }),
-    [entries, from, kindFilter, query, recent, stateFilter, to],
+    () => (recent ? recentLedgerEntries(entries, RECENT_LIMIT) : filterLedgerEntries(entries, query)),
+    [entries, query, recent],
   );
 
   const filterFields = useMemo<readonly FilterFieldConfig<string>[]>(
@@ -173,7 +187,11 @@ export function ActivityLedger({
         header: t('Activity'),
         size: 360,
         cell: ({ row }) => {
-          const meta = [row.original.detail?.replace(/\.\s*$/, ''), row.original.workspaceLabel]
+          const meta = [
+            row.original.detail?.replace(/\.\s*$/, ''),
+            row.original.orderRef,
+            row.original.workspaceLabel,
+          ]
             .filter(Boolean)
             .join(' · ');
           const amount = row.original.amount;
@@ -268,11 +286,11 @@ export function ActivityLedger({
     state === 'error' || state === 'permission-denied' ? (
       <Alert tone="danger">
         <AlertTitle>
-          {state === 'permission-denied' ? t('Earnings access denied') : t('Activity unavailable')}
+          {state === 'permission-denied' ? t('This balance is not yours to view') : t('Activity unavailable')}
         </AlertTitle>
         <AlertDescription>
           {state === 'permission-denied'
-            ? t('Your current access cannot view this person-owned ledger.')
+            ? t('Your current access cannot open this doctor-owned ledger.')
             : t('The ledger could not be loaded. No activity has been inferred.')}
         </AlertDescription>
       </Alert>
@@ -307,7 +325,7 @@ export function ActivityLedger({
         errorState={errorState}
         isLoading={state === 'loading'}
         layout={{ borders: 'rows', density: 'compact', stickyHeader: !recent, width: 'fixed' }}
-        loadingMessage={t('Loading earnings activity')}
+        loadingMessage={t('Loading activity')}
         recordCount={visibleEntries.length}
         table={table}
       >
@@ -316,18 +334,27 @@ export function ActivityLedger({
             <Input
               aria-label={t('Search activity')}
               className={styles.searchField}
-              onChange={(event) => setQuery(event.currentTarget.value)}
+              onChange={(event) => setQuery({ ...query, query: event.currentTarget.value })}
               placeholder={t('Search activity')}
               prefix={<SearchIcon aria-hidden="true" size={16} />}
               size="sm"
               type="search"
-              value={query}
+              value={query.query}
             />
             <Filters
               allowMultiple={false}
               fields={filterFields}
               filters={filters}
-              onChange={setFilters}
+              onChange={(next) => {
+                setFilters(next);
+                const find = (field: string) =>
+                  next.find((filter) => filter.field === field)?.values[0];
+                setQuery({
+                  ...query,
+                  state: find('state') as LedgerEntryState | undefined,
+                  kind: find('kind') as LedgerEntryKind | undefined,
+                });
+              }}
               size="sm"
             />
             <Popover>
@@ -336,21 +363,30 @@ export function ActivityLedger({
                   <Button
                     leadingIcon={<CalendarIcon aria-hidden="true" size={16} />}
                     size="sm"
-                    variant={from || to ? 'secondary' : 'ghost'}
+                    variant={query.from || query.to ? 'secondary' : 'ghost'}
                   >
-                    {dateRangeLabel(from, to, t)}
+                    {dateRangeLabel(query.from ?? '', query.to ?? '', t)}
                   </Button>
                 }
               />
               <PopoverContent align="end" className={styles.datePopover}>
-                <Input label={t('From')} onChange={(event) => setFrom(event.currentTarget.value)} size="sm" type="date" value={from} />
-                <Input label={t('To')} onChange={(event) => setTo(event.currentTarget.value)} size="sm" type="date" value={to} />
-                {from || to ? (
+                <Input
+                  label={t('From')}
+                  onChange={(event) => setQuery({ ...query, from: event.currentTarget.value })}
+                  size="sm"
+                  type="date"
+                  value={query.from ?? ''}
+                />
+                <Input
+                  label={t('To')}
+                  onChange={(event) => setQuery({ ...query, to: event.currentTarget.value })}
+                  size="sm"
+                  type="date"
+                  value={query.to ?? ''}
+                />
+                {query.from || query.to ? (
                   <Button
-                    onClick={() => {
-                      setFrom('');
-                      setTo('');
-                    }}
+                    onClick={() => setQuery({ ...query, from: '', to: '' })}
                     size="sm"
                     variant="ghost"
                   >
@@ -361,7 +397,7 @@ export function ActivityLedger({
             </Popover>
           </DataGridToolbar>
         ) : null}
-        <DataGridTable aria-label={t('Earnings activity')} scrollHeight={recent ? undefined : 'lg'} />
+        <DataGridTable aria-label={t('Balance activity')} scrollHeight={recent ? undefined : 'lg'} />
         {state === 'ready' && !recent && visibleEntries.length > 0 ? (
           <DataGridPagination pageSizes={[6, 12, 24]} rowsPerPageLabel={t('Activity per page')} />
         ) : null}
