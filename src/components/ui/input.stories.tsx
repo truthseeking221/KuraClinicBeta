@@ -95,7 +95,12 @@ export const Default: Story = {
     const input = canvas.getByLabelText('Patient name');
     const control = input.closest('[data-slot="input-control"]');
     await expect(control).toHaveAttribute('data-variant', 'filled');
-    expect(control ? getComputedStyle(control).backgroundColor : '').not.toBe('rgb(255, 255, 255)');
+    const surfaceProbe = document.createElement('div');
+    surfaceProbe.style.backgroundColor = 'var(--color-surface-2)';
+    document.body.append(surfaceProbe);
+    const expectedFieldColor = getComputedStyle(surfaceProbe).backgroundColor;
+    surfaceProbe.remove();
+    expect(control ? getComputedStyle(control).backgroundColor : '').toBe(expectedFieldColor);
     await userEvent.type(input, 'Sokha Chan');
     await expect(input).toHaveValue('Sokha Chan');
   },

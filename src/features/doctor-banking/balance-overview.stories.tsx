@@ -33,7 +33,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'The doctor-owned Balance page, led by what was earned this month. Earned is settled completion credit only; the signed balance says who owes whom in words; What happens next names the one thing Kura will do. Settling and auto-pay are contextual actions, not tabs.',
+          'The doctor-owned Balance page, led by what was earned this month. Earned is settled completion credit only; the signed balance says who owes whom in words; a collection state appears only when it changes what the doctor must understand or do. Settling and auto-pay are contextual actions, not tabs.',
       },
     },
   },
@@ -65,11 +65,9 @@ export const KuraOwesYou: Story = {
     await expect(canvas.getByText('$363.50')).toBeVisible();
     await expect(canvas.getByRole('heading', { name: 'Kura owes you' })).toBeVisible();
     await expect(
-      canvas.getByText('This credit offsets future charges. Cash payout is not available yet.'),
+      canvas.getByText('This credit offsets future charges. It cannot be withdrawn. No collection is scheduled.'),
     ).toBeVisible();
-    await expect(
-      canvas.getByText('No collection is scheduled. Your credit offsets future charges.'),
-    ).toBeVisible();
+    await expect(canvas.queryByRole('heading', { name: 'What happens next' })).not.toBeInTheDocument();
     await expect(canvas.queryByRole('button', { name: 'Settle now' })).not.toBeInTheDocument();
     await userEvent.click(canvas.getByRole('button', { name: 'View all' }));
     await expect(args.onOpenStatements).toHaveBeenCalled();
@@ -93,7 +91,8 @@ export const Settled: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getByRole('heading', { name: "You're settled" })).toBeVisible();
-    await expect(canvas.getByText('Nothing in progress.')).toBeVisible();
+    await expect(canvas.queryByRole('heading', { name: 'In progress' })).not.toBeInTheDocument();
+    await expect(canvas.queryByRole('heading', { name: 'What happens next' })).not.toBeInTheDocument();
     await expect(canvas.queryByRole('button', { name: 'Settle now' })).not.toBeInTheDocument();
   },
 };

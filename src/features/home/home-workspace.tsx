@@ -20,23 +20,28 @@ import {
   EmptyStateDescription,
   EmptyStateHeader,
   EmptyStateTitle,
-  WorkspaceMetricGrid,
   WorkspacePage,
   WorkspacePageHeader,
   WorkspaceSectionHeader,
-  WorkspaceSplit,
 } from "../../components/shared";
 import { useT } from "../../components/foundations/i18n";
 
 import { HomeResultReviewPreview } from "./home-result-review-preview";
-import { HomeSignalTile } from "./home-signal-tile";
+import { HomeSignalRow, SignalValue } from "./home-signal-row";
 import {
   greetingForHour,
   isAllClear,
   licenceBanner,
+  orderSignals,
 } from "./logic";
-import type { HomeData, NextAction } from "./types";
+import type { HomeData, HomeSignal, NextAction, SignalTone } from "./types";
 import styles from "./home-workspace.module.css";
+
+const TONE_BADGE: Record<Exclude<SignalTone, "neutral">, "warning" | "danger"> =
+  {
+    attention: "warning",
+    critical: "danger",
+  };
 
 export type HomeWorkspaceProps = {
   data: HomeData;
@@ -218,6 +223,92 @@ function FirstUseHome({
   );
 }
 
+/**
+ * The review axis, stated once. Label, loud count, evidence, then the queue
+ * itself and the single primary action on the page. Nothing here repeats in
+ * the rail: what waits on the doctor's judgement lives only in this column.
+ */
+function ReviewLead({
+  onNavigate,
+  onRetry,
+  signal,
+}: {
+  signal: HomeSignal;
+  onNavigate?: (targetKey: string) => void;
+  onRetry?: (signalKey: string) => void;
+}) {
+  const t = useT();
+  const ready = signal.state === "ready";
+  const count = signal.count ?? 0;
+  const hasQueue = ready ? count > 0 : true;
+  const action = signal.action;
+
+  return (
+    <section aria-labelledby="home-review-title" className={styles.lead}>
+      <header className={styles.leadHeader} data-tone={signal.tone}>
+        <div className={styles.leadHeading}>
+          <h2 className={styles.leadTitle} id="home-review-title">
+            {t("Results to review")}
+          </h2>
+          {/* Severity is a loaded fact. While the axis is still loading or has
+              failed, claiming one would state something we do not know. */}
+          {ready && signal.tone !== "neutral" && signal.toneLabel ? (
+            <Badge appearance="soft" size="sm" variant={TONE_BADGE[signal.tone]}>
+              {t(signal.toneLabel)}
+            </Badge>
+          ) : null}
+        </div>
+        {ready ? (
+          <>
+            {/* The loudest value on the page. Severity carries the word too:
+                the tone Badge above never leaves colour alone. */}
+            <p className={styles.leadValue} data-tone={signal.tone}>
+              <SignalValue signal={signal} />
+            </p>
+            <p className={styles.leadDetail}>{t(signal.detail)}</p>
+          </>
+        ) : null}
+      </header>
+
+      {hasQueue ? (
+        <HomeResultReviewPreview
+          onNavigate={onNavigate}
+          onRetry={onRetry}
+          showFooter={false}
+          showHeader={false}
+          signal={signal}
+        />
+      ) : null}
+
+      {ready && hasQueue && action ? (
+        <Button
+          className={styles.leadAction}
+          onClick={() => onNavigate?.(action.targetKey)}
+          variant="primary"
+        >
+          {t(action.label)}
+        </Button>
+      ) : null}
+    </section>
+  );
+}
+
+/** Nothing waits on the doctor. The counts below stay visible as the evidence. */
+function AllClearLead() {
+  const t = useT();
+
+  return (
+    <section aria-labelledby="home-review-title" className={styles.lead}>
+      <header className={styles.leadHeader}>
+        <h2 className={styles.leadTitle} id="home-review-title">
+          {t("All caught up")}
+        </h2>
+        <p className={styles.leadDetail}>{t("No work needs attention.")}</p>
+      </header>
+    </section>
+  );
+}
+
 function DayRow({
   action,
   onNavigate,
@@ -265,8 +356,12 @@ function DayRow({
   );
 }
 
-/** The day in reading order. The imminent stop leads by weight, not by colour. */
-function NextToday({
+/**
+ * The clock-bound day: appointments and hand-offs, in time order. Review work
+ * has no appointment, so it never appears here — that boundary is what keeps
+ * the two columns from restating each other.
+ */
+function ComingUp({
   actions,
   onNavigate,
 }: {
@@ -276,27 +371,99 @@ function NextToday({
   const t = useT();
 
   return (
-    <section aria-labelledby="home-next-title" className={styles.nextSection}>
+    <section aria-labelledby="home-coming-up-title" className={styles.railSection}>
       <WorkspaceSectionHeader
-        headingId="home-next-title"
-        title={t("Next actions")}
+        headingId="home-coming-up-title"
+        title={t("Coming up")}
       />
-      <Card className={styles.nextTray}>
-        <ol className={styles.dayList}>
-          {actions.map((action) => (
-            <li key={`${action.time}-${action.label}`}>
-              <DayRow action={action} onNavigate={onNavigate} />
-            </li>
-          ))}
-        </ol>
-      </Card>
+      <ol className={styles.dayList}>
+        {actions.map((action) => (
+          <li key={`${action.time}-${action.label}`}>
+            <DayRow action={action} onNavigate={onNavigate} />
+          </li>
+        ))}
+      </ol>
+    </section>
+  );
+}
+
+/** Every other lifecycle axis as one quiet row: value, evidence, route. */
+function ClinicOverview({
+  onNavigate,
+  onRetry,
+  signals,
+}: {
+  signals: HomeSignal[];
+  onNavigate?: (targetKey: string) => void;
+  onRetry?: (signalKey: string) => void;
+}) {
+  const t = useT();
+
+  return (
+    <section aria-labelledby="home-overview-title" className={styles.railSection}>
+      <WorkspaceSectionHeader
+        headingId="home-overview-title"
+        title={t("Clinic overview")}
+      />
+      <ul
+        aria-labelledby="home-overview-title"
+        className={styles.signalList}
+        role="list"
+      >
+        {orderSignals(signals).map((signal) => (
+          <li key={signal.key}>
+            <HomeSignalRow
+              onNavigate={onNavigate}
+              onRetry={onRetry}
+              signal={signal}
+            />
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+function ClosedToday({
+  closed,
+}: {
+  closed: NonNullable<HomeData["closedToday"]>;
+}) {
+  const t = useT();
+
+  return (
+    <section aria-labelledby="home-closed-title" className={styles.railSection}>
+      <WorkspaceSectionHeader
+        headingId="home-closed-title"
+        title={t("Closed today")}
+      />
+      <dl className={styles.closedList}>
+        <div className={styles.closedRow}>
+          <dt className={styles.closedLabel}>{t("Results")}</dt>
+          <dd className={styles.closedValue}>{closed.resultLoops}</dd>
+        </div>
+        <div className={styles.closedRow}>
+          <dt className={styles.closedLabel}>{t("Bookings")}</dt>
+          <dd className={styles.closedValue}>{closed.bookings}</dd>
+        </div>
+        <div className={styles.closedRow}>
+          <dt className={styles.closedLabel}>{t("Earned")}</dt>
+          <dd className={styles.closedValue}>
+            <MoneyText currency="USD" minor={closed.earnedMinor} />
+          </dd>
+        </div>
+      </dl>
     </section>
   );
 }
 
 /**
  * Clinical Home (WQ-01): a start-of-shift briefing, not a second worklist.
- * It previews priority and routes each item to its canonical owning surface.
+ *
+ * One twelve-field grid carries the whole page. The review queue spans eight
+ * fields because it is the work that hurts if it waits; the day and the other
+ * axes span four. Every item appears exactly once and deep-links to the
+ * surface that owns it.
  */
 export function HomeWorkspace({
   data,
@@ -311,11 +478,21 @@ export function HomeWorkspace({
   const t = useT();
   const banner = licenceBanner(data.licence);
   const allClear = isAllClear(data.signals);
-  const resultsSignal = data.signals.find((signal) => signal.key === "results");
+  // The review axis leads the page. When nothing waits it drops back into the
+  // overview rows, so the zero stays visible as the evidence for "all caught up".
+  const reviewSignal = data.signals.find(
+    (signal) => signal.reviewItems !== undefined,
+  );
+  const leadSignal = allClear ? undefined : reviewSignal;
+  const railSignals = data.signals.filter((signal) => signal !== leadSignal);
   const viewState = data.viewState ?? "ready";
   const mayShowLicence =
     viewState !== "permission" && viewState !== "no-workspace";
   const hasDay = data.nextActions.length > 0;
+  const showBriefing =
+    (viewState === "ready" || viewState === "loading") &&
+    !data.firstUse &&
+    data.signals.length > 0;
 
   return (
     <WorkspacePage data-slot="home-workspace">
@@ -368,30 +545,6 @@ export function HomeWorkspace({
           </Alert>
         ) : null}
       </div>
-
-      {viewState === "loading" ? (
-        <section aria-labelledby="home-loading-title" className={styles.section}>
-          <WorkspaceSectionHeader
-            headingId="home-loading-title"
-            title={t("Loading")}
-          />
-          <WorkspaceMetricGrid
-            aria-label={t("Loading clinic overview")}
-            className={styles.metrics}
-            role="list"
-          >
-            {data.signals.map((signal) => (
-              <div key={signal.key} role="listitem">
-                <HomeSignalTile
-                  onNavigate={onNavigate}
-                  onRetry={onRetrySignal}
-                  signal={signal}
-                />
-              </div>
-            ))}
-          </WorkspaceMetricGrid>
-        </section>
-      ) : null}
 
       {viewState === "error" ? (
         <Alert tone="danger">
@@ -465,106 +618,39 @@ export function HomeWorkspace({
         </EmptyState>
       ) : null}
 
-      {viewState === "ready" && !data.firstUse && data.signals.length > 0 ? (
-        <>
-          <WorkspaceMetricGrid
-            aria-label={t("Clinic overview")}
-            className={styles.metrics}
-            role="list"
-          >
-            {data.signals.map((signal) => (
-              <div key={signal.key} role="listitem">
-                <HomeSignalTile
-                  onNavigate={onNavigate}
-                  onRetry={onRetrySignal}
-                  signal={signal}
-                />
-              </div>
-            ))}
-          </WorkspaceMetricGrid>
+      {showBriefing ? (
+        <div
+          className={styles.grid}
+          data-lead={allClear ? "clear" : leadSignal ? "true" : "false"}
+        >
+          {allClear ? <AllClearLead /> : null}
 
-          {allClear ? (
-            <Alert tone="success">
-              <AlertTitle>{t("All caught up")}</AlertTitle>
-              <AlertDescription>{t("No work needs attention.")}</AlertDescription>
-            </Alert>
+          {leadSignal ? (
+            <ReviewLead
+              onNavigate={onNavigate}
+              onRetry={onRetrySignal}
+              signal={leadSignal}
+            />
           ) : null}
 
-          {resultsSignal || hasDay ? (
-            <WorkspaceSplit>
-              {resultsSignal ? (
-                <section
-                  aria-labelledby="home-results-title"
-                  className={styles.resultsSection}
-                >
-                  <WorkspaceSectionHeader
-                    actions={
-                      resultsSignal.action ? (
-                        <Button
-                          onClick={() => {
-                            const targetKey = resultsSignal.action?.targetKey;
-                            if (targetKey) onNavigate?.(targetKey);
-                          }}
-                          size="sm"
-                          variant="ghost"
-                        >
-                          {t("View all")}
-                        </Button>
-                      ) : undefined
-                    }
-                    headingId="home-results-title"
-                    title={t("Results needing review")}
-                  />
-                  <HomeResultReviewPreview
-                    onNavigate={onNavigate}
-                    onRetry={onRetrySignal}
-                    showFooter={false}
-                    showHeader={false}
-                    signal={resultsSignal}
-                  />
-                </section>
-              ) : null}
+          <div className={styles.rail}>
+            {hasDay ? (
+              <ComingUp actions={data.nextActions} onNavigate={onNavigate} />
+            ) : null}
 
-              {hasDay ? (
-                <NextToday actions={data.nextActions} onNavigate={onNavigate} />
-              ) : null}
-            </WorkspaceSplit>
-          ) : null}
-
-          {data.closedToday ? (
-            <section aria-labelledby="home-closed-title" className={styles.section}>
-              <WorkspaceSectionHeader
-                headingId="home-closed-title"
-                title={t("Closed today")}
+            {railSignals.length > 0 ? (
+              <ClinicOverview
+                onNavigate={onNavigate}
+                onRetry={onRetrySignal}
+                signals={railSignals}
               />
-              <Card className={styles.closedTray}>
-                <dl className={styles.closedList}>
-                  <div className={styles.closedRow}>
-                    <dt className={styles.closedLabel}>{t("Results")}</dt>
-                    <dd className={styles.closedValue}>
-                      {data.closedToday.resultLoops}
-                    </dd>
-                  </div>
-                  <div className={styles.closedRow}>
-                    <dt className={styles.closedLabel}>{t("Bookings")}</dt>
-                    <dd className={styles.closedValue}>
-                      {data.closedToday.bookings}
-                    </dd>
-                  </div>
-                  <div className={styles.closedRow}>
-                    <dt className={styles.closedLabel}>{t("Earned")}</dt>
-                    <dd className={styles.closedValue}>
-                      <MoneyText
-                        currency="USD"
-                        minor={data.closedToday.earnedMinor}
-                      />
-                    </dd>
-                  </div>
-                </dl>
-              </Card>
-            </section>
-          ) : null}
-        </>
+            ) : null}
+
+            {data.closedToday ? (
+              <ClosedToday closed={data.closedToday} />
+            ) : null}
+          </div>
+        </div>
       ) : null}
     </WorkspacePage>
   );

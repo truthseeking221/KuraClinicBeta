@@ -117,14 +117,11 @@ export type PhoneGateOutcome =
  */
 export const PHONE_GATE_COPY = {
   phoneTitle: 'Contact phone number',
-  phoneSubtitle: 'Use the patient’s number, or a guardian’s or guarantor’s.',
   /**
    * The precondition the gate depends on. An SMS code proves possession of the
-   * handset at this moment, so it is evidence only when the holder is here; a
-   * number typed for someone across town proves nothing and creates a record
-   * nobody present can vouch for.
+   * handset at this moment, so it is evidence only when the holder is present.
    */
-  phonePresence: 'The patient or phone holder must be with you to receive the code.',
+  phonePresence: 'The patient or phone holder must be present.',
   otpTitle: 'Enter the code',
   matchTitle: 'Is this the patient?',
   sharedTitle: 'Which patient?',

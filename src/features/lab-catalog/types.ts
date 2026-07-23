@@ -4,7 +4,8 @@ export type LabCatalogKind =
   | 'panel'
   | 'profile'
   | 'package'
-  | 'consult';
+  | 'consult'
+  | 'service';
 
 export type LabCatalogAvailability = 'available' | 'unavailable';
 

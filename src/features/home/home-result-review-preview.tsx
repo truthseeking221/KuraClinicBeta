@@ -81,7 +81,6 @@ export function HomeResultReviewPreview({
     return (
       <Card
         as="section"
-        aria-label={showHeader ? undefined : t('Results needing review')}
         className={styles.preview}
       >
         {showHeader ? <PreviewHeader count={signal.count} /> : null}

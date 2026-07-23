@@ -87,10 +87,8 @@ export const ImagingConsentChain: Story = {
   render: () => <ConsentPlayground initial={orderReady('consent-imaging', 'Male')} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    const body = within(canvasElement.ownerDocument.body);
     await userEvent.click(canvas.getByRole('tab', { name: /Orders/ }));
-    await userEvent.click(canvas.getByRole('button', { name: /Additional order types/ }));
-    await userEvent.click(body.getByRole('checkbox', { name: 'Chest X-ray' }));
+    await userEvent.click(await canvas.findByRole('checkbox', { name: 'Chest X-ray' }));
     await expect((await canvas.findAllByText('Consent needed'))[0]).toBeVisible();
     await userEvent.click(canvas.getByRole('button', { name: 'Send sign-off' }));
     await expect(canvas.getByText('Sent · awaiting signature')).toBeVisible();
@@ -129,8 +127,7 @@ export const PregnancyGateNotPregnant: Story = {
     const canvas = within(canvasElement);
     const body = within(canvasElement.ownerDocument.body);
     await userEvent.click(canvas.getByRole('tab', { name: /Orders/ }));
-    await userEvent.click(canvas.getByRole('button', { name: /Additional order types/ }));
-    await userEvent.click(body.getByRole('checkbox', { name: 'Chest X-ray' }));
+    await userEvent.click(await canvas.findByRole('checkbox', { name: 'Chest X-ray' }));
     await expect(await body.findByText(/Could the patient be pregnant/)).toBeVisible();
     await userEvent.click(body.getByRole('button', { name: 'Not pregnant — add order' }));
     // The scan is ordered, but its consent chain still gates payment.
@@ -146,8 +143,7 @@ export const PregnancyGateClinicianOverride: Story = {
     const canvas = within(canvasElement);
     const body = within(canvasElement.ownerDocument.body);
     await userEvent.click(canvas.getByRole('tab', { name: /Orders/ }));
-    await userEvent.click(canvas.getByRole('button', { name: /Additional order types/ }));
-    await userEvent.click(body.getByRole('checkbox', { name: 'Chest X-ray' }));
+    await userEvent.click(await canvas.findByRole('checkbox', { name: 'Chest X-ray' }));
     await userEvent.click(await body.findByRole('button', { name: 'Possibly pregnant' }));
     await expect(await body.findByText('Clinician override required')).toBeVisible();
     const record = body.getByRole('button', { name: 'Record & add' });
@@ -171,8 +167,7 @@ export const PregnancyGateCancelOrder: Story = {
     const canvas = within(canvasElement);
     const body = within(canvasElement.ownerDocument.body);
     await userEvent.click(canvas.getByRole('tab', { name: /Orders/ }));
-    await userEvent.click(canvas.getByRole('button', { name: /Additional order types/ }));
-    const chestXray = body.getByRole('checkbox', { name: 'Chest X-ray' });
+    const chestXray = await canvas.findByRole('checkbox', { name: 'Chest X-ray' });
     await userEvent.click(chestXray);
     await userEvent.click(await body.findByRole('button', { name: 'Cancel order' }));
     await waitFor(async () => {
@@ -214,11 +209,9 @@ export const PaymentBlockedUntilConsent: Story = {
     const canvas = within(canvasElement);
     await userEvent.click(canvas.getByRole('tab', { name: /Payment/ }));
     await expect(
-      await canvas.findByText('Resolve blockers before collecting payment'),
+      await canvas.findByText(/Chest X-ray still needs consent — resolve it on the Orders step/),
     ).toBeVisible();
-    await expect(
-      canvas.getByText(/Chest X-ray still needs consent — resolve it on the Orders step/),
-    ).toBeVisible();
+    await expect(canvas.getByRole('button', { name: 'Go to Orders' })).toBeVisible();
   },
 };
 

@@ -77,7 +77,7 @@ export const EnterPhone: Story = {
     await expect(await screen.findByRole('dialog')).toBeVisible();
     await expect(screen.getByRole('heading', { name: 'Contact phone number' })).toBeVisible();
     await expect(
-      screen.getByText('Use the patient’s number, or a guardian’s or guarantor’s.'),
+      screen.getByText('The patient or phone holder must be present.'),
     ).toBeVisible();
 
     await userEvent.click(screen.getByRole('button', { name: 'Send SMS code' }));

@@ -512,7 +512,7 @@ function NowServingStrip({ visits }: { visits: DeskVisit[] }) {
   return (
     <Card aria-label={t('Now serving')} className={styles.nowServing}>
       {called ? (
-        <div className={styles.nowServingSlot}>
+        <div className={styles.nowServingSlot} data-state="calling">
           <span className={styles.nowServingLabel}>{t('Now calling')}</span>
           <span className={styles.nowServingTicket}>{called.ticket}</span>
           <span className={styles.nowServingMeta}>
@@ -522,7 +522,7 @@ function NowServingStrip({ visits }: { visits: DeskVisit[] }) {
         </div>
       ) : null}
       {serving ? (
-        <div className={styles.nowServingSlot}>
+        <div className={styles.nowServingSlot} data-state="serving">
           <span className={styles.nowServingLabel}>{t('In the chair')}</span>
           <span className={styles.nowServingTicket}>{serving.ticket}</span>
           <span className={styles.nowServingMeta}>
@@ -621,14 +621,23 @@ export function DeskQueue({
           {onCallVisit ? (
             <span className={styles.callNext}>
               <Button
+                // A disabled control that cannot say why is a dead end for
+                // anyone not looking at the sentence beside it.
+                aria-describedby={
+                  callable && next === null ? 'desk-call-next-reason' : undefined
+                }
                 disabled={!callable || next === null}
                 onClick={() => next && onCallVisit(next.id)}
-                variant="primary"
+                // Calling is the primary action only while it is available.
+                // While a call is in flight the draw is the real primary, and
+                // a solid grey slab for a dead control outweighed the walk-in
+                // button beside it that the desk can actually use.
+                variant={callable && next !== null ? 'primary' : 'outline'}
               >
                 {next ? `${t('Call next')} · ${next.ticket}` : t('Call next')}
               </Button>
               {callable && next === null ? (
-                <span className={styles.callNextReason}>
+                <span className={styles.callNextReason} id="desk-call-next-reason">
                   {blocked
                     ? `${t('Finish with')} ${blocked.ticket} ${t('first')}`
                     : t('Nobody is ready to be called')}

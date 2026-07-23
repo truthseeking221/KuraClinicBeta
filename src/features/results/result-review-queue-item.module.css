@@ -51,13 +51,30 @@
   }
 }
 
-@media (max-width: 359px) {
+/* Patient identity, the analyte, and how long it has waited need the full
+   measure before the status pill does. Below this the pill drops under the
+   identity block instead of pinning it to a third column that hard-wraps the
+   name and the test into ~150px. The chevron stays on the right so a row that
+   is a link still ends in its affordance. */
+@media (max-width: 480px) {
   .item {
-    align-items: center;
+    align-items: start;
   }
 
   .actions {
+    display: contents;
+  }
+
+  .actions > :global([data-slot='badge']) {
+    grid-column: 2;
+    justify-self: start;
+    margin-block-start: var(--space-1);
+  }
+
+  .chevron {
     grid-column: 3;
-    justify-content: flex-end;
+    grid-row: 1;
+    align-self: center;
+    margin-inline-start: var(--space-2);
   }
 }

@@ -26,11 +26,75 @@
   grid-template-columns: minmax(0, 1fr) calc(var(--space-16) * 5);
 }
 
+/* Keep the patient task on the same measure as the stepper. The full-width
+ * workspace is reserved for the order rail; a planned visit is one reading
+ * field and should not start from a different edge than its navigation. */
+.workspace[data-cart-rail='hidden'] {
+  width: min(100%, 64rem);
+  align-self: center;
+}
+
 /* The two identity tasks use the available canvas; order tasks retain their
  * left reading edge beside the order rail. */
 .workspace[data-cart-rail='hidden'][data-task='arrival'],
 .workspace[data-cart-rail='hidden'][data-task='patient'] {
   justify-content: center;
+}
+
+/*
+ * Confirm-the-patient carries four groups that a single 44rem column pushes
+ * past the fold. From the desktop boundary up they are disposed across one
+ * 12-field grid — 7 fields for the patient's own facts and how the clinic
+ * reaches them, 5 for optional records only — and the whole step reads in one
+ * viewport. Both columns start at the same y, so the left column alone must
+ * carry gate → identity → reachability in reading order; the right column is
+ * a pure optional rail, never a required field, so racing the left column's
+ * top on a wide screen costs nothing. The panel takes the stepper's own 64rem
+ * measure so step numbers, fields, and the footer action share one left and
+ * one right edge instead of three. Below the boundary the groups stack in
+ * the wizard's form measure.
+ */
+.reviewGrid {
+  display: grid;
+  gap: var(--space-4);
+  align-items: start;
+}
+
+.reviewColumn {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+@media (min-width: 1024px) {
+  .workspace[data-cart-rail='hidden'][data-task='patient'] {
+    grid-template-columns: minmax(0, 64rem);
+  }
+
+  .reviewGrid {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    column-gap: var(--space-5);
+  }
+
+  .reviewColumn:first-child {
+    grid-column: span 7;
+  }
+
+  .reviewColumn:last-child {
+    grid-column: span 5;
+  }
+
+  .wizard[data-task='patient'] .stepFooterInner {
+    max-width: 64rem;
+  }
+
+  /* Order Cart rides the second grid column. Below 1024px the grid
+     collapses to one column and the cart stacks in normal flow instead. */
+  .workspace[data-cart-rail='visible'] > aside {
+    position: sticky;
+    top: var(--space-5);
+  }
 }
 
 /* A blank identity search is an entry point, not a form section: centre it in
@@ -91,13 +155,6 @@
   font-weight: var(--weight-semibold);
   line-height: var(--leading-snug);
   color: var(--color-text-primary);
-}
-
-.stepHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
 }
 
 .subTitle {
@@ -186,41 +243,6 @@
   color: var(--color-text-tertiary);
 }
 
-.additionalOrdersPopover {
-  width: min(24rem, calc(100vw - var(--space-8)));
-  padding: var(--space-2);
-}
-
-.additionalOrderList {
-  display: flex;
-  flex-direction: column;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.additionalOrderRow {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: var(--space-3);
-  min-height: var(--touch-target-min);
-  padding: var(--space-2);
-  border-radius: var(--radius-control-compact);
-  transition: background-color var(--motion-color);
-}
-
-.additionalOrderRow:hover {
-  background: var(--color-background-primary-hover);
-}
-
-.additionalOrderPrice {
-  font-size: var(--type-sm);
-  font-variant-numeric: tabular-nums;
-  color: var(--color-text-primary);
-  white-space: nowrap;
-}
-
 .intakeList {
   list-style: none;
   margin: 0;
@@ -306,28 +328,46 @@
   gap: var(--space-2);
 }
 
-.due {
-  margin: 0;
-  font-size: var(--type-lg);
+/* Loud data: the amount is the hero of the payment step; chrome stays quiet. */
+.dueBlock {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.dueLabel {
+  font-size: var(--type-sm);
+  color: var(--color-text-secondary);
+}
+
+.dueHero {
+  font-size: var(--type-2xl);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-snug);
+  font-variant-numeric: tabular-nums;
   color: var(--color-text-primary);
 }
 
-.khr {
-  margin-left: var(--space-2);
+/* KHR is a conversion aid for the patient conversation, not a second bill. */
+.dueKhr {
   font-size: var(--type-sm);
+  font-variant-numeric: tabular-nums;
   color: var(--color-text-tertiary);
 }
 
-.payGrid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--space-4);
-}
-
-.payBody {
+.methodPanel {
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
   gap: var(--space-3);
+}
+
+.methodPanel > * {
+  max-width: 24rem;
+}
+
+.promoToggle {
+  align-self: flex-start;
 }
 
 .payFooter {
@@ -393,9 +433,13 @@
 }
 
 @media (max-width: 599px) {
-  .fieldGrid,
-  .payGrid {
+  .fieldGrid {
     grid-template-columns: 1fr;
+  }
+
+  .methodPanel > * {
+    max-width: none;
+    width: 100%;
   }
 
   .phoneRow {
@@ -793,10 +837,6 @@
 @media (prefers-reduced-motion: reduce) {
   .checkingSpinner {
     animation: none;
-  }
-
-  .additionalOrderRow {
-    transition: none;
   }
 }
 

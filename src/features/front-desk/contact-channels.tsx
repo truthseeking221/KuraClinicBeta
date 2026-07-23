@@ -11,9 +11,11 @@ import {
   Button,
   Card,
   Input,
+  OtpInput,
   SegmentedToggle,
   Select,
   SpinnerGapIcon,
+  TelegramProviderMark,
 } from '../../components/ui';
 import { useT } from '../../components/foundations/i18n';
 import { DEMO_OTP } from './demo-data';
@@ -22,6 +24,12 @@ import type { FrontDeskPatient } from './types';
 import styles from './contact-channels.module.css';
 
 const RESEND_COOLDOWN_SECONDS = 30;
+
+function formatWaitingTime(totalSeconds: number) {
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}:${String(seconds).padStart(2, '0')}`;
+}
 
 export type ContactChannelsProps = {
   patient: FrontDeskPatient;
@@ -54,12 +62,26 @@ export function ContactChannels({ onUpdate, patient }: ContactChannelsProps) {
 
   const phoneValid = patient.phoneNumber.replace(/\D/g, '').length >= 8;
   const anyVerified = patient.otpVerified || patient.telegramVerified;
+  const waitingForTelegram = channel === 'telegram' && !anyVerified;
+  const [waitingSeconds, setWaitingSeconds] = useState(0);
 
   useEffect(() => {
     if (cooldown <= 0) return;
     const timer = setTimeout(() => setCooldown((value) => value - 1), 1000);
     return () => clearTimeout(timer);
   }, [cooldown]);
+
+  // Elapsed reading for an indeterminate wait: the desk has no way to know
+  // how long the ceremony has been running otherwise, and no timeout exists
+  // to tell them when to give up and fall back to SMS themselves.
+  useEffect(() => {
+    if (!waitingForTelegram) {
+      setWaitingSeconds(0);
+      return;
+    }
+    const interval = setInterval(() => setWaitingSeconds((value) => value + 1), 1000);
+    return () => clearInterval(interval);
+  }, [waitingForTelegram]);
 
   function sendCode() {
     setOtpSent(true);
@@ -98,57 +120,58 @@ export function ContactChannels({ onUpdate, patient }: ContactChannelsProps) {
 
   return (
     <Card as="section" className={styles.channel} variant="outline">
-      <div className={styles.channelHeader}>
-        <h3 className={styles.subTitle}>{t('Contact channel')}</h3>
-        <span className={styles.requiredTag}>{t('Required')}</span>
-      </div>
-
-      {patient.telegramVerified ? (
-        <div className={styles.verifiedRow}>
-          <Badge variant="success">{t('Telegram verified')}</Badge>
-          <span className={styles.verifiedMeta}>
-            {patient.telegramHandle} · {patient.countryCode} {patient.phoneNumber}
-          </span>
-          <Button
-            onClick={() =>
-              onUpdate({
-                telegramVerified: false,
-                telegramHandle: undefined,
-                preferredChannel: patient.otpVerified ? 'sms' : null,
-              })
-            }
-            size="sm"
-            variant="ghost"
-          >
-            {t('Change')}
-          </Button>
-        </div>
-      ) : null}
-      {patient.otpVerified ? (
-        <div className={styles.verifiedRow}>
-          <Badge variant="success">{t('SMS verified')}</Badge>
-          <span className={styles.verifiedMeta}>
-            {patient.countryCode} {patient.phoneNumber}
-          </span>
-          <Button
-            onClick={() =>
-              onUpdate({
-                otpVerified: false,
-                preferredChannel: patient.telegramVerified ? 'telegram' : null,
-              })
-            }
-            size="sm"
-            variant="ghost"
-          >
-            {t('Edit to re-verify')}
-          </Button>
-        </div>
-      ) : null}
+      {/* No "Required" tag: the phone field carries the marker, and the step
+          footer states the real rule — verify, or record why not. */}
+      <h3 className={styles.subTitle}>{t('Contact channel')}</h3>
 
       {anyVerified ? (
-        <p className={styles.assuranceNote}>
-          {t('Confirms the patient controls this channel — it does not prove who they are.')}
-        </p>
+        <div className={styles.verifiedSummary}>
+          {patient.telegramVerified ? (
+            <div className={styles.verifiedRow}>
+              <Badge variant="success">{t('Telegram verified')}</Badge>
+              <span className={styles.verifiedMeta}>
+                {patient.telegramHandle} · {patient.countryCode} {patient.phoneNumber}
+              </span>
+              <Button
+                onClick={() =>
+                  onUpdate({
+                    telegramVerified: false,
+                    telegramHandle: undefined,
+                    preferredChannel: patient.otpVerified ? 'sms' : null,
+                  })
+                }
+                size="sm"
+                variant="link"
+              >
+                {t('Change')}
+              </Button>
+            </div>
+          ) : null}
+          {patient.otpVerified ? (
+            <div className={styles.verifiedRow}>
+              <Badge variant="success">{t('SMS verified')}</Badge>
+              <span className={styles.verifiedMeta}>
+                {patient.countryCode} {patient.phoneNumber}
+              </span>
+              <Button
+                onClick={() =>
+                  onUpdate({
+                    otpVerified: false,
+                    preferredChannel: patient.telegramVerified ? 'telegram' : null,
+                  })
+                }
+                size="sm"
+                variant="link"
+              >
+                {t('Edit to re-verify')}
+              </Button>
+            </div>
+          ) : null}
+
+          <p className={styles.assuranceNote}>
+            {t('Confirms the patient controls this channel — it does not prove who they are.')}
+          </p>
+        </div>
       ) : null}
 
       {patient.otpVerified && patient.telegramVerified ? (
@@ -166,24 +189,34 @@ export function ContactChannels({ onUpdate, patient }: ContactChannelsProps) {
         />
       ) : null}
 
-      {!anyVerified && channel === 'telegram' ? (
-        <div className={styles.telegramCard}>
+      {/* Waiting on the patient's own phone. This is the channel card's only
+          content while it runs, so it needs no well of its own — the state
+          leads, the two facts the desk cannot guess follow. */}
+      {waitingForTelegram ? (
+        <div className={styles.telegramWait}>
           <div className={styles.telegramText}>
             <p className={styles.telegramTitle}>
-              {t('Telegram QR pushed to the patient display')}
+              <SpinnerGapIcon aria-hidden className={styles.waitingSpinner} size={16} />
+              {t('Waiting for the patient to scan')}
+              <span className={styles.waitingElapsed}>{formatWaitingTime(waitingSeconds)}</span>
             </p>
             <p className={styles.hint}>
               {t(
-                'Ask the patient to scan it with their phone camera — their number fills in when they share it.',
+                'The QR is on the patient display. Their number fills in when they share it.',
               )}
             </p>
           </div>
-          <span aria-hidden className={styles.waiting}>
-            <SpinnerGapIcon className={styles.waitingSpinner} size={16} />
-            {t('Waiting for the patient…')}
-          </span>
-          <div className={styles.telegramActions}>
-            {/* Demo stand-in for the patient completing the share on their phone. */}
+          {/* The real escape sits alone: it is a genuine desk action, the same
+              class as every other button on this card. */}
+          <div className={styles.escapeRow}>
+            <Button onClick={() => setChannel('sms')} size="sm" variant="ghost">
+              {t('Use SMS instead')}
+            </Button>
+          </div>
+          {/* Demo stand-in for the patient completing the share on their own
+              phone — not a desk action, so it never shares a row or a size
+              with one. Smaller, on its own line, last. */}
+          <div className={styles.escapeRow}>
             <Button
               onClick={() => {
                 const first = (patient.name || 'patient').split(/\s+/)[0].toLowerCase();
@@ -196,13 +229,10 @@ export function ContactChannels({ onUpdate, patient }: ContactChannelsProps) {
                 });
                 setChannel('sms');
               }}
-              size="sm"
-              variant="outline"
+              size="xs"
+              variant="ghost"
             >
               {t('Simulate patient share')}
-            </Button>
-            <Button onClick={() => setChannel('sms')} size="sm" variant="ghost">
-              {t('Use SMS instead')}
             </Button>
           </div>
         </div>
@@ -235,14 +265,14 @@ export function ContactChannels({ onUpdate, patient }: ContactChannelsProps) {
             </Button>
           </div>
           {otpSent ? (
-            <div className={styles.phoneRow}>
-              <Input
+            <>
+              <OtpInput
+                className={styles.codeField}
                 error={otpError}
-                inputMode="numeric"
+                fullWidth
                 label={t('SMS code')}
-                maxLength={6}
-                onChange={(event) => {
-                  setOtpInput(event.target.value);
+                onValueChange={(next) => {
+                  setOtpInput(next);
                   setOtpError(null);
                 }}
                 value={otpInput}
@@ -265,7 +295,7 @@ export function ContactChannels({ onUpdate, patient }: ContactChannelsProps) {
               >
                 {t('Verify')}
               </Button>
-            </div>
+            </>
           ) : null}
           {/* Both ways out sit under the action they replace — the Nextdoor
               "try another method" placement. A bare escape floating beside the
@@ -273,6 +303,7 @@ export function ContactChannels({ onUpdate, patient }: ContactChannelsProps) {
           {!unverifiedOpen ? (
             <div className={styles.escapeRow}>
               <Button onClick={() => setChannel('telegram')} size="sm" variant="ghost">
+                <TelegramProviderMark aria-hidden="true" size={16} />
                 {t('Use Telegram instead')}
               </Button>
               <Button onClick={() => setUnverifiedOpen(true)} size="sm" variant="ghost">

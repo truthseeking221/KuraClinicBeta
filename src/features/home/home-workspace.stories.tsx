@@ -53,7 +53,7 @@ const meta = {
     docs: {
       description: {
         component:
-          "Clinical Home (WQ-01) is a calm start-of-shift briefing inside the canonical AppShell. Five peer metrics make the clinic state scannable, then the safety-relevant Results preview sits beside the next agenda. Every item deep-links into its owning surface. Licence stories map to the current seven-state clinic contract. Aggregate Home counts remain design fixtures because no Home/today BFF read model exists.",
+          "Clinical Home (WQ-01) is a calm start-of-shift briefing inside the canonical AppShell. One twelve-field grid carries the page: the result review queue spans eight fields because it is the work that hurts if it waits, and the clock-bound day plus the remaining lifecycle axes span four. Each piece of work is stated once and deep-links into its owning surface. Licence stories map to the current seven-state clinic contract. Aggregate Home counts remain design fixtures because no Home/today BFF read model exists.",
       },
     },
   },
@@ -73,32 +73,52 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** Default: verified clinician, mixed work, real shell and one clear reading path. */
+/**
+ * Default: verified clinician, mixed work. Proves the page states each job
+ * once — the review queue leads, the clock-bound day and the remaining axes
+ * sit in the rail, and exactly one primary action is offered.
+ */
 export const StartOfDayVerified: Story = {
-  play: async ({ canvasElement }) => {
+  play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
+    const home = within(
+      canvasElement.querySelector(
+        '[data-slot="home-workspace"]',
+      ) as HTMLElement,
+    );
     await expect(
       canvas.getByRole("heading", { name: "Good morning, Dr. Sok Vanna" }),
     ).toBeVisible();
     await expect(
-      canvas.getByRole("heading", { name: "Results needing review" }),
+      canvas.getByRole("heading", { name: "Results to review" }),
     ).toBeVisible();
-    await expect(
-      canvas.getByRole("heading", { name: "Next actions" }),
-    ).toBeVisible();
+    await expect(canvas.getByRole("heading", { name: "Coming up" })).toBeVisible();
+
+    // The review axis is never restated in the rail.
     const overview = canvas.getByRole("list", { name: "Clinic overview" });
-    await expect(within(overview).getAllByRole("listitem")).toHaveLength(5);
+    await expect(within(overview).getAllByRole("listitem")).toHaveLength(4);
     await expect(
-      within(overview).getByRole("link", { name: /Review bookings/ }),
+      within(overview).getByRole("link", { name: /Bookings/ }),
     ).toBeVisible();
     await expect(
-      within(overview).getByRole("link", { name: /Review patients/ }),
+      within(overview).getByRole("link", { name: /Patients/ }),
     ).toBeVisible();
+
     const queue = canvas.getByRole("list", {
       name: "Patients with results to review",
     });
     await expect(within(queue).getAllByRole("listitem")).toHaveLength(5);
     await expect(within(queue).getByText("Dara Phally")).toBeVisible();
+
+    // One primary action on the page, and it routes into the owning surface.
+    const primaries = home
+      .getAllByRole("button")
+      .filter((button) => button.dataset.variant === "primary");
+    await expect(primaries).toHaveLength(1);
+    await userEvent.click(
+      canvas.getByRole("button", { name: "Review results" }),
+    );
+    await expect(args.onNavigate).toHaveBeenCalledWith("results");
   },
 };
 
@@ -138,10 +158,11 @@ export const AllCaughtUpWithNextAppointment: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getByText("All caught up")).toBeVisible();
-    await expect(
-      canvas.getByRole("heading", { name: "Next actions" }),
-    ).toBeVisible();
+    await expect(canvas.getByRole("heading", { name: "Coming up" })).toBeVisible();
     await expect(canvas.getByText("Tube pickup")).toBeVisible();
+    // The zeroed axes stay visible as the evidence for the all-clear claim.
+    const overview = canvas.getByRole("list", { name: "Clinic overview" });
+    await expect(within(overview).getAllByRole("listitem")).toHaveLength(5);
   },
 };
 
@@ -362,19 +383,21 @@ export const LicenceLapsed: Story = {
   },
 };
 
+/** Loading keeps the page structure and its headings; only the values wait. */
 export const Loading: Story = {
   args: { data: demo.loading },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(
-      canvas.getByRole("heading", { name: "Loading" }),
+      canvas.getByRole("heading", { name: "Results to review" }),
     ).toBeVisible();
-    const overview = canvas.getByRole("list", {
-      name: "Loading clinic overview",
-    });
+    const overview = canvas.getByRole("list", { name: "Clinic overview" });
     await expect(within(overview).getByText("Bookings")).toBeVisible();
     await expect(within(overview).getByText("Patients")).toBeVisible();
     await expect(canvas.queryByRole("link")).not.toBeInTheDocument();
+    await expect(
+      canvas.queryByRole("button", { name: "Review results" }),
+    ).not.toBeInTheDocument();
   },
 };
 
@@ -382,16 +405,14 @@ export const PartialFailureAndRetry: Story = {
   args: { data: demo.partialData },
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
+    // The failed axis names its failure where its work would have been, and the
+    // axes that did load keep working.
+    await expect(canvas.getByText("Results could not load.")).toBeVisible();
     const overview = canvas.getByRole("list", { name: "Clinic overview" });
     await expect(
-      within(overview).getByText("Results could not load."),
+      within(overview).getByRole("link", { name: /Bookings/ }),
     ).toBeVisible();
-    await expect(
-      within(overview).getByRole("link", { name: /Review bookings/ }),
-    ).toBeVisible();
-    await userEvent.click(
-      within(overview).getByRole("button", { name: "Retry" }),
-    );
+    await userEvent.click(canvas.getByRole("button", { name: "Retry" }));
     await expect(args.onRetrySignal).toHaveBeenCalledWith("results");
   },
 };
@@ -429,7 +450,7 @@ export const FullFailureRecoverable: Story = {
     await userEvent.click(canvas.getByRole("button", { name: "Reload" }));
     await waitFor(async () => {
       await expect(
-        canvas.getByRole("heading", { name: "Results needing review" }),
+        canvas.getByRole("heading", { name: "Results to review" }),
       ).toBeVisible();
     });
   },

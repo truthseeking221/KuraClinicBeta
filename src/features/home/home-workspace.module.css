@@ -117,25 +117,138 @@
   font-size: var(--type-sm);
 }
 
-/* ── Operational sections ─────────────────────────────────── */
+/* ── The briefing grid ────────────────────────────────────────
+ * One twelve-field grid owns the whole briefing, so the review column, the
+ * day, and the overview rows all start and end on the same field boundaries.
+ * Importance is expressed in fields spanned, not in decoration: the work that
+ * hurts if it waits takes eight, everything else takes four.
+ */
 
-.section,
-.resultsSection,
-.nextSection {
+.grid {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  align-items: start;
+  column-gap: var(--space-6);
+  row-gap: var(--space-8);
+}
+
+.lead {
+  display: flex;
+  min-width: 0;
+  grid-column: span 8;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.rail {
+  display: flex;
+  min-width: 0;
+  grid-column: span 4;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+/* No review axis in this workspace: the remaining fields belong to the rail
+   rather than leaving eight empty ones beside it. */
+.grid[data-lead='false'] .rail {
+  grid-column: 1 / -1;
+}
+
+/* Nothing waits on the doctor, so there is no eight-field column of work to
+   lead with. The reassurance takes the full measure and the remaining sections
+   sit side by side on the same twelve fields, four each. */
+.grid[data-lead='clear'] .lead,
+.grid[data-lead='clear'] .rail {
+  grid-column: 1 / -1;
+}
+
+/* Equal columns land on whole fields for the counts this state can produce:
+   two sections take six fields each, three take four each. */
+.grid[data-lead='clear'] .rail {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  align-items: start;
+  column-gap: var(--space-6);
+}
+
+/* ── Review lead ──────────────────────────────────────────────
+ * The stat anatomy with no container: label, loud value, evidence sentence.
+ * Home spends its single tray on the queue itself, directly below.
+ */
+
+.leadHeader {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.leadHeading {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.leadTitle,
+.leadValue,
+.leadDetail {
+  margin: 0;
+}
+
+.leadTitle {
+  color: var(--color-text-primary);
+  font-size: var(--type-md);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-snug);
+}
+
+/* The loudest value on the page, and the only thing allowed to shout. */
+.leadValue {
+  color: var(--color-text-primary);
+  font-size: var(--type-3xl);
+  font-weight: var(--weight-medium);
+  font-variant-numeric: tabular-nums;
+  line-height: var(--leading-tight);
+}
+
+.leadValue[data-tone='critical'] {
+  color: var(--color-status-danger-fg);
+}
+
+.leadDetail {
+  color: var(--color-text-secondary);
+  font-size: var(--type-sm);
+  line-height: var(--leading-normal);
+  text-wrap: pretty;
+}
+
+/* A critical finding names the value, the patient, and how long it has waited.
+   That sentence is the one place legibility outranks a quiet hierarchy. */
+.leadHeader[data-tone='critical'] .leadDetail {
+  color: var(--color-text-primary);
+}
+
+.leadAction {
+  align-self: flex-start;
+}
+
+/* ── Rail sections ────────────────────────────────────────────
+ * A heading and its rows, grouped by spacing alone. Each section is a hard
+ * edge: a clock-bound day, the remaining lifecycle axes, then what closed.
+ */
+
+.railSection {
   display: flex;
   min-width: 0;
   flex-direction: column;
   gap: var(--space-3);
 }
 
-/* ── Next actions: one justified gray tray with row separators ── */
-
-.nextTray,
-.closedTray {
-  padding: var(--space-inset-card);
-}
-
-.dayList {
+.dayList,
+.signalList {
   display: flex;
   flex-direction: column;
   margin: 0;
@@ -146,19 +259,14 @@
 .dayRow {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: center;
+  align-items: start;
   column-gap: var(--space-3);
   margin-inline: calc(var(--space-2) * -1);
-  padding: var(--space-3) var(--space-2);
-  border-bottom: 1px solid var(--color-border);
+  padding: var(--space-2-5) var(--space-2);
   border-radius: var(--radius-control-compact);
   color: inherit;
   text-decoration: none;
   transition: background-color var(--motion-color);
-}
-
-.dayList > li:last-child .dayRow {
-  border-bottom: 0;
 }
 
 a.dayRow:hover {
@@ -175,6 +283,7 @@ a.dayRow:focus-visible {
   font-size: var(--type-sm);
   font-variant-numeric: tabular-nums;
   font-weight: var(--weight-medium);
+  line-height: var(--leading-snug);
   white-space: nowrap;
 }
 
@@ -206,7 +315,10 @@ a.dayRow:focus-visible {
   line-height: var(--leading-normal);
 }
 
+/* Optically centred on the first line of the label rather than on the row box,
+   so a wrapped two-line item does not drag the chevron to its middle. */
 .dayChevron {
+  margin-block-start: var(--space-0-5);
   color: var(--color-text-tertiary);
   transition: transform var(--motion-control);
 }
@@ -257,6 +369,25 @@ a.dayRow:hover .dayChevron {
 
 /* ── Responsive ───────────────────────────────────────────── */
 
+/* Below this the rail can no longer hold a patient name and a time on one
+   line, so the twelve fields become one column and the reading order —
+   review first, then the day — carries the priority instead. */
+@media (max-width: 1080px) {
+  .grid {
+    row-gap: var(--space-6);
+  }
+
+  .lead,
+  .rail {
+    grid-column: 1 / -1;
+  }
+
+  .grid[data-lead='clear'] .rail {
+    grid-auto-flow: row;
+    row-gap: var(--space-6);
+  }
+}
+
 @media (max-width: 767px) {
   .firstUse {
     gap: var(--space-6);
@@ -278,12 +409,19 @@ a.dayRow:hover .dayChevron {
     grid-column: 2;
     justify-self: start;
   }
-
 }
 
 @media (max-width: 480px) {
   .welcomeTitle {
     font-size: var(--type-2xl);
+  }
+
+  .leadValue {
+    font-size: var(--type-2xl);
+  }
+
+  .leadAction {
+    align-self: stretch;
   }
 
   .bookingActions {
@@ -328,16 +466,5 @@ a.dayRow:hover .dayChevron {
     grid-column: 1 / -1;
     grid-row: 3;
     width: 100%;
-  }
-}
-
-@media (min-width: 360px) and (max-width: 480px) {
-  .metrics {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: var(--space-3);
-  }
-
-  .metrics > :last-child:nth-child(odd) {
-    grid-column: 1 / -1;
   }
 }

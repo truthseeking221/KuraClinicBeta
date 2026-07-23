@@ -16,10 +16,8 @@ import type { KhmerDictionary } from '../types';
 export const PHONE_GATE_KM: KhmerDictionary = {
   // ── Step titles ───────────────────────────────────────────
   'Contact phone number': 'លេខទូរស័ព្ទទំនាក់ទំនង',
-  'Use the patient’s number, or a guardian’s or guarantor’s.':
-    'ប្រើលេខរបស់អ្នកជំងឺ ឬរបស់អាណាព្យាបាល ឬអ្នកធានា។',
-  'The patient or phone holder must be with you to receive the code.':
-    'អ្នកជំងឺ ឬម្ចាស់ទូរស័ព្ទត្រូវនៅជាមួយអ្នក ដើម្បីទទួលលេខកូដ។',
+  'The patient or phone holder must be present.':
+    'អ្នកជំងឺ ឬម្ចាស់ទូរស័ព្ទត្រូវនៅទីនេះ។',
   'Enter the code': 'បញ្ចូលលេខកូដ',
   'Is this the patient?': 'តើនេះជាអ្នកជំងឺមែនទេ?',
   'Which patient?': 'អ្នកជំងឺណាមួយ?',

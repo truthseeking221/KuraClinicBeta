@@ -59,7 +59,7 @@ export const MockJourneySmokeTest: Story = {
     const body = within(canvasElement.ownerDocument.body);
 
     await expect(canvas.getByText('Mock Storybook prototype')).toBeVisible();
-    await expect(canvas.getByRole('heading', { name: 'Find or create a patient' })).toBeVisible();
+    await expect(canvas.getByRole('heading', { name: 'Find the booking' })).toBeVisible();
 
     await userEvent.click(canvas.getByRole('button', { name: /Front desk/ }));
     await userEvent.click(await body.findByRole('menuitemradio', { name: /Collection/ }));
@@ -74,7 +74,7 @@ export const MockJourneySmokeTest: Story = {
 
     await userEvent.click(canvas.getByRole('button', { name: /Collection/ }));
     await userEvent.click(await body.findByRole('menuitemradio', { name: /Front desk/ }));
-    await expect(await canvas.findByRole('heading', { name: 'Find or create a patient' })).toBeVisible();
+    await expect(await canvas.findByRole('heading', { name: 'Find the booking' })).toBeVisible();
 
     // A draw already under way survives a trip to the desk and back. Only
     // committed work is expected to persist — an unsubmitted search string is

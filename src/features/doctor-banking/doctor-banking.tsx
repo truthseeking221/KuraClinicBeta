@@ -229,9 +229,9 @@ function BalanceSummary({
     direction === 'doctor-owes' ? 'danger' : direction === 'kura-owes' ? 'positive' : 'neutral';
   const support =
     direction === 'kura-owes'
-      ? t('This credit offsets future charges. Cash payout is not available yet.')
+      ? t('This credit offsets future charges. It cannot be withdrawn. No collection is scheduled.')
       : direction === 'settled'
-        ? t('Neither you nor Kura owes anything.')
+        ? t('Neither you nor Kura owes anything. No collection is scheduled.')
         : direction === 'unavailable'
           ? t('We could not verify this amount, so no payment action is offered.')
           : null;
@@ -272,27 +272,25 @@ function InProgress({ overview }: { overview: DoctorBankingOverview }) {
     isZero(overview.pendingCredit) && isZero(overview.pendingDebit) && isZero(overview.reservedDebit);
   const breached = floorBreached(overview);
 
+  if (idle) return null;
+
   return (
     <Card aria-labelledby="in-progress-title" as="section" className={styles.progressTray}>
       <h2 className={styles.sectionTitle} id="in-progress-title">{t('In progress')}</h2>
-      {idle ? (
-        <p className={styles.quietCopy}>{t('Nothing in progress.')}</p>
-      ) : (
-        <dl className={styles.progressFacts}>
-          <div>
-            <dt>{t('Pending earnings')}</dt>
-            <dd><AmountText value={overview.pendingCredit} /></dd>
-          </div>
-          <div>
-            <dt>{t('Pending charges')}</dt>
-            <dd><AmountText value={overview.pendingDebit} /></dd>
-          </div>
-          <div>
-            <dt>{t('Reserved for draft orders')}</dt>
-            <dd><AmountText value={overview.reservedDebit} /></dd>
-          </div>
-        </dl>
-      )}
+      <dl className={styles.progressFacts}>
+        <div>
+          <dt>{t('Pending earnings')}</dt>
+          <dd><AmountText value={overview.pendingCredit} /></dd>
+        </div>
+        <div>
+          <dt>{t('Pending charges')}</dt>
+          <dd><AmountText value={overview.pendingDebit} /></dd>
+        </div>
+        <div>
+          <dt>{t('Reserved for draft orders')}</dt>
+          <dd><AmountText value={overview.reservedDebit} /></dd>
+        </div>
+      </dl>
       <p className={styles.projectedLine}>
         {t('Projected balance if everything completes')} <SignedMoneyText value={overview.exposure} />{' '}
         · {t('Ordering floor')} <SignedMoneyText value={overview.creditFloor} />
@@ -326,7 +324,7 @@ function nextStepView(step: NextCollectionStep, t: Translate): NextStepView {
       return { sentence: t('No collection is scheduled.') };
     case 'credit_held':
       return {
-        sentence: t('No collection is scheduled. Your credit offsets future charges.'),
+        sentence: t('No collection is scheduled.'),
       };
     case 'sweep_scheduled':
       return {
@@ -423,7 +421,10 @@ function NextStep({
   overview: DoctorBankingOverview;
 }) {
   const t = useT();
-  const view = nextStepView(nextCollectionStep(overview, notifications), t);
+  const step = nextCollectionStep(overview, notifications);
+  if (step.kind === 'credit_held' || step.kind === 'nothing_due') return null;
+
+  const view = nextStepView(step, t);
   return (
     <section aria-labelledby="next-step-title" className={styles.section}>
       <div className={styles.nextStepHeading}>
@@ -500,8 +501,10 @@ export function DoctorBalancePage({
           {data.overview.licence === 'lapsed' ? (
             <LicenceLapsedNotice onOpenLicence={onOpenLicence} />
           ) : null}
-          <EarningsHero overview={data.overview} />
-          <BalanceSummary onSettle={onSettle} overview={data.overview} />
+          <div className={styles.financialSnapshot}>
+            <EarningsHero overview={data.overview} />
+            <BalanceSummary onSettle={onSettle} overview={data.overview} />
+          </div>
           <InProgress overview={data.overview} />
           <NextStep notifications={data.notifications} overview={data.overview} />
           <AutoPaySummary mandate={data.overview.mandate} onManageAutoPay={onManageAutoPay} />

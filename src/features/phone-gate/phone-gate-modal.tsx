@@ -403,17 +403,15 @@ export function PhoneGateModal({
   // unchecked earns an error on the checkbox instead of silence.
   const draftReady = isDraftFilled(draft);
   const description =
-    state === 'enterPhone'
-      ? PHONE_GATE_COPY.phoneSubtitle
-      : state === 'knownMatch'
-        ? PHONE_GATE_COPY.identityCaveat
-        : state === 'possibleDuplicates'
-          ? PHONE_GATE_COPY.duplicateBody
-          : state === 'concurrentMatch'
-            ? PHONE_GATE_COPY.concurrentBody
-            : showDetails && detailsMode === 'noMatch'
-              ? PHONE_GATE_COPY.noMatchBody
-              : null;
+    state === 'knownMatch'
+      ? PHONE_GATE_COPY.identityCaveat
+      : state === 'possibleDuplicates'
+        ? PHONE_GATE_COPY.duplicateBody
+        : state === 'concurrentMatch'
+          ? PHONE_GATE_COPY.concurrentBody
+          : showDetails && detailsMode === 'noMatch'
+            ? PHONE_GATE_COPY.noMatchBody
+            : null;
 
   return (
     <Dialog
@@ -470,10 +468,10 @@ export function PhoneGateModal({
               countries={['KH']}
               defaultCountry="KH"
               error={phoneError}
+              aria-label={t('Contact phone number')}
               // The precondition belongs on the field that depends on it: the
               // code is only evidence if whoever holds the handset is here.
               helpText={t(PHONE_GATE_COPY.phonePresence)}
-              label={t('Contact phone number')}
               onChange={(next) => {
                 setPhone(next);
                 setPhoneError(null);

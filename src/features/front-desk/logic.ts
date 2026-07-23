@@ -89,7 +89,7 @@ export function validateIdentityFields(
   const todayYear = today ? Number(today[1]) : new Date().getUTCFullYear();
 
   if (dob === '') {
-    issues.push({ field: 'dob', message: 'Enter the date of birth, or the year alone.' });
+    issues.push({ field: 'dob', message: 'Enter the date of birth, or just the birth year, e.g. 1993.' });
     return issues;
   }
 
@@ -108,7 +108,7 @@ export function validateIdentityFields(
 
   const parts = FULL_DATE.exec(dob);
   if (!parts) {
-    issues.push({ field: 'dob', message: 'Use YYYY-MM-DD, or the year alone.' });
+    issues.push({ field: 'dob', message: 'Use YYYY-MM-DD, or just the birth year, e.g. 1993.' });
     return issues;
   }
 
@@ -226,7 +226,7 @@ export function checkInGate(patient: FrontDeskPatient, todayIso = ''): CheckInGa
   const beforePayment = tasks.includes('preconsult') ? done.preconsult : payerSettled;
   done.payment = beforePayment && (paid || payLater || noCharge);
   if (!done.payment && beforePayment) {
-    blockers.payment = 'Collect payment, or record that it is deferred.';
+    blockers.payment = 'Payment is still open.';
   }
 
   for (const [index, task] of tasks.entries()) {

@@ -39,26 +39,41 @@
 
 .callNext {
   display: flex;
-  max-width: 15rem;
+  max-width: 18rem;
   flex-direction: column;
   align-items: flex-end;
   gap: var(--space-1);
 }
 
-/* A blocked primary action always names its reason beside it. */
+/*
+ * A blocked primary action always names its reason beside it — and the reason
+ * has to be readable. At tertiary 11px against the pane edge it was the
+ * smallest, faintest text on screen while carrying the only explanation for
+ * the largest disabled control.
+ */
 .callNextReason {
-  color: var(--color-text-tertiary);
-  font-size: var(--type-xs);
+  color: var(--color-text-secondary);
+  font-size: var(--type-sm);
   line-height: var(--leading-snug);
   text-align: end;
+  text-wrap: balance;
 }
 
 /* The waiting-room fact, in its own functional region so the desk and the
-   room never disagree about which ticket was called. */
+   room never disagree about which ticket was called. The tray carries its own
+   inset because it holds plain slots, not CardHeader/CardContent. */
+/*
+ * Sized to what it says. Stretching three short lines across the full width
+ * left most of the tray empty, which made the one fact the room is waiting on
+ * look like a mostly-blank band rather than a statement.
+ */
 .nowServing {
   display: flex;
+  width: fit-content;
+  max-width: 100%;
   flex-wrap: wrap;
   gap: var(--space-6);
+  padding: var(--space-inset-card);
 }
 
 .nowServingSlot {
@@ -84,6 +99,27 @@
 .nowServingMeta {
   color: var(--color-text-tertiary);
   font-size: var(--type-sm);
+}
+
+/*
+ * Two very different states shared one treatment. A call in flight is the
+ * thing nobody has answered yet; a patient already in the chair is settled
+ * work. The live call is emphasised by letting the settled one recede, rather
+ * than by adding another colour to a screen that just lost eighteen.
+ */
+.nowServingSlot[data-state='calling'] .nowServingLabel {
+  color: var(--color-text-primary);
+  font-weight: var(--weight-medium);
+}
+
+.nowServingSlot[data-state='calling'] .nowServingTicket {
+  font-weight: var(--weight-semibold);
+}
+
+.nowServingSlot[data-state='serving'] .nowServingTicket {
+  color: var(--color-text-secondary);
+  font-size: var(--type-xl);
+  font-weight: var(--weight-regular);
 }
 
 .staleRow {
@@ -124,10 +160,11 @@
   font-weight: var(--weight-medium);
 }
 
-.ticket[data-class='stat'],
-.mobileTicket[data-class='stat'] {
-  color: var(--destructive);
-}
+/*
+ * The ticket is an identifier, not a status. Urgency is already a word in the
+ * next column, and painting the number red said the same thing a second time
+ * in the same colour — two marks competing to make one point.
+ */
 
 .patientNames {
   display: flex;
@@ -204,8 +241,14 @@
   line-height: var(--leading-snug);
 }
 
+/*
+ * A settled fact is quiet. Colouring "ID checked", "Confirmed" and "Paid" put
+ * eighteen green cells on a routine queue, and the six rows that actually
+ * need a receptionist had to out-shout them. Colour is scarce here so that
+ * the exception is the only thing on the row that carries it.
+ */
 .fact[data-tone='success'] {
-  color: var(--color-status-success-fg);
+  color: var(--color-text-secondary);
 }
 
 .fact[data-tone='warning'] {

@@ -139,9 +139,13 @@ const balanceSignal: HomeSignal = {
   action: { label: 'Open balance', targetKey: 'balance' },
 };
 
+/**
+ * Clock-bound commitments only: someone is waiting at that time. Result review
+ * has no appointment, so it never appears here — it is the review signal, and
+ * repeating it would make the same work look like two different jobs.
+ */
 const NEXT_ACTIONS: HomeData['nextActions'] = [
   { time: '09:30', label: 'Sokha Chan · T2DM review', meta: 'Booking FZ48210', targetKey: 'bookings' },
-  { time: '10:15', label: 'Dara Phally · lipid panel review', meta: 'Results available', targetKey: 'results' },
   { time: '11:00', label: 'Chenda Sreymom · new patient visit', meta: 'Walk in confirmed', targetKey: 'patients' },
   { time: '16:40', label: 'Hand 8 tubes to Sok S.', meta: 'Pickup code required', targetKey: 'bookings' },
 ];

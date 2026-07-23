@@ -284,6 +284,14 @@ export const ResizableOrderDraftWorkspace: Story = {
     expect(getComputedStyle(record!).scrollbarWidth).toBe("none");
     expect(getComputedStyle(catalog!).scrollbarWidth).toBe("none");
 
+    const panelWrappers = canvasElement.querySelectorAll<HTMLElement>(
+      '[data-slot="resizable-panel"] > div',
+    );
+    expect(panelWrappers.length).toBe(2);
+    panelWrappers.forEach((wrapper) => {
+      expect(getComputedStyle(wrapper).overflow).toBe("hidden");
+    });
+
     if (catalog!.scrollHeight > catalog!.clientHeight) {
       catalog!.scrollTop = 160;
       await waitFor(() => expect(catalog!.scrollTop).toBeGreaterThan(0));

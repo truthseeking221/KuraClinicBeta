@@ -80,7 +80,7 @@ export const READINESS = {
   frontDesk: {
     area: 'Clinic/Front Desk',
     level: 'partial',
-    note: 'Booking and priced carts follow the real contracts. Payment capture is cash-only in the backend; receipts and the desk queue are local scaffolding.',
+    note: 'Booking and priced carts follow the real contracts. Payment capture is cash-only in the backend, so eligibility, coverage splits, and insurer claims are read-only previews that never complete a check-in. Receipts, ticketing, call order, and the desk queue are local scaffolding.',
     owner: 'src/features/front-desk',
   },
   collection: {

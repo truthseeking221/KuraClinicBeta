@@ -143,7 +143,7 @@ export const ReviewLockedIdentity: Story = {
     // No unlock: editing a record to fit the person in front of the desk is
     // how a wrong-patient match gets buried.
     await expect(canvas.queryByRole('button', { name: /Unlock/ })).not.toBeInTheDocument();
-    await expect(canvas.getByText(/read-only at the desk/)).toBeVisible();
+    await expect(canvas.getByText(/read-only at the desk/i)).toBeVisible();
   },
 };
 
@@ -163,7 +163,7 @@ export const ConfirmPatientOpenQuestions: Story = {
 
     const confirm = canvas.getByRole('button', { name: 'Confirm patient' });
     await expect(confirm).toBeDisabled();
-    await expect(canvas.getByText('Type both answers to confirm.')).toBeVisible();
+    await expect(canvas.getByText('Type both answers.')).toBeVisible();
 
     await userEvent.type(canvas.getByLabelText('What is your full name?'), 'Sok Phearom');
     await userEvent.type(canvas.getByLabelText('What is your date of birth?'), '19740315');
@@ -337,10 +337,12 @@ export const TelegramChannel: Story = {
   render: () => <DetailsPlayground initial={confirmedPatient()} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await userEvent.click(canvas.getByRole('button', { name: 'Use Telegram instead' }));
+    const telegramButton = canvas.getByRole('button', { name: 'Use Telegram instead' });
     await expect(
-      await canvas.findByText('Telegram QR pushed to the patient display'),
-    ).toBeVisible();
+      telegramButton.querySelector('[data-kura-provider-mark="telegram"]'),
+    ).toBeInTheDocument();
+    await userEvent.click(telegramButton);
+    await expect(await canvas.findByText('Waiting for the patient to scan')).toBeVisible();
     // The desk never types the number — the patient shares it from their phone.
     await userEvent.click(canvas.getByRole('button', { name: 'Simulate patient share' }));
     await expect(await canvas.findByText('Telegram verified')).toBeVisible();

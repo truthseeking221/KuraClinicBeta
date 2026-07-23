@@ -42,9 +42,9 @@ export const HOME_KM: KhmerDictionary = {
   'No work right now.': 'គ្មានការងារឥឡូវនេះទេ។',
   'Clinic overview': 'ទិដ្ឋភាពទូទៅនៃគ្លីនិក',
   'Loading clinic overview': 'កំពុងផ្ទុកទិដ្ឋភាពទូទៅនៃគ្លីនិក',
-  'Results needing review': 'លទ្ធផលដែលត្រូវការពិនិត្យ',
-  'Next actions': 'សកម្មភាពបន្ទាប់',
+  'Coming up': 'នៅពេលខាងមុខ',
   'Closed today': 'បានបញ្ចប់ថ្ងៃនេះ',
+  Results: 'លទ្ធផល',
   Earned: 'ចំណូល',
   'work queue': 'ជួរការងារ',
 

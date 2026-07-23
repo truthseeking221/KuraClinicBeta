@@ -77,6 +77,14 @@ export type HomeSignal = {
   action?: { label: string; targetKey: string };
 };
 
+/**
+ * One clock-bound commitment: an appointment, an arrival, or a hand-off where
+ * a person is waiting at that time.
+ *
+ * Asynchronous work the doctor can do whenever — result review above all —
+ * belongs to its signal and never to this list. Home states each piece of work
+ * once, so the day and the review queue can never describe the same job twice.
+ */
 export type NextAction = {
   time: string;
   label: string;

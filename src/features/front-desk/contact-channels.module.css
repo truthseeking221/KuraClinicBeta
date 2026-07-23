@@ -5,17 +5,6 @@
   padding: var(--space-inset-card);
 }
 
-.channelHeader {
-  display: flex;
-  align-items: baseline;
-  gap: var(--space-2);
-}
-
-.requiredTag {
-  font-size: var(--type-xs);
-  color: var(--color-text-tertiary);
-}
-
 /* Shown once verified, where over-trusting the green badge is the real risk. */
 .assuranceNote {
   margin: 0;
@@ -27,11 +16,15 @@
   max-width: 220px;
 }
 
+/* Chrome, not data: the card names its section, but the live state below
+   (a verified badge, or the waiting line) is what the desk actually reads.
+   Matches the label role in the stat-tile anatomy (k-label) — secondary
+   weight and color so the current state stays the loudest line. */
 .subTitle {
   margin: 0;
   font-size: var(--type-sm);
-  font-weight: var(--weight-semibold);
-  color: var(--color-text-primary);
+  font-weight: var(--weight-medium);
+  color: var(--color-text-secondary);
 }
 
 .hint {
@@ -74,6 +67,21 @@
   min-width: 0;
 }
 
+/* Matches .phoneRow's cap: a 6-digit code is a short value and looks wrong
+   stretched to the full card width. */
+.codeField {
+  max-width: 26rem;
+}
+
+/* The badge row(s) and the note qualifying them read as one fact, not three
+   unrelated stack items — tighter than .channel's own space-3 rhythm so
+   proximity carries that pairing. */
+.verifiedSummary {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
 .verifiedRow {
   display: flex;
   align-items: center;
@@ -88,16 +96,13 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* Customer-display handoff, waiting on the patient. The parent channel card
-   already carries the boundary, so this is a grey well inside it — a second
-   border here would be a box inside a box. */
-.telegramCard {
+/* Customer-display handoff, waiting on the patient. The channel card already
+   carries the boundary and this is its only content while the ceremony runs,
+   so the group is spacing and typography — no well, no second surface. */
+.telegramWait {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
-  padding: var(--space-3);
-  border-radius: var(--radius-control);
-  background: var(--color-surface-2);
+  gap: var(--space-3);
 }
 
 .telegramText {
@@ -107,28 +112,30 @@
 }
 
 .telegramTitle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1-5);
   margin: 0;
   font-size: var(--type-sm);
   font-weight: var(--weight-semibold);
   color: var(--color-text-primary);
 }
 
-.telegramActions {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-}
-
-.waiting {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1-5);
-  font-size: var(--type-xs);
-  color: var(--color-text-secondary);
-}
-
 .waitingSpinner {
+  flex-shrink: 0;
   animation: contact-spin 900ms linear infinite;
+}
+
+/* Elapsed reading, not a progress bar — there's no known total duration to
+   fill toward. Tertiary and small so it stays a quiet stopwatch, never
+   competing with the waiting line it sits beside. */
+.waitingElapsed {
+  margin-inline-start: auto;
+  flex-shrink: 0;
+  font-family: var(--font-family-mono);
+  font-size: var(--type-xs);
+  color: var(--color-text-tertiary);
+  font-variant-numeric: tabular-nums;
 }
 
 @keyframes contact-spin {

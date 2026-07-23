@@ -14,6 +14,19 @@
   gap: var(--space-7);
 }
 
+/* One scan area for the two settled facts: earnings lead; balance explains
+ * who owes whom. It is intentionally not a card — these facts are one page
+ * context, not an isolated task. */
+.financialSnapshot {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  align-items: start;
+  column-gap: var(--space-6);
+  row-gap: var(--space-5);
+  padding-block-end: var(--space-6);
+  border-block-end: 1px solid var(--color-border);
+}
+
 .narrowFlow {
   max-width: 48rem;
   gap: var(--space-6);
@@ -76,6 +89,7 @@
 
 /* Earnings hero: the loudest number on the page, on the bare white canvas. */
 .hero {
+  grid-column: span 7;
   gap: var(--space-1);
   min-width: 0;
 }
@@ -107,12 +121,13 @@
 /* Who owes whom. The heading carries the meaning; colour only confirms it. */
 .balanceRow {
   display: flex;
+  grid-column: span 5;
   min-width: 0;
   align-items: flex-start;
   justify-content: space-between;
   gap: var(--space-4);
-  padding-block-start: var(--space-5);
-  border-block-start: 1px solid var(--color-border);
+  padding-inline-start: var(--space-8);
+  border-inline-start: 1px solid var(--color-border);
 }
 
 .balanceMain {
@@ -133,7 +148,7 @@
 .settlementAmount {
   display: inline-flex;
   margin-top: var(--space-2);
-  font-size: var(--type-2xl);
+  font-size: var(--type-3xl);
   font-weight: var(--weight-semibold);
   line-height: var(--leading-none);
   letter-spacing: -0.02em;
@@ -161,7 +176,7 @@
 }
 
 .metricHelp {
-  margin-top: var(--space-3);
+  margin-top: var(--space-2);
   max-width: 34rem;
 }
 
@@ -213,8 +228,12 @@
 }
 
 .progressFacts {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(12, minmax(0, 1fr));
   gap: var(--space-4);
+}
+
+.progressFacts > div {
+  grid-column: span 4;
 }
 
 .progressFacts dd {
@@ -502,9 +521,21 @@
 }
 
 @media (max-width: 48rem) {
+  .financialSnapshot {
+    grid-template-columns: 1fr;
+    gap: var(--space-5);
+  }
+
+  .hero,
+  .balanceRow {
+    grid-column: 1 / -1;
+  }
+
   .balanceRow {
     align-items: stretch;
     flex-direction: column;
+    padding-inline-start: 0;
+    border-inline-start: 0;
   }
 
   .balanceAction {
@@ -545,6 +576,10 @@
 
   .progressFacts {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .progressFacts > div {
+    grid-column: span 1;
   }
 
   .objectHeader {

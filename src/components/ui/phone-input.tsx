@@ -45,7 +45,7 @@ export type PhoneInputProps = Omit<
   ComponentPropsWithoutRef<'input'>,
   'defaultValue' | 'onChange' | 'size' | 'type' | 'value'
 > & {
-  /** Visible field label. Omit only when an external label references the phone input. */
+  /** Visible field label. Omit when an external label or accessible name names the input. */
   label?: ReactNode;
   /** Supporting text that helps a person enter a reachable number. */
   helpText?: ReactNode;

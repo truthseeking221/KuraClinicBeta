@@ -103,6 +103,12 @@ export function Icd10DiagnosisRail({
 
     return [...visible.values()];
   }, [allCandidates, selectedIds, suggestions]);
+  /**
+   * Provenance is carried once per group instead of once per row: chart and
+   * clinician-picked codes need no caveat, AI proposals need review.
+   */
+  const chartRows = rows.filter((candidate) => candidate.source !== "ai");
+  const aiRows = rows.filter((candidate) => candidate.source === "ai");
   const selectedCandidates = useMemo(
     () =>
       selectedIds
@@ -145,6 +151,89 @@ export function Icd10DiagnosisRail({
     setQuery("");
   }
 
+  function renderRow(candidate: Icd10DiagnosisCandidate) {
+    const isSelected = selected.has(candidate.id);
+    const isAiSuggested = candidate.source === "ai";
+    const isCodable = candidate.codable !== false;
+    const relatedFindings = (
+      candidate.evidence?.length ? candidate.evidence : flaggedLabs
+    ).slice(0, 4);
+
+    return (
+      <div
+        className={styles.suggestionRow}
+        data-codable={isCodable ? undefined : "false"}
+        data-selected={isSelected ? "true" : "false"}
+        data-slot="diagnosis-proposal"
+        key={candidate.id}
+      >
+        <Checkbox
+          aria-label={`${isSelected ? t("Remove") : t("Add")} ${candidate.code}. ${candidate.label}${isAiSuggested ? `. ${t("AI suggested")}.` : ""} ${isSelected ? t("from draft") : t("to draft")}`}
+          checked={isSelected}
+          className={styles.rowChoice}
+          disabled={!isCodable}
+          onCheckedChange={(nextSelected) =>
+            setDraftSelection(candidate, nextSelected)
+          }
+        >
+          <span className={styles.rowCopy}>
+            <code className={styles.code}>{candidate.code}</code>
+            <span className={styles.rowLabel}>{candidate.label}</span>
+          </span>
+        </Checkbox>
+        <span className={styles.rowTrailing}>
+          {isCodable ? null : (
+            <span className={styles.rowNote}>{t("Not codable")}</span>
+          )}
+          {isAiSuggested ? (
+            <Popover>
+              <PopoverTrigger
+                render={
+                  <IconButton
+                    aria-label={`${t("View evidence for")} ${candidate.code}`}
+                    className={styles.evidenceTrigger}
+                    variant="tertiary"
+                  >
+                    <InformationIcon aria-hidden="true" />
+                  </IconButton>
+                }
+              />
+              <PopoverContent
+                align="end"
+                aria-label={`${t("Evidence for")} ${candidate.code}`}
+                className={styles.evidencePopover}
+                initialFocus={false}
+                role="dialog"
+              >
+                <PopoverTitle>{candidate.label}</PopoverTitle>
+                <PopoverDescription>
+                  {tooltipCopy(candidate, t)}
+                </PopoverDescription>
+                {relatedFindings.length > 0 ? (
+                  <div className={styles.findings}>
+                    <span className={styles.findingsLabel}>
+                      {t("Related findings")}
+                    </span>
+                    <span className={styles.findingChips}>
+                      {relatedFindings.map((finding) => (
+                        <span
+                          data-tone={finding.tone ?? "neutral"}
+                          key={`${candidate.id}-${finding.label}-${finding.value}`}
+                        >
+                          {finding.label} {evidenceValue(finding)}
+                        </span>
+                      ))}
+                    </span>
+                  </div>
+                ) : null}
+              </PopoverContent>
+            </Popover>
+          ) : null}
+        </span>
+      </div>
+    );
+  }
+
   return (
     <section
       aria-labelledby="icd10-diagnosis-rail-title"
@@ -153,100 +242,37 @@ export function Icd10DiagnosisRail({
       <header className={styles.header}>
         <div className={styles.headerTop}>
           <h2 id="icd10-diagnosis-rail-title">{t("Select diagnosis")}</h2>
-          <div className={styles.headerActions}>
-            <span className={styles.aiLegend}>
-              <AiBrainIcon aria-hidden="true" />
-              {t("AI suggested")}
-            </span>
-            {onClose ? (
-              <CloseButton
-                aria-label={t("Close diagnosis selection")}
-                onClick={onClose}
-                size="sm"
-              />
-            ) : null}
-          </div>
+          {onClose ? (
+            <CloseButton
+              aria-label={t("Close diagnosis selection")}
+              onClick={onClose}
+              size="sm"
+            />
+          ) : null}
         </div>
         <p>{t("Draft — not verified or saved.")}</p>
       </header>
 
-      <div className={styles.rows}>
-        {rows.map((candidate) => {
-          const isSelected = selected.has(candidate.id);
-          const isAiSuggested = candidate.source === "ai";
-          const relatedFindings = (
-            candidate.evidence?.length ? candidate.evidence : flaggedLabs
-          ).slice(0, 4);
+      <div className={styles.groups}>
+        {chartRows.length > 0 ? (
+          <div className={styles.rows}>{chartRows.map(renderRow)}</div>
+        ) : null}
 
-          return (
+        {aiRows.length > 0 ? (
+          <div className={styles.group}>
+            <p className={styles.groupLabel} id="icd10-diagnosis-rail-ai">
+              <AiBrainIcon aria-hidden="true" />
+              {t("AI suggested")}
+            </p>
             <div
-              className={styles.suggestionRow}
-              data-codable={candidate.codable === false ? "false" : undefined}
-              data-selected={isSelected ? "true" : "false"}
-              data-slot="diagnosis-proposal"
-              key={candidate.id}
+              aria-labelledby="icd10-diagnosis-rail-ai"
+              className={styles.rows}
+              role="group"
             >
-              <Checkbox
-                aria-label={`${isSelected ? t("Remove") : t("Add")} ${candidate.code}. ${candidate.label}${isAiSuggested ? `. ${t("AI suggested")}.` : ""} ${isSelected ? t("from draft") : t("to draft")}`}
-                checked={isSelected}
-                className={styles.rowChoice}
-                disabled={candidate.codable === false}
-                onCheckedChange={(nextSelected) =>
-                  setDraftSelection(candidate, nextSelected)
-                }
-              >
-                <span className={styles.rowCopy}>
-                  <span className={styles.rowLabel}>{candidate.label}</span>
-                  <code className={styles.code}>{candidate.code}</code>
-                </span>
-              </Checkbox>
-              {isAiSuggested ? (
-                <Popover>
-                  <PopoverTrigger
-                    render={
-                      <IconButton
-                        aria-label={`${t("View evidence for")} ${candidate.code}`}
-                        className={styles.evidenceTrigger}
-                        variant="tertiary"
-                      >
-                        <InformationIcon aria-hidden="true" />
-                      </IconButton>
-                    }
-                  />
-                  <PopoverContent
-                    align="end"
-                    aria-label={`${t("Evidence for")} ${candidate.code}`}
-                    className={styles.evidencePopover}
-                    initialFocus={false}
-                    role="dialog"
-                  >
-                    <PopoverTitle>{candidate.label}</PopoverTitle>
-                    <PopoverDescription>
-                      {tooltipCopy(candidate, t)}
-                    </PopoverDescription>
-                    {relatedFindings.length > 0 ? (
-                      <div className={styles.findings}>
-                        <span className={styles.findingsLabel}>
-                          {t("Related findings")}
-                        </span>
-                        <span className={styles.findingChips}>
-                          {relatedFindings.map((finding) => (
-                            <span
-                              data-tone={finding.tone ?? "neutral"}
-                              key={`${candidate.id}-${finding.label}-${finding.value}`}
-                            >
-                              {finding.label} {evidenceValue(finding)}
-                            </span>
-                          ))}
-                        </span>
-                      </div>
-                    ) : null}
-                  </PopoverContent>
-                </Popover>
-              ) : null}
+              {aiRows.map(renderRow)}
             </div>
-          );
-        })}
+          </div>
+        ) : null}
       </div>
 
       <Combobox<Icd10DiagnosisCandidate, true>

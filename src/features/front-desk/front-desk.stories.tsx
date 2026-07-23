@@ -51,7 +51,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'Six-step Storybook reception flow: Identity → Review → Insurance → Orders → Pre-consult → Payment. The order rail is a backend-priced summary only; workflow actions remain in the step footer. SMS code 123456 and the injected FX quote are explicit story fixtures.',
+          'Adaptive reception check-in: a visit carries only the tasks its own facts require, ordered by dependency — Arrival, Patient, Orders, Payer, Intake, Payment. The order rail prices lines and never acts; every workflow action stays in the step footer. SMS code 123456 and the injected FX quote are story fixtures.',
       },
     },
   },
@@ -122,7 +122,7 @@ export const Default: Story = {
   },
 };
 
-/** Planned visit resumes after the booking and patient identity were resolved. */
+/** A booked visit resumes at the patient step with its booking code bound. */
 export const PlannedVisit: Story = {
   args: Default.args,
   render: () => (
@@ -136,6 +136,35 @@ export const PlannedVisit: Story = {
     await expect(
       canvas.getByRole('heading', { name: 'Confirm the patient' }),
     ).toBeVisible();
+
+    // The planned visit uses one centered measure: the patient task, stepper,
+    // and persistent action bar share the same left and right grid edges.
+    if (window.innerWidth >= 1024) {
+      const workspace = canvasElement.querySelector<HTMLElement>(
+        '[data-slot="check-in-workspace"]',
+      );
+      const stepPanel = canvasElement.querySelector<HTMLElement>(
+        '[data-slot="check-in-step-panel"]',
+      );
+      const stepper = canvasElement.querySelector<HTMLElement>('[data-slot="stepper"]');
+      const footer = canvasElement.querySelector<HTMLElement>(
+        '[data-slot="check-in-action-bar"]',
+      );
+      if (!workspace || !stepPanel || !stepper || !footer) {
+        throw new Error('Planned visit grid did not render.');
+      }
+
+      const workspaceBounds = workspace.getBoundingClientRect();
+      const panelBounds = stepPanel.getBoundingClientRect();
+      const stepperBounds = stepper.getBoundingClientRect();
+      const footerBounds = footer.getBoundingClientRect();
+      await expect(Math.abs(workspaceBounds.left - panelBounds.left)).toBeLessThanOrEqual(1);
+      await expect(Math.abs(workspaceBounds.right - panelBounds.right)).toBeLessThanOrEqual(1);
+      await expect(Math.abs(workspaceBounds.left - stepperBounds.left)).toBeLessThanOrEqual(1);
+      await expect(Math.abs(workspaceBounds.right - stepperBounds.right)).toBeLessThanOrEqual(1);
+      await expect(Math.abs(workspaceBounds.left - footerBounds.left)).toBeLessThanOrEqual(1);
+      await expect(Math.abs(workspaceBounds.right - footerBounds.right)).toBeLessThanOrEqual(1);
+    }
   },
 };
 
@@ -323,7 +352,7 @@ export const FullCheckInFlow: Story = {
     await expect(canvas.queryByRole('tab', { name: /Payer/ })).not.toBeInTheDocument();
 
     // Add CBC and attribute the ordering clinician (ADR-0057).
-    await expect(canvas.getByLabelText('67 tests')).toBeVisible();
+    await expect(canvas.getByLabelText(/^\d+ tests$/)).toBeVisible();
     await userEvent.click(
       canvas.getByRole('checkbox', { name: /Complete blood count/ }),
     );
@@ -387,6 +416,7 @@ export const KhqrPayment: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await userEvent.click(canvas.getByRole('tab', { name: /Payment/ }));
+    await userEvent.click(canvas.getByRole('radio', { name: 'KHQR' }));
     await userEvent.click(canvas.getByRole('button', { name: 'Generate QR' }));
     await expect(await canvas.findByText(/KHQR waiting for Bakong/)).toBeVisible();
 
@@ -432,6 +462,7 @@ export const KhqrLifecycle: Story = {
     const canvas = within(canvasElement);
     const body = within(canvasElement.ownerDocument.body);
     await userEvent.click(canvas.getByRole('tab', { name: /Payment/ }));
+    await userEvent.click(canvas.getByRole('radio', { name: 'KHQR' }));
     await userEvent.click(canvas.getByRole('button', { name: 'Generate QR' }));
 
     // Expiry is terminal for the intent — only a new QR can retry.
@@ -483,6 +514,7 @@ export const SplitCashKhqr: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await userEvent.click(canvas.getByRole('tab', { name: /Payment/ }));
+    await userEvent.click(canvas.getByRole('radio', { name: 'Split' }));
 
     const collect = canvas.getByRole('button', { name: 'Collect cash · show QR' });
     // Zero and full-cover amounts are not splits.
@@ -541,10 +573,14 @@ export const PrescriberAttribution: Story = {
   render: () => <WizardPlayground initial={readyWithOrders('attr-1')} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    // The wizard reopens at Payment (first incomplete step) — blocked upfront.
+    // The wizard reopens at Payment (first incomplete step) — blocked upfront,
+    // with the fix named and a jump to where it lives.
     await expect(
-      await canvas.findByText('Resolve blockers before collecting payment'),
+      await canvas.findByText('Choose the ordering clinician on the Orders step.'),
     ).toBeVisible();
+    await expect(canvas.getByRole('button', { name: 'Go to Orders' })).toBeVisible();
+    // Method controls never render while collection is blocked.
+    await expect(canvas.queryByRole('radio', { name: 'Cash' })).not.toBeInTheDocument();
 
     await userEvent.click(canvas.getByRole('tab', { name: /Orders/ }));
     const select = canvas.getByLabelText('Ordering clinician');
@@ -559,8 +595,9 @@ export const PrescriberAttribution: Story = {
     await userEvent.click(canvas.getByRole('tab', { name: /Intake/ }));
     await userEvent.click(canvas.getByRole('tab', { name: /Payment/ }));
     await expect(
-      canvas.queryByText('Resolve blockers before collecting payment'),
+      canvas.queryByText('Choose the ordering clinician on the Orders step.'),
     ).not.toBeInTheDocument();
+    await expect(canvas.getByRole('radio', { name: 'Cash' })).toBeVisible();
   },
 };
 
@@ -678,10 +715,10 @@ export const OrderCompositionBlockers: Story = {
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    // The wizard reopens at Payment — the same gate blocks upfront.
-    await expect(
-      await canvas.findByText('Resolve blockers before collecting payment'),
-    ).toBeVisible();
+    // The wizard reopens at Payment — the same gate blocks upfront, naming
+    // the first order blocker and offering the jump to Orders.
+    await expect(await canvas.findByText(/not orderable at this lab yet/)).toBeVisible();
+    await expect(canvas.getByRole('button', { name: 'Go to Orders' })).toBeVisible();
 
     await userEvent.click(canvas.getByRole('tab', { name: /Orders/ }));
     await expect(await canvas.findByText('Resolve 2 order blockers')).toBeVisible();
@@ -788,6 +825,9 @@ export const PromoDiscount: Story = {
     const canvas = within(canvasElement);
     await userEvent.click(canvas.getByRole('tab', { name: /Payment/ }));
 
+    // The promo field hides behind a disclosure — the rare path costs a click.
+    await userEvent.click(canvas.getByRole('button', { name: 'Add promo code' }));
+
     // Unknown code fails loudly, applies nothing.
     await userEvent.type(canvas.getByLabelText('Promo code'), 'NOPE');
     await userEvent.click(canvas.getByRole('button', { name: 'Apply' }));
@@ -835,8 +875,10 @@ export const PricingUnavailableInFlow: Story = {
     await expect(
       await canvas.findByText(/The order total could not be refreshed — retry pricing/),
     ).toBeVisible();
-    await expect(canvas.getByRole('button', { name: 'Confirm cash' })).toBeDisabled();
-    await expect(canvas.getByRole('button', { name: 'Generate QR' })).toBeDisabled();
+    // No method controls and no quotable amount while the price is untrusted.
+    await expect(canvas.queryByRole('button', { name: 'Confirm cash' })).not.toBeInTheDocument();
+    await expect(canvas.queryByRole('radio', { name: 'Cash' })).not.toBeInTheDocument();
+    await expect(canvas.queryByText('Patient due')).not.toBeInTheDocument();
   },
 };
 
@@ -855,11 +897,8 @@ export const VisitAndVitalsOrderable: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await userEvent.click(canvas.getByRole('tab', { name: /Orders/ }));
-    const body = within(canvasElement.ownerDocument.body);
-    await userEvent.click(canvas.getByRole('button', { name: 'Additional order types' }));
-    await userEvent.click(await body.findByRole('checkbox', { name: 'Clinic visit' }));
-    await userEvent.click(canvas.getByRole('button', { name: 'Additional order types' }));
-    await userEvent.click(await body.findByRole('checkbox', { name: 'Vital signs' }));
+    await userEvent.click(await canvas.findByRole('checkbox', { name: 'Clinic visit' }));
+    await userEvent.click(await canvas.findByRole('checkbox', { name: 'Vital signs' }));
     await expect(canvas.getAllByText('Clinic visit').length).toBeGreaterThan(0);
     await expect(canvas.getAllByText('Vital signs').length).toBeGreaterThan(0);
   },

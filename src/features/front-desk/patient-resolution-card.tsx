@@ -279,6 +279,7 @@ function ActionRow({ actions }: { actions?: PatientResolutionAction[] }) {
         <Button
           key={action.label}
           size="sm"
+          leadingIcon={action.icon}
           variant={
             action.variant === 'primary' ? 'primary' : action.variant === 'ghost' ? 'ghost' : 'outline'
           }
@@ -288,7 +289,6 @@ function ActionRow({ actions }: { actions?: PatientResolutionAction[] }) {
             action.onClick?.();
           }}
         >
-          {action.icon}
           {t(action.label)}
         </Button>
       ))}

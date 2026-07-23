@@ -3,7 +3,7 @@ import {
   LAB_CATALOG_CATEGORIES,
   LAB_CATALOG_TESTS,
 } from '../lab-catalog/demo-data';
-import type { LabCatalogTest } from '../lab-catalog/types';
+import type { LabCatalogCategory, LabCatalogTest } from '../lab-catalog/types';
 
 export type CatalogEntry = Omit<CartItem, 'qty'> & {
   category: string;
@@ -49,14 +49,92 @@ const ORDER_ENTRY_ID_BY_PICKER_TEST_ID: Record<string, string> = {
   'lipid-panel': 'lipid',
   lpa: 'lpa',
   tsh: 'tsh',
+  // Non-lab desk services: the picker test id and the ORDER_CATALOG id are
+  // the same string, so these are a plain identity mapping.
+  'visit-fee': 'visit-fee',
+  'vitals-panel': 'vitals-panel',
+  'xray-chest': 'xray-chest',
+  'ecg-12': 'ecg-12',
+  telecon: 'telecon',
 };
 
 /**
- * Front-desk adapter for the canonical Storybook Test Picker. The priced order
- * catalog stays the source of truth. The full 67-test catalog remains visible;
- * tests without a front-desk quote are explicitly unavailable to order.
+ * Visit-level services (Simple and Usable, "Hard edges" — a category split
+ * must match the desk's mental model, not an internal data source) sit
+ * ahead of the lab categories: a visit fee and vitals are the highest-
+ * frequency lines at a walk-in desk, so they read first, not behind a second
+ * control (About Face's commensurate-effort rule: what's used many times a
+ * day belongs immediately in reach). Imaging and follow-up sit at the end —
+ * genuinely occasional, unlike visit/vitals.
  */
-export const ORDER_PICKER_CATEGORIES = LAB_CATALOG_CATEGORIES;
+const FRONT_DESK_CATEGORIES: LabCatalogCategory[] = [
+  { categoryId: 'visit', code: 'VISIT', displayName: 'Visit', priority: 0, count: 2 },
+  { categoryId: 'imaging', code: 'IMAGING', displayName: 'Imaging', priority: 13, count: 1 },
+  { categoryId: 'follow-up', code: 'FOLLOWUP', displayName: 'Follow-up', priority: 14, count: 1 },
+];
+
+/** 12-lead ECG joins the existing Cardiac lab tests — same clinical category. */
+const LAB_CATEGORIES_WITH_ECG = LAB_CATALOG_CATEGORIES.map((category) =>
+  category.categoryId === 'cardiac' ? { ...category, count: category.count + 1 } : category,
+);
+
+const FRONT_DESK_SERVICE_TESTS: LabCatalogTest[] = [
+  {
+    testCatalogId: 'visit-fee',
+    code: 'SVC_VISIT',
+    displayName: 'Clinic visit',
+    kind: 'service',
+    status: 'active',
+    categoryIds: ['visit'],
+    preview: { specimen: 'None', turnaround: 'Same visit', priceMinor: '1500', currencyCode: 'USD' },
+  },
+  {
+    testCatalogId: 'vitals-panel',
+    code: 'SVC_VITALS',
+    displayName: 'Vital signs',
+    kind: 'service',
+    status: 'active',
+    categoryIds: ['visit'],
+    preview: { specimen: 'None', turnaround: 'Same visit', priceMinor: '500', currencyCode: 'USD' },
+  },
+  {
+    testCatalogId: 'xray-chest',
+    code: 'SVC_XRAY_CHEST',
+    displayName: 'Chest X-ray',
+    kind: 'service',
+    status: 'active',
+    categoryIds: ['imaging'],
+    preview: { specimen: 'None', turnaround: 'Same-day', priceMinor: '1800', currencyCode: 'USD' },
+  },
+  {
+    testCatalogId: 'ecg-12',
+    code: 'SVC_ECG_12',
+    displayName: '12-lead ECG',
+    kind: 'service',
+    status: 'active',
+    categoryIds: ['cardiac'],
+    preview: { specimen: 'None', turnaround: 'Same-day', priceMinor: '1000', currencyCode: 'USD' },
+  },
+  {
+    testCatalogId: 'telecon',
+    code: 'SVC_TELECON',
+    displayName: 'Teleconsultation',
+    kind: 'consult',
+    status: 'active',
+    categoryIds: ['follow-up'],
+    preview: { specimen: 'None', turnaround: 'Scheduled', priceMinor: '0', currencyCode: 'USD' },
+  },
+];
+
+/**
+ * Front-desk adapter for the canonical Storybook Test Picker. The priced order
+ * catalog stays the source of truth. The full lab catalog remains visible;
+ * tests without a front-desk quote are explicitly unavailable to order. Desk
+ * services (visit, vitals, imaging, ECG, telecon) are ordered through the
+ * same picker and search, not a separate mechanism — see catalog.ts history
+ * for the "Additional order types" popover this replaced.
+ */
+export const ORDER_PICKER_CATEGORIES = [...LAB_CATEGORIES_WITH_ECG, ...FRONT_DESK_CATEGORIES];
 
 export function orderEntryForPickerTest(testId: string): CatalogEntry | undefined {
   const entryId = ORDER_ENTRY_ID_BY_PICKER_TEST_ID[testId];
@@ -65,7 +143,7 @@ export function orderEntryForPickerTest(testId: string): CatalogEntry | undefine
     : undefined;
 }
 
-export const ORDER_PICKER_TESTS: LabCatalogTest[] = LAB_CATALOG_TESTS.map((test) => {
+const ORDER_PICKER_LAB_TESTS: LabCatalogTest[] = LAB_CATALOG_TESTS.map((test) => {
   const entry = orderEntryForPickerTest(test.testCatalogId);
 
   if (test.availability === 'unavailable') return test;
@@ -86,12 +164,10 @@ export const ORDER_PICKER_TESTS: LabCatalogTest[] = LAB_CATALOG_TESTS.map((test)
   return test;
 });
 
-const PICKER_ORDER_ENTRY_IDS = new Set(Object.values(ORDER_ENTRY_ID_BY_PICKER_TEST_ID));
-
-/** Orders outside the lab catalog keep their priced front-desk controls. */
-export const OTHER_ORDER_ENTRIES = ORDER_CATALOG.filter(
-  (entry) => !PICKER_ORDER_ENTRY_IDS.has(entry.id),
-);
+export const ORDER_PICKER_TESTS: LabCatalogTest[] = [
+  ...ORDER_PICKER_LAB_TESTS,
+  ...FRONT_DESK_SERVICE_TESTS,
+];
 
 /* Word-bounded: "fasting" must never match the STI class. */
 export const SENSITIVE_TEST_PATTERN = /\b(?:hiv|sti|genetic)\b/i;

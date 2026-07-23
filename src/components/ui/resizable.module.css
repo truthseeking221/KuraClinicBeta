@@ -7,6 +7,10 @@
 .panel {
   min-width: 0;
   min-height: 0;
+  /* The panel primitive adds an overflow:auto wrapper around its child.
+   * Panel content owns scrolling explicitly; keeping this wrapper clipped
+   * prevents a duplicate native scrollbar at the split boundary. */
+  overflow: hidden !important;
 }
 
 .handle {

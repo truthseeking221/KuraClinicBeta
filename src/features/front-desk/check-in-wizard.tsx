@@ -19,11 +19,6 @@ import {
   AlertTitle,
   Badge,
   Button,
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  Checkbox,
   CheckIcon,
   ChevronRightIcon,
   Collapsible,
@@ -34,9 +29,6 @@ import {
   Kbd,
   LockKeyIcon,
   MoneyText,
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
   QrCodeIcon,
   RefreshIcon,
   Select,
@@ -60,7 +52,6 @@ import { CartRail } from './cart-rail';
 import { ContactChannels } from './contact-channels';
 import {
   ORDER_CATALOG,
-  OTHER_ORDER_ENTRIES,
   ORDER_PICKER_CATEGORIES,
   ORDER_PICKER_TESTS,
   orderEntryForPickerTest,
@@ -408,6 +399,7 @@ export function CheckInWizard({
           {activeTask === 'payment' ? (
             <StepPayment
               fxRate={fxRate}
+              onGoToOrders={() => setTask('orders')}
               onUpdate={update}
               patient={patient}
               prescribers={prescribers}
@@ -643,7 +635,7 @@ function TaskFooter({
       data-mobile-dock={mobileDockAvailable ? 'true' : undefined}
       role="region"
     >
-      <div className={styles.stepFooterInner}>
+      <div className={styles.stepFooterInner} data-slot="check-in-action-bar">
         {!isFirst ? (
           <Button className={styles.footerBack} onClick={onBack} variant="outline">
             {t('Back')}
@@ -1220,7 +1212,7 @@ function CollisionAlert({
       <AlertDescription>
         {evidence ? `${t(evidence)} · ` : ''}
         {t('score')} {collision.score}.{' '}
-        {t('Duplicate records create a duplicate-risk audit entry.')}
+        {t('Keeping both creates a duplicate-risk audit entry.')}
       </AlertDescription>
       {recordOpen ? (
         <dl className={styles.collisionRecord}>
@@ -1389,9 +1381,9 @@ function IdentityConfirmation({
       <div className={styles.sectionHeader}>
         <h3 className={styles.subTitle}>{t('Ask the patient')}</h3>
       </div>
-      <p className={styles.hint}>
-        {t('Ask, then type what they answer. Do not read the record out loud.')}
-      </p>
+      {/* The heading and the question labels already say to ask and type. Only
+          the rule the desk would not guess belongs here. */}
+      <p className={styles.hint}>{t('Do not read the record out loud.')}</p>
       <div className={styles.fieldGrid}>
         {questions.includes('name') ? (
           <Input
@@ -1400,7 +1392,6 @@ function IdentityConfirmation({
               setAnswers((previous) => ({ ...previous, name: event.target.value }));
               setMismatch(false);
             }}
-            placeholder={t('Type the answer')}
             value={answers.name}
           />
         ) : null}
@@ -1431,7 +1422,7 @@ function IdentityConfirmation({
           </AlertAction>
         </Alert>
       ) : null}
-      <IdentityActionArea helper={answered ? undefined : t('Type both answers to confirm.')}>
+      <IdentityActionArea helper={answered ? undefined : t('Type both answers.')}>
         <Button
           disabled={!answered}
           onClick={() => {
@@ -1513,176 +1504,195 @@ function StepReview({
         }
       />
 
-      {/* Positive identification gates this step, so it leads it. */}
-      <IdentityConfirmation
-        onConfirm={(confirmation) => onUpdate({ identityConfirmation: confirmation })}
-        onRestartIdentity={onRestartIdentity}
-        patient={patient}
-      />
-
-      {/* Identity is a section of this step, not an independent object — it
-          groups by heading and spacing, never by a card boundary. */}
-      <div className={styles.formSection}>
-        <div className={styles.sectionHeader}>
-          <h3 className={styles.subTitle}>{t('Identity')}</h3>
-          <span className={styles.sectionProvenance}>
-            {patient.identity.source === 'existing'
-              ? t('From Kura record')
-              : t('Entered at the desk')}
-          </span>
-        </div>
-        {hasLocks ? (
-          <p className={styles.hint}>
-            {t(
-              'Record values are read-only at the desk. If they are wrong, this is not the patient.',
-            )}
-          </p>
-        ) : null}
-        <div className={styles.fieldGrid}>
-          <LockedOrEditableInput
-            error={issueFor('name')}
-            field="name"
-            label={t('Full name (Latin)')}
-            lockedFields={lockedFields}
-            onChange={(next) => onUpdate({ name: next, collisionAcked: [] })}
-            placeholder={t('As shown on the ID document')}
-            required
-            value={patient.name}
+      {/* Four independent groups stacked in one column ran past the fold, so
+          they are disposed across a 12-field grid instead. But a 2-column
+          grid isn't a linear reading order — on a wide screen both columns
+          start at the same y, so the eye scans left-to-right before it scans
+          down (Gutenberg arc). A required, step-gating field placed at the
+          top of the right column would race the desk's eye against whatever
+          leads the left column, not follow it. So the left column alone
+          carries the story in order — gate, identity, reachability — and the
+          right column is left as a pure optional rail, the one thing that's
+          safe to sit outside the primary scan path. */}
+      <div className={styles.reviewGrid}>
+        <div className={styles.reviewColumn}>
+          {/* Positive identification gates this step, so it leads it. */}
+          <IdentityConfirmation
+            onConfirm={(confirmation) => onUpdate({ identityConfirmation: confirmation })}
+            onRestartIdentity={onRestartIdentity}
+            patient={patient}
           />
-          <Input
-            label={t('Full name (Khmer)')}
-            lang="km"
-            onChange={(event) => onUpdate({ nameKhmer: event.target.value })}
-            placeholder="សុខ ស្រីម៉ៅ"
-            value={patient.nameKhmer}
-          />
-          <LockedOrEditableInput
-            error={issueFor('dob')}
-            field="dob"
-            label={t('Date of birth')}
-            lockedFields={lockedFields}
-            onChange={(next) => onUpdate({ dob: next, collisionAcked: [] })}
-            placeholder={t('YYYY-MM-DD, or the year alone')}
-            required
-            value={patient.dob}
-          />
-          {lockedFields.includes('sexAtBirth') ? (
-            <Input
-              disabled
-              label={t('Sex at birth')}
-              required
-              suffix={<LockKeyIcon size={14} aria-hidden />}
-              value={t(patient.sexAtBirth)}
-            />
-          ) : (
-            <SegmentedToggle
-              label={t('Sex at birth')}
-              labelVisible
-              onValueChange={(value) =>
-                onUpdate({
-                  sexAtBirth: value as FrontDeskPatient['sexAtBirth'],
-                  collisionAcked: [],
-                })
-              }
-              options={[
-                { value: 'Female', label: t('Female') },
-                { value: 'Male', label: t('Male') },
-              ]}
-              value={patient.sexAtBirth}
-            />
-          )}
-          <Input
-            label={t('National ID number')}
-            onChange={(event) => onUpdate({ idNumber: event.target.value, collisionAcked: [] })}
-            placeholder="012345678"
-            value={patient.idNumber}
-          />
-        </div>
-      </div>
 
-      {/* The contact channel owns its own state machine and gates this step —
-          the one boundary on the screen that represents a real object. */}
-      <ContactChannels onUpdate={onUpdate} patient={patient} />
-
-      <div className={styles.disclosures}>
-        <PolicyDisclosure onUpdate={onUpdate} patient={patient} />
-
-        <Collapsible inset="none">
-          <CollapsibleTrigger headingLevel={3} meta={t('Optional')}>
-            {t('Address')}
-          </CollapsibleTrigger>
-          <CollapsibleContent>
+          {/* Identity is a section of this step, not an independent object — it
+              groups by heading and spacing, never by a card boundary. */}
+          <div className={styles.formSection}>
+            <div className={styles.sectionHeader}>
+              <h3 className={styles.subTitle}>{t('Identity')}</h3>
+              <span className={styles.sectionProvenance}>
+                {patient.identity.source === 'existing'
+                  ? t('From Kura record')
+                  : t('Entered at the desk')}
+              </span>
+            </div>
+            {hasLocks ? (
+              <p className={styles.hint}>
+                {t('Read-only at the desk. If a value is wrong, this is not the patient.')}
+              </p>
+            ) : null}
             <div className={styles.fieldGrid}>
-              <Input
-                label={t('Province')}
-                onChange={(event) => updateAddress({ province: event.target.value })}
-                placeholder={t('Phnom Penh')}
-                value={patient.address.province}
+              <LockedOrEditableInput
+                error={issueFor('name')}
+                field="name"
+                label={t('Full name (Latin)')}
+                lockedFields={lockedFields}
+                onChange={(next) => onUpdate({ name: next, collisionAcked: [] })}
+                placeholder={t('As shown on the ID document')}
+                required
+                value={patient.name}
               />
               <Input
-                label={t('District')}
-                onChange={(event) => updateAddress({ district: event.target.value })}
-                placeholder={t('Chamkarmon')}
-                value={patient.address.district}
+                label={t('Full name (Khmer)')}
+                lang="km"
+                onChange={(event) => onUpdate({ nameKhmer: event.target.value })}
+                placeholder="សុខ ស្រីម៉ៅ"
+                value={patient.nameKhmer}
               />
-              <Input
-                label={t('Commune')}
-                onChange={(event) => updateAddress({ commune: event.target.value })}
-                placeholder={t('Tonle Bassac')}
-                value={patient.address.commune}
+              <LockedOrEditableInput
+                error={issueFor('dob')}
+                field="dob"
+                label={t('Date of birth')}
+                lockedFields={lockedFields}
+                onChange={(next) => onUpdate({ dob: next, collisionAcked: [] })}
+                placeholder={t('YYYY-MM-DD, or just the birth year, e.g. 1993')}
+                required
+                value={patient.dob}
               />
+              {lockedFields.includes('sexAtBirth') ? (
+                <Input
+                  disabled
+                  label={t('Sex at birth')}
+                  required
+                  suffix={<LockKeyIcon size={14} aria-hidden />}
+                  value={t(patient.sexAtBirth)}
+                />
+              ) : (
+                <SegmentedToggle
+                  label={t('Sex at birth')}
+                  labelVisible
+                  onValueChange={(value) =>
+                    onUpdate({
+                      sexAtBirth: value as FrontDeskPatient['sexAtBirth'],
+                      collisionAcked: [],
+                    })
+                  }
+                  options={[
+                    { value: 'Female', label: t('Female') },
+                    { value: 'Male', label: t('Male') },
+                  ]}
+                  value={patient.sexAtBirth}
+                />
+              )}
               <Input
-                className={styles.fieldSpanAll}
-                label={t('Street / house')}
-                onChange={(event) => updateAddress({ street: event.target.value })}
-                placeholder={t('House, street, landmark')}
-                value={patient.address.street}
+                label={t('National ID number')}
+                onChange={(event) =>
+                  onUpdate({ idNumber: event.target.value, collisionAcked: [] })
+                }
+                placeholder="012345678"
+                value={patient.idNumber}
               />
             </div>
-          </CollapsibleContent>
-        </Collapsible>
+          </div>
 
-        <Collapsible inset="none">
-          <CollapsibleTrigger headingLevel={3} meta={t('Optional')}>
-            {t('Refund account')}
-          </CollapsibleTrigger>
-          <CollapsibleContent>
-            {patient.refundAccount ? (
-              <div className={styles.refundRow}>
-                <QrCodeIcon size={16} aria-hidden />
-                <span className={styles.refundValue}>{patient.refundAccount}</span>
-                <Badge size="sm" variant="success">
-                  {t('Bakong KHQR saved')}
-                </Badge>
-                <Button
-                  onClick={() => onUpdate({ refundAccount: null })}
-                  size="sm"
-                  variant="ghost"
-                >
-                  {t('Remove')}
-                </Button>
-              </div>
-            ) : (
-              /* Nothing saved is a state, not an object — the hint and its one
-                 action sit on the page, with no box drawn around them. */
-              <div className={styles.refundEmpty}>
-                <p className={styles.hint}>
-                  {t(
-                    'No account saved. Add Bakong KHQR only if this patient may need a refund.',
+          {/* Reachability closes the primary column's story — gate, identity,
+              reachability — instead of opening a second one. It still owns
+              its own state machine and gates this step: the one boundary in
+              this column that represents a real object. */}
+          <ContactChannels onUpdate={onUpdate} patient={patient} />
+        </div>
+
+        <div className={styles.reviewColumn}>
+          {/* One name for the group replaces the same word repeated on every
+              row: these three are optional because the group is. */}
+          <div className={styles.formSection}>
+            <h3 className={styles.subTitle}>{t('Optional records')}</h3>
+            <div className={styles.disclosures}>
+              <PolicyDisclosure onUpdate={onUpdate} patient={patient} />
+
+              <Collapsible inset="none">
+                <CollapsibleTrigger headingLevel={3}>{t('Address')}</CollapsibleTrigger>
+                <CollapsibleContent>
+                  <div className={styles.fieldGrid}>
+                    <Input
+                      label={t('Province')}
+                      onChange={(event) => updateAddress({ province: event.target.value })}
+                      placeholder={t('Phnom Penh')}
+                      value={patient.address.province}
+                    />
+                    <Input
+                      label={t('District')}
+                      onChange={(event) => updateAddress({ district: event.target.value })}
+                      placeholder={t('Chamkarmon')}
+                      value={patient.address.district}
+                    />
+                    <Input
+                      label={t('Commune')}
+                      onChange={(event) => updateAddress({ commune: event.target.value })}
+                      placeholder={t('Tonle Bassac')}
+                      value={patient.address.commune}
+                    />
+                    <Input
+                      className={styles.fieldSpanAll}
+                      label={t('Street / house')}
+                      onChange={(event) => updateAddress({ street: event.target.value })}
+                      placeholder={t('House, street, landmark')}
+                      value={patient.address.street}
+                    />
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
+
+              <Collapsible inset="none">
+                <CollapsibleTrigger headingLevel={3}>{t('Refund account')}</CollapsibleTrigger>
+                <CollapsibleContent>
+                  {patient.refundAccount ? (
+                    <div className={styles.refundRow}>
+                      <QrCodeIcon size={16} aria-hidden />
+                      <span className={styles.refundValue}>{patient.refundAccount}</span>
+                      <Badge size="sm" variant="success">
+                        {t('Bakong KHQR saved')}
+                      </Badge>
+                      <Button
+                        onClick={() => onUpdate({ refundAccount: null })}
+                        size="sm"
+                        variant="ghost"
+                      >
+                        {t('Remove')}
+                      </Button>
+                    </div>
+                  ) : (
+                    /* Nothing saved is a state, not an object — the hint and its one
+                       action sit on the page, with no box drawn around them. */
+                    <div className={styles.refundEmpty}>
+                      <p className={styles.hint}>
+                        {t(
+                          'No account saved. Add Bakong KHQR only if this patient may need a refund.',
+                        )}
+                      </p>
+                      <Button
+                        onClick={() => onUpdate({ refundAccount: 'kh-qr://demo-bakong-account' })}
+                        size="sm"
+                        variant="outline"
+                      >
+                        <QrCodeIcon size={13} aria-hidden />
+                        {t('Scan KHQR')}
+                      </Button>
+                    </div>
                   )}
-                </p>
-                <Button
-                  onClick={() => onUpdate({ refundAccount: 'kh-qr://demo-bakong-account' })}
-                  size="sm"
-                  variant="outline"
-                >
-                  <QrCodeIcon size={13} aria-hidden />
-                  {t('Scan KHQR')}
-                </Button>
-              </div>
-            )}
-          </CollapsibleContent>
-        </Collapsible>
+                </CollapsibleContent>
+              </Collapsible>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
   );
@@ -1785,9 +1795,11 @@ function PolicyDisclosure({
 
   return (
     <Collapsible inset="none">
+      {/* The count is the only meta that adds a fact — "Optional" is now the
+          group's name, not a tag on every row. */}
       <CollapsibleTrigger
         headingLevel={3}
-        meta={patient.insurance.length > 0 ? patient.insurance.length : t('Optional')}
+        meta={patient.insurance.length > 0 ? patient.insurance.length : undefined}
       >
         {t('Insurance policy')}
       </CollapsibleTrigger>
@@ -2111,7 +2123,6 @@ function StepOrders({
   /** Imaging entry waiting on the pregnancy screen before it may be added. */
   const [pregnancyGateEntry, setPregnancyGateEntry] = useState<CatalogEntry | null>(null);
   const [verbalForId, setVerbalForId] = useState<string | null>(null);
-  const [additionalOrdersOpen, setAdditionalOrdersOpen] = useState(false);
   const verbalFor = patient.cart.items.find((item) => item.id === verbalForId) ?? null;
 
   function addEntry(
@@ -2180,53 +2191,6 @@ function StepOrders({
 
   return (
     <section aria-label={t('Orders')} className={styles.step}>
-      <div className={styles.stepHeader}>
-        <h2 className={styles.stepTitle}>{t('Add orders')}</h2>
-        <Popover onOpenChange={setAdditionalOrdersOpen} open={additionalOrdersOpen}>
-          <PopoverTrigger
-            render={
-              <Button size="sm" variant="outline">
-                {t('Additional order types')}
-              </Button>
-            }
-          />
-          <PopoverContent
-            aria-label={t('Choose an additional order type')}
-            className={styles.additionalOrdersPopover}
-            initialFocus={false}
-            role="dialog"
-          >
-            <ul className={styles.additionalOrderList}>
-              {OTHER_ORDER_ENTRIES.map((entry) => (
-                <li className={styles.additionalOrderRow} key={entry.id}>
-                  <Checkbox
-                    aria-label={entry.name}
-                    checked={inCart.has(entry.id)}
-                    onCheckedChange={(checked) => {
-                      setEntrySelected(entry, checked);
-                      setAdditionalOrdersOpen(false);
-                    }}
-                  >
-                    <span className={styles.lineTextWide}>
-                      <span className={styles.lineName}>{entry.name}</span>
-                      <span className={styles.lineMeta}>
-                        {t(entry.category)}
-                        {entry.fasting ? ` · ${t('Fasting')}` : ''}
-                      </span>
-                    </span>
-                  </Checkbox>
-                  <MoneyText
-                    className={styles.additionalOrderPrice}
-                    currency={entry.currencyCode}
-                    minor={entry.priceMinor}
-                  />
-                </li>
-              ))}
-            </ul>
-          </PopoverContent>
-        </Popover>
-      </div>
-
       {/* Order attribution (ADR-0057): the server refuses placement without an
           eligible prescriber — the desk resolves it here, not at payment. */}
       {patient.cart.items.length > 0 ? (
@@ -2386,7 +2350,6 @@ function StepOrders({
           return entry && inCart.has(entry.id) ? [test.testCatalogId] : [];
         })}
         tests={ORDER_PICKER_TESTS}
-        totalCount={67}
       />
     </section>
   );
@@ -2792,12 +2755,15 @@ function StepPreConsult({
 
 function StepPayment({
   fxRate,
+  onGoToOrders,
   onUpdate,
   patient,
   prescribers,
   pricingStatus = 'ready',
 }: {
   fxRate?: FxRateQuote;
+  /** Jump to the Orders step to fix a blocker that lives there. */
+  onGoToOrders?: () => void;
   onUpdate: (patch: Partial<FrontDeskPatient>) => void;
   patient: FrontDeskPatient;
   prescribers: Prescriber[];
@@ -2809,6 +2775,8 @@ function StepPayment({
   const payment = patient.cart.payment;
   const [tendered, setTendered] = useState('');
   const [splitCash, setSplitCash] = useState('');
+  const [method, setMethod] = useState<'cash' | 'khqr' | 'split'>('cash');
+  const [promoOpen, setPromoOpen] = useState(false);
   const [promoCode, setPromoCode] = useState('');
   const [promoError, setPromoError] = useState<string | null>(null);
   const splitCashMinor = parseUsdMajor(splitCash);
@@ -2825,6 +2793,31 @@ function StepPayment({
     composition.length > 0 ||
     unresolvedConsent.length > 0;
   const appliedPromoLines = promoLines(patient.cart);
+  // One blocker at a time: the first unmet gate, phrased as the fix itself.
+  const blockedReason =
+    attribution?.kind === 'no-eligible-prescriber'
+      ? t('No licensed clinician can be attributed to this order.')
+      : attribution
+        ? t('Choose the ordering clinician on the Orders step.')
+        : staleQuote
+          ? t('Prices changed since this quote — accept the new total in the order cart first.')
+          : pricingUnavailable
+            ? pricingStatus === 'loading'
+              ? t('The server price is still loading — do not collect payment yet.')
+              : t(
+                  'The order total could not be refreshed — retry pricing in the order cart before collecting.',
+                )
+            : composition.length > 0
+              ? orderBlockerMessage(composition[0])
+              : unresolvedConsent.length > 0
+                ? `${unresolvedConsent[0].name} ${t('still needs consent — resolve it on the Orders step.')}`
+                : '';
+  // The desk can fix these on the Orders step; pricing blockers resolve in the rail.
+  const fixOnOrders =
+    attribution?.kind !== 'no-eligible-prescriber' &&
+    (attribution !== null || composition.length > 0 || unresolvedConsent.length > 0);
+  // A stale or unpriced total must never be quoted to the patient.
+  const amountTrusted = !staleQuote && !pricingUnavailable;
 
   function applyPromoCode() {
     const promo = findDemoPromo(promoCode);
@@ -2924,32 +2917,6 @@ function StepPayment({
     <section aria-label={t('Payment')} className={styles.step}>
       <h2 className={styles.stepTitle}>{t('Payment')}</h2>
 
-      {placementBlocked ? (
-        <Alert tone="warning">
-          <AlertTitle>{t('Resolve blockers before collecting payment')}</AlertTitle>
-          <AlertDescription>
-            {attribution?.kind === 'no-eligible-prescriber'
-              ? t('No licensed clinician can be attributed to this order.')
-              : attribution
-                ? t('Choose the ordering clinician on the Orders step.')
-                : staleQuote
-                  ? t(
-                      'Prices changed since this quote — accept the new total in the order cart first.',
-                    )
-                  : pricingUnavailable
-                    ? pricingStatus === 'loading'
-                      ? t('The server price is still loading — do not collect payment yet.')
-                      : t(
-                          'The order total could not be refreshed — retry pricing in the order cart before collecting.',
-                        )
-                    : composition.length > 0
-                      ? orderBlockerMessage(composition[0])
-                      : unresolvedConsent.length > 0
-                        ? `${unresolvedConsent[0].name} ${t('still needs consent — resolve it on the Orders step.')}`
-                        : ''}
-          </AlertDescription>
-        </Alert>
-      ) : null}
       {appliedPromoLines.length > 0 ? (
         <dl className={styles.dueBreakdown}>
           <div>
@@ -2980,15 +2947,31 @@ function StepPayment({
           ))}
         </dl>
       ) : null}
-      <p className={styles.due}>
-        {t('Patient due')}{' '}
-        <MoneyText as="strong" currency="USD" minor={dueMinor} />
-        {khrMinor ? (
-          <MoneyText className={styles.khr} currency="KHR" minor={khrMinor} />
-        ) : null}
-      </p>
+      {amountTrusted ? (
+        <div className={styles.dueBlock}>
+          <span className={styles.dueLabel}>{t('Patient due')}</span>
+          <MoneyText as="strong" className={styles.dueHero} currency="USD" minor={dueMinor} />
+          {khrMinor ? (
+            <span className={styles.dueKhr}>
+              {'≈ '}
+              <MoneyText currency="KHR" minor={khrMinor} />
+            </span>
+          ) : null}
+        </div>
+      ) : null}
 
-      {noCharge ? (
+      {placementBlocked ? (
+        <Alert tone="warning">
+          <AlertTitle>{blockedReason}</AlertTitle>
+          {fixOnOrders && onGoToOrders ? (
+            <AlertAction>
+              <Button onClick={onGoToOrders} size="sm" variant="outline">
+                {t('Go to Orders')}
+              </Button>
+            </AlertAction>
+          ) : null}
+        </Alert>
+      ) : noCharge ? (
         <Alert tone="neutral">
           <AlertTitle>{t('Nothing to collect')}</AlertTitle>
           <AlertDescription>
@@ -3076,27 +3059,38 @@ function StepPayment({
         </>
       ) : (
         <>
-          <div className={styles.promoRow}>
-            <Input
-              aria-label={t('Promo code')}
-              label={t('Promo code')}
-              onChange={(event) => {
-                setPromoCode(event.target.value);
-                setPromoError(null);
-              }}
-              placeholder={t('e.g. WELCOME10')}
-              value={promoCode}
-              variant="surface"
-              error={promoError ?? undefined}
-            />
+          {promoOpen ? (
+            <div className={styles.promoRow}>
+              <Input
+                aria-label={t('Promo code')}
+                label={t('Promo code')}
+                onChange={(event) => {
+                  setPromoCode(event.target.value);
+                  setPromoError(null);
+                }}
+                placeholder={t('e.g. WELCOME10')}
+                value={promoCode}
+                variant="surface"
+                error={promoError ?? undefined}
+              />
+              <Button
+                disabled={promoCode.trim() === ''}
+                onClick={applyPromoCode}
+                variant="outline"
+              >
+                {t('Apply')}
+              </Button>
+            </div>
+          ) : (
             <Button
-              disabled={promoCode.trim() === ''}
-              onClick={applyPromoCode}
-              variant="outline"
+              className={styles.promoToggle}
+              onClick={() => setPromoOpen(true)}
+              size="sm"
+              variant="link"
             >
-              {t('Apply')}
+              {t('Add promo code')}
             </Button>
-          </div>
+          )}
           {appliedPromoLines.length > 0 ? (
             <p className={styles.hint}>
               {t(
@@ -3104,84 +3098,80 @@ function StepPayment({
               )}
             </p>
           ) : null}
-          <div className={styles.payGrid}>
-            <Card as="section" size="sm">
-              <CardHeader>
-                <CardTitle>{t('Cash')}</CardTitle>
-              </CardHeader>
-              <CardContent className={styles.payBody}>
-                <Input
-                  inputMode="decimal"
-                  label={t('Tendered (USD)')}
-                  onChange={(event) => setTendered(event.target.value)}
-                  placeholder="0.00"
-                  value={tendered}
-                  variant="surface"
-                />
-                {cashOk ? (
-                  <p className={styles.hint}>
-                    {t('Change due')}{' '}
-                    <MoneyText
-                      currency="USD"
-                      minor={subtractMinorFloor(tenderedMinor, dueMinor)}
-                    />
-                  </p>
-                ) : null}
-                <Button
-                  className={styles.inlineAction}
-                  disabled={!cashOk || placementBlocked}
-                  onClick={() =>
-                    setPayment(
-                      confirmedPayment(payment, 'cash', dueMinor, {
-                        receiptId: DEMO_RECEIPT_ID,
-                        confirmedAt: DEMO_CONFIRMED_AT,
-                        cashier: DEMO_CASHIER,
-                        tenderedMinor: tenderedMinor ?? '0',
-                      }),
-                    )
-                  }
-                  variant="primary"
-                >
-                  {t('Confirm cash')}
-                </Button>
-              </CardContent>
-            </Card>
-            <Card as="section" size="sm">
-              <CardHeader>
-                <CardTitle>KHQR (Bakong)</CardTitle>
-              </CardHeader>
-              <CardContent className={styles.payBody}>
+          <SegmentedToggle
+            label={t('Payment method')}
+            labelVisible
+            onValueChange={(value) => setMethod(value as 'cash' | 'khqr' | 'split')}
+            options={[
+              { value: 'cash', label: t('Cash') },
+              { value: 'khqr', label: 'KHQR' },
+              { value: 'split', label: t('Split') },
+            ]}
+            value={method}
+          />
+          {method === 'cash' ? (
+            <div className={styles.methodPanel}>
+              <Input
+                inputMode="decimal"
+                label={t('Tendered (USD)')}
+                onChange={(event) => setTendered(event.target.value)}
+                placeholder="0.00"
+                value={tendered}
+                variant="surface"
+              />
+              {cashOk ? (
                 <p className={styles.hint}>
-                  {khrMinor ? (
-                    <>
-                      {t('Generates a QR for')}{' '}
-                      <MoneyText currency="KHR" minor={khrMinor} />.
-                    </>
-                  ) : (
-                    t('KHR is unavailable until the live FX rate loads.')
-                  )}
+                  {t('Change due')}{' '}
+                  <MoneyText
+                    currency="USD"
+                    minor={subtractMinorFloor(tenderedMinor, dueMinor)}
+                  />
                 </p>
-                <Button
-                  className={styles.inlineAction}
-                  disabled={dueMinor === '0' || !khrMinor || placementBlocked}
-                  onClick={() => setPayment({ ...payment, status: 'waiting', method: 'khqr' })}
-                  variant="secondary"
-                >
-                  {t('Generate QR')}
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-          <Card as="section" size="sm">
-            <CardHeader>
-              <CardTitle>{t('Cash + KHQR split')}</CardTitle>
-            </CardHeader>
-            <CardContent className={styles.payBody}>
+              ) : null}
+              <Button
+                className={styles.inlineAction}
+                disabled={!cashOk}
+                onClick={() =>
+                  setPayment(
+                    confirmedPayment(payment, 'cash', dueMinor, {
+                      receiptId: DEMO_RECEIPT_ID,
+                      confirmedAt: DEMO_CONFIRMED_AT,
+                      cashier: DEMO_CASHIER,
+                      tenderedMinor: tenderedMinor ?? '0',
+                    }),
+                  )
+                }
+                variant="primary"
+              >
+                {t('Confirm cash')}
+              </Button>
+            </div>
+          ) : method === 'khqr' ? (
+            <div className={styles.methodPanel}>
+              <p className={styles.hint}>
+                {khrMinor ? (
+                  <>
+                    {t('Generates a QR for')}{' '}
+                    <MoneyText currency="KHR" minor={khrMinor} />.
+                  </>
+                ) : (
+                  t('KHR is unavailable until the live FX rate loads.')
+                )}
+              </p>
+              <Button
+                className={styles.inlineAction}
+                disabled={dueMinor === '0' || !khrMinor}
+                onClick={() => setPayment({ ...payment, status: 'waiting', method: 'khqr' })}
+                variant="primary"
+              >
+                {t('Generate QR')}
+              </Button>
+            </div>
+          ) : (
+            <div className={styles.methodPanel}>
               <p className={styles.hint}>
                 {khrMinor
-                  ? t(
-                      'Collect part in cash first; a KHQR intent covers the remainder. The split completes only when Bakong confirms.',
-                    )
+                  ? t('Cash first — a KHQR intent covers the remainder.')
                   : t(
                       'Unavailable until the live FX rate loads — the KHQR remainder needs a KHR amount.',
                     )}
@@ -3197,7 +3187,6 @@ function StepPayment({
                 />
                 <Button
                   disabled={
-                    placementBlocked ||
                     !khrMinor ||
                     splitCashMinor === null ||
                     !splitCashPortionValid(splitCashMinor, dueMinor)
@@ -3211,7 +3200,7 @@ function StepPayment({
                       khqrState: 'waiting',
                     })
                   }
-                  variant="secondary"
+                  variant="primary"
                 >
                   {t('Collect cash · show QR')}
                 </Button>
@@ -3225,12 +3214,12 @@ function StepPayment({
                   />
                 </p>
               ) : null}
-            </CardContent>
-          </Card>
+            </div>
+          )}
           <div className={styles.payFooter}>
             <Button
               onClick={() => setPayment({ ...payment, status: 'deferred', method: null })}
-              variant="ghost"
+              variant="link"
             >
               {t('Pay later')}
             </Button>

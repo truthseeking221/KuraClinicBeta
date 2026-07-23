@@ -154,8 +154,8 @@ export const FRONT_DESK_KM: KhmerDictionary = {
   'Likely duplicate': 'ទំនងជាស្ទួន',
   'Possible duplicate': 'អាចជាស្ទួន',
   score: 'ពិន្ទុ',
-  'Duplicate records create a duplicate-risk audit entry.':
-    'កំណត់ត្រាស្ទួនបង្កើតកំណត់ត្រាត្រួតពិនិត្យហានិភ័យស្ទួន។',
+  'Keeping both creates a duplicate-risk audit entry.':
+    'ការរក្សាទាំងពីរបង្កើតកំណត់ត្រាត្រួតពិនិត្យហានិភ័យស្ទួន។',
   'Supervisor PIN': 'លេខសម្ងាត់អ្នកគ្រប់គ្រង',
   'Same national ID. Keeping both records is logged with time and staff.':
     'អត្តសញ្ញាណប័ណ្ណដូចគ្នា។ ការរក្សាកំណត់ត្រាទាំងពីរត្រូវបានកត់ត្រាជាមួយម៉ោង និងឈ្មោះបុគ្គលិក។',
@@ -276,10 +276,9 @@ export const FRONT_DESK_KM: KhmerDictionary = {
   'Confirms the patient controls this channel — it does not prove who they are.':
     'បញ្ជាក់ថាអ្នកជំងឺគ្រប់គ្រងមធ្យោបាយនេះ — មិនបញ្ជាក់ថាគាត់ជានរណាទេ។',
   'Preferred channel': 'មធ្យោបាយចង់បាន',
-  'Telegram QR pushed to the patient display': 'QR Telegram បានបង្ហាញលើអេក្រង់អ្នកជំងឺ',
-  'Ask the patient to scan it with their phone camera — their number fills in when they share it.':
-    'សូមឲ្យអ្នកជំងឺស្កេនដោយកាមេរ៉ាទូរស័ព្ទ — លេខរបស់គាត់នឹងបំពេញពេលគាត់ចែករំលែក។',
-  'Waiting for the patient…': 'កំពុងរង់ចាំអ្នកជំងឺ…',
+  'Waiting for the patient to scan': 'កំពុងរង់ចាំអ្នកជំងឺស្កេន',
+  'The QR is on the patient display. Their number fills in when they share it.':
+    'QR នៅលើអេក្រង់អ្នកជំងឺ។ លេខរបស់គាត់នឹងបំពេញពេលគាត់ចែករំលែក។',
   'Simulate patient share': 'សាកល្បងការចែករំលែករបស់អ្នកជំងឺ',
   'Use SMS instead': 'ប្រើ SMS ជំនួសវិញ',
   'Use Telegram instead': 'ប្រើ Telegram ជំនួសវិញ',
@@ -348,13 +347,9 @@ export const FRONT_DESK_KM: KhmerDictionary = {
   'Add anyway': 'បន្ថែមទោះជាយ៉ាងណា',
 
   // ── Step 4 · Orders, attribution, consent ────────────────
-  'Additional order types': 'ប្រភេទការបញ្ជាបន្ថែម',
-  'Choose an additional order type': 'ជ្រើសរើសប្រភេទការបញ្ជាបន្ថែម',
   Fasting: 'តមអាហារ',
   Chemistry: 'គីមីវិទ្យា',
   Liver: 'ថ្លើម',
-  Imaging: 'រូបភាពវេជ្ជសាស្ត្រ',
-  Cardiac: 'បេះដូង',
   'No clinician can be attributed': 'គ្មានគ្រូពេទ្យអាចទទួលបន្ទុកបានទេ',
   'No clinician in this workspace has a live licence. The order cannot be placed until an eligible clinician is available.':
     'គ្មានគ្រូពេទ្យក្នុងកន្លែងធ្វើការនេះមានអាជ្ញាបណ្ណសកម្មទេ។ ការបញ្ជាមិនអាចដាក់បានទេ រហូតដល់មានគ្រូពេទ្យមានសិទ្ធិ។',
@@ -512,7 +507,8 @@ export const FRONT_DESK_KM: KhmerDictionary = {
   'The server-priced order has a zero balance.': 'ការបញ្ជាដែលម៉ាស៊ីនមេគិតតម្លៃមានសមតុល្យសូន្យ។',
   'Nothing to collect': 'គ្មានអ្វីត្រូវប្រមូល',
   'Continue without payment': 'បន្តដោយគ្មានការទូទាត់',
-  'Resolve blockers before collecting payment': 'ដោះស្រាយឧបសគ្គមុននឹងប្រមូលប្រាក់',
+  'Go to Orders': 'ទៅជំហានការបញ្ជា',
+  'Payment is still open.': 'ការទូទាត់នៅបើកនៅឡើយ។',
   'No licensed clinician can be attributed to this order.':
     'គ្មានគ្រូពេទ្យមានអាជ្ញាបណ្ណអាចទទួលបន្ទុកការបញ្ជានេះទេ។',
   'Choose the ordering clinician on the Orders step.':
@@ -545,9 +541,11 @@ export const FRONT_DESK_KM: KhmerDictionary = {
   'KHR is unavailable until the live FX rate loads.':
     'KHR មិនអាចប្រើបានទេ រហូតដល់អត្រាប្តូរប្រាក់ផ្ទាល់បានផ្ទុក។',
   'Generate QR': 'បង្កើត QR',
-  'Cash + KHQR split': 'បែងចែកសាច់ប្រាក់ + KHQR',
-  'Collect part in cash first; a KHQR intent covers the remainder. The split completes only when Bakong confirms.':
-    'ប្រមូលមួយផ្នែកជាសាច់ប្រាក់ជាមុន KHQR គ្របដណ្តប់ចំណែកនៅសល់។ ការបែងចែកបញ្ចប់តែពេល Bakong បញ្ជាក់។',
+  'Payment method': 'វិធីបង់ប្រាក់',
+  Split: 'បែងចែក',
+  'Add promo code': 'បញ្ចូលលេខកូដបញ្ចុះតម្លៃ',
+  'Cash first — a KHQR intent covers the remainder.':
+    'សាច់ប្រាក់ជាមុន — KHQR គ្របដណ្តប់ចំណែកនៅសល់។',
   'Unavailable until the live FX rate loads — the KHQR remainder needs a KHR amount.':
     'មិនអាចប្រើបានទេ រហូតដល់អត្រាប្តូរប្រាក់ផ្ទាល់បានផ្ទុក — ចំណែក KHQR ត្រូវការចំនួន KHR។',
   'Cash portion (USD)': 'ចំណែកសាច់ប្រាក់ (USD)',

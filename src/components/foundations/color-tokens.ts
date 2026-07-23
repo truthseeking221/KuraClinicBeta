@@ -190,7 +190,7 @@ export const DCM_SEMANTIC_TOKENS = [
   semantic('--color-surface', 'Background', resolve('--color-background-primary-default'), 'bg-surface', 'White content surface: overlays, tiles, controls.', ['--surface'], 'background-primary-default'),
   semantic('--color-surface-2', 'Background', resolve('--color-background-secondary-default'), 'bg-surface-2', 'Gray tray surface: cards on the white page.', ['--card', '--muted', '--surface-2'], 'background-secondary-default'),
   semantic('--color-surface-sunken', 'Background', resolve('--color-background-tertiary-default'), 'bg-surface-sunken', 'Sunken or inset surface.', ['--surface-sunken'], 'background-tertiary-default'),
-  semantic('--color-field-bg', 'Background', '#f9f9f9', 'bg-[var(--color-field-bg)]', 'Filled field rest state — 75% neutral surface-2 mixed with white for quiet separation.', [], 'surface-2'),
+  semantic('--color-field-bg', 'Background', resolve('--color-surface-2'), 'bg-[var(--color-field-bg)]', 'Filled field rest state — the neutral surface-2 tint provides quiet separation on the white canvas.', [], 'surface-2'),
   semantic('--color-background-canvas-subtle', 'Background', resolve('--color-neutral-50'), 'bg-[var(--color-background-canvas-subtle)]', 'Subtle canvas used by floating navigation.', [], 'neutral-50'),
   semantic('--color-overlay-scrim', 'Background', 'color-mix(in srgb, var(--color-text-primary) 48%, transparent)', 'bg-overlay-scrim', 'Modal and sheet scrim.', [], 'text-primary / 48%'),
 

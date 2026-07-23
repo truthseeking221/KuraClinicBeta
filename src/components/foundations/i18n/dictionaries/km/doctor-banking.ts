@@ -41,14 +41,14 @@ export const DOCTOR_BANKING_KM: KhmerDictionary = {
   'Doctor owes Kura': 'វេជ្ជបណ្ឌិតជំពាក់ Kura',
   'Kura owes doctor': 'Kura ជំពាក់វេជ្ជបណ្ឌិត',
   'Settled balance': 'សមតុល្យបានទូទាត់',
-  'This credit offsets future charges. Cash payout is not available yet.':
-    'ឥណទាននេះនឹងកាត់ចេញពីការគិតថ្លៃនាពេលអនាគត។ ការដកជាសាច់ប្រាក់មិនទាន់មានទេ។',
-  'Neither you nor Kura owes anything.': 'ទាំងអ្នក ទាំង Kura គ្មានអ្វីជំពាក់គ្នាទេ។',
+  'This credit offsets future charges. It cannot be withdrawn. No collection is scheduled.':
+    'ឥណទាននេះនឹងកាត់ចេញពីការគិតថ្លៃនាពេលអនាគត។ វាមិនអាចដកបានទេ។ គ្មានការប្រមូលត្រូវបានកំណត់ទេ។',
+  'Neither you nor Kura owes anything. No collection is scheduled.':
+    'ទាំងអ្នក ទាំង Kura គ្មានអ្វីជំពាក់គ្នាទេ។ គ្មានការប្រមូលត្រូវបានកំណត់ទេ។',
   'We could not verify this amount, so no payment action is offered.':
     'យើងមិនអាចផ្ទៀងផ្ទាត់ចំនួននេះបានទេ ដូច្នេះគ្មានសកម្មភាពទូទាត់ត្រូវបានផ្តល់ជូនឡើយ។',
 
   // In progress
-  'Nothing in progress.': 'គ្មានអ្វីកំពុងដំណើរការទេ។',
   'Pending earnings': 'ប្រាក់ចំណូលកំពុងរង់ចាំ',
   'Pending charges': 'ការគិតថ្លៃកំពុងរង់ចាំ',
   'Reserved for draft orders': 'បម្រុងទុកសម្រាប់ការបញ្ជាព្រាង',
@@ -60,8 +60,6 @@ export const DOCTOR_BANKING_KM: KhmerDictionary = {
   'The balance could not be verified, so no collection is scheduled from this screen.':
     'មិនអាចផ្ទៀងផ្ទាត់សមតុល្យបានទេ ដូច្នេះគ្មានការប្រមូលត្រូវបានកំណត់ពីអេក្រង់នេះឡើយ។',
   'No collection is scheduled.': 'គ្មានការប្រមូលត្រូវបានកំណត់ទេ។',
-  'No collection is scheduled. Your credit offsets future charges.':
-    'គ្មានការប្រមូលត្រូវបានកំណត់ទេ។ ឥណទានរបស់អ្នកនឹងកាត់ចេញពីការគិតថ្លៃនាពេលអនាគត។',
   'Kura will collect up to': 'Kura នឹងប្រមូលមិនលើសពី',
   on: 'នៅថ្ងៃ',
   'You get a notice before it happens.': 'អ្នកនឹងទទួលការជូនដំណឹងមុនពេលវាកើតឡើង។',
