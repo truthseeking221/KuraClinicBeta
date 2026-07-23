@@ -13,6 +13,10 @@ import {
   EmptyStateTitle,
 } from '../../components/shared/empty-state';
 import {
+  WorkspacePage,
+  WorkspacePageHeader,
+} from '../../components/shared/workspace-page';
+import {
   Alert,
   AlertAction,
   AlertDescription,
@@ -123,39 +127,43 @@ export function ResultsWorkspace({
   };
 
   return (
-    <main className={styles.workspace} data-slot="results-workspace">
-      <header className={styles.pageHeader}>
-        <div className={styles.pageHeading}>
-          <h1 className={styles.pageTitle}>{t('Results')}</h1>
-          {patient ? (
-            <p className={styles.patient}>
-              {patient.name} · {patient.medicalRecordNumber} · {t('born')}{' '}
-              {formatDate(patient.dob, 'en-US', t)}
-            </p>
-          ) : null}
-        </div>
-        {progress.total > 0 ? (
-          <Badge
-            size="md"
-            variant={
-              progress.status === 'completed'
-                ? progress.unavailable > 0
-                  ? 'warning'
-                  : 'neutral'
-                : progress.status === 'cancelled'
-                  ? 'neutral'
-                  : 'info'
-            }
-            leading={
-              progress.status === 'completed' && progress.unavailable === 0 ? (
-                <CheckIcon size={16} />
-              ) : undefined
-            }
-          >
-            {episodeProgressLabel(progress, t)}
-          </Badge>
-        ) : null}
-      </header>
+    <WorkspacePage aria-labelledby="results-workspace-title" data-slot="results-workspace">
+      <WorkspacePageHeader
+        actions={
+          progress.total > 0 ? (
+            <Badge
+              size="md"
+              variant={
+                progress.status === 'completed'
+                  ? progress.unavailable > 0
+                    ? 'warning'
+                    : 'neutral'
+                  : progress.status === 'cancelled'
+                    ? 'neutral'
+                    : 'info'
+              }
+              leading={
+                progress.status === 'completed' && progress.unavailable === 0 ? (
+                  <CheckIcon size={16} />
+                ) : undefined
+              }
+            >
+              {episodeProgressLabel(progress, t)}
+            </Badge>
+          ) : undefined
+        }
+        description={
+          patient
+            ? `${patient.name} · ${patient.medicalRecordNumber} · ${t('born')} ${formatDate(
+                patient.dob,
+                'en-US',
+                t,
+              )}`
+            : t('Review released laboratory results across this workspace.')
+        }
+        headingId="results-workspace-title"
+        title={t('Results')}
+      />
 
       {state === 'loading' ? (
         <Alert tone="info" role="status">
@@ -339,6 +347,6 @@ export function ResultsWorkspace({
           ) : null}
         </>
       ) : null}
-    </main>
+    </WorkspacePage>
   );
 }

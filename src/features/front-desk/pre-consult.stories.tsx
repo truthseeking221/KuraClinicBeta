@@ -201,12 +201,6 @@ export const Mobile: Story = {
   },
 };
 
-export const DarkTheme: Story = {
-  args: baseArgs,
-  globals: { theme: 'dark' },
-  render: () => <PreConsultPlayground initial={preConsultReady('pre-dark')} />,
-};
-
 export const IntakeStatusMachine: Story = {
   name: 'Intake · answered count and link state track together',
   args: baseArgs,

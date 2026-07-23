@@ -635,11 +635,6 @@ export const CompactDensity: Story = {
   render: ManyGroups.render,
 };
 
-export const DarkTheme: Story = {
-  globals: { theme: 'dark' },
-  render: AuthorisedRecordSearch.render,
-};
-
 export const MobileInteractiveLongList: Story = {
   name: 'Mobile 320 — interactive long list',
   parameters: { viewport: { defaultViewport: 'mobile1' } },

@@ -81,23 +81,27 @@ export function TubeLabeling({
       </CardHeader>
 
       <CardContent className={styles.content}>
-        <ul aria-label={t("Collected tubes")} className={styles.tubes}>
-          {tubes.map((tube) => (
-            <li className={styles.tube} key={tube.key}>
-              <span aria-hidden="true" className={styles.tubeGlyph}>
-                <span
-                  className={styles.stopper}
-                  style={{
-                    background: tube.color,
-                    borderColor: tube.stripeColor,
-                  }}
-                />
-                <span className={styles.tubeBody} />
-              </span>
-              <span className={styles.tubeLabel}>{tube.stopperLabel}</span>
-            </li>
-          ))}
-        </ul>
+        <Card as="section" aria-label={t("Collected tubes")} size="sm" variant="tile">
+          <CardContent>
+            <ul className={styles.tubes}>
+              {tubes.map((tube) => (
+                <li className={styles.tube} key={tube.key}>
+                  <span aria-hidden="true" className={styles.tubeGlyph}>
+                    <span
+                      className={styles.stopper}
+                      style={{
+                        background: tube.color,
+                        borderColor: tube.stripeColor,
+                      }}
+                    />
+                    <span className={styles.tubeBody} />
+                  </span>
+                  <span className={styles.tubeLabel}>{tube.stopperLabel}</span>
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
 
         <RadioGroup
           className={styles.methods}
@@ -136,10 +140,14 @@ export function TubeLabeling({
         </RadioGroup>
 
         {stage === "label" && method === "pen" ? (
-          <div className={styles.penTemplate}>
-            <p className={styles.templateCaption}>{t("Write on each tube")}</p>
-            <p className={styles.templateLine}>{patientLabelLine}</p>
-          </div>
+          <Card as="section" aria-label={t("Write on each tube")} size="sm" variant="tile">
+            <CardHeader>
+              <CardTitle>{t("Write on each tube")}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className={styles.templateLine}>{patientLabelLine}</p>
+            </CardContent>
+          </Card>
         ) : null}
       </CardContent>
 

@@ -202,10 +202,6 @@ export const SETTINGS_KM: KhmerDictionary = {
   'Conventional (mg/dL)': 'ធម្មតា (mg/dL)',
   'Applies to lab history and printouts':
     'អនុវត្តលើប្រវត្តិមន្ទីរពិសោធន៍ និងឯកសារបោះពុម្ព',
-  Theme: 'រូបរាង',
-  Light: 'ភ្លឺ',
-  Dark: 'ងងឹត',
-  System: 'ប្រព័ន្ធ',
   'Match system': 'តាមប្រព័ន្ធ',
   'Clinical terms, drug names, and lab codes stay in English.':
     'ពាក្យវេជ្ជសាស្ត្រ ឈ្មោះថ្នាំ និងកូដមន្ទីរពិសោធន៍ នៅតែជាភាសាអង់គ្លេស។',

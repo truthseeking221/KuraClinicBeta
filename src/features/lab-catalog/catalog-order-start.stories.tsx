@@ -30,6 +30,7 @@ export const EmptySelection: Story = {
     const styles = window.getComputedStyle(button);
     await expect(button).toBeDisabled();
     await expect(button).toHaveTextContent('Choose patient');
+    await expect(canvas.getByText('Select at least one test')).toBeVisible();
     expect(styles.color).not.toBe(styles.backgroundColor);
   },
 };
@@ -39,8 +40,13 @@ export const NewDoctorBlocked: Story = {
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getByText('Licence required to place orders')).toBeVisible();
-    await expect(canvas.getByRole('button', { name: 'Choose patient' })).toBeDisabled();
+    await expect(canvas.queryByRole('button', { name: 'Choose patient' })).not.toBeInTheDocument();
     await userEvent.click(canvas.getByRole('button', { name: 'Verify licence' }));
     await expect(args.onVerifyLicence).toHaveBeenCalled();
   },
+};
+
+export const Mobile320: Story = {
+  args: { selectedCount: 2 },
+  parameters: { viewport: { defaultViewport: 'kura320' } },
 };

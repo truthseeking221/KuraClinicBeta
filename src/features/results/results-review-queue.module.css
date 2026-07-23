@@ -1,0 +1,94 @@
+.toolbar {
+  justify-content: flex-start;
+}
+
+.search {
+  width: min(28rem, 100%);
+}
+
+.patientCell {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.patientCopy {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: var(--space-0-5);
+}
+
+.patientName,
+.testName {
+  color: var(--color-text-primary);
+  font-weight: var(--weight-medium);
+  overflow-wrap: anywhere;
+}
+
+.patientIdentity,
+.returned {
+  color: var(--color-text-secondary);
+  font-size: var(--type-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+.actionHeader,
+.actionCell {
+  text-align: end;
+}
+
+.actionCell :global([data-slot='button']) {
+  margin-inline-start: auto;
+}
+
+.mobileResultSummary,
+.mobileAffordance {
+  display: none;
+}
+
+@media (max-width: 480px) {
+  .search {
+    width: 100%;
+  }
+
+  .queueTable {
+    min-width: 100% !important;
+    table-layout: auto;
+  }
+
+  .desktopOnly {
+    display: none;
+  }
+
+  .patientCell {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: start;
+  }
+
+  .mobileAffordance {
+    display: block;
+    align-self: center;
+    color: var(--color-text-tertiary);
+  }
+
+  .mobileResultSummary {
+    display: flex;
+    min-width: 0;
+    grid-column: 2 / -1;
+    flex-direction: column;
+    gap: var(--space-1);
+    padding-block-start: var(--space-2);
+  }
+
+  .mobileResultLine {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+  }
+}

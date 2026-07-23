@@ -111,7 +111,7 @@ const meta = {
           "Catalog reflows; the exhaustive comparison matrix uses labelled, intentional horizontal scrolling at narrow widths.",
       },
       verification: {
-        themes: ["light", "dark"],
+        themes: ["light"],
         densities: ["compact", "cozy", "comfortable"],
         widths: [320, 360, 390, 412, 480, 768, 1024, "desktop"],
       },
@@ -543,14 +543,6 @@ export const Catalog: Story = {
       );
     }
   },
-};
-
-export const CatalogDark: Story = {
-  render: ({ iconStyle = "stroke-rounded" }) => (
-    <IconCatalog iconStyle={iconStyle} />
-  ),
-  globals: { theme: "dark" },
-  parameters: { chromatic: { viewports: [390, 1440] } },
 };
 
 export const CatalogNarrow: Story = {

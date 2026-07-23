@@ -84,12 +84,17 @@ const FILTER_FIELDS: readonly FilterFieldConfig<string>[] = [
  */
 function StateCell({ state }: { state: LedgerEntryState }) {
   const t = useT();
-  if (state === 'settled') return <span className={styles.stateSettled}>{t('Settled')}</span>;
+  if (state === 'settled') return <span className={styles.stateSettled}>{ledgerStateLabel(state, t)}</span>;
   return (
     <Badge variant={state === 'pending' ? 'warning' : 'neutral'}>
-      {state === 'pending' ? t('Pending') : t('Voided')}
+      {ledgerStateLabel(state, t)}
     </Badge>
   );
+}
+
+function ledgerStateLabel(state: LedgerEntryState, t: Translate) {
+  if (state === 'settled') return t('Settled');
+  return state === 'pending' ? t('Pending') : t('Voided');
 }
 
 /** Short "12 Jul" for the date-range trigger so the active filter stays visible. */
@@ -171,6 +176,9 @@ export function ActivityLedger({
           const meta = [row.original.detail?.replace(/\.\s*$/, ''), row.original.workspaceLabel]
             .filter(Boolean)
             .join(' · ');
+          const amount = row.original.amount;
+          const voided = row.original.state === 'voided';
+          const credit = !voided && balanceDirection(amount.minor) === 'kura-owes';
           return (
             <div className={styles.activityPrimary}>
               <span className={styles.activityTitle}>{row.original.title}</span>
@@ -179,6 +187,24 @@ export function ActivityLedger({
                   {meta}
                 </span>
               ) : null}
+              <span aria-hidden="true" className={styles.activityMobileFacts}>
+                <time dateTime={row.original.occurredAt}>
+                  {formatLedgerDateTime(row.original.occurredAt)}
+                </time>
+                <span>{ledgerStateLabel(row.original.state, t)}</span>
+                <span
+                  className={[
+                    styles.activityMobileAmount,
+                    credit && styles.amountCredit,
+                    voided && styles.amountVoided,
+                  ]
+                    .filter(Boolean)
+                    .join(' ')}
+                >
+                  {credit ? <span>+</span> : null}
+                  <SignedMoneyText value={amount} />
+                </span>
+              </span>
             </div>
           );
         },

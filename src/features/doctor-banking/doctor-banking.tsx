@@ -10,6 +10,7 @@ import {
   ArrowLeftIcon,
   Badge,
   Button,
+  Card,
   DownloadIcon,
   QrCodeIcon,
   RefreshIcon,
@@ -24,6 +25,9 @@ import {
   EmptyStateHeader,
   EmptyStateMedia,
   EmptyStateTitle,
+  WorkspaceMetricGrid,
+  WorkspacePage,
+  WorkspacePageHeader,
 } from '../../components/shared';
 
 import { ActivityLedger } from './activity-ledger';
@@ -54,24 +58,24 @@ function PageHeader({
 }) {
   const t = useT();
   return (
-    <header className={styles.pageHeader}>
-      <div className={styles.pageHeading}>
-        {onBack ? (
-          <Button
-            className={styles.backAction}
-            leadingIcon={<ArrowLeftIcon aria-hidden="true" />}
-            onClick={onBack}
-            size="sm"
-            variant="link"
-          >
-            {t('Earnings')}
-          </Button>
-        ) : null}
-        <h1 className={styles.pageTitle}>{t(title)}</h1>
-        {description ? <p className={styles.pageDescription}>{t(description)}</p> : null}
-      </div>
-      {actions ? <div className={styles.pageActions}>{actions}</div> : null}
-    </header>
+    <div className={styles.pageHeaderGroup}>
+      {onBack ? (
+        <Button
+          className={styles.backAction}
+          leadingIcon={<ArrowLeftIcon aria-hidden="true" />}
+          onClick={onBack}
+          size="sm"
+          variant="link"
+        >
+          {t('Earnings')}
+        </Button>
+      ) : null}
+      <WorkspacePageHeader
+        actions={actions}
+        description={description ? t(description) : undefined}
+        title={t(title)}
+      />
+    </div>
   );
 }
 
@@ -177,7 +181,13 @@ function BalanceCard({
         : 'neutral';
 
   return (
-    <section aria-labelledby="balance-summary-title" className={styles.balanceCard} data-tone={tone}>
+    <Card
+      aria-labelledby="balance-summary-title"
+      as="div"
+      className={styles.balanceCard}
+      data-tone={tone}
+      role="listitem"
+    >
       <div className={styles.balanceMain}>
         <p className={styles.metricLabel} id="balance-summary-title">{balanceLabel}</p>
         <SignedMoneyText announceDirection className={styles.balanceValue} value={overview.settledBalance} />
@@ -191,27 +201,28 @@ function BalanceCard({
           <Button onClick={onSettle}>{t('Settle now')}</Button>
         </div>
       ) : null}
-    </section>
+    </Card>
   );
 }
 
 function PeriodStats({ overview }: { overview: DoctorBankingOverview }) {
   const t = useT();
+  const stats = [
+    { label: t('Earned this period'), value: overview.earnedThisPeriod },
+    { label: t('Pending earnings'), value: overview.pendingCredit },
+    { label: t('Pending charges'), value: overview.pendingDebit },
+    { label: t('Reserved'), value: overview.reservedDebit },
+  ];
+
   return (
-    <section aria-label={t('This period')} className={styles.periodStats}>
-      <dl className={styles.statStrip}>
-        <div>
-          <dt>{t('Earned this period')}</dt>
-          <dd><AmountText value={overview.earnedThisPeriod} /></dd>
-        </div>
-        <div><dt>{t('Pending earnings')}</dt><dd><AmountText value={overview.pendingCredit} /></dd></div>
-        <div><dt>{t('Pending charges')}</dt><dd><AmountText value={overview.pendingDebit} /></dd></div>
-        <div><dt>{t('Reserved')}</dt><dd><AmountText value={overview.reservedDebit} /></dd></div>
-      </dl>
-      <p className={styles.statNote}>
-        {t('Earned includes settled and pending earnings across your Kura workspaces. Pending and reserved amounts do not change the settled balance yet.')}
-      </p>
-    </section>
+    <>
+      {stats.map((stat) => (
+        <Card as="div" className={styles.metricCard} key={stat.label} role="listitem">
+          <p className={styles.metricLabel}>{stat.label}</p>
+          <p className={styles.metricValue}><AmountText value={stat.value} /></p>
+        </Card>
+      ))}
+    </>
   );
 }
 
@@ -225,7 +236,7 @@ function CollectionsSection({
   const t = useT();
   const { mandate, nextSweep } = overview;
   return (
-    <section aria-labelledby="collections-title" className={styles.section}>
+    <Card aria-labelledby="collections-title" as="section" className={styles.collectionTray}>
       <header className={styles.sectionHeader}>
         <div>
           <h2 className={styles.sectionTitle} id="collections-title">{t('Scheduled collections')}</h2>
@@ -256,7 +267,7 @@ function CollectionsSection({
           </dd>
         </div>
       </dl>
-    </section>
+    </Card>
   );
 }
 
@@ -281,7 +292,7 @@ export function DoctorBalancePage({
 }: DoctorBalancePageProps) {
   const t = useT();
   return (
-    <main className={styles.page}>
+    <WorkspacePage>
       <PageHeader
         actions={
           state === 'ready' ? (
@@ -292,13 +303,20 @@ export function DoctorBalancePage({
       />
       {state !== 'ready' ? <PageState onOpenLicence={onOpenLicence} onRetry={onRetry} state={state} /> : (
         <div className={styles.pageFlow}>
-          <BalanceCard onSettle={onSettle} overview={data.overview} />
-          <PeriodStats overview={data.overview} />
+          <section aria-label={t('This period')} className={styles.overviewMetrics}>
+            <WorkspaceMetricGrid role="list">
+              <BalanceCard onSettle={onSettle} overview={data.overview} />
+              <PeriodStats overview={data.overview} />
+            </WorkspaceMetricGrid>
+            <p className={styles.statNote}>
+              {t('Earned includes settled and pending earnings across your Kura workspaces. Pending and reserved amounts do not change the settled balance yet.')}
+            </p>
+          </section>
           <CollectionsSection onManageAutoPay={onManageAutoPay} overview={data.overview} />
           <ActivityLedger entries={data.entries} onViewAll={onOpenStatements} variant="recent" />
         </div>
       )}
-    </main>
+    </WorkspacePage>
   );
 }
 
@@ -396,7 +414,7 @@ export function DoctorStatementsPage({
 }: DoctorStatementsPageProps) {
   const t = useT();
   return (
-    <main className={styles.page}>
+    <WorkspacePage>
       <PageHeader
         actions={
           state === 'ready' ? (
@@ -421,7 +439,7 @@ export function DoctorStatementsPage({
           <FinancialNotifications notifications={data.notifications} />
         </div>
       )}
-    </main>
+    </WorkspacePage>
   );
 }
 
@@ -451,7 +469,7 @@ export function DoctorSettlePage({
   const t = useT();
   const direction = balanceDirection(overview.settledBalance.minor);
   return (
-    <main className={styles.page}>
+    <WorkspacePage width="reading">
       <PageHeader
         description="Pay the exact settled amount you owe from any KHQR-enabled bank app."
         onBack={onBack}
@@ -485,7 +503,7 @@ export function DoctorSettlePage({
           </div>
         </section>
       )}
-    </main>
+    </WorkspacePage>
   );
 }
 
@@ -516,7 +534,7 @@ export function DoctorPaymentsPage({
 }: DoctorPaymentsPageProps) {
   const t = useT();
   return (
-    <main className={styles.page}>
+    <WorkspacePage width="reading">
       <PageHeader
         description="Manage the optional ABA authorization used for scheduled collections. KHQR remains available when auto-pay is off."
         onBack={onBack}
@@ -540,6 +558,6 @@ export function DoctorPaymentsPage({
           </section>
         </div>
       )}
-    </main>
+    </WorkspacePage>
   );
 }

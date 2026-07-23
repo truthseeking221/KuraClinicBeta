@@ -891,11 +891,13 @@ export const DesktopWidth1440: Story = {
     const safetyLabel = canvasElement.querySelector<HTMLElement>(
       "#patient-context-safety",
     )?.parentElement;
+    const safetyVisibleStart = safetyLabel?.firstElementChild as HTMLElement | null;
     const resultHeading = canvasElement.querySelector<HTMLElement>(
       '[data-slot="lab-history-browser"] h2',
     );
     const actionHeading = actions!.querySelector<HTMLElement>("h2");
     await expect(safetyLabel).not.toBeNull();
+    await expect(safetyVisibleStart).not.toBeNull();
     await expect(resultHeading).not.toBeNull();
     await expect(actionHeading).not.toBeNull();
 
@@ -904,7 +906,7 @@ export const DesktopWidth1440: Story = {
       region.getBoundingClientRect().left;
     const targetInset = visibleInset(actionHeading!, actions!);
     expect(
-      Math.abs(visibleInset(safetyLabel!, context!) - targetInset),
+      Math.abs(visibleInset(safetyVisibleStart!, context!) - targetInset),
     ).toBeLessThanOrEqual(1);
     expect(
       Math.abs(visibleInset(resultHeading!, record!) - targetInset),
@@ -924,8 +926,4 @@ export const DesktopWidth1440: Story = {
     expect(context!.scrollTop).toBe(0);
     expect(actions!.scrollTop).toBe(0);
   },
-};
-
-export const DarkTheme: Story = {
-  globals: { theme: "dark" },
 };

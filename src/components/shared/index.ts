@@ -3,3 +3,4 @@ export * from './empty-state';
 export * from './filters';
 export * from './identity-provider';
 export * from './subject-header';
+export * from './workspace-page';

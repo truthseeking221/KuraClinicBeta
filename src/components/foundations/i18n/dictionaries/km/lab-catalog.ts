@@ -13,6 +13,8 @@ import type { KhmerDictionary } from '../types';
 export const LAB_CATALOG_KM: KhmerDictionary = {
   // Catalog result summary and search
   'Lab test catalog': 'បញ្ជីតេស្តមន្ទីរពិសោធន៍',
+  'Browse current tests and build an order.':
+    'មើលតេស្តបច្ចុប្បន្ន និងរៀបចំការបញ្ជា។',
   'Search results': 'លទ្ធផលស្វែងរក',
   'Filtered tests': 'តេស្តដែលបានត្រង',
   'Search tests, panels, or keywords': 'ស្វែងរកតេស្ត បណ្តុំតេស្ត ឬពាក្យគន្លឹះ',

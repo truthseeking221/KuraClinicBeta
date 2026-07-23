@@ -233,3 +233,10 @@ export const ReceptionPaymentToCheckIn: Story = {
     await expect(canvas.getByText('Cash collected · R-58213')).toBeVisible();
   },
 };
+
+export const Mobile320: Story = {
+  parameters: { viewport: { defaultViewport: 'kura320' } },
+  render: () => (
+    <DoctorFlowHarness intro="Decide who collects, where Kura draws, and how the patient pays." />
+  ),
+};

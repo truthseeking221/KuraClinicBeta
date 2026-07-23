@@ -25,6 +25,9 @@ export type HomeResultReviewPreviewProps = {
   signal: HomeSignal;
   onNavigate?: (targetKey: string) => void;
   onRetry?: (signalKey: string) => void;
+  /** Page compositions may own the section heading and action above the tray. */
+  showHeader?: boolean;
+  showFooter?: boolean;
 };
 
 function PreviewHeader({ count }: { count?: number }) {
@@ -46,6 +49,8 @@ function PreviewHeader({ count }: { count?: number }) {
 export function HomeResultReviewPreview({
   onNavigate,
   onRetry,
+  showFooter = true,
+  showHeader = true,
   signal,
 }: HomeResultReviewPreviewProps) {
   const t = useT();
@@ -54,7 +59,7 @@ export function HomeResultReviewPreview({
   if (signal.state === 'loading') {
     return (
       <Card as="section" aria-label={t('Loading results to review')} className={styles.preview}>
-        <PreviewHeader count={signal.count} />
+        {showHeader ? <PreviewHeader count={signal.count} /> : null}
         <CardContent className={styles.content}>
           <ItemGroup aria-hidden="true">
             {[0, 1, 2].map((index) => (
@@ -74,8 +79,12 @@ export function HomeResultReviewPreview({
 
   if (signal.state === 'error') {
     return (
-      <Card as="section" className={styles.preview}>
-        <PreviewHeader count={signal.count} />
+      <Card
+        as="section"
+        aria-label={showHeader ? undefined : t('Results needing review')}
+        className={styles.preview}
+      >
+        {showHeader ? <PreviewHeader count={signal.count} /> : null}
         <CardContent className={styles.message}>
           <p>{t(signal.errorMessage ?? 'Patient result details could not load.')}</p>
           <Button onClick={() => onRetry?.(signal.key)} variant="outline">
@@ -89,8 +98,12 @@ export function HomeResultReviewPreview({
   const reviewItems = signal.reviewItems ?? [];
 
   return (
-    <Card as="section" className={styles.preview}>
-      <PreviewHeader count={signal.count} />
+    <Card
+      as="section"
+      aria-label={showHeader ? undefined : t('Results needing review')}
+      className={styles.preview}
+    >
+      {showHeader ? <PreviewHeader count={signal.count} /> : null}
       <CardContent className={styles.content}>
         {reviewItems.length > 0 ? (
           <ItemGroup aria-label={t('Patients with results to review')} role="list">
@@ -104,13 +117,15 @@ export function HomeResultReviewPreview({
               </div>
             ))}
           </ItemGroup>
-        ) : (
+        ) : (signal.count ?? 0) > 0 ? (
           <p className={styles.unavailable}>
             {t('Patient details are unavailable.')} {t('Open')} {t('Results')} {t('to continue.')}
           </p>
+        ) : (
+          <p className={styles.unavailable}>{t(signal.detail)}</p>
         )}
       </CardContent>
-      {signal.action ? (
+      {showFooter && signal.action ? (
         <CardFooter align="start" className={styles.footer}>
           <a
             className={styles.viewAll}

@@ -10,7 +10,6 @@ import {
   Badge,
   Button,
   Card,
-  CheckIcon,
   ChevronRightIcon,
   MoneyText,
   RefreshIcon,
@@ -20,21 +19,23 @@ import {
   EmptyStateContent,
   EmptyStateDescription,
   EmptyStateHeader,
-  EmptyStateMedia,
   EmptyStateTitle,
+  WorkspaceMetricGrid,
+  WorkspacePage,
+  WorkspacePageHeader,
+  WorkspaceSectionHeader,
+  WorkspaceSplit,
 } from "../../components/shared";
 import { useT } from "../../components/foundations/i18n";
 
-import { HomeSignalRow } from "./home-signal-row";
 import { HomeResultReviewPreview } from "./home-result-review-preview";
-import { HomeWorkQueuePreview } from "./home-work-queue-preview";
+import { HomeSignalTile } from "./home-signal-tile";
 import {
   greetingForHour,
   isAllClear,
   licenceBanner,
-  orderSignals,
 } from "./logic";
-import type { HomeData, HomeSignal, NextAction } from "./types";
+import type { HomeData, NextAction } from "./types";
 import styles from "./home-workspace.module.css";
 
 export type HomeWorkspaceProps = {
@@ -50,8 +51,6 @@ export type HomeWorkspaceProps = {
   onRetrySignal?: (signalKey: string) => void;
   onRefresh?: () => void;
 };
-
-type SignalHandlers = Pick<HomeWorkspaceProps, "onNavigate" | "onRetrySignal">;
 
 type FirstUseLicenceContent = {
   actionLabel?: string;
@@ -237,42 +236,6 @@ function FirstUseHome({
   );
 }
 
-/**
- * Home spends its one tray on the safety-specific Results preview. Other work
- * queues stay flat but preserve patient identity; passive context remains a row.
- */
-function PriorityWork({
-  onNavigate,
-  onRetrySignal,
-  signals,
-}: SignalHandlers & { signals: HomeSignal[] }) {
-  const results = signals.find((signal) => signal.key === "results");
-  const queues = orderSignals(
-    signals.filter((signal) => signal.key !== "results"),
-  ).filter((signal) => signal.state !== "ready" || (signal.count ?? 0) > 0);
-
-  return (
-    <div className={styles.priority}>
-      {results ? (
-        <HomeResultReviewPreview
-          onNavigate={onNavigate}
-          onRetry={onRetrySignal}
-          signal={results}
-        />
-      ) : null}
-
-      {queues.map((signal) => (
-        <HomeWorkQueuePreview
-          key={signal.key}
-          onNavigate={onNavigate}
-          onRetry={onRetrySignal}
-          signal={signal}
-        />
-      ))}
-    </div>
-  );
-}
-
 function DayRow({
   action,
   onNavigate,
@@ -320,7 +283,7 @@ function DayRow({
   );
 }
 
-/** The day in reading order. The imminent stop leads by weight, not by surface. */
+/** The day in reading order. The imminent stop leads by weight, not by colour. */
 function NextToday({
   actions,
   onNavigate,
@@ -331,17 +294,20 @@ function NextToday({
   const t = useT();
 
   return (
-    <section aria-labelledby="home-next-title" className={styles.section}>
-      <h2 className={styles.sectionTitle} id="home-next-title">
-        {t("Next")}
-      </h2>
-      <ol className={styles.dayList}>
-        {actions.map((action) => (
-          <li key={`${action.time}-${action.label}`}>
-            <DayRow action={action} onNavigate={onNavigate} />
-          </li>
-        ))}
-      </ol>
+    <section aria-labelledby="home-next-title" className={styles.nextSection}>
+      <WorkspaceSectionHeader
+        headingId="home-next-title"
+        title={t("Next actions")}
+      />
+      <Card className={styles.nextTray}>
+        <ol className={styles.dayList}>
+          {actions.map((action) => (
+            <li key={`${action.time}-${action.label}`}>
+              <DayRow action={action} onNavigate={onNavigate} />
+            </li>
+          ))}
+        </ol>
+      </Card>
     </section>
   );
 }
@@ -363,18 +329,34 @@ export function HomeWorkspace({
   const t = useT();
   const banner = licenceBanner(data.licence);
   const allClear = isAllClear(data.signals);
-  const workSignals = data.signals.filter(
-    (signal) => signal.kind === "worklist",
-  );
-  const infoSignals = data.signals.filter((signal) => signal.kind === "info");
+  const resultsSignal = data.signals.find((signal) => signal.key === "results");
   const viewState = data.viewState ?? "ready";
   const mayShowLicence =
     viewState !== "permission" && viewState !== "no-workspace";
   const hasDay = data.nextActions.length > 0;
-  const hasContext = infoSignals.length > 0 || Boolean(data.closedToday);
 
   return (
-    <div className={styles.workspace} data-slot="home-workspace">
+    <WorkspacePage data-slot="home-workspace">
+      {!data.firstUse ? (
+        <WorkspacePageHeader
+          actions={
+            data.freshness.kind === "stale" ? (
+              <div className={styles.staleRow}>
+                <span>
+                  {t("Last updated")} {data.freshness.asOf}
+                </span>
+                <Button onClick={() => onRefresh?.()} size="sm" variant="ghost">
+                  <RefreshIcon aria-hidden="true" size={14} />
+                  {t("Refresh")}
+                </Button>
+              </div>
+            ) : undefined
+          }
+          description={`${data.dateLabel} · ${data.scopeLabel}`}
+          title={`${t(greetingForHour(data.hour))}, ${data.doctorName}`}
+        />
+      ) : null}
+
       <div className={styles.statusStack}>
         {data.freshness.kind === "offline" ? (
           <Alert tone="warning">
@@ -405,44 +387,27 @@ export function HomeWorkspace({
         ) : null}
       </div>
 
-      {!data.firstUse ? (
-        <header className={styles.header}>
-          <div className={styles.headerText}>
-            <h1 className={styles.greeting}>
-              {t(greetingForHour(data.hour))}, {data.doctorName}
-            </h1>
-            <p className={styles.scope}>
-              <span>{data.dateLabel}</span>
-              <span className={styles.scopeLabel}>{data.scopeLabel}</span>
-            </p>
-          </div>
-          {data.freshness.kind === "stale" ? (
-            <div className={styles.staleRow}>
-              <span>
-                {t("Last updated")} {data.freshness.asOf}
-              </span>
-              <Button onClick={() => onRefresh?.()} size="sm" variant="ghost">
-                <RefreshIcon aria-hidden="true" size={14} />
-                {t("Refresh")}
-              </Button>
-            </div>
-          ) : null}
-        </header>
-      ) : null}
-
       {viewState === "loading" ? (
-        <section
-          aria-labelledby="home-loading-title"
-          className={styles.section}
-        >
-          <h2 className={styles.sectionTitle} id="home-loading-title">
-            {t("Loading")}
-          </h2>
-          <PriorityWork
-            onNavigate={onNavigate}
-            onRetrySignal={onRetrySignal}
-            signals={workSignals}
+        <section aria-labelledby="home-loading-title" className={styles.section}>
+          <WorkspaceSectionHeader
+            headingId="home-loading-title"
+            title={t("Loading")}
           />
+          <WorkspaceMetricGrid
+            aria-label={t("Loading clinic overview")}
+            className={styles.metrics}
+            role="list"
+          >
+            {data.signals.map((signal) => (
+              <div key={signal.key} role="listitem">
+                <HomeSignalTile
+                  onNavigate={onNavigate}
+                  onRetry={onRetrySignal}
+                  signal={signal}
+                />
+              </div>
+            ))}
+          </WorkspaceMetricGrid>
         </section>
       ) : null}
 
@@ -519,108 +484,106 @@ export function HomeWorkspace({
       ) : null}
 
       {viewState === "ready" && !data.firstUse && data.signals.length > 0 ? (
-        <div
-          className={styles.briefing}
-          data-columns={hasContext ? "two" : "one"}
-        >
-          <div className={styles.rail}>
-            <section
-              aria-labelledby="home-attention-title"
-              className={styles.section}
-            >
-              <h2 className={styles.sectionTitle} id="home-attention-title">
-                {t("Priority work")}
-              </h2>
-
-              {allClear ? (
-                <EmptyState align="start" surface="muted">
-                  <EmptyStateMedia variant="icon">
-                    <CheckIcon aria-hidden="true" size={20} />
-                  </EmptyStateMedia>
-                  <EmptyStateHeader>
-                    <EmptyStateTitle>{t("All caught up")}</EmptyStateTitle>
-                    <EmptyStateDescription>
-                      {t("No work needs attention.")}
-                    </EmptyStateDescription>
-                  </EmptyStateHeader>
-                </EmptyState>
-              ) : workSignals.length > 0 ? (
-                <PriorityWork
+        <>
+          <WorkspaceMetricGrid
+            aria-label={t("Clinic overview")}
+            className={styles.metrics}
+            role="list"
+          >
+            {data.signals.map((signal) => (
+              <div key={signal.key} role="listitem">
+                <HomeSignalTile
                   onNavigate={onNavigate}
-                  onRetrySignal={onRetrySignal}
-                  signals={workSignals}
+                  onRetry={onRetrySignal}
+                  signal={signal}
                 />
-              ) : (
-                <p className={styles.quietState}>{t("No work right now.")}</p>
-              )}
-            </section>
+              </div>
+            ))}
+          </WorkspaceMetricGrid>
 
-            {hasDay ? (
-              <NextToday actions={data.nextActions} onNavigate={onNavigate} />
-            ) : null}
-          </div>
-
-          {hasContext ? (
-            <div className={styles.rail}>
-              {infoSignals.length > 0 ? (
-                <section
-                  aria-labelledby="home-overview-title"
-                  className={styles.section}
-                >
-                  <h2 className={styles.sectionTitle} id="home-overview-title">
-                    {t("Today")}
-                  </h2>
-                  <ul className={styles.rowList} role="list">
-                    {infoSignals.map((signal) => (
-                      <li key={signal.key}>
-                        <HomeSignalRow
-                          onNavigate={onNavigate}
-                          onRetry={onRetrySignal}
-                          signal={signal}
-                        />
-                      </li>
-                    ))}
-                  </ul>
-                </section>
-              ) : null}
-
-              {data.closedToday ? (
-                <section
-                  aria-labelledby="home-closed-title"
-                  className={styles.section}
-                >
-                  <h2 className={styles.sectionTitle} id="home-closed-title">
-                    {t("Closed today")}
-                  </h2>
-                  <dl className={styles.closedList}>
-                    <div className={styles.closedRow}>
-                      <dt className={styles.closedLabel}>{t("Results")}</dt>
-                      <dd className={styles.closedValue}>
-                        {data.closedToday.resultLoops}
-                      </dd>
-                    </div>
-                    <div className={styles.closedRow}>
-                      <dt className={styles.closedLabel}>{t("Bookings")}</dt>
-                      <dd className={styles.closedValue}>
-                        {data.closedToday.bookings}
-                      </dd>
-                    </div>
-                    <div className={styles.closedRow}>
-                      <dt className={styles.closedLabel}>{t("Earned")}</dt>
-                      <dd className={styles.closedValue}>
-                        <MoneyText
-                          currency="USD"
-                          minor={data.closedToday.earnedMinor}
-                        />
-                      </dd>
-                    </div>
-                  </dl>
-                </section>
-              ) : null}
-            </div>
+          {allClear ? (
+            <Alert tone="success">
+              <AlertTitle>{t("All caught up")}</AlertTitle>
+              <AlertDescription>{t("No work needs attention.")}</AlertDescription>
+            </Alert>
           ) : null}
-        </div>
+
+          {resultsSignal || hasDay ? (
+            <WorkspaceSplit>
+              {resultsSignal ? (
+                <section
+                  aria-labelledby="home-results-title"
+                  className={styles.resultsSection}
+                >
+                  <WorkspaceSectionHeader
+                    actions={
+                      resultsSignal.action ? (
+                        <Button
+                          onClick={() => {
+                            const targetKey = resultsSignal.action?.targetKey;
+                            if (targetKey) onNavigate?.(targetKey);
+                          }}
+                          size="sm"
+                          variant="ghost"
+                        >
+                          {t("View all")}
+                        </Button>
+                      ) : undefined
+                    }
+                    headingId="home-results-title"
+                    title={t("Results needing review")}
+                  />
+                  <HomeResultReviewPreview
+                    onNavigate={onNavigate}
+                    onRetry={onRetrySignal}
+                    showFooter={false}
+                    showHeader={false}
+                    signal={resultsSignal}
+                  />
+                </section>
+              ) : null}
+
+              {hasDay ? (
+                <NextToday actions={data.nextActions} onNavigate={onNavigate} />
+              ) : null}
+            </WorkspaceSplit>
+          ) : null}
+
+          {data.closedToday ? (
+            <section aria-labelledby="home-closed-title" className={styles.section}>
+              <WorkspaceSectionHeader
+                headingId="home-closed-title"
+                title={t("Closed today")}
+              />
+              <Card className={styles.closedTray}>
+                <dl className={styles.closedList}>
+                  <div className={styles.closedRow}>
+                    <dt className={styles.closedLabel}>{t("Results")}</dt>
+                    <dd className={styles.closedValue}>
+                      {data.closedToday.resultLoops}
+                    </dd>
+                  </div>
+                  <div className={styles.closedRow}>
+                    <dt className={styles.closedLabel}>{t("Bookings")}</dt>
+                    <dd className={styles.closedValue}>
+                      {data.closedToday.bookings}
+                    </dd>
+                  </div>
+                  <div className={styles.closedRow}>
+                    <dt className={styles.closedLabel}>{t("Earned")}</dt>
+                    <dd className={styles.closedValue}>
+                      <MoneyText
+                        currency="USD"
+                        minor={data.closedToday.earnedMinor}
+                      />
+                    </dd>
+                  </div>
+                </dl>
+              </Card>
+            </section>
+          ) : null}
+        </>
       ) : null}
-    </div>
+    </WorkspacePage>
   );
 }

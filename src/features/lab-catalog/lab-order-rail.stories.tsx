@@ -68,3 +68,12 @@ export const ComfortableWidth560: Story = {
     </Frame>
   ),
 };
+
+export const Mobile320: Story = {
+  parameters: { viewport: { defaultViewport: 'kura320' } },
+  render: (args) => (
+    <Frame widthClass={styles.width320}>
+      <LabOrderRail {...args} />
+    </Frame>
+  ),
+};

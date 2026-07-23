@@ -53,7 +53,7 @@ const meta = {
     docs: {
       description: {
         component:
-          "Clinical Home (WQ-01) is a calm start-of-shift briefing inside the canonical AppShell. It prioritizes safety-relevant work, keeps the next agenda visible, and deep-links into owning surfaces. Licence stories map to the current seven-state clinic contract. Aggregate Home counts remain design fixtures because no Home/today BFF read model exists.",
+          "Clinical Home (WQ-01) is a calm start-of-shift briefing inside the canonical AppShell. Five peer metrics make the clinic state scannable, then the safety-relevant Results preview sits beside the next agenda. Every item deep-links into its owning surface. Licence stories map to the current seven-state clinic contract. Aggregate Home counts remain design fixtures because no Home/today BFF read model exists.",
       },
     },
   },
@@ -81,25 +81,24 @@ export const StartOfDayVerified: Story = {
       canvas.getByRole("heading", { name: "Good morning, Dr. Sok Vanna" }),
     ).toBeVisible();
     await expect(
-      canvas.getByRole("heading", { name: "Priority work" }),
+      canvas.getByRole("heading", { name: "Results needing review" }),
     ).toBeVisible();
-    await expect(canvas.getByRole("heading", { name: "Next" })).toBeVisible();
-    await expect(canvas.getByRole("heading", { name: "Today" })).toBeVisible();
+    await expect(
+      canvas.getByRole("heading", { name: "Next actions" }),
+    ).toBeVisible();
+    const overview = canvas.getByRole("list", { name: "Clinic overview" });
+    await expect(within(overview).getAllByRole("listitem")).toHaveLength(5);
+    await expect(
+      within(overview).getByRole("link", { name: /Review bookings/ }),
+    ).toBeVisible();
+    await expect(
+      within(overview).getByRole("link", { name: /Review patients/ }),
+    ).toBeVisible();
     const queue = canvas.getByRole("list", {
       name: "Patients with results to review",
     });
     await expect(within(queue).getAllByRole("listitem")).toHaveLength(5);
     await expect(within(queue).getByText("Dara Phally")).toBeVisible();
-    await expect(
-      within(
-        canvas.getByRole("list", { name: "Bookings work queue" }),
-      ).getByText("Sokha Chan"),
-    ).toBeVisible();
-    await expect(
-      within(
-        canvas.getByRole("list", { name: "Patients work queue" }),
-      ).getByText("Vicheka Sam"),
-    ).toBeVisible();
   },
 };
 
@@ -139,7 +138,9 @@ export const AllCaughtUpWithNextAppointment: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getByText("All caught up")).toBeVisible();
-    await expect(canvas.getByRole("heading", { name: "Next" })).toBeVisible();
+    await expect(
+      canvas.getByRole("heading", { name: "Next actions" }),
+    ).toBeVisible();
     await expect(canvas.getByText("Tube pickup")).toBeVisible();
   },
 };
@@ -368,12 +369,11 @@ export const Loading: Story = {
     await expect(
       canvas.getByRole("heading", { name: "Loading" }),
     ).toBeVisible();
-    await expect(
-      canvas.getByRole("heading", { name: "Bookings" }),
-    ).toBeVisible();
-    await expect(
-      canvas.getByRole("heading", { name: "Patients" }),
-    ).toBeVisible();
+    const overview = canvas.getByRole("list", {
+      name: "Loading clinic overview",
+    });
+    await expect(within(overview).getByText("Bookings")).toBeVisible();
+    await expect(within(overview).getByText("Patients")).toBeVisible();
     await expect(canvas.queryByRole("link")).not.toBeInTheDocument();
   },
 };
@@ -382,11 +382,16 @@ export const PartialFailureAndRetry: Story = {
   args: { data: demo.partialData },
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByText("Results could not load.")).toBeVisible();
+    const overview = canvas.getByRole("list", { name: "Clinic overview" });
     await expect(
-      canvas.getByRole("list", { name: "Bookings work queue" }),
+      within(overview).getByText("Results could not load."),
     ).toBeVisible();
-    await userEvent.click(canvas.getByRole("button", { name: "Retry" }));
+    await expect(
+      within(overview).getByRole("link", { name: /Review bookings/ }),
+    ).toBeVisible();
+    await userEvent.click(
+      within(overview).getByRole("button", { name: "Retry" }),
+    );
     await expect(args.onRetrySignal).toHaveBeenCalledWith("results");
   },
 };
@@ -424,7 +429,7 @@ export const FullFailureRecoverable: Story = {
     await userEvent.click(canvas.getByRole("button", { name: "Reload" }));
     await waitFor(async () => {
       await expect(
-        canvas.getByRole("heading", { name: "Priority work" }),
+        canvas.getByRole("heading", { name: "Results needing review" }),
       ).toBeVisible();
     });
   },
@@ -536,9 +541,4 @@ export const CompactDensity: Story = {
 
 export const ComfortableDensity: Story = {
   globals: { density: "comfortable" },
-};
-
-export const DarkTheme: Story = {
-  globals: { theme: "dark" },
-  args: { data: demo.criticalDay },
 };

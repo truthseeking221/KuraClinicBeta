@@ -113,8 +113,3 @@ export const NarrowContainer: Story = {
     </div>
   ),
 };
-
-export const DarkTheme: Story = {
-  globals: { theme: 'dark' },
-  args: { range: FIVE_ZONE, value: { kind: 'numeric', value: 151 } },
-};

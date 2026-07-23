@@ -16,7 +16,7 @@ const meta = {
   component: PatientsRegistry,
   tags: ['autodocs', 'adapted-kura'],
   parameters: {
-    layout: 'padded',
+    layout: 'fullscreen',
     kura: PATIENTS_STORYBOOK_KURA,
     docs: {
       description: {
@@ -136,6 +136,12 @@ export const Loading: Story = {
 
 export const ErrorAndRecovery: Story = {
   args: { state: 'error', onRetry: fn() },
+  tags: ['play-fn'],
+  play: async ({ args, canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(canvas.getByRole('button', { name: 'Retry' }));
+    await expect(args.onRetry).toHaveBeenCalledOnce();
+  },
 };
 
 export const LongContent: Story = {
@@ -159,16 +165,29 @@ export const MobileWidth320: Story = {
   globals: { viewport: { value: 'kura320' } },
 };
 
+export const MobileWidth360: Story = {
+  globals: { viewport: { value: 'kura360' } },
+};
+
+export const MobileWidth412: Story = {
+  args: { triage: DEMO_TRIAGE },
+  globals: { viewport: { value: 'kura412' } },
+};
+
+export const MobileWidth480: Story = {
+  globals: { viewport: { value: 'kura480' } },
+};
+
 export const TabletWidth768: Story = {
   args: { triage: DEMO_TRIAGE },
   globals: { viewport: { value: 'kura768' } },
 };
 
-export const ComfortableDensity: Story = {
-  globals: { density: 'comfortable' },
+export const DesktopWidth1024: Story = {
+  args: { triage: DEMO_TRIAGE },
+  globals: { viewport: { value: 'kura1024' } },
 };
 
-export const DarkTheme: Story = {
-  args: { triage: DEMO_TRIAGE },
-  globals: { theme: 'dark' },
+export const ComfortableDensity: Story = {
+  globals: { density: 'comfortable' },
 };

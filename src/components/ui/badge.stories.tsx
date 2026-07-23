@@ -215,20 +215,3 @@ export const CountBadges: Story = {
     </div>
   ),
 };
-
-export const DarkTheme: Story = {
-  globals: { theme: 'dark' },
-  render: () => (
-    <div className="flex flex-col gap-3">
-      {APPEARANCES.map((appearance) => (
-        <div className="flex flex-wrap items-center gap-2" key={appearance}>
-          {VARIANTS.map((variant) => (
-            <Badge appearance={appearance} dot={appearance === 'soft'} key={variant} variant={variant}>
-              {variant === 'ai' ? 'AI draft' : variant.charAt(0).toUpperCase() + variant.slice(1)}
-            </Badge>
-          ))}
-        </div>
-      ))}
-    </div>
-  ),
-};

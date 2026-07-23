@@ -135,8 +135,3 @@ export const MobileWidth320: Story = {
     </div>
   ),
 };
-
-export const DarkTheme: Story = {
-  globals: { theme: 'dark' },
-  args: { result: creatinine },
-};

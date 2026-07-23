@@ -203,10 +203,6 @@ export const Mobile: Story = {
   },
 };
 
-export const DarkTheme: Story = {
-  globals: { theme: 'dark' },
-};
-
 // ── Flow: check-in hands off to the queue ──────────────────
 
 function CheckInToQueueHarness() {

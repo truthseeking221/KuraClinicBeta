@@ -58,9 +58,10 @@ export const Default: Story = {
     const body = within(canvasElement.ownerDocument.body);
     const dialog = await body.findByRole("dialog", { name: "Switch patient" });
     await expect(within(dialog).getByText("61 · M · MRN ··87")).toBeVisible();
-    await expect(within(dialog).getByText("Verified")).toBeVisible();
+    const daraRow = within(dialog).getByRole("button", { name: /Dara Pich/ });
+    await expect(within(daraRow).getByText("Verified")).toBeVisible();
 
-    await userEvent.click(within(dialog).getByRole("button", { name: /Dara Pich/ }));
+    await userEvent.click(daraRow);
     await expect(args.onSwitchPatient).toHaveBeenCalledWith("p-dara-pich");
   },
 };

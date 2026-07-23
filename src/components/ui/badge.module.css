@@ -137,12 +137,6 @@
   color: var(--badge-solid-fg);
 }
 
-.sizeSm.variantPrimary.appearanceSoft,
-.sizeSm.variantPrimary.appearanceSolid {
-  background: var(--color-action-primary-accent);
-  color: var(--color-action-primary-fg);
-}
-
 /* Outline is the lightest reading: hairline drawn from the tone itself. */
 .appearanceOutline {
   border-color: color-mix(in srgb, var(--badge-fg) 32%, transparent);
@@ -212,11 +206,4 @@
   min-height: var(--space-7);
   padding-inline: var(--space-3);
   font-size: var(--type-sm);
-}
-
-/* Keep the primary chip tonal when embedded in a dark preview surface. */
-:global([data-theme='dark']) .variantPrimary {
-  --badge-bg: color-mix(in srgb, var(--color-brand-primary) 16%, transparent);
-  --badge-fg: var(--color-action-primary-subtle-hover);
-  --badge-border: color-mix(in srgb, var(--color-brand-primary) 40%, transparent);
 }

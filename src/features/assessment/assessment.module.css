@@ -32,29 +32,12 @@
   min-width: 0;
 }
 
-/* The assessment is the one section another surface reads, so it gets its own
-   white tile inside the tray instead of sharing the prose rhythm above it. */
-.assessment {
+/* The assessment is the one section another surface reads, so its canonical
+   nested Card owns the tile surface while this class owns only content flow. */
+.assessmentContent {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
-  border-radius: var(--radius-card-tile);
-  padding: var(--space-4);
-  background: var(--color-surface);
-  box-shadow: var(--elevation-card-tile);
-}
-
-.sectionTitle {
-  margin: 0;
-  font-size: var(--type-base);
-  font-weight: var(--weight-semibold);
-  color: var(--color-text-primary);
-}
-
-.sectionHint {
-  margin: 0;
-  font-size: var(--type-sm);
-  color: var(--color-text-secondary);
 }
 
 .empty {

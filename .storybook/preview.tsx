@@ -4,13 +4,10 @@ import '../src/app/globals.css';
 import { LocaleProvider } from '../src/components/foundations/i18n';
 import type { Locale } from '../src/components/foundations/i18n';
 
-const withTheme: Decorator = (Story, context) => {
+const WithDensity: Decorator = (Story, context) => {
   if (typeof document !== 'undefined') {
-    // Docs are the canonical light-mode reference. Keep explicit dark-theme
-    // stories available in Canvas without allowing them to change autodocs.
-    const theme = context.viewMode === 'docs' ? 'light' : String(context.globals.theme ?? 'light');
-    document.documentElement.dataset.theme = theme;
     document.documentElement.dataset.density = String(context.globals.density ?? 'cozy');
+    delete document.documentElement.dataset.theme;
   }
 
   return Story();
@@ -25,7 +22,7 @@ const withTheme: Decorator = (Story, context) => {
  * an in-story language control (the shell account menu) actually switches the
  * story. The toolbar sets the starting language and overrides it when changed.
  */
-const withLocale: Decorator = (Story, context) => {
+const WithLocale: Decorator = (Story, context) => {
   const toolbarLocale = (context.globals.locale ?? 'en') as Locale;
   const [locale, setLocale] = useState<Locale>(toolbarLocale);
 
@@ -44,18 +41,6 @@ const withLocale: Decorator = (Story, context) => {
 
 const preview: Preview = {
   globalTypes: {
-    theme: {
-      description: 'Theme',
-      defaultValue: 'light',
-      toolbar: {
-        title: 'Theme',
-        icon: 'paintbrush',
-        items: [
-          { value: 'light', title: 'Light' },
-          { value: 'dark', title: 'Dark' },
-        ],
-      },
-    },
     locale: {
       description: 'Interface language',
       defaultValue: 'en',
@@ -124,7 +109,7 @@ const preview: Preview = {
       },
     },
   },
-  decorators: [withLocale, withTheme],
+  decorators: [WithLocale, WithDensity],
   parameters: {
     options: {
       storySort: {

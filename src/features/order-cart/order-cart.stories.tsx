@@ -1058,16 +1058,6 @@ export const MobileTubePreparation: Story = {
   render: (args) => <Playground args={args} mobile />,
 };
 
-export const DarkTheme: Story = {
-  args: { workflow: DOCTOR_PAYMENT_CHOICE },
-  globals: { theme: "dark" },
-};
-
-export const DarkThemeReception: Story = {
-  args: { workflow: RECEPTION_PAID },
-  globals: { theme: "dark" },
-};
-
 /* ── Hierarchy + shared-atom credit + engine suggestions ── */
 
 /**

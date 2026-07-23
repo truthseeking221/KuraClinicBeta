@@ -212,7 +212,7 @@ export const FullClinic: Story = {
           rule instanceof CSSStyleRule && rule.selectorText === `.${styles.navItem}:hover`,
       );
     if (!navHoverRule) throw new Error('App Shell navigation hover rule did not render.');
-    expect(navHoverRule.style.background).toBe('var(--sidebar-active-bg)');
+    expect(navHoverRule.style.background).toBe('var(--sidebar-hover-bg)');
     // The context selector names its axis, keeps the text label primary, and
     // reserves the icon-only representation for the collapsed rail.
     const modeButton = canvas.getByRole('button', { name: 'Work area: Clinical' });

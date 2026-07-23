@@ -342,17 +342,6 @@ export const MobileNarrow: Story = {
   },
 };
 
-export const DarkTheme: Story = {
-  args: baseArgs,
-  globals: { theme: 'dark' },
-  render: () => <IdentityPlayground />,
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    await userEvent.type(canvas.getByLabelText(SEARCH_LABEL), '087 654 3210');
-    await expect(await canvas.findByRole('radiogroup', { name: 'Choose who is here today' })).toBeVisible();
-  },
-};
-
 /**
  * Canonical collection-code lifecycle branches. A blocked code is never
  * silently redeemed: the desk sees the canonical status, why it blocks, and a

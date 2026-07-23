@@ -11,6 +11,7 @@ import {
 
 import {
   Alert,
+  AlertAction,
   AlertDescription,
   AlertTitle,
   Avatar,
@@ -21,6 +22,8 @@ import {
   DataGridPagination,
   DataGridTable,
   DataGridToolbar,
+  ChevronRightIcon,
+  RefreshIcon,
   SegmentedToggle,
 } from '../../components/ui';
 import {
@@ -30,6 +33,8 @@ import {
   EmptyStateHeader,
   EmptyStateMedia,
   EmptyStateTitle,
+  WorkspacePage,
+  WorkspacePageHeader,
 } from '../../components/shared';
 import { useT } from '../../components/foundations/i18n';
 
@@ -154,6 +159,13 @@ export function PatientsRegistry({
                 </span>
                 {identity ? <span className={styles.identity}>{identity}</span> : null}
               </span>
+              {onOpenPatient ? (
+                <ChevronRightIcon
+                  aria-hidden="true"
+                  className={styles.mobileOpenAffordance}
+                  size={16}
+                />
+              ) : null}
             </span>
           );
         },
@@ -228,17 +240,44 @@ export function PatientsRegistry({
           }),
         ]
       : base;
-    if (!triage) return withWork;
+    const withTriage = triage
+      ? [
+          ...withWork,
+          column.display({
+            id: 'triage',
+            header: t('Why now'),
+            size: 230,
+            cell: ({ row }) => <TriageCell triage={triage[row.original.userId]} />,
+          }),
+        ]
+      : withWork;
+    if (!onOpenPatient) return withTriage;
     return [
-      ...withWork,
+      ...withTriage,
       column.display({
-        id: 'triage',
-        header: t('Why now'),
-        size: 230,
-        cell: ({ row }) => <TriageCell triage={triage[row.original.userId]} />,
+        id: 'open-patient',
+        header: '',
+        size: 56,
+        meta: {
+          cellClassName: styles.openCell,
+          headerClassName: styles.openHeader,
+        },
+        cell: ({ row }) => (
+          <Button
+            aria-label={`${t('Open')} ${displayNameOf(row.original, t)}`}
+            onClick={(event) => {
+              event.stopPropagation();
+              onOpenPatient(row.original.userId);
+            }}
+            size="icon-xs"
+            variant="ghost"
+          >
+            <ChevronRightIcon aria-hidden="true" size={16} />
+          </Button>
+        ),
       }),
     ];
-  }, [demoPatients, onOpenWorkItem, t, triage, workItems]);
+  }, [demoPatients, onOpenPatient, onOpenWorkItem, t, triage, workItems]);
 
   const table = useReactTable({
     columns,
@@ -257,19 +296,37 @@ export function PatientsRegistry({
           {t('The registry could not be loaded.')}
           {onRetry ? ` ${t('Try again.')}` : ''}
         </AlertDescription>
+        {onRetry ? (
+          <AlertAction>
+            <Button
+              leadingIcon={<RefreshIcon aria-hidden="true" size={16} />}
+              onClick={onRetry}
+              size="sm"
+              variant="outline"
+            >
+              {t('Retry')}
+            </Button>
+          </AlertAction>
+        ) : null}
       </Alert>
     ) : undefined;
 
   return (
-    <section aria-labelledby="patients-registry-title" className={styles.section}>
-      <header className={styles.header}>
-        <h1 className={styles.title} id="patients-registry-title">
-          {t('Patients')}
-        </h1>
-        {state === 'ready' && onAddPatient && !emptyRegistry ? (
-          <Button onClick={onAddPatient}>{t('Add patient')}</Button>
-        ) : null}
-      </header>
+    <WorkspacePage
+      as="section"
+      aria-labelledby="patients-registry-title"
+      data-slot="patients-registry"
+    >
+      <WorkspacePageHeader
+        actions={
+          state === 'ready' && onAddPatient && !emptyRegistry ? (
+            <Button onClick={onAddPatient}>{t('Add patient')}</Button>
+          ) : undefined
+        }
+        description={t('Most recently seen in this workspace first.')}
+        headingId="patients-registry-title"
+        title={t('Patients')}
+      />
       <DataGrid
         emptyState={
           <EmptyState align="center" surface="plain">
@@ -280,6 +337,7 @@ export function PatientsRegistry({
                     alt=""
                     className={styles.emptyIllustrationImage}
                     height={1254}
+                    priority
                     sizes="160px"
                     src="/generated/kura-patients-empty-add-first-v1.png"
                     width={1254}
@@ -341,6 +399,6 @@ export function PatientsRegistry({
           <DataGridPagination pageSizes={[10, 20, 50]} rowsPerPageLabel={t('Patients per page')} />
         ) : null}
       </DataGrid>
-    </section>
+    </WorkspacePage>
   );
 }

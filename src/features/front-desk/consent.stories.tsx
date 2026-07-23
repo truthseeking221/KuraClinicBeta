@@ -257,33 +257,3 @@ export const Mobile: Story = {
     await expect(await canvas.findByText('Sent · awaiting signature')).toBeVisible();
   },
 };
-
-export const DarkTheme: Story = {
-  args: baseArgs,
-  globals: { theme: 'dark' },
-  render: () => {
-    const initial = orderReady('consent-dark', 'Male');
-    return (
-      <ConsentPlayground
-        initial={{
-          ...initial,
-          cart: {
-            ...initial.cart,
-            attributedPrescriberId: 'dr-sok-vanna',
-            items: [
-              {
-                id: 'xray-chest',
-                kind: 'imaging',
-                name: 'Chest X-ray',
-                priceMinor: '1800',
-                currencyCode: 'USD',
-                qty: 1,
-                consent: { state: 'needed' },
-              },
-            ],
-          },
-        }}
-      />
-    );
-  },
-};

@@ -11,3 +11,20 @@
   flex-wrap: wrap;
   gap: var(--space-3);
 }
+
+.selectionHint {
+  color: var(--color-text-secondary);
+  font-size: var(--type-sm);
+}
+
+@media (max-width: 480px) {
+  .actions {
+    width: 100%;
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .actions :global([data-slot='button']) {
+    width: 100%;
+  }
+}

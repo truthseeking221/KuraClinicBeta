@@ -178,8 +178,3 @@ export const MobileBottomSheet: Story = {
     });
   },
 };
-
-export const DarkTheme: Story = {
-  globals: { theme: 'dark' },
-  args: { result: CRITICAL_POTASSIUM_RESULT },
-};

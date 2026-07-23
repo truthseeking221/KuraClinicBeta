@@ -57,8 +57,12 @@
   --color-surface-2: var(--color-neutral-100);
   --color-surface-sunken: var(--color-neutral-200);
   --color-surface-bg: var(--color-white);
-  /* Filled field rest state: the neutral tray tone, kept distinct on white. */
-  --color-field-bg: var(--color-surface-2);
+  /* Filled field rest state: a quieter 75% tray tint that stays legible on white. */
+  --color-field-bg: color-mix(
+    in srgb,
+    var(--color-surface-2) 75%,
+    var(--color-surface)
+  );
   --color-background-canvas-subtle: var(--color-neutral-50);
   --color-overlay-scrim: color-mix(in srgb, var(--color-neutral-950) 48%, transparent);
   --color-border: var(--color-neutral-200);
@@ -494,6 +498,9 @@
   --space-section-gap: var(--space-8);
   --space-page-gutter: var(--space-6);
   --space-page-gutter-wide: var(--space-10);
+  --layout-page-max: 70rem;
+  --layout-page-max-reading: 56rem;
+  --layout-page-max-wide: 80rem;
 
   /* Radius primitives: size-named value scale. Components never consume these
      directly — they bind to the semantic roles below. */
@@ -661,18 +668,4 @@
     --duration-slow: 0ms;
     --motion-stagger-step: 0ms;
   }
-}
-
-[data-theme='dark'] {
-  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.14);
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.18);
-  --shadow-md: 0 4px 10px rgba(0, 0, 0, 0.24);
-  --shadow-lg: 0 8px 18px rgba(0, 0, 0, 0.3);
-  --shadow-xl: 0 14px 28px rgba(0, 0, 0, 0.36);
-  --card-border: var(--color-border);
-  --shadow-card: none;
-  --shadow-table: none;
-  --shadow-button-raised: 0 1px 2px rgba(0, 0, 0, 0.24);
-  --shadow-button-primary-raised:
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.1), 0 1px 2px rgba(0, 0, 0, 0.24);
 }

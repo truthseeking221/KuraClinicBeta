@@ -230,12 +230,6 @@ export const Mobile: Story = {
   render: () => <SheetPlayground booking={bookingOf('GW87430')} />,
 };
 
-export const DarkTheme: Story = {
-  args: baseArgs,
-  globals: { theme: 'dark' },
-  render: () => <SheetPlayground booking={bookingOf('GW87510')} />,
-};
-
 export const ReadOnlyBlocked: Story = {
   name: 'Blocked — read-only with no recovery action',
   args: baseArgs,

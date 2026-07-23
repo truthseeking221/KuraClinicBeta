@@ -7,6 +7,7 @@ import {
   Button,
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
   Collapsible,
@@ -162,77 +163,81 @@ export function AssessmentWorkspace({
           </CollapsibleContent>
         </Collapsible>
 
-        <section aria-label={t('Assessment')} className={styles.assessment}>
-          <h3 className={styles.sectionTitle}>{t('Assessment')}</h3>
-          <p className={styles.sectionHint}>
-            {t('Every test ordered from this visit carries one of these as its stated reason.')}
-          </p>
+        <Card as="section" aria-label={t('Assessment')} size="sm" variant="tile">
+          <CardHeader>
+            <CardTitle>{t('Assessment')}</CardTitle>
+            <CardDescription>
+              {t('Every test ordered from this visit carries one of these as its stated reason.')}
+            </CardDescription>
+          </CardHeader>
 
-          {assessment.diagnoses.length === 0 ? (
-            <p className={styles.empty}>{t('No diagnosis recorded yet.')}</p>
-          ) : (
-            <ul className={styles.diagnosisList}>
-              {assessment.diagnoses.map((diagnosis) => (
-                <li className={styles.diagnosis} key={diagnosis.id}>
-                  <div className={styles.diagnosisMain}>
-                    <span className={styles.diagnosisLabel}>{diagnosisLine(diagnosis)}</span>
-                    {diagnosis.evidence ? (
-                      <span className={styles.diagnosisEvidence}>{diagnosis.evidence}</span>
-                    ) : null}
-                  </div>
-                  <SegmentedToggle
-                    label={`${t('Certainty for')} ${diagnosis.label}`}
-                    onValueChange={(value) => setCertainty(diagnosis.id, value as DiagnosisCertainty)}
-                    options={CERTAINTY_OPTIONS.map((option) => ({
-                      ...option,
-                      label: t(option.label),
-                    }))}
-                    value={diagnosis.certainty}
-                  />
-                  <Button
-                    aria-label={`${t('Remove')} ${diagnosis.label}`}
-                    onClick={() => removeDiagnosis(diagnosis.id)}
-                    size="sm"
-                    variant="ghost"
-                  >
-                    {t('Remove')}
-                  </Button>
-                </li>
-              ))}
-            </ul>
-          )}
+          <CardContent className={styles.assessmentContent}>
+            {assessment.diagnoses.length === 0 ? (
+              <p className={styles.empty}>{t('No diagnosis recorded yet.')}</p>
+            ) : (
+              <ul className={styles.diagnosisList}>
+                {assessment.diagnoses.map((diagnosis) => (
+                  <li className={styles.diagnosis} key={diagnosis.id}>
+                    <div className={styles.diagnosisMain}>
+                      <span className={styles.diagnosisLabel}>{diagnosisLine(diagnosis)}</span>
+                      {diagnosis.evidence ? (
+                        <span className={styles.diagnosisEvidence}>{diagnosis.evidence}</span>
+                      ) : null}
+                    </div>
+                    <SegmentedToggle
+                      label={`${t('Certainty for')} ${diagnosis.label}`}
+                      onValueChange={(value) => setCertainty(diagnosis.id, value as DiagnosisCertainty)}
+                      options={CERTAINTY_OPTIONS.map((option) => ({
+                        ...option,
+                        label: t(option.label),
+                      }))}
+                      value={diagnosis.certainty}
+                    />
+                    <Button
+                      aria-label={`${t('Remove')} ${diagnosis.label}`}
+                      onClick={() => removeDiagnosis(diagnosis.id)}
+                      size="sm"
+                      variant="ghost"
+                    >
+                      {t('Remove')}
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            )}
 
-          <div className={styles.addRow}>
-            <Input
-              label={t('Diagnosis or impression')}
-              list="assessment-icd-shortlist"
-              onChange={(event) => setDraftLabel(event.target.value)}
-              placeholder={t('Type or pick a coded diagnosis')}
-              value={draftLabel}
-            />
-            <datalist id="assessment-icd-shortlist">
-              {ICD10_SHORTLIST.map((entry) => (
-                <option key={entry.code} value={entry.label}>
-                  {entry.code}
-                </option>
-              ))}
-            </datalist>
-            <Input
-              label="ICD-10"
-              helpText={t('Optional while the impression is uncoded.')}
-              onChange={(event) => setDraftCode(event.target.value)}
-              value={draftCode}
-            />
-            <Input
-              label={t('Evidence')}
-              onChange={(event) => setDraftEvidence(event.target.value)}
-              value={draftEvidence}
-            />
-            <Button disabled={draftLabel.trim() === ''} onClick={addDiagnosis} variant="outline">
-              {t('Add diagnosis')}
-            </Button>
-          </div>
-        </section>
+            <div className={styles.addRow}>
+              <Input
+                label={t('Diagnosis or impression')}
+                list="assessment-icd-shortlist"
+                onChange={(event) => setDraftLabel(event.target.value)}
+                placeholder={t('Type or pick a coded diagnosis')}
+                value={draftLabel}
+              />
+              <datalist id="assessment-icd-shortlist">
+                {ICD10_SHORTLIST.map((entry) => (
+                  <option key={entry.code} value={entry.label}>
+                    {entry.code}
+                  </option>
+                ))}
+              </datalist>
+              <Input
+                label="ICD-10"
+                helpText={t('Optional while the impression is uncoded.')}
+                onChange={(event) => setDraftCode(event.target.value)}
+                value={draftCode}
+              />
+              <Input
+                label={t('Evidence')}
+                onChange={(event) => setDraftEvidence(event.target.value)}
+                value={draftEvidence}
+              />
+              <Button disabled={draftLabel.trim() === ''} onClick={addDiagnosis} variant="outline">
+                {t('Add diagnosis')}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
 
         <Textarea
           label={t('Plan')}

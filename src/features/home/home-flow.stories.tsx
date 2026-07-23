@@ -158,17 +158,24 @@ export const WorkspaceSwitchClearsPriorClinicContext: Story = {
     const canvas = within(canvasElement);
     const documentBody = within(canvasElement.ownerDocument.body);
 
-    await expect(canvas.getByText(/Potassium/)).toBeVisible();
+    await expect(canvas.getAllByText(/Potassium/).length).toBeGreaterThan(0);
     await userEvent.click(canvas.getByRole('button', { name: /Mekong Clinic/ }));
     await userEvent.click(
       await documentBody.findByRole('menuitemradio', { name: 'Lotus Family Clinic' }),
     );
 
     await waitFor(async () => {
-      await expect(canvas.getByText('Lotus Family Clinic · Riverside · 26 patients in view')).toBeVisible();
+      await expect(
+        canvas.getByText(/Lotus Family Clinic · Riverside · 26 patients in view/),
+      ).toBeVisible();
     });
     await expect(canvas.getByText('Care team huddle')).toBeVisible();
-    await expect(canvas.queryByText(/Potassium/)).not.toBeInTheDocument();
-    await expect(canvas.queryByText(/Sokha Chan/)).not.toBeInTheDocument();
+    await expect(canvas.queryAllByText(/Potassium/)).toHaveLength(0);
+    await expect(canvas.queryAllByText(/Sokha Chan/)).toHaveLength(0);
   },
+};
+
+/** The cross-page flow starts from the same mobile Home composition. */
+export const Mobile320: Story = {
+  parameters: { viewport: { defaultViewport: 'kura320' } },
 };

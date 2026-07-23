@@ -323,7 +323,6 @@ export function inviteError(
 
 export type Prefs = {
   units: 'conventional' | 'si';
-  theme: 'light' | 'dark' | 'system';
   inlineRef: boolean;
   collapseNormal: boolean;
   clock24: boolean;
@@ -331,7 +330,6 @@ export type Prefs = {
 
 export const DEFAULT_PREFS: Prefs = {
   units: 'conventional',
-  theme: 'light',
   inlineRef: true,
   collapseNormal: false,
   clock24: true,
@@ -343,9 +341,19 @@ export function loadPrefs(): Prefs {
   if (typeof window === 'undefined') return DEFAULT_PREFS;
   try {
     const raw = window.localStorage.getItem(PREFS_STORAGE_KEY);
-    return raw
-      ? { ...DEFAULT_PREFS, ...(JSON.parse(raw) as Partial<Prefs>) }
-      : DEFAULT_PREFS;
+    if (!raw) return DEFAULT_PREFS;
+
+    const saved = JSON.parse(raw) as Partial<Prefs>;
+    return {
+      units: saved.units === 'si' ? 'si' : DEFAULT_PREFS.units,
+      inlineRef:
+        typeof saved.inlineRef === 'boolean' ? saved.inlineRef : DEFAULT_PREFS.inlineRef,
+      collapseNormal:
+        typeof saved.collapseNormal === 'boolean'
+          ? saved.collapseNormal
+          : DEFAULT_PREFS.collapseNormal,
+      clock24: typeof saved.clock24 === 'boolean' ? saved.clock24 : DEFAULT_PREFS.clock24,
+    };
   } catch {
     return DEFAULT_PREFS;
   }
@@ -364,8 +372,6 @@ export function savePrefs(prefs: Prefs): void {
 export const PREFS_VALUE_TEXT = {
   units: (prefs: Prefs) =>
     prefs.units === 'conventional' ? 'Conventional (mg/dL)' : 'SI (mmol/L)',
-  theme: (prefs: Prefs) =>
-    prefs.theme === 'light' ? 'Light' : prefs.theme === 'dark' ? 'Dark' : 'Match system',
   inlineRef: (prefs: Prefs) =>
     prefs.inlineRef ? 'Shown inline' : 'Hidden until opened',
   collapseNormal: (prefs: Prefs) =>

@@ -302,8 +302,3 @@ export const CompactDensity: Story = {
 export const ComfortableDensity: Story = {
   globals: { density: 'comfortable' },
 };
-
-export const DarkTheme: Story = {
-  globals: { theme: 'dark' },
-  args: { sections: PARTIAL_EPISODE_SECTIONS },
-};

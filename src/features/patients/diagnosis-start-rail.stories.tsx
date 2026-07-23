@@ -114,7 +114,7 @@ export const OpensDraftReview: Story = {
     const canvas = within(canvasElement);
     await userEvent.click(canvas.getByRole('button', { name: 'Diagnose this patient' }));
     await expect(await canvas.findByRole('heading', { name: 'Select diagnosis' })).toBeVisible();
-    await expect(canvas.getByText('Draft only — not verified or saved.')).toBeVisible();
+    await expect(canvas.getByText('Draft — not verified or saved.')).toBeVisible();
   },
 };
 

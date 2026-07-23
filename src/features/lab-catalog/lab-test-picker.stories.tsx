@@ -405,9 +405,3 @@ export const ComfortableDensity: Story = {
   args: { defaultSelectedTestIds: FIGMA_DEFAULT_SELECTED_TEST_IDS },
   render: (args) => <Frame args={args} />,
 };
-
-export const DarkTheme: Story = {
-  globals: { theme: 'dark' },
-  args: { defaultSelectedTestIds: FIGMA_DEFAULT_SELECTED_TEST_IDS },
-  render: (args) => <Frame args={args} />,
-};

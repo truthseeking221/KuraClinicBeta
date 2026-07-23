@@ -103,8 +103,3 @@ export const MobileWidth390: Story = {
     </div>
   ),
 };
-
-export const DarkTheme: Story = {
-  globals: { theme: 'dark' },
-  args: { sections: CRITICAL_COMPLETE_SECTIONS },
-};

@@ -85,7 +85,3 @@ export const VoidedEvidence: Story = {
 export const Mobile: Story = {
   globals: { viewport: { value: 'kura320' } },
 };
-
-export const DarkTheme: Story = {
-  globals: { theme: 'dark' },
-};

@@ -171,10 +171,6 @@
   color: var(--color-text-brand);
 }
 
-[data-theme="dark"] .activeStyleCard {
-  background: var(--muted);
-}
-
 .styleCard span,
 .activeStyleCard span {
   display: grid;

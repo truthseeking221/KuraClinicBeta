@@ -28,6 +28,11 @@ export { LabTrendChart } from "./lab-trend-chart";
 export type { LabTrendChartProps } from "./lab-trend-chart";
 export { ResultReviewQueueItem } from "./result-review-queue-item";
 export type { ResultReviewQueueItemProps } from "./result-review-queue-item";
+export { ResultsReviewQueue } from './results-review-queue';
+export type {
+  ResultsReviewQueueProps,
+  ResultsReviewQueueState,
+} from './results-review-queue';
 export { ResultsReviewFlow } from "./results-review-flow";
 export type { ResultsReviewFlowProps } from "./results-review-flow";
 export { ResultsToolbar } from "./results-toolbar";

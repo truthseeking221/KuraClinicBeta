@@ -7,3 +7,5 @@ export * from './logic';
 export type * from './types';
 export { CatalogOrderStart } from './catalog-order-start';
 export type { CatalogOrderStartProps } from './catalog-order-start';
+export { CatalogWorkspace } from './catalog-workspace';
+export type { CatalogWorkspaceProps } from './catalog-workspace';

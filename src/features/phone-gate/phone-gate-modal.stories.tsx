@@ -75,7 +75,10 @@ export const EnterPhone: Story = {
 export const VerifyOtp: Story = {
   play: async ({ canvasElement }) => {
     const screen = body(canvasElement);
-    await userEvent.type(await screen.findByLabelText(/Contact phone number/), FRESH_PHONE);
+    await userEvent.type(
+      await screen.findByRole('textbox', { name: 'Contact phone number' }),
+      FRESH_PHONE,
+    );
     await userEvent.click(screen.getByRole('button', { name: 'Send SMS code' }));
 
     await expect(await screen.findByRole('heading', { name: 'Enter the code' })).toBeVisible();
@@ -270,7 +273,10 @@ export const SubmittingTemporaryPatient: Story = {
 export const LookupError: Story = {
   play: async ({ canvasElement }) => {
     const screen = body(canvasElement);
-    await userEvent.type(await screen.findByLabelText(/Contact phone number/), '099111000');
+    await userEvent.type(
+      await screen.findByRole('textbox', { name: 'Contact phone number' }),
+      '099111000',
+    );
     await userEvent.click(screen.getByRole('button', { name: 'Send SMS code' }));
     await userEvent.type(screen.getByRole('textbox', { name: 'SMS code' }), DEMO_OTP);
     await userEvent.click(screen.getByRole('button', { name: 'Verify code' }));
@@ -285,7 +291,10 @@ export const LookupError: Story = {
 export const RateLimited: Story = {
   play: async ({ canvasElement }) => {
     const screen = body(canvasElement);
-    await userEvent.type(await screen.findByLabelText(/Contact phone number/), '099111999');
+    await userEvent.type(
+      await screen.findByRole('textbox', { name: 'Contact phone number' }),
+      '099111999',
+    );
     await userEvent.click(screen.getByRole('button', { name: 'Send SMS code' }));
     await expect(await screen.findByText(/Too many codes requested/)).toBeVisible();
   },
@@ -295,7 +304,10 @@ export const RateLimited: Story = {
 export const UnsavedDataGuard: Story = {
   play: async ({ canvasElement, args }) => {
     const screen = body(canvasElement);
-    await userEvent.type(await screen.findByLabelText(/Contact phone number/), '0991');
+    await userEvent.type(
+      await screen.findByRole('textbox', { name: 'Contact phone number' }),
+      '0991',
+    );
     await userEvent.keyboard('{Escape}');
 
     await expect(await screen.findByText('Discard what you entered?')).toBeVisible();
@@ -313,7 +325,10 @@ export const FullJourneyTemporary: Story = {
   args: { createDelayMs: 0 },
   play: async ({ canvasElement, args }) => {
     const screen = body(canvasElement);
-    await userEvent.type(await screen.findByLabelText(/Contact phone number/), FRESH_PHONE);
+    await userEvent.type(
+      await screen.findByRole('textbox', { name: 'Contact phone number' }),
+      FRESH_PHONE,
+    );
     await userEvent.click(screen.getByRole('button', { name: 'Send SMS code' }));
     await userEvent.type(screen.getByRole('textbox', { name: 'SMS code' }), DEMO_OTP);
     await userEvent.click(screen.getByRole('button', { name: 'Verify code' }));
@@ -336,7 +351,10 @@ export const FullJourneyTemporary: Story = {
 export const FullJourneyKnownMatch: Story = {
   play: async ({ canvasElement, args }) => {
     const screen = body(canvasElement);
-    await userEvent.type(await screen.findByLabelText(/Contact phone number/), KNOWN_PHONE);
+    await userEvent.type(
+      await screen.findByRole('textbox', { name: 'Contact phone number' }),
+      KNOWN_PHONE,
+    );
     await userEvent.click(screen.getByRole('button', { name: 'Send SMS code' }));
     await userEvent.type(screen.getByRole('textbox', { name: 'SMS code' }), DEMO_OTP);
     await userEvent.click(screen.getByRole('button', { name: 'Verify code' }));
@@ -352,7 +370,9 @@ export const Mobile320: Story = {
   play: async ({ canvasElement }) => {
     const screen = body(canvasElement);
     await expect(await screen.findByRole('heading', { name: 'Contact phone number' })).toBeVisible();
-    await expect(screen.getByLabelText(/Contact phone number/)).toBeVisible();
+    await expect(
+      screen.getByRole('textbox', { name: 'Contact phone number' }),
+    ).toBeVisible();
     await expect(screen.getByRole('button', { name: 'Send SMS code' })).toBeVisible();
   },
 };

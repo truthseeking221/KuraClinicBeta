@@ -1,46 +1,8 @@
-.workspace {
-  box-sizing: border-box;
-  display: flex;
-  width: 100%;
-  max-width: 72rem;
-  margin: 0 auto;
-  padding: var(--space-page-gutter);
-  flex-direction: column;
-  gap: var(--space-stack-section);
-  color: var(--color-text-primary);
-  font-family: var(--font-family-sans);
-}
-
-.pageHeader {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: var(--space-inline-group);
-}
-
-.pageHeading {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-
-.patient,
 .filterStatus {
   margin: 0;
   color: var(--color-text-secondary);
   font-size: var(--type-sm);
   line-height: var(--leading-normal);
-}
-
-.pageTitle {
-  margin: 0;
-  color: var(--color-text-primary);
-  font-size: var(--type-2xl);
-  font-weight: var(--weight-bold);
-  line-height: var(--leading-tight);
-  letter-spacing: -0.01em;
 }
 
 .filterStatus {
@@ -64,22 +26,7 @@
 }
 
 @media (max-width: 48rem) {
-  .workspace {
-    padding: var(--space-4);
-  }
-
-  .pageHeader {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
   .filterStatus {
     text-align: left;
-  }
-}
-
-@media (max-width: 22.5rem) {
-  .workspace {
-    padding-inline: var(--space-3);
   }
 }

@@ -76,57 +76,64 @@ export function CareLoopReview({
       </CardHeader>
 
       <CardContent className={styles.loopContent}>
-        <section aria-label={t('Evidence')} className={styles.evidence}>
-          <h3 className={styles.sectionTitle}>{t('What the result shows')}</h3>
-          <ul className={styles.evidenceList}>
-            {draft.evidence.map((item) => (
-              <li className={styles.evidenceRow} key={item.label}>
-                <span className={styles.evidenceLabel}>{item.label}</span>
-                <span className={styles.evidenceValue}>{item.value}</span>
-                <span className={styles.evidenceReference}>{item.reference}</span>
-                <Badge size="sm" variant={item.tone === 'danger' ? 'danger' : 'warning'}>
-                  {t(item.flagLabel)}
-                </Badge>
-              </li>
-            ))}
-          </ul>
-        </section>
+        <Card as="section" aria-label={t('Evidence')} size="sm" variant="tile">
+          <CardHeader>
+            <CardTitle>{t('What the result shows')}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ul className={styles.evidenceList}>
+              {draft.evidence.map((item) => (
+                <li className={styles.evidenceRow} key={item.label}>
+                  <span className={styles.evidenceLabel}>{item.label}</span>
+                  <span className={styles.evidenceValue}>{item.value}</span>
+                  <span className={styles.evidenceReference}>{item.reference}</span>
+                  <Badge size="sm" variant={item.tone === 'danger' ? 'danger' : 'warning'}>
+                    {t(item.flagLabel)}
+                  </Badge>
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
 
-        <section aria-label={t('Plan')} className={styles.proposals}>
-          <h3 className={styles.sectionTitle}>{t('What this adds to the plan')}</h3>
+        <Card as="section" aria-label={t('Plan')} size="sm" variant="tile">
+          <CardHeader>
+            <CardTitle>{t('What this adds to the plan')}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ul className={styles.proposalList}>
+              {spine.map((proposal) => (
+                <li className={styles.proposal} data-spine="true" key={proposal.id}>
+                  <span className={styles.proposalKind}>{t(KIND_LABELS[proposal.kind])}</span>
+                  <span className={styles.proposalMain}>
+                    <span className={styles.proposalLabel}>{proposal.label}</span>
+                    {proposal.detail ? (
+                      <span className={styles.proposalDetail}>{t(proposal.detail)}</span>
+                    ) : null}
+                  </span>
+                  <span className={styles.proposalFixed}>{t('Always included')}</span>
+                </li>
+              ))}
 
-          <ul className={styles.proposalList}>
-            {spine.map((proposal) => (
-              <li className={styles.proposal} data-spine="true" key={proposal.id}>
-                <span className={styles.proposalKind}>{t(KIND_LABELS[proposal.kind])}</span>
-                <span className={styles.proposalMain}>
-                  <span className={styles.proposalLabel}>{proposal.label}</span>
-                  {proposal.detail ? (
-                    <span className={styles.proposalDetail}>{t(proposal.detail)}</span>
-                  ) : null}
-                </span>
-                <span className={styles.proposalFixed}>{t('Always included')}</span>
-              </li>
-            ))}
-
-            {optional.map((proposal) => (
-              <li className={styles.proposal} key={proposal.id}>
-                <span className={styles.proposalKind}>{t(KIND_LABELS[proposal.kind])}</span>
-                <span className={styles.proposalMain}>
-                  <span className={styles.proposalLabel}>{proposal.label}</span>
-                  {proposal.detail ? (
-                    <span className={styles.proposalDetail}>{t(proposal.detail)}</span>
-                  ) : null}
-                </span>
-                <Checkbox
-                  aria-label={`${t('Include')} ${proposal.label}`}
-                  checked={!dropped.has(proposal.id)}
-                  onCheckedChange={() => toggle(proposal.id)}
-                />
-              </li>
-            ))}
-          </ul>
-        </section>
+              {optional.map((proposal) => (
+                <li className={styles.proposal} key={proposal.id}>
+                  <span className={styles.proposalKind}>{t(KIND_LABELS[proposal.kind])}</span>
+                  <span className={styles.proposalMain}>
+                    <span className={styles.proposalLabel}>{proposal.label}</span>
+                    {proposal.detail ? (
+                      <span className={styles.proposalDetail}>{t(proposal.detail)}</span>
+                    ) : null}
+                  </span>
+                  <Checkbox
+                    aria-label={`${t('Include')} ${proposal.label}`}
+                    checked={!dropped.has(proposal.id)}
+                    onCheckedChange={() => toggle(proposal.id)}
+                  />
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
       </CardContent>
 
       <footer className={styles.loopFooter}>

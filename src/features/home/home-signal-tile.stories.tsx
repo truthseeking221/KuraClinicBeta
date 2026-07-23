@@ -117,7 +117,7 @@ export const MobileWidth320: Story = {
   args: { signal: signal(demo.longContent, 'bookings') },
 };
 
-/** Two tiles side by side: the only arrangement that earns the tray boundary. */
+/** Peer metrics earn equal trays because comparison is the task. */
 export const PeerMetrics: Story = {
   render: (args) => (
     <ul

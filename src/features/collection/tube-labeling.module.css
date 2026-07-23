@@ -14,18 +14,15 @@
   gap: var(--space-5);
 }
 
-/* Physical tubes read as objects, so they sit on their own white tile with the
-   stopper colour carrying identity — paired with its name, never colour alone. */
+/* The canonical Card owns the nested tile; the list owns only physical tube
+   arrangement. Stopper colour is always paired with its name. */
 .tubes {
   list-style: none;
   margin: 0;
-  padding: var(--space-4);
+  padding: 0;
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-4) var(--space-5);
-  border-radius: var(--radius-card-tile);
-  background: var(--color-surface);
-  box-shadow: var(--elevation-card-tile);
 }
 
 .tube {
@@ -95,24 +92,8 @@
   white-space: nowrap;
 }
 
-/* What the operator copies onto each tube. The sunken band echoes the label
-   band on the tube glyphs above: this text is what goes in that spot. */
-.penTemplate {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  padding: var(--space-4);
-  border-radius: var(--radius-card-tile);
-  background: var(--color-surface);
-  box-shadow: var(--elevation-card-tile);
-}
-
-.templateCaption {
-  margin: 0;
-  font-size: var(--type-xs);
-  color: var(--color-text-tertiary);
-}
-
+/* The sunken band echoes the label band on the tube glyphs above: this text
+   is what the operator copies into that spot. */
 .templateLine {
   margin: 0;
   align-self: flex-start;
@@ -123,34 +104,6 @@
   font-size: var(--type-md);
   letter-spacing: 0.04em;
   color: var(--color-text-primary);
-}
-
-/* The sticker route's evidence requirement lives on its own white tile so the
-   checklist reads as one obligation, not three floating rows. */
-.photoBlock {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  padding: var(--space-4);
-  border-radius: var(--radius-card-tile);
-  background: var(--color-surface);
-  box-shadow: var(--elevation-card-tile);
-}
-
-.photoCaption {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  margin: 0;
-  font-size: var(--type-sm);
-  font-weight: var(--weight-medium);
-  color: var(--color-text-primary);
-}
-
-.photoList {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
 }
 
 .footer {

@@ -664,19 +664,3 @@ export const CompactDensity: Story = {
   },
   globals: { density: "compact" },
 };
-
-export const DarkTheme: Story = {
-  args: {
-    className: styles.frame,
-    defaultValue: "clinic",
-    legend: "Collection route",
-    name: "dark-collection-route",
-    children: (
-      <>
-        <Radio value="clinic">Clinic draw</Radio>
-        <Radio value="psc">Patient service centre</Radio>
-      </>
-    ),
-  },
-  globals: { theme: "dark" },
-};

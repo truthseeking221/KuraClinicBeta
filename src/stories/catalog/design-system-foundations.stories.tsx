@@ -104,18 +104,6 @@ export const TypographyLongContent: Story = {
     },
   },
 };
-export const TypographyDark: Story = {
-  render: () => <TypographyReference />,
-  globals: { theme: 'dark' },
-  parameters: {
-    chromatic: { viewports: [390, 1440] },
-    docs: {
-      description: {
-        story: 'The same typography roles in the dark semantic theme. Color changes remain semantic; hierarchy, roles, weights, and line heights do not fork.',
-      },
-    },
-  },
-};
 export const Spacing: Story = { render: () => <SpacingReference /> };
 export const Radius: Story = { render: () => <RadiusReference /> };
 export const Elevation: Story = { render: () => <ElevationReference /> };

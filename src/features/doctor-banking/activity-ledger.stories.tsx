@@ -81,7 +81,7 @@ export const StateTreatment: Story = {
     const canvas = within(canvasElement);
     await userEvent.click(canvas.getByRole('button', { name: 'Go to next page' }));
     const row = (await canvas.findByText('Reservation released')).closest('tr');
-    await expect(within(row!).getByText('Voided')).toBeVisible();
+    await expect(within(row!).getAllByText('Voided').length).toBeGreaterThan(0);
   },
 };
 

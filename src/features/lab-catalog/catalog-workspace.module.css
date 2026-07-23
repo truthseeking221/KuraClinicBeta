@@ -1,0 +1,21 @@
+.orderStart {
+  padding: var(--space-4);
+}
+
+.catalog {
+  height: min(
+    calc(var(--space-32) * 6),
+    max(
+      calc(var(--space-32) * 3),
+      calc(100dvh - var(--space-32) - var(--space-12))
+    )
+  );
+  min-height: 0;
+}
+
+@media (max-width: 480px) {
+  .orderStart {
+    padding: var(--space-3);
+  }
+
+}

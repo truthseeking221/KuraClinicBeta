@@ -2,8 +2,6 @@
 @import '../styles/fonts.css';
 @import '../styles/tokens.css';
 
-@custom-variant dark (&:is([data-theme='dark'] *));
-
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);

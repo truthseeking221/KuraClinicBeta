@@ -1,5 +1,9 @@
 'use client';
 
+"use client";
+
+import { useId } from "react";
+
 import {
   Alert,
   AlertAction,
@@ -27,6 +31,8 @@ export function CatalogOrderStart({
   selectedCount,
 }: CatalogOrderStartProps) {
   const t = useT();
+  const selectionHintId = useId();
+  const selectionMissing = canPlaceOrder && selectedCount === 0;
 
   return (
     <div className={styles.start}>
@@ -48,21 +54,31 @@ export function CatalogOrderStart({
         </Alert>
       ) : null}
 
-      <div className={styles.actions}>
-        {selectedCount > 0 ? (
-          <Badge size="sm" variant="primary">
-            {t('{count} selected').replace('{count}', String(selectedCount))}
-          </Badge>
-        ) : null}
-        <Button
-          disabled={selectedCount === 0 || !canPlaceOrder}
-          onClick={onChoosePatient}
-          size="sm"
-          variant="primary"
-        >
-          {t('Choose patient')}
-        </Button>
-      </div>
+      {canPlaceOrder || selectedCount > 0 ? (
+        <div className={styles.actions}>
+          {selectedCount > 0 ? (
+            <Badge size="sm" variant="primary">
+              {t('{count} selected').replace('{count}', String(selectedCount))}
+            </Badge>
+          ) : null}
+          {selectionMissing ? (
+            <span className={styles.selectionHint} id={selectionHintId}>
+              {t('Select at least one test')}
+            </span>
+          ) : null}
+          {canPlaceOrder ? (
+            <Button
+              aria-describedby={selectionMissing ? selectionHintId : undefined}
+              disabled={selectionMissing}
+              onClick={onChoosePatient}
+              size="sm"
+              variant="primary"
+            >
+              {t('Choose patient')}
+            </Button>
+          ) : null}
+        </div>
+      ) : null}
     </div>
   );
 }

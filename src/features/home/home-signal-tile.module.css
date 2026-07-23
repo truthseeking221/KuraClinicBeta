@@ -6,7 +6,7 @@
 .tile {
   position: relative;
   gap: var(--space-1);
-  min-height: 9rem;
+  min-height: 8.25rem;
   padding: var(--space-inset-card);
   transition: background-color var(--motion-color);
 }
@@ -73,53 +73,43 @@
   text-wrap: pretty;
 }
 
-/* On the red field the evidence sentence and the deep link take full contrast:
- * a critical finding is the one place legibility outranks a quiet hierarchy. */
-.tile[data-tone='critical'] .detail,
-.tile[data-tone='critical'] .action {
+/* On the red field the evidence sentence takes full contrast: a critical
+ * finding is the one place legibility outranks a quiet hierarchy. */
+.tile[data-tone='critical'] .detail {
   color: var(--color-text-primary);
 }
 
 .action {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1);
-  margin-top: var(--space-2);
-  color: var(--color-text-secondary);
-  font-size: var(--type-sm);
-  font-weight: var(--weight-medium);
-  text-decoration: none;
-  transition: color var(--motion-color);
-}
-
-/* One link, whole tray clickable, accessible name stays the outcome label. */
-.action::after {
-  content: '';
   position: absolute;
   inset: 0;
   border-radius: inherit;
+  text-decoration: none;
 }
 
-.action svg {
-  transition: transform var(--motion-control);
+.actionLabel {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.tile:has(.action) {
+  cursor: pointer;
 }
 
 .tile:has(.action:hover) {
   background: var(--color-background-secondary-hover);
 }
 
-/* A critical tray already spends its colour on severity, so its hover moves
- * the deep link instead of the field. */
+/* A critical tray already spends its colour on severity, so hover keeps the
+ * semantic field stable. */
 .tile[data-tone='critical']:has(.action:hover) {
   background: var(--color-status-danger-bg);
-}
-
-.tile:has(.action:hover) .action {
-  color: var(--color-text-brand);
-}
-
-.tile:has(.action:hover) .action svg {
-  transform: translateX(2px);
 }
 
 .tile:has(.action:focus-visible) {
@@ -147,14 +137,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .tile,
-  .action,
-  .action svg {
+  .tile {
     transition: none;
-  }
-
-  .tile:has(.action:hover) .action svg {
-    transform: none;
   }
 }
 

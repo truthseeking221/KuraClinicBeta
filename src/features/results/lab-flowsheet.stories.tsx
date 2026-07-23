@@ -201,11 +201,3 @@ export const ComfortableDensity: Story = {
     mode: 'first-visit',
   },
 };
-
-export const DarkTheme: Story = {
-  globals: { theme: 'dark' },
-  args: {
-    title: 'Longitudinal lab results',
-    sections: PARTIAL_EPISODE_SECTIONS,
-  },
-};

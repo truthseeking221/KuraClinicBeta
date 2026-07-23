@@ -1,0 +1,163 @@
+.page {
+  box-sizing: border-box;
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  max-width: var(--layout-page-max);
+  margin-inline: auto;
+  padding: var(--space-page-gutter);
+  flex-direction: column;
+  gap: var(--space-5);
+  color: var(--color-text-primary);
+  font-family: var(--font-family-sans);
+}
+
+.page[data-width='reading'] {
+  max-width: var(--layout-page-max-reading);
+}
+
+.page[data-width='wide'] {
+  max-width: var(--layout-page-max-wide);
+}
+
+.page[data-width='full'] {
+  max-width: none;
+  margin-inline: 0;
+}
+
+/* AppShell already supplies the application gutter. Keeping the page inset
+   only outside that owner prevents every app route from paying it twice while
+   preserving a faithful standalone Storybook canvas. */
+:global([data-slot='app-shell-content'][data-content-inset='page']) .page {
+  padding: 0;
+}
+
+.header,
+.sectionHeader {
+  display: flex;
+  min-width: 0;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.header {
+  gap: var(--space-5);
+}
+
+.heading,
+.sectionHeading {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+
+.heading {
+  gap: var(--space-1);
+}
+
+.title,
+.description,
+.sectionTitle,
+.sectionDescription {
+  margin: 0;
+}
+
+.title {
+  color: var(--color-text-primary);
+  font-size: var(--type-2xl);
+  font-weight: var(--weight-semibold);
+  letter-spacing: -0.01em;
+  line-height: var(--leading-tight);
+  text-wrap: balance;
+}
+
+.description {
+  max-width: 48rem;
+  color: var(--color-text-secondary);
+  font-size: var(--type-base);
+  line-height: var(--leading-normal);
+  text-wrap: pretty;
+}
+
+.actions,
+.sectionActions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.sectionHeader {
+  gap: var(--space-4);
+}
+
+.sectionHeading {
+  gap: var(--space-0-5);
+}
+
+.sectionTitle {
+  color: var(--color-text-primary);
+  font-size: var(--type-md);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-snug);
+}
+
+.sectionDescription {
+  color: var(--color-text-secondary);
+  font-size: var(--type-sm);
+  line-height: var(--leading-normal);
+}
+
+.metricGrid {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 10rem), 1fr));
+  gap: var(--space-4);
+}
+
+.split {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1.35fr) minmax(17rem, 0.9fr);
+  align-items: start;
+  gap: var(--space-6);
+}
+
+@media (max-width: 900px) {
+  .split {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 767px) {
+  .page {
+    padding: var(--space-5);
+  }
+
+  .header {
+    gap: var(--space-4);
+  }
+}
+
+@media (max-width: 480px) {
+  .page {
+    padding: var(--space-4);
+  }
+
+  .header,
+  .sectionHeader {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .actions,
+  .sectionActions {
+    justify-content: flex-start;
+  }
+
+  .actions :global([data-slot='button']) {
+    flex: 1 1 auto;
+  }
+}

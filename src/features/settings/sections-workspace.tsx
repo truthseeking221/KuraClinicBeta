@@ -790,22 +790,6 @@ export function PreferencesSection() {
         <SettingsRow
           action={
             <SegmentedToggle
-              label={t('Theme')}
-              onValueChange={(value) => set('theme', value as Prefs['theme'])}
-              options={[
-                { value: 'light', label: t('Light') },
-                { value: 'dark', label: t('Dark') },
-                { value: 'system', label: t('System') },
-              ]}
-              value={prefs.theme}
-            />
-          }
-          label={t('Theme')}
-          value={t(PREFS_VALUE_TEXT.theme(prefs))}
-        />
-        <SettingsRow
-          action={
-            <SegmentedToggle
               label={t('Language')}
               onValueChange={(value) => setLocale(value as Locale)}
               options={LOCALES.map((option) => ({

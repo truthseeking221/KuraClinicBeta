@@ -611,6 +611,20 @@ export const IRREGULAR_DATE_RESULT: LabAnalyteResult = {
 };
 
 /** Synthetic cross-patient queue data used by Results and Home stories. */
+export const CRITICAL_RESULT_REVIEW_ENTRY: ResultReviewQueueEntry = {
+  id: 'review-dara-pich-potassium',
+  patient: {
+    id: 'patient-dara-pich',
+    name: 'Dara Pich',
+    dob: '1965-02-09',
+    sexAtBirth: 'Male',
+    medicalRecordNumber: 'MK-09118',
+  },
+  testName: 'Potassium',
+  returnedLabel: '12 minutes ago',
+  status: 'critical',
+};
+
 export const RESULT_REVIEW_QUEUE: ResultReviewQueueEntry[] = [
   {
     id: 'review-dara-phally-lipid',

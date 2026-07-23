@@ -8,7 +8,6 @@ import {
   Button,
   Card,
   ChartAnalysisIcon,
-  ChevronRightIcon,
   Skeleton,
   TestTubesIcon,
   UserMultipleIcon,
@@ -71,8 +70,7 @@ function DeepLink({
         onNavigate(action.targetKey);
       }}
     >
-      {t(action.label)}
-      <ChevronRightIcon aria-hidden="true" size={14} />
+      <span className={styles.actionLabel}>{t(action.label)}</span>
     </a>
   );
 }
@@ -83,9 +81,9 @@ function DeepLink({
  * the surface that owns the work. The link stretches over the tray, so the
  * whole tile is the target while the accessible name stays the outcome label.
  *
- * Reach for it only where peer metrics need a stable comparison boundary. Home
- * itself renders its signals as rows — a tray needs a functional reason, and
- * "these counts are related" is not one.
+ * Reach for it only where peer metrics need a stable comparison boundary. The
+ * canonical Home uses one five-axis strip so results, bookings, patients,
+ * pickup, and earnings can be compared in a single scan.
  */
 export function HomeSignalTile({ signal, onNavigate, onRetry }: HomeSignalTileProps) {
   const t = useT();

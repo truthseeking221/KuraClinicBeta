@@ -106,16 +106,18 @@ export function JourneyWorkspace({ initialEpisode }: JourneyWorkspaceProps) {
           ))}
         </ol>
 
-        <div className={styles.nextStep} role="status">
-          <span className={styles.nextLabel}>{t('Next')}</span>
-          <span className={styles.nextAction}>{t(step.action)}</span>
-          <span className={styles.nextActor}>{t(step.actor)}</span>
-          {step.blockedBy ? (
-            <span className={styles.nextBlocked}>
-              {t('Waiting')}: {t(step.blockedBy)}
-            </span>
-          ) : null}
-        </div>
+        <Card as="div" role="status" size="sm" variant="tile">
+          <CardContent className={styles.nextStepContent}>
+            <span className={styles.nextLabel}>{t('Next')}</span>
+            <span className={styles.nextAction}>{t(step.action)}</span>
+            <span className={styles.nextActor}>{t(step.actor)}</span>
+            {step.blockedBy ? (
+              <span className={styles.nextBlocked}>
+                {t('Waiting')}: {t(step.blockedBy)}
+              </span>
+            ) : null}
+          </CardContent>
+        </Card>
 
         <p className={styles.axes}>
           {axisParts(episode)

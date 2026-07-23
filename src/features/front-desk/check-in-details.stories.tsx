@@ -313,13 +313,6 @@ export const MobileNarrow: Story = {
   render: () => <DetailsPlayground initial={capturedPatient()} />,
 };
 
-export const DarkTheme: Story = {
-  name: 'Step 3 — Dark theme',
-  args: baseArgs,
-  globals: { theme: 'dark' },
-  render: () => <DetailsPlayground initial={reviewedPatient()} />,
-};
-
 export const InsuranceScanCard: Story = {
   name: 'Step 3 — Scan card autofills the policy form',
   args: baseArgs,

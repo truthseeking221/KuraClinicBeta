@@ -4,32 +4,17 @@
  * clinical table keeps its row hairlines by design).
  */
 
-.section {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-  min-inline-size: 0;
-}
-
-.header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-4);
-  flex-wrap: wrap;
-}
-
-.title {
-  margin: 0;
-  color: var(--color-text-primary);
-  font-size: var(--type-2xl);
-  font-weight: var(--weight-bold);
-  line-height: var(--leading-tight);
-  letter-spacing: -0.01em;
-}
-
 .toolbar {
   justify-content: flex-start;
+}
+
+.openHeader,
+.openCell {
+  text-align: end;
+}
+
+.openCell :global([data-slot='button']) {
+  margin-inline-start: auto;
 }
 
 .emptyIllustration {
@@ -55,9 +40,16 @@
 
 .patientCopy {
   display: flex;
+  flex: 1 1 auto;
   flex-direction: column;
   gap: 2px;
   min-inline-size: 0;
+}
+
+.mobileOpenAffordance {
+  display: none;
+  flex: 0 0 auto;
+  color: var(--color-text-tertiary);
 }
 
 .nameLine {
@@ -141,4 +133,10 @@
 
 .triage[data-tone='info'] .triageDot {
   background: var(--color-status-info-fg);
+}
+
+@media (max-width: 480px) {
+  .mobileOpenAffordance {
+    display: block;
+  }
 }

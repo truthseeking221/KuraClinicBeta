@@ -70,7 +70,7 @@ export const TypingSeparators: Story = {
   render: () => <ControlledDateInput />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    const input = canvas.getByLabelText('Date of birth');
+    const input = canvas.getByRole('textbox', { name: 'Date of birth' });
 
     await userEvent.type(input, '19900505');
     await expect(input).toHaveValue('1990-05-05');
@@ -81,7 +81,7 @@ export const PasteAndBackspace: Story = {
   render: () => <ControlledDateInput />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    const input = canvas.getByLabelText('Date of birth');
+    const input = canvas.getByRole('textbox', { name: 'Date of birth' });
 
     await userEvent.click(input);
     await userEvent.paste('19900505');

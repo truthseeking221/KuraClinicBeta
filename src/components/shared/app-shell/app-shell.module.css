@@ -89,7 +89,7 @@
   left: 0;
   display: block;
   width: auto;
-  height: var(--space-5);
+  height: auto;
   transform: translateY(-50%);
   transition:
     max-width var(--motion-layout),
@@ -451,7 +451,7 @@
 }
 
 .navItem:hover {
-  background: var(--sidebar-active-bg);
+  background: var(--sidebar-hover-bg);
 }
 
 .navItem:focus-visible {

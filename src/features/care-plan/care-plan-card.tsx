@@ -4,6 +4,7 @@ import {
   Badge,
   Button,
   Card,
+  CardAction,
   CardContent,
   CardHeader,
   CardTitle,
@@ -156,55 +157,65 @@ export function CarePlanCard({
           const monitoring = monitoringForFocus(plan, focus.id);
 
           return (
-            <section aria-label={focus.label} className={styles.focus} key={focus.id}>
-              <header className={styles.focusHeader}>
-                <h3 className={styles.focusTitle}>
+            <Card
+              as="section"
+              aria-label={focus.label}
+              key={focus.id}
+              size="sm"
+              variant="tile"
+            >
+              <CardHeader>
+                <CardTitle>
                   {focus.code === '' ? focus.label : `${focus.code} · ${focus.label}`}
-                </h3>
+                </CardTitle>
                 {focus.enrolledVia === 'protocol' ? (
-                  <Badge size="sm" variant="info">
-                    {t('From protocol')}
-                  </Badge>
+                  <CardAction mobileLayout="inline">
+                    <Badge size="sm" variant="info">
+                      {t('From protocol')}
+                    </Badge>
+                  </CardAction>
                 ) : null}
-              </header>
+              </CardHeader>
 
-              {goals.length > 0 ? (
-                <ul className={styles.goalList}>
-                  {goals.map((goal) => (
-                    <li className={styles.goal} key={goal.id}>
-                      <span className={styles.goalLabel}>{goal.label}</span>
-                      <span className={styles.goalValue}>{goal.latest ?? '—'}</span>
-                      <Badge size="sm" variant={GOAL_TONE[goal.status]}>
-                        {t(GOAL_LABEL[goal.status])}
-                      </Badge>
-                    </li>
-                  ))}
-                </ul>
-              ) : null}
+              <CardContent className={styles.focusContent}>
+                {goals.length > 0 ? (
+                  <ul className={styles.goalList}>
+                    {goals.map((goal) => (
+                      <li className={styles.goal} key={goal.id}>
+                        <span className={styles.goalLabel}>{goal.label}</span>
+                        <span className={styles.goalValue}>{goal.latest ?? '—'}</span>
+                        <Badge size="sm" variant={GOAL_TONE[goal.status]}>
+                          {t(GOAL_LABEL[goal.status])}
+                        </Badge>
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
 
-              {interventions.length > 0 ? (
-                <ul
-                  aria-label={`${t('Steps for')} ${focus.label}`}
-                  className={styles.interventionList}
-                >
-                  {interventions.map((intervention) => (
-                    <InterventionRow
-                      intervention={intervention}
-                      key={intervention.id}
-                      onComplete={() => onCompleteIntervention?.(intervention.id)}
-                      onException={() => onRecordException?.(intervention.id)}
-                    />
-                  ))}
-                </ul>
-              ) : null}
+                {interventions.length > 0 ? (
+                  <ul
+                    aria-label={`${t('Steps for')} ${focus.label}`}
+                    className={styles.interventionList}
+                  >
+                    {interventions.map((intervention) => (
+                      <InterventionRow
+                        intervention={intervention}
+                        key={intervention.id}
+                        onComplete={() => onCompleteIntervention?.(intervention.id)}
+                        onException={() => onRecordException?.(intervention.id)}
+                      />
+                    ))}
+                  </ul>
+                ) : null}
 
-              {monitoring.map((rule) => (
-                <p className={styles.monitoring} key={rule.id}>
-                  <strong>{rule.label}</strong> {t('every')} {rule.cadence}
-                  {rule.escalation ? ` · ${rule.escalation}` : ''}
-                </p>
-              ))}
-            </section>
+                {monitoring.map((rule) => (
+                  <p className={styles.monitoring} key={rule.id}>
+                    <strong>{rule.label}</strong> {t('every')} {rule.cadence}
+                    {rule.escalation ? ` · ${rule.escalation}` : ''}
+                  </p>
+                ))}
+              </CardContent>
+            </Card>
           );
         })}
       </CardContent>

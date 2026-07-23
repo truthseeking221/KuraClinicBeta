@@ -52,7 +52,7 @@ const meta = {
       },
     },
   },
-  args: { demoHint: DEMO_DOOR_HINT, onRouted: fn() },
+  args: { onRouted: fn() },
 } satisfies Meta<typeof Door>;
 
 export default meta;
@@ -69,15 +69,9 @@ export const Default: Story = {
       canvas.getByText('New here? Verify your code to create an account.'),
     ).toBeVisible();
     await expect(canvas.getByLabelText(/Phone number/)).toBeVisible();
-    const demoAccess = canvas.getByRole('complementary', {
-      name: 'Demo access',
-    });
-    const demoHint = within(demoAccess);
-    await expect(demoHint.getByText('111111')).toBeVisible();
-    await expect(demoHint.getByText('098 111 222')).toBeVisible();
-    await expect(demoHint.getByText('098 117 001')).toBeVisible();
-    await expect(demoHint.getByText('098 118 001')).toBeVisible();
-    await expect(demoHint.getByText('098 119 001')).toBeVisible();
+    await expect(
+      canvas.queryByRole('complementary', { name: 'Demo access' }),
+    ).not.toBeInTheDocument();
     const emailAlternate = canvas.getByRole('button', {
       name: 'Use email instead',
     });
@@ -89,6 +83,31 @@ export const Default: Story = {
     await expect(
       canvas.queryByRole('button', { name: /Google/ }),
     ).not.toBeInTheDocument();
+  },
+};
+
+/** Storybook-only credentials stay available without cluttering the product-default Door. */
+export const DemoAccess: Story = {
+  args: { demoHint: DEMO_DOOR_HINT },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'A Storybook-only verification fixture. Production callers leave `demoHint` unset, and the canonical Default story mirrors that clean product surface.',
+      },
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const demoAccess = canvas.getByRole('complementary', {
+      name: 'Demo access',
+    });
+    const demoHint = within(demoAccess);
+    await expect(demoHint.getByText('111111')).toBeVisible();
+    await expect(demoHint.getByText('098 111 222')).toBeVisible();
+    await expect(demoHint.getByText('098 117 001')).toBeVisible();
+    await expect(demoHint.getByText('098 118 001')).toBeVisible();
+    await expect(demoHint.getByText('098 119 001')).toBeVisible();
   },
 };
 
