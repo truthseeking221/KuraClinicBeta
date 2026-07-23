@@ -87,7 +87,7 @@ const meta = {
         decision: 'EXTEND (front-desk patient task to upstream information parity)',
         owner: 'src/features/front-desk',
         evidence:
-          'Information architecture ported from Kura-med/ui-kit `Receptionist/Wizard/Step 2 Patient` (source-kura-ui-kit): identity section with read-only record fields, Khmer name, preferred language, and optional Address, Refund-account, and Insurance-policy disclosures. Composed from house Card, Collapsible, Input, Select, SegmentedToggle, Badge, Alert, MoneyText; Tailwind and tabler icons replaced. Coverage moved out of this task entirely — it is resolved after the order lines exist.',
+          'Information architecture ported from Kura-med/ui-kit `Receptionist/Wizard/Step 2 Patient` (source-kura-ui-kit): identity section with read-only record fields, Khmer name, preferred language, and optional Address, Refund-account, and Insurance-policy disclosures. Composed from house Card, Collapsible, Input, Select, RadioGroup, Badge, Alert, MoneyText; Tailwind and tabler icons replaced. Coverage moved out of this task entirely — it is resolved after the order lines exist.',
         exclusions: [
           'Capture photo (camera hardware ceremony)',
           'Telegram contact channel (platform ceremony — SMS OTP carries the verified-contact gate)',

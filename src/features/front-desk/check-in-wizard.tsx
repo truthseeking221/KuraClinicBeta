@@ -30,6 +30,8 @@ import {
   LockKeyIcon,
   MoneyText,
   QrCodeIcon,
+  Radio,
+  RadioGroup,
   RefreshIcon,
   Select,
   ShieldIcon,
@@ -1576,21 +1578,22 @@ function StepReview({
                   value={t(patient.sexAtBirth)}
                 />
               ) : (
-                <SegmentedToggle
-                  label={t('Sex at birth')}
-                  labelVisible
+                <RadioGroup
+                  legend={t('Sex at birth')}
+                  name="sex-at-birth"
                   onValueChange={(value) =>
                     onUpdate({
                       sexAtBirth: value as FrontDeskPatient['sexAtBirth'],
                       collisionAcked: [],
                     })
                   }
-                  options={[
-                    { value: 'Female', label: t('Female') },
-                    { value: 'Male', label: t('Male') },
-                  ]}
-                  value={patient.sexAtBirth}
-                />
+                  orientation="horizontal"
+                  required
+                  value={patient.sexAtBirth || undefined}
+                >
+                  <Radio value="Female">{t('Female')}</Radio>
+                  <Radio value="Male">{t('Male')}</Radio>
+                </RadioGroup>
               )}
               <Input
                 label={t('National ID number')}

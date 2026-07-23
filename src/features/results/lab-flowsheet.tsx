@@ -10,7 +10,6 @@ import {
   EmptyStateTitle,
 } from '../../components/shared/empty-state';
 import { Badge } from '../../components/ui/badge';
-import { Card, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import {
   Collapsible,
   CollapsibleContent,
@@ -71,16 +70,14 @@ export function LabFlowsheet({
         : 'info';
 
   return (
-    <Card
+    <article
       {...props}
       className={joinClasses(styles.flowsheet, className)}
       data-slot="lab-flowsheet"
-      dividers
-      variant="outline"
     >
-      <CardHeader className={styles.header}>
-        <CardTitle as="h2">{title}</CardTitle>
-        {description ? <CardDescription>{description}</CardDescription> : null}
+      <header className={styles.header}>
+        <h2 className={styles.title}>{title}</h2>
+        {description ? <p className={styles.description}>{description}</p> : null}
         {shouldShowProgress ? (
           <div className={styles.progress} role="status" aria-live="polite">
             <Badge size="sm" variant={progressVariant}>
@@ -88,7 +85,7 @@ export function LabFlowsheet({
             </Badge>
           </div>
         ) : null}
-      </CardHeader>
+      </header>
 
       <div className={styles.body}>
         {renderedSections.map((section) => {
@@ -129,6 +126,6 @@ export function LabFlowsheet({
           </EmptyState>
         ) : null}
       </div>
-    </Card>
+    </article>
   );
 }

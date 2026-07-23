@@ -1,9 +1,41 @@
 .flowsheet {
   width: 100%;
+  min-width: 0;
+  color: var(--color-text-primary);
+  overflow-wrap: anywhere;
 }
 
 .header {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: var(--space-stack-label) var(--space-inline-group);
+  padding: var(--space-4) var(--space-inset-card) var(--space-stack-control);
   position: relative;
+}
+
+.title,
+.description {
+  min-width: 0;
+  grid-column: 1;
+  margin: 0;
+}
+
+.title {
+  color: var(--color-text-primary);
+  font-size: var(--type-md);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-snug);
+  text-wrap: balance;
+}
+
+.description {
+  color: var(--color-text-secondary);
+  font-size: var(--type-sm);
+  font-weight: var(--weight-regular);
+  line-height: var(--leading-normal);
+  text-wrap: pretty;
 }
 
 .progress {
@@ -22,19 +54,19 @@
   flex-direction: column;
 }
 
-/* Table grammar: a grey header band on the white container, hairlines above and
-   below, and white data rows. The band shares the card's inset so the section
-   title, the card title, and every analyte name sit on one left edge. */
-/* `inset="none"` drops the disclosure's own 12px gutter; the attribute is
-   repeated here so this card inset wins over it and the band, the card title,
-   and every analyte name land on one left edge. */
+/* Table grammar: a grey header band on the white reading surface, hairlines
+   above and below, and white data rows. The band shares the flowsheet inset so
+   the section title, the flowsheet title, and every analyte name sit on one
+   left edge. */
+/* `inset="none"` drops the disclosure's own 12px gutter; the explicit inset
+   keeps the band, title, and analyte names aligned without a surrounding card. */
 .sectionTrigger[data-inset][data-slot='collapsible-trigger'] {
   padding-inline: var(--space-inset-card);
 }
 
-/* No side borders: the band spans the card, and its 1px sides would push the
-   section label one pixel off the shared left edge. Focus stays visible
-   through the trigger's focus ring. */
+/* No side borders: the band spans the flowsheet, and its 1px sides would push
+   the section label off the shared left edge. Focus stays visible through the
+   trigger's focus ring. */
 .sectionTrigger {
   border-radius: 0;
   border-inline-width: 0;

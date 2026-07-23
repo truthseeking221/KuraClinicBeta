@@ -340,7 +340,12 @@ export const FullCheckInFlow: Story = {
     const dateOfBirth = canvas.getByLabelText(/Date of birth/);
     await userEvent.type(dateOfBirth, '19900505');
     await expect(dateOfBirth).toHaveValue('1990-05-05');
-    await userEvent.click(canvas.getByRole('radio', { name: 'Female' }));
+    const sexGroup = canvas.getByRole('group', { name: 'Sex at birth' });
+    await expect(within(sexGroup).getAllByRole('radio')).toHaveLength(2);
+    await expect(within(sexGroup).getByRole('radio', { name: 'Female' })).not.toBeChecked();
+    await userEvent.click(within(sexGroup).getByRole('radio', { name: 'Male' }));
+    await expect(within(sexGroup).getByRole('radio', { name: 'Male' })).toBeChecked();
+    await userEvent.click(within(sexGroup).getByRole('radio', { name: 'Female' }));
     await userEvent.type(canvas.getByLabelText(/^Phone/), '99887766');
     await userEvent.click(canvas.getByRole('button', { name: 'Send SMS code' }));
     await userEvent.type(canvas.getByLabelText('SMS code'), DEMO_OTP);
