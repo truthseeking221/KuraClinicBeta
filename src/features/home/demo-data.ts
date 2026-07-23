@@ -291,7 +291,7 @@ export const newDoctorFirstHome: HomeData = {
   firstUse: true,
   scopeLabel: "Bopha Kim's cabinet",
   licence: { state: 'none' },
-  demoPatient: { name: 'Sokha Chann', summary: 'results already back' },
+  demoPatient: { name: 'Sokha Chann' },
   signals: [],
   nextActions: [],
 };

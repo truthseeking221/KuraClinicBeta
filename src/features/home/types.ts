@@ -127,8 +127,6 @@ export type HomeData = {
    */
   demoPatient?: {
     name: string;
-    /** What the record already contains, e.g. "results already back". */
-    summary: string;
   };
   /** First-use route action when the workspace has no signals yet. */
   emptyAction?: { label: string; targetKey: string };

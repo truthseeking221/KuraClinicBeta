@@ -95,17 +95,16 @@ export const HOME_KM: KhmerDictionary = {
   'Renew licence': 'បន្តសុពលភាពអាជ្ញាបណ្ណ',
 
   // First use
-  'You’re in. Your cabinet is ready.': 'អ្នកចូលរួចហើយ។ ការិយាល័យរបស់អ្នករួចរាល់។',
-  'Pick the tests, choose how the sample is collected, and the results come back here.':
-    'ជ្រើសរើសការធ្វើតេស្ត ជ្រើសរើសវិធីប្រមូលសំណាក រួចលទ្ធផលនឹងត្រឡប់មកទីនេះវិញ។',
+  'Your cabinet is ready.': 'ការិយាល័យរបស់អ្នករួចរាល់។',
+  'Book patients, order tests, and review results.': 'កក់អ្នកជំងឺ បញ្ជាតេស្ត និងពិនិត្យលទ្ធផល។',
   'Create booking': 'បង្កើតការកក់',
   'Open demo patient': 'បើកអ្នកជំងឺគំរូ',
-  'results already back': 'លទ្ធផលបានត្រឡប់មកវិញរួចហើយ',
-  'Your records will not change.': 'កំណត់ត្រារបស់អ្នកនឹងមិនផ្លាស់ប្តូរទេ។',
+  'Demo results ready for': 'លទ្ធផលសាកល្បងរួចរាល់សម្រាប់',
+  'No records change.': 'គ្មានកំណត់ត្រាត្រូវបានផ្លាស់ប្តូរ។',
   'Medical licence': 'អាជ្ញាបណ្ណវេជ្ជសាស្ត្រ',
   'Start verification': 'ចាប់ផ្តើមការផ្ទៀងផ្ទាត់',
-  'You can book patients now. A verified licence is required to place orders under your own attribution, collect payments, issue legal documents, submit claims and appear in the doctor directory.':
-    'អ្នកអាចកក់អ្នកជំងឺបានឥឡូវនេះ។ អាជ្ញាបណ្ណដែលបានផ្ទៀងផ្ទាត់ត្រូវបានទាមទារ ដើម្បីធ្វើការបញ្ជាក្រោមឈ្មោះរបស់អ្នកផ្ទាល់ ទទួលការទូទាត់ ចេញឯកសារផ្លូវច្បាប់ ដាក់ស្នើការទាមទារ និងបង្ហាញក្នុងបញ្ជីវេជ្ជបណ្ឌិត។',
+  'Booking is available now. A verified licence unlocks orders under your name, payments, legal documents, claims, and the doctor directory.':
+    'អាចកក់អ្នកជំងឺបានឥឡូវនេះ។ អាជ្ញាបណ្ណដែលបានផ្ទៀងផ្ទាត់អនុញ្ញាតឱ្យបញ្ជាក្រោមឈ្មោះរបស់អ្នក ទទួលការទូទាត់ ចេញឯកសារផ្លូវច្បាប់ ដាក់ស្នើការទាមទារ និងបង្ហាញក្នុងបញ្ជីវេជ្ជបណ្ឌិត។',
   'Not started': 'មិនទាន់ចាប់ផ្តើម',
   'You can book patients now. Your documents are being reviewed and we will notify you when a decision is ready.':
     'អ្នកអាចកក់អ្នកជំងឺបានឥឡូវនេះ។ ឯកសាររបស់អ្នកកំពុងត្រូវបានពិនិត្យ ហើយយើងនឹងជូនដំណឹងនៅពេលមានការសម្រេច។',

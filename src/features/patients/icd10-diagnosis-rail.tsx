@@ -178,7 +178,12 @@ export function Icd10DiagnosisRail({
         >
           <span className={styles.rowCopy}>
             <code className={styles.code}>{candidate.code}</code>
-            <span className={styles.rowLabel}>{candidate.label}</span>
+            <span className={styles.rowText}>
+              <span className={styles.rowLabel}>{candidate.label}</span>
+              {!isAiSuggested && candidate.reviewMeta ? (
+                <span className={styles.rowMeta}>{candidate.reviewMeta}</span>
+              ) : null}
+            </span>
           </span>
         </Checkbox>
         <span className={styles.rowTrailing}>
@@ -250,19 +255,25 @@ export function Icd10DiagnosisRail({
             />
           ) : null}
         </div>
-        <p>{t("Draft — not verified or saved.")}</p>
+        <p>{t("Draft only. Nothing is saved yet.")}</p>
       </header>
 
       <div className={styles.groups}>
         {chartRows.length > 0 ? (
-          <div className={styles.rows}>{chartRows.map(renderRow)}</div>
+          <div className={styles.group}>
+            <p className={styles.groupLabel}>{t("Selected diagnoses")}</p>
+            <div className={styles.rows}>{chartRows.map(renderRow)}</div>
+          </div>
         ) : null}
 
         {aiRows.length > 0 ? (
           <div className={styles.group}>
-            <p className={styles.groupLabel} id="icd10-diagnosis-rail-ai">
+            <p
+              className={`${styles.groupLabel} ${styles.aiLabel}`}
+              id="icd10-diagnosis-rail-ai"
+            >
               <AiBrainIcon aria-hidden="true" />
-              {t("AI suggested")}
+              {t("AI suggestions")}
             </p>
             <div
               aria-labelledby="icd10-diagnosis-rail-ai"
@@ -275,62 +286,65 @@ export function Icd10DiagnosisRail({
         ) : null}
       </div>
 
-      <Combobox<Icd10DiagnosisCandidate, true>
-        autoHighlight
-        filteredItems={searchResults}
-        inline
-        inputValue={query}
-        isItemEqualToValue={(item, value) => item.id === value.id}
-        itemToStringLabel={(candidate) =>
-          `${candidate.code} ${candidate.label}`
-        }
-        itemToStringValue={(candidate) => candidate.id}
-        items={searchCandidates}
-        multiple
-        onInputValueChange={setQuery}
-        onValueChange={syncSearchSelection}
-        value={selectedCandidates}
-      >
-        <ComboboxLabel className="sr-only">
-          {t("Search or add diagnosis")}
-        </ComboboxLabel>
-        <ComboboxInput
-          leadingIcon={<SearchIcon aria-hidden="true" />}
-          placeholder={t("Search or add diagnosis")}
-          showTrigger={false}
-        />
-        {trimmedQuery ? (
-          <div className={styles.searchResults}>
-            {searchResults.length > 0 ? (
-              <p className={styles.searchStatus} role="status">
-                {searchResults.length}{" "}
-                {searchResults.length === 1 ? t("match") : t("matches")}
-              </p>
-            ) : (
-              <ComboboxEmpty>
-                {t("No matching diagnosis. Try a code or name.")}
-              </ComboboxEmpty>
-            )}
-            <ComboboxList>
-              {(candidate: Icd10DiagnosisCandidate) => {
-                const isSelected = selected.has(candidate.id);
-                return (
-                  <ComboboxItem
-                    disabled={isSelected || candidate.codable === false}
-                    key={candidate.id}
-                    value={candidate}
-                  >
-                    <span className={styles.optionCopy}>
-                      <code>{candidate.code}</code>
-                      <span>{candidate.label}</span>
-                    </span>
-                  </ComboboxItem>
-                );
-              }}
-            </ComboboxList>
-          </div>
-        ) : null}
-      </Combobox>
+      <div className={styles.searchGroup}>
+        <p className={styles.groupLabel}>{t("Add diagnosis")}</p>
+        <Combobox<Icd10DiagnosisCandidate, true>
+          autoHighlight
+          filteredItems={searchResults}
+          inline
+          inputValue={query}
+          isItemEqualToValue={(item, value) => item.id === value.id}
+          itemToStringLabel={(candidate) =>
+            `${candidate.code} ${candidate.label}`
+          }
+          itemToStringValue={(candidate) => candidate.id}
+          items={searchCandidates}
+          multiple
+          onInputValueChange={setQuery}
+          onValueChange={syncSearchSelection}
+          value={selectedCandidates}
+        >
+          <ComboboxLabel className="sr-only">
+            {t("Search or add diagnosis")}
+          </ComboboxLabel>
+          <ComboboxInput
+            leadingIcon={<SearchIcon aria-hidden="true" />}
+            placeholder={t("Code or diagnosis name")}
+            showTrigger={false}
+          />
+          {trimmedQuery ? (
+            <div className={styles.searchResults}>
+              {searchResults.length > 0 ? (
+                <p className={styles.searchStatus} role="status">
+                  {searchResults.length}{" "}
+                  {searchResults.length === 1 ? t("match") : t("matches")}
+                </p>
+              ) : (
+                <ComboboxEmpty>
+                  {t("No matching diagnosis. Try a code or name.")}
+                </ComboboxEmpty>
+              )}
+              <ComboboxList>
+                {(candidate: Icd10DiagnosisCandidate) => {
+                  const isSelected = selected.has(candidate.id);
+                  return (
+                    <ComboboxItem
+                      disabled={isSelected || candidate.codable === false}
+                      key={candidate.id}
+                      value={candidate}
+                    >
+                      <span className={styles.optionCopy}>
+                        <code>{candidate.code}</code>
+                        <span>{candidate.label}</span>
+                      </span>
+                    </ComboboxItem>
+                  );
+                }}
+              </ComboboxList>
+            </div>
+          ) : null}
+        </Combobox>
+      </div>
 
       <footer className={styles.footer}>
         {selectedIds.length === 0 ? (

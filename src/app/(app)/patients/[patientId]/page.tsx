@@ -9,6 +9,8 @@ import {
   PrescribeFlow,
   patientSummaryFromJourney,
 } from "../../../../features/patients";
+import { CarePlanCard, completeIntervention } from "../../../../features/care-plan";
+import type { CarePlan } from "../../../../features/care-plan";
 import {
   LabJourneyProgress,
   labJourneyStatusFromCollectionStage,
@@ -121,6 +123,11 @@ export default function PatientChartPage({
       : DEMO_PATIENTS.find((row) => row.userId === patientId));
   // Verify-identity is local demo state: the endpoint returns the updated ref.
   const [verified, setVerified] = useState<PatientSummary | null>(null);
+  // Care-plan edits are local demo state, same shape as the verify pattern:
+  // the prototype has no backend to persist an intervention completion.
+  const [planState, setPlanState] = useState<{ patientId: string; plan: CarePlan } | null>(
+    null,
+  );
   const [floatingCartState, setFloatingCartState] =
     useState<FloatingCartLocalState | null>(null);
   const [floatingCartOpen, setFloatingCartOpen] = useState(false);
@@ -194,6 +201,26 @@ export default function PatientChartPage({
   // Chart content follows the patient. Without this every record rendered the
   // same chronic-disease persona, so the rail and the identity bar disagreed.
   const chart = chartFixtureFor(patient.userId);
+  const carePlan =
+    planState?.patientId === patientId ? planState.plan : chart?.plan;
+
+  function completePlanIntervention(interventionId: string) {
+    if (!carePlan) return;
+    const target = carePlan.interventions.find((iv) => iv.id === interventionId);
+    if (!target) return;
+    const result = completeIntervention(target);
+    if (!result.ok) return;
+    setPlanState({
+      patientId,
+      plan: {
+        ...carePlan,
+        interventions: carePlan.interventions.map((iv) =>
+          iv.id === interventionId ? result.intervention : iv,
+        ),
+      },
+    });
+  }
+
   const baseOrders = chartScenario?.emptyOrders
     ? []
     : (chart?.orders ?? DEMO_ORDERS);
@@ -229,7 +256,7 @@ export default function PatientChartPage({
           <NextActionsRail
             onOrder={() => updateLocalState({ railMode: "order" })}
             onPrescribe={() => updateLocalState({ railMode: "prescribe" })}
-            onSchedule={() => router.push("/soon/care-plan")}
+            onSchedule={() => updateLocalState({ selectedTab: "overview" })}
             patientName={patientName}
           />
         ) : localState.railMode === "order" ? (
@@ -358,6 +385,11 @@ export default function PatientChartPage({
             title="Results — booking AB12345"
           />
         )
+      }
+      carePlan={
+        carePlan ? (
+          <CarePlanCard onCompleteIntervention={completePlanIntervention} plan={carePlan} />
+        ) : undefined
       }
       selectedTab={localState.selectedTab}
       workflow={

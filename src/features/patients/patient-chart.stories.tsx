@@ -5,6 +5,7 @@ import { expect, fn, userEvent, waitFor, within } from "storybook/test";
 
 import { PatientContextRail } from "../patient-context/patient-context-rail";
 import { PATIENT_CONTEXT_FIXTURES } from "../patient-context/demo-data";
+import { CarePlanCard } from "../care-plan";
 import { FloatingOrderCart } from "../order-cart";
 import { doctorWorkflow, returningPatientCart } from "../order-cart/demo-data";
 import { LabOrderRail } from "../lab-catalog";
@@ -154,6 +155,9 @@ export const DemoTourPatient: Story = {
     patient: SOKHA_CHANN,
     orders: DEMO_TOUR_CHART.orders,
     results: SOKHA_CHANN_RESULTS,
+    carePlan: DEMO_TOUR_CHART.plan ? (
+      <CarePlanCard onCompleteIntervention={fn()} plan={DEMO_TOUR_CHART.plan} />
+    ) : undefined,
     rail: (
       <PatientContextRail
         patient={{
@@ -176,6 +180,10 @@ export const DemoTourPatient: Story = {
     await expect(canvas.getByText("Sulfa allergy")).toBeVisible();
     await expect(
       canvas.getByRole("button", { name: /Active problems/ }),
+    ).toBeVisible();
+    // The Overview tab is where the ongoing plan lives — not a rail launcher.
+    await expect(
+      canvas.getByRole("heading", { name: "Chronic kidney disease care plan" }),
     ).toBeVisible();
     await expect(canvas.getByRole("tab", { name: /^Orders$/ })).toBeVisible();
     await userEvent.click(canvas.getByRole("tab", { name: "Results" }));

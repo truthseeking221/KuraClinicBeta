@@ -11,6 +11,7 @@
  */
 
 import { JOURNEY_PATIENT } from '../journey/patient';
+import type { CarePlan } from '../care-plan';
 import type { PatientAcquisitionJourneySnapshot } from '../care-loop/patient-acquisition-flow';
 import type {
   PatientContextLine,
@@ -545,6 +546,95 @@ export type PatientChartFixture = {
   sections: readonly PatientContextSection[];
   diagnoses: readonly DiagnosisContext[];
   orders: readonly PatientOrder[];
+  /** Absent means no plan exists yet; the Overview tab renders nothing extra. */
+  plan?: CarePlan;
+};
+
+/**
+ * Her only care-plan focus is the CKD/hypertension pair already on this
+ * chart: the repeat lab cites her real order (ord-2210), and the next one
+ * is not due yet, so it deliberately carries no evidence.
+ */
+const SOKHA_CHANN_CARE_PLAN: CarePlan = {
+  id: 'plan-sokha-chann-ckd',
+  patientId: DEMO_TOUR_PATIENT_ID,
+  title: 'Chronic kidney disease care plan',
+  status: 'active',
+  version: 1,
+  reviewCadence: '3 months',
+  focuses: [
+    { id: 'focus-ckd', code: 'N18.3', label: 'Chronic kidney disease, stage 3', enrolledVia: 'consultation' },
+  ],
+  goals: [
+    {
+      id: 'goal-egfr',
+      focusId: 'focus-ckd',
+      label: 'eGFR holds above 45 mL/min/1.73m²',
+      target: 'above 45 mL/min/1.73m²',
+      trendKey: 'egfr',
+      latest: '48',
+      status: 'on-track',
+    },
+    {
+      id: 'goal-bp',
+      focusId: 'focus-ckd',
+      label: 'Blood pressure below 130/80',
+      target: 'below 130/80',
+      trendKey: 'bp-systolic',
+      latest: '138/86',
+      status: 'off-target',
+    },
+  ],
+  interventions: [
+    {
+      id: 'iv-repeat-renal-panel',
+      focusId: 'focus-ckd',
+      kind: 'lab',
+      label: 'Creatinine and urine albumin-to-creatinine ratio',
+      owner: 'Dr. Sok Vanna',
+      status: 'complete',
+      evidence: 'Creatinine stable · UACR 28 mg/g — order AB12781',
+    },
+    {
+      id: 'iv-amlodipine-review',
+      focusId: 'focus-ckd',
+      kind: 'medication',
+      label: 'Review amlodipine 5 mg dose',
+      detail: 'BP not yet at target on the current dose',
+      owner: 'Dr. Sok Vanna',
+      status: 'in-progress',
+    },
+    {
+      id: 'iv-renal-diet',
+      focusId: 'focus-ckd',
+      kind: 'lifestyle',
+      label: 'Low-sodium renal diet advice',
+      owner: 'Dr. Sok Vanna',
+      status: 'complete',
+    },
+    {
+      id: 'iv-repeat-renal-panel-next',
+      focusId: 'focus-ckd',
+      kind: 'lab',
+      label: 'Repeat creatinine and UACR',
+      owner: 'Dr. Sok Vanna',
+      due: '3 months (from 09 Jul 2026)',
+      status: 'planned',
+    },
+  ],
+  monitoring: [
+    {
+      id: 'mon-egfr',
+      focusId: 'focus-ckd',
+      label: 'eGFR',
+      cadence: '3 months',
+      trendKey: 'egfr',
+      escalation: 'Falling below 30 — refer to nephrology.',
+    },
+  ],
+  reviews: [
+    { id: 'review-1', onLabel: '09 Jul 2026', by: 'Dr. Sok Vanna', note: 'Stage 3a confirmed, hypertension on treatment' },
+  ],
 };
 
 const DEMO_TOUR_CHART: PatientChartFixture = {
@@ -616,6 +706,7 @@ const DEMO_TOUR_CHART: PatientChartFixture = {
       lineItems: [{ code: 'CRE', displayName: 'Creatinine' }],
     },
   ],
+  plan: SOKHA_CHANN_CARE_PLAN,
 };
 
 /** The chart fixture for a patient, when one has been authored. */

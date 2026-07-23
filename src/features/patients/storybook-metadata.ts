@@ -4,8 +4,10 @@ export const PATIENTS_STORYBOOK_KURA = {
   readiness: READINESS.patients,
   contract: {
     status: 'target-contract',
-    backendMapping: 'ListWorkspacePatients (patient.proto) + GET /clinic/patients',
-    backendRef: 'Kura-med/kura-platform@c55fd36 (freshest local checkout with apps/services)',
+    backendMapping:
+      'ListWorkspacePatients (patient.proto) + GET /clinic/patients',
+    backendRef:
+      'Kura-med/kura-platform@c55fd36 (freshest local checkout with apps/services)',
     consulted: [
       'libs/contracts/proto/patient.proto',
       'apps/services/patient-ms/src/app/origination/workspace-patients.service.ts',
@@ -14,8 +16,7 @@ export const PATIENTS_STORYBOOK_KURA = {
       'apps/bff/clinic-bff/src/app/patient/patient.controller.ts',
       'apps/clinic/clinic-patients-mf/src/app/patients-page.tsx',
     ],
-    note:
-      'The row shape, masking, recency order, and pagination mirror the live list contract verbatim. Both status axes come from that record and are rendered as two columns: assurance is the identity axis (verified means a sighted document), and a masked phone is populated only for a verified primary number, so its absence is the contact axis stating itself. The triage column and assurance filter are design intent: the RPC accepts only limit/offset, and no triage model exists. Name search is impossible by schema (encrypted names, no HMAC) and is deliberately absent, not deferred.',
+    note: 'The row shape, masking, recency order, and pagination mirror the live list contract verbatim. Both status axes come from that record and are rendered as two columns: assurance is the identity axis (verified means a sighted document), and a masked phone is populated only for a verified primary number, so its absence is the contact axis stating itself. The triage column and assurance filter are design intent: the RPC accepts only limit/offset, and no triage model exists. Name search is impossible by schema (encrypted names, no HMAC) and is deliberately absent, not deferred.',
   },
   intake: {
     decision: 'COMPOSE + FEATURE-OWN',
@@ -50,22 +51,23 @@ export const PRESCRIBE_STORYBOOK_KURA = {
   readiness: READINESS.prescribing,
   contract: {
     status: 'target-contract',
-    backendMapping: 'No prescription or medication-reconciliation contract exists',
-    backendRef: 'Kura-med/kura-platform@c55fd36 (freshest inspected local checkout)',
+    backendMapping:
+      'No prescription or medication-reconciliation contract exists',
+    backendRef:
+      'Kura-med/kura-platform@c55fd36 (freshest inspected local checkout)',
     consulted: [
       'libs/contracts/proto/patient.proto',
       'apps/bff/clinic-bff/src/app/patient/patient.controller.ts',
       'apps/clinic/clinic-patients-mf/src/app/patients-page.tsx',
     ],
-    note:
-      'The workspace models a local, unsigned medication draft only. It does not persist, sign, send, dispense, or imply a prescription. AI proposals expose their evidence and missing checks and always require deliberate clinician addition.',
+    note: 'The workspace models a local, unsigned medication draft only. It does not persist, sign, send, dispense, or imply a prescription. AI proposals expose their evidence and missing checks and always require deliberate clinician addition.',
   },
   intake: {
-    decision: 'FEATURE-OWN',
+    decision: 'COMPOSE + FEATURE-OWN',
     owner: 'src/features/patients/prescribe-rail.tsx',
     level: 'clinical composite',
     evidence:
-      'Existing Kura Button, IconButton, Input, SegmentedToggle, Badge, and canonical icons cover the interaction and visual primitives. The feature owns whole-regimen reconciliation, draft state, AI provenance, and the target-contract safety boundary.',
+      'Kura Autocomplete (adapted from ReUI), Collapsible, SegmentedToggle, Alert, Button, Badge, and canonical icons own the interaction architecture. The feature composes whole-regimen reconciliation, local draft state, AI provenance, and the target-contract safety boundary without recreating those lower layers.',
     exclusions: [
       'No signed, sent, dispensed, active, or clinically closed prescription state.',
       'No autonomous medication application or hidden AI provenance.',
@@ -81,6 +83,7 @@ export const PRESCRIBE_STORYBOOK_KURA = {
     elevation: 'none',
     icons: 'kura-canonical',
     motion: 'kura tokens',
-    responsive: 'contained right rail; 320px reflow preserves the review decision and footer state',
+    responsive:
+      'contained right rail; 320px reflow preserves the review decision and footer state',
   },
 } as const;

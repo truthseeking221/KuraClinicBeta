@@ -1,12 +1,9 @@
 /* Medication draft — surface law applied.
  *
  * The page is white and the sections are bare: proximity, labels, and
- * dividers carry the grouping. Only three surfaces earn a container — each
- * medication awaiting a decision is an outline card (a unit with its own
- * state on the white page), and the AI proposals sit in the one grey tray,
- * because AI-drafted work must stay visibly separate from clinician-authored
- * work. Everything settled is a flat row: facts, not work. Status is a Badge
- * with text, never a coloured string.
+ * dividers carry the grouping. Medication decisions stay in one flat
+ * disclosure list. AI proposals use the only grey tray because their
+ * provenance and missing checks need a distinct functional boundary.
  */
 
 /* Bare sections need clearer air between them than trays did: section
@@ -34,13 +31,6 @@
   min-width: 0;
   padding: var(--space-3) var(--space-4);
   border-bottom: 1px solid var(--color-border);
-}
-
-.headerLead {
-  display: flex;
-  min-width: 0;
-  align-items: center;
-  gap: var(--space-2);
 }
 
 .title {
@@ -109,18 +99,7 @@
 }
 
 .diagnosisWarning {
-  display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--space-2);
-}
-
-.diagnosisWarning p {
-  margin: 0;
-  min-width: 0;
-  font-size: var(--type-sm);
-  color: var(--color-status-warning-fg);
 }
 
 /* ── Current regimen ──────────────────────────────────────── */
@@ -131,40 +110,24 @@
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
+  gap: 0;
 }
 
-/* A medication awaiting a decision: an outline card — a unit with its own
-   state and expansion, sitting directly on the white page, so the hairline
-   is what marks it as one object. */
-.reviewItem {
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-card-tile);
-  background: var(--color-surface);
-  overflow: hidden;
+.medicationRow {
+  min-width: 0;
+}
+
+.medicationRow + .medicationRow,
+.medicationRow + .row {
+  border-top: 1px solid var(--color-border);
+}
+
+.reviewDisclosure {
+  min-width: 0;
 }
 
 .reviewTrigger {
-  display: flex;
-  width: 100%;
-  align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-3);
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  font: inherit;
-  text-align: left;
-  transition: background-color var(--motion-color);
-}
-
-.reviewTrigger:hover {
-  background: var(--color-background-primary-hover);
-}
-
-.reviewTrigger:focus-visible {
-  outline: none;
-  box-shadow: inset var(--shadow-focus);
+  padding-inline: var(--space-1);
 }
 
 .rowCopy {
@@ -173,6 +136,21 @@
   min-width: 0;
   flex-direction: column;
   gap: var(--space-0-5);
+}
+
+.reviewSummary {
+  display: grid;
+  min-width: 0;
+  flex: 1;
+  gap: var(--space-0-5);
+}
+
+.reviewTitle {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
 }
 
 .rowDrug {
@@ -200,28 +178,16 @@
   flex-shrink: 0;
 }
 
-.chevron,
-.chevronOpen {
-  flex-shrink: 0;
-  color: var(--color-foreground-icon-tertiary);
-  transition: rotate var(--motion-control);
-}
-
-.chevronOpen {
-  rotate: 180deg;
-}
-
-/* Expansion continues the same tile; the hairline separates trigger from
-   work area without implying a second object. */
 .reviewBody {
-  padding: var(--space-3);
-  border-top: 1px solid var(--color-border);
+  padding-inline: var(--space-1);
+  padding-bottom: var(--space-3);
 }
 
-.decisions {
+.reviewControls {
   display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--space-3);
 }
 
 .adjust {
@@ -249,8 +215,7 @@
   border-top: 1px solid var(--color-border);
 }
 
-.emptyMessage,
-.searchEmpty {
+.emptyMessage {
   margin: 0;
   font-size: var(--type-sm);
   color: var(--color-text-secondary);
@@ -258,20 +223,10 @@
 
 /* ── New medications ──────────────────────────────────────── */
 
-.addAction {
-  flex-shrink: 0;
-}
-
-.draftGroup {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-
-.groupLabel {
-  margin: 0;
-  font-size: var(--type-xs);
-  color: var(--color-text-tertiary);
+.optionCopy {
+  display: grid;
+  min-width: 0;
+  gap: var(--space-0-5);
 }
 
 /* AI proposals: the one grey tray on this page. The background change is the
@@ -298,12 +253,6 @@
   font-size: var(--type-sm);
   font-weight: var(--weight-medium);
   color: var(--color-text-primary);
-}
-
-.aiDescription {
-  margin: 0;
-  font-size: var(--type-xs);
-  color: var(--color-text-secondary);
 }
 
 .aiRows {
@@ -389,11 +338,13 @@
     flex-direction: column;
   }
 
-  .footer :global([data-slot='button']) {
+  .footer :global([data-slot="button"]) {
     width: 100%;
   }
 
-  .decisions :global([data-slot='button']) {
-    flex: 1 1 40%;
+  .reviewTitle {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: var(--space-1);
   }
 }

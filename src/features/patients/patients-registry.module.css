@@ -4,10 +4,6 @@
  * clinical table keeps its row hairlines by design).
  */
 
-.toolbar {
-  justify-content: flex-start;
-}
-
 .openHeader,
 .openCell {
   text-align: end;

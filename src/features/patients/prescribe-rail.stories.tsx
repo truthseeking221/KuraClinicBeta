@@ -22,7 +22,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'Medication review comes first. Once every current-medication decision is drafted, the rail reveals new-medication work and any AI proposals; it returns an unsigned local draft without implying a prescription.',
+          'Review the current regimen, add draft medicines, and inspect AI evidence without implying a saved or signed prescription.',
       },
     },
   },
@@ -56,14 +56,14 @@ export const Default: Story = {
       canvas.getByRole('heading', { name: 'Medication review' }),
     ).toBeVisible();
     await expect(
-      canvas.queryByRole('heading', { name: 'New medications' }),
+      canvas.queryByRole('heading', { name: 'Add medication' }),
     ).not.toBeInTheDocument();
     await expect(
-      canvas.queryByRole('button', { name: 'Add medication' }),
+      canvas.queryByRole('combobox', { name: 'Search medications' }),
     ).not.toBeInTheDocument();
     await expect(
-      canvas.queryByRole('button', { name: 'Finish review' }),
-    ).not.toBeInTheDocument();
+      canvas.getByRole('button', { name: 'Finish review' }),
+    ).toBeDisabled();
   },
 };
 
@@ -73,23 +73,23 @@ export const ReviewGate: Story = {
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(
-      canvas.queryByRole('button', { name: 'Finish review' }),
-    ).not.toBeInTheDocument();
+      canvas.getByRole('button', { name: 'Finish review' }),
+    ).toBeDisabled();
     await expect(
-      canvas.queryByRole('button', { name: 'Add medication' }),
+      canvas.queryByRole('combobox', { name: 'Search medications' }),
     ).not.toBeInTheDocument();
 
     await userEvent.click(canvas.getByRole('button', { name: /Metformin/ }));
-    await userEvent.click(canvas.getByRole('button', { name: 'Stop' }));
-    await expect(canvas.getByText('Draft · stop')).toBeVisible();
+    await userEvent.click(canvas.getByRole('radio', { name: 'Stop' }));
+    await expect(canvas.getByText('Stop')).toBeVisible();
     await expect(canvas.getByText('Metformin')).toBeVisible();
 
     await userEvent.click(canvas.getByRole('button', { name: /Lisinopril/ }));
-    await userEvent.click(canvas.getByRole('button', { name: 'Keep' }));
-    await expect(canvas.getByText('Draft · keep current')).toBeVisible();
+    await userEvent.click(canvas.getByRole('radio', { name: 'Keep' }));
+    await expect(canvas.getByText('Keep')).toBeVisible();
 
     await expect(
-      canvas.getByRole('button', { name: 'Add medication' }),
+      canvas.getByRole('combobox', { name: 'Search medications' }),
     ).toBeEnabled();
     await userEvent.click(
       canvas.getByRole('button', { name: 'Finish review' }),
@@ -111,13 +111,13 @@ export const AdjustFlow: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await userEvent.click(canvas.getByRole('button', { name: /Metformin/ }));
-    await userEvent.click(canvas.getByRole('button', { name: 'Adjust' }));
+    await userEvent.click(canvas.getByRole('radio', { name: 'Adjust' }));
     await userEvent.click(canvas.getByRole('radio', { name: '500 mg' }));
     await userEvent.click(canvas.getByRole('radio', { name: 'once daily' }));
     await userEvent.click(
       canvas.getByRole('button', { name: 'Save adjustment' }),
     );
-    await expect(canvas.getByText('Draft · adjust')).toBeVisible();
+    await expect(canvas.getByText('Adjust')).toBeVisible();
     await expect(canvas.getByText('500 mg · once daily')).toBeVisible();
   },
 };
@@ -132,28 +132,26 @@ export const AddAiSuggestion: Story = {
     await userEvent.click(
       within(aiRegion).getAllByRole('button', { name: 'Add to draft' })[0],
     );
-    await expect(canvas.getByText('Draft additions')).toBeVisible();
+    await expect(
+      canvas.getByRole('list', { name: 'Draft additions' }),
+    ).toBeVisible();
     await expect(canvas.getByText('AI suggestion')).toBeVisible();
     await expect(canvas.getAllByText('Calcium acetate')).toHaveLength(2);
   },
 };
 
-/** A formulary addition remains visible after returning from search. */
+/** The inline authoritative search adds one formulary item without leaving the draft. */
 export const SearchMedication: Story = {
   args: { needsReview: [] },
   tags: ['play-fn'],
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await userEvent.click(
-      canvas.getByRole('button', { name: 'Add medication' }),
-    );
-    const input = canvas.getByRole('searchbox', { name: 'Search medications' });
+    const input = canvas.getByRole('combobox', { name: 'Search medications' });
     await userEvent.type(input, 'ator');
-    await userEvent.click(canvas.getByRole('button', { name: 'Add to draft' }));
-    await userEvent.click(
-      canvas.getByRole('button', { name: 'Back to medication draft' }),
-    );
-    await expect(canvas.getByText('Draft additions')).toBeVisible();
+    await userEvent.click(canvas.getByRole('option', { name: /Atorvastatin/ }));
+    await expect(
+      canvas.getByRole('list', { name: 'Draft additions' }),
+    ).toBeVisible();
     await expect(canvas.getByText('Atorvastatin')).toBeVisible();
   },
 };
@@ -165,13 +163,15 @@ export const NoDiagnosisLinked: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(
-      canvas.queryByRole('button', { name: 'Add medication' }),
+      canvas.queryByRole('combobox', { name: 'Search medications' }),
     ).not.toBeInTheDocument();
     await expect(
-      canvas.queryByRole('button', { name: 'Finish review' }),
-    ).not.toBeInTheDocument();
+      canvas.getByRole('button', { name: 'Finish review' }),
+    ).toBeDisabled();
     await expect(
-      canvas.getByText('Add a diagnosis before reviewing this medication draft.'),
+      canvas.getByText(
+        'Add a diagnosis before reviewing this medication draft.',
+      ),
     ).toBeVisible();
   },
 };
@@ -203,6 +203,36 @@ export const EmptyRegimen: Story = {
   args: { needsReview: [], settled: [], suggestions: [] },
 };
 
+/** A completed review keeps the next action visible and exposes inline medication search. */
+export const ReviewComplete: Story = {
+  args: {
+    initialDraft: {
+      decisions: {
+        'med-metformin': {
+          decision: 'keep',
+          dose: '1 g',
+          frequency: 'twice daily',
+        },
+        'med-lisinopril': {
+          decision: 'pause',
+          dose: '10 mg',
+          frequency: 'once daily',
+        },
+      },
+      additions: [],
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      canvas.getByRole('button', { name: 'Finish review' }),
+    ).toBeEnabled();
+    await expect(
+      canvas.getByRole('combobox', { name: 'Search medications' }),
+    ).toBeVisible();
+  },
+};
+
 export const LongContent: Story = {
   args: {
     patientName: 'Sokha Monirath Chann very long registry display name',
@@ -219,4 +249,19 @@ export const LongContent: Story = {
 
 export const MobileWidth320: Story = {
   globals: { viewport: { value: 'kura320' } },
+};
+
+/** The medication plan remains reachable and readable at the narrow reference width. */
+export const MobileDecision: Story = {
+  globals: { viewport: { value: 'kura320' } },
+  tags: ['play-fn'],
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(canvas.getByRole('button', { name: /Metformin/ }));
+    await expect(
+      canvas.getByRole('radiogroup', { name: 'Plan' }),
+    ).toBeVisible();
+    await userEvent.click(canvas.getByRole('radio', { name: 'Pause' }));
+    await expect(canvas.getByText('Pause')).toBeVisible();
+  },
 };

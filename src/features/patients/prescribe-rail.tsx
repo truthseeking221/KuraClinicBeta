@@ -3,19 +3,21 @@
 import { useMemo, useState } from 'react';
 
 import {
-  AddIcon,
   AiBrainIcon,
+  Alert,
+  AlertAction,
+  AlertDescription,
+  Autocomplete,
   Badge,
   Button,
   CheckIcon,
-  ChevronDownIcon,
-  ChevronLeftIcon,
   CloseButton,
-  IconButton,
-  Input,
-  SearchIcon,
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
   SegmentedToggle,
 } from '../../components/ui';
+import type { AutocompleteItem } from '../../components/ui';
 import { useT } from '../../components/foundations/i18n';
 
 import type {
@@ -32,10 +34,14 @@ import type {
 import styles from './prescribe-rail.module.css';
 
 const DECISION_LABEL: Record<PrescribeDecision, string> = {
-  keep: 'Draft · keep current',
-  adjust: 'Draft · adjust',
-  pause: 'Draft · pause',
-  stop: 'Draft · stop',
+  keep: 'Keep',
+  adjust: 'Adjust',
+  pause: 'Pause',
+  stop: 'Stop',
+};
+
+type MedicationAutocompleteItem = AutocompleteItem & {
+  medication: MedicationOption;
 };
 
 export type PrescribeRailProps = {
@@ -77,7 +83,6 @@ export function PrescribeRail({
   suggestions = [],
 }: PrescribeRailProps) {
   const t = useT();
-  const [view, setView] = useState<'review' | 'search'>('review');
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [decisions, setDecisions] = useState<
     Record<string, PrescribeDraftDecision>
@@ -100,11 +105,23 @@ export function PrescribeRail({
     [decisions, draftAdditions],
   );
 
-  const searchResults = useMemo(() => {
-    const trimmed = query.trim().toLowerCase();
-    if (trimmed === '') return searchPool;
-    return searchPool.filter((med) => med.drug.toLowerCase().includes(trimmed));
-  }, [query, searchPool]);
+  const medicationOptions = useMemo<MedicationAutocompleteItem[]>(
+    () =>
+      searchPool.map((medication) => {
+        const added = draftAdditions.some((item) => item.id === medication.id);
+        return {
+          id: medication.id,
+          label: medication.drug,
+          description: added
+            ? `${medication.dose} · ${t('In draft')}`
+            : medication.dose,
+          keywords: `${medication.drug} ${medication.dose}`,
+          disabled: added,
+          medication,
+        };
+      }),
+    [draftAdditions, searchPool, t],
+  );
 
   const showNewMedicationWork =
     draftAdditions.length > 0 ||
@@ -157,83 +174,6 @@ export function PrescribeRail({
     setDraftAdditions((current) => current.filter((item) => item.id !== id));
   }
 
-  if (view === 'search') {
-    return (
-      <section
-        aria-label={`${t('Prescribe for')} ${patientName}`}
-        className={styles.rail}
-      >
-        <header className={styles.header}>
-          <div className={styles.headerLead}>
-            <IconButton
-              aria-label={t('Back to medication draft')}
-              onClick={() => setView('review')}
-              size="micro"
-            >
-              <ChevronLeftIcon aria-hidden="true" size={16} />
-            </IconButton>
-            <h2 className={styles.title} id="prescribe-search-title">
-              {t('Add medication')}
-            </h2>
-          </div>
-          {onBack ? (
-            <CloseButton
-              aria-label={t('Close medication draft')}
-              onClick={() => onBack(currentDraft)}
-              size="xs"
-            />
-          ) : null}
-        </header>
-        <div className={styles.content}>
-          <Input
-            aria-label={t('Search medications')}
-            autoFocus
-            onChange={(event) => setQuery(event.currentTarget.value)}
-            placeholder={t('Search medications')}
-            prefix={<SearchIcon aria-hidden="true" size={16} />}
-            size="sm"
-            type="search"
-            value={query}
-          />
-          {searchResults.length === 0 ? (
-            <p className={styles.searchEmpty}>
-              {t('No medication matches')} &ldquo;{query.trim()}&rdquo;.{' '}
-              {t('Try another search.')}
-            </p>
-          ) : (
-            <ul className={styles.rows}>
-              {searchResults.map((med) => {
-                const added = draftAdditions.some((item) => item.id === med.id);
-                return (
-                  <li className={styles.row} key={med.id}>
-                    <span className={styles.rowCopy}>
-                      <span className={styles.rowDrug}>{med.drug}</span>
-                      <span className={styles.rowMeta}>{med.dose}</span>
-                    </span>
-                    {added ? (
-                      <span className={styles.addedMark}>
-                        <CheckIcon aria-hidden="true" size={14} />
-                        {t('In draft')}
-                      </span>
-                    ) : (
-                      <Button
-                        onClick={() => addFormularyMedication(med)}
-                        size="sm"
-                        variant="ghost"
-                      >
-                        {t('Add to draft')}
-                      </Button>
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </div>
-      </section>
-    );
-  }
-
   return (
     <section
       aria-label={`${t('Prescribe for')} ${patientName}`}
@@ -272,23 +212,30 @@ export function PrescribeRail({
             ) : null}
           </div>
           {diagnoses.length === 0 ? (
-            <div
+            <Alert
               className={styles.diagnosisWarning}
               id="prescribe-diagnosis-gate"
+              tone="warning"
             >
-              <p>
+              <AlertDescription>
                 {onAddDiagnosis
                   ? t('Add a diagnosis before reviewing this medication draft.')
                   : t(
                       'A linked diagnosis is required before this medication draft can continue.',
                     )}
-              </p>
+              </AlertDescription>
               {onAddDiagnosis ? (
-                <Button onClick={onAddDiagnosis} size="sm" variant="secondary">
-                  {t('Add diagnosis')}
-                </Button>
+                <AlertAction>
+                  <Button
+                    onClick={onAddDiagnosis}
+                    size="sm"
+                    variant="secondary"
+                  >
+                    {t('Add diagnosis')}
+                  </Button>
+                </AlertAction>
               ) : null}
-            </div>
+            </Alert>
           ) : (
             <ul className={styles.rows}>
               {diagnoses.map((diagnosis) => (
@@ -316,16 +263,11 @@ export function PrescribeRail({
             <h3 className={styles.sectionLabel} id="current-medications-title">
               {t('Medication review')}
             </h3>
-            {pending.length > 0 ? (
-              <Badge aria-live="polite" size="sm" variant="warning">
-                {pending.length} {t('to review')}
-              </Badge>
-            ) : null}
           </div>
 
           {needsReview.length === 0 && settled.length === 0 ? (
             <p className={styles.emptyMessage}>
-              {t('No current medications are available in this draft.')}
+              {t('No current medications.')}
             </p>
           ) : (
             <ul className={styles.medicationList}>
@@ -335,121 +277,98 @@ export function PrescribeRail({
                 const adjusting = adjustingId === med.id;
                 const dose = record?.dose ?? med.dose;
                 const frequency = record?.frequency ?? med.frequency;
-                const bodyId = `prescribe-decision-${med.id}`;
                 return (
-                  <li className={styles.reviewItem} key={med.id}>
-                    <button
-                      aria-controls={bodyId}
-                      aria-expanded={expanded}
-                      className={styles.reviewTrigger}
-                      onClick={() => {
-                        setExpandedId(expanded ? null : med.id);
-                        setAdjustingId(null);
+                  <li className={styles.medicationRow} key={med.id}>
+                    <Collapsible
+                      className={styles.reviewDisclosure}
+                      onOpenChange={(open) => {
+                        setExpandedId(open ? med.id : null);
+                        if (!open) setAdjustingId(null);
                       }}
-                      type="button"
+                      open={expanded}
                     >
-                      <span className={styles.rowCopy}>
-                        <span className={styles.rowDrug}>{med.drug}</span>
-                        <span className={styles.rowMeta}>
-                          {dose} · {frequency}
+                      <CollapsibleTrigger className={styles.reviewTrigger}>
+                        <span className={styles.reviewSummary}>
+                          <span className={styles.reviewTitle}>
+                            <span className={styles.rowDrug}>{med.drug}</span>
+                            <Badge
+                              aria-live="polite"
+                              className={styles.reviewState}
+                              size="sm"
+                              variant={record ? 'info' : 'warning'}
+                            >
+                              {record
+                                ? t(DECISION_LABEL[record.decision])
+                                : t('Needs review')}
+                            </Badge>
+                          </span>
+                          <span className={styles.rowMeta}>
+                            {dose} · {frequency}
+                          </span>
+                          <span className={styles.rowRisk}>{med.risk}</span>
                         </span>
-                        <span className={styles.rowRisk}>{med.risk}</span>
-                      </span>
-                      <Badge
-                        className={styles.reviewState}
-                        size="sm"
-                        variant={record ? 'info' : 'warning'}
-                      >
-                        {record
-                          ? t(DECISION_LABEL[record.decision])
-                          : t('Needs review')}
-                      </Badge>
-                      <ChevronDownIcon
-                        aria-hidden="true"
-                        className={
-                          expanded ? styles.chevronOpen : styles.chevron
-                        }
-                        size={16}
-                      />
-                    </button>
-                    {expanded ? (
-                      <div className={styles.reviewBody} id={bodyId}>
-                        {adjusting ? (
-                          <div className={styles.adjust}>
-                            <SegmentedToggle
-                              label={t('Dose')}
-                              labelVisible
-                              onValueChange={setDraftDose}
-                              options={med.doseOptions.map((option) => ({
-                                value: option,
-                                label: option,
-                              }))}
-                              value={draftDose}
-                            />
-                            <SegmentedToggle
-                              label={t('How often')}
-                              labelVisible
-                              onValueChange={setDraftFrequency}
-                              options={med.frequencyOptions.map((option) => ({
-                                value: option,
-                                label: option,
-                              }))}
-                              value={draftFrequency}
-                            />
-                            <div className={styles.adjustActions}>
-                              <Button
-                                onClick={() => setAdjustingId(null)}
-                                size="sm"
-                                variant="ghost"
-                              >
-                                {t('Cancel')}
-                              </Button>
-                              <Button
-                                onClick={() => saveAdjustment(med)}
-                                size="sm"
-                                variant="primary"
-                              >
-                                {t('Save adjustment')}
-                              </Button>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent className={styles.reviewBody}>
+                        <div className={styles.reviewControls}>
+                          <SegmentedToggle
+                            label={t('Plan')}
+                            labelVisible
+                            onValueChange={(value) =>
+                              decide(med, value as PrescribeDecision)
+                            }
+                            options={[
+                              { value: 'keep', label: t('Keep') },
+                              { value: 'adjust', label: t('Adjust') },
+                              { value: 'pause', label: t('Pause') },
+                              { value: 'stop', label: t('Stop') },
+                            ]}
+                            value={
+                              adjusting ? 'adjust' : (record?.decision ?? '')
+                            }
+                          />
+                          {adjusting ? (
+                            <div className={styles.adjust}>
+                              <SegmentedToggle
+                                label={t('Dose')}
+                                labelVisible
+                                onValueChange={setDraftDose}
+                                options={med.doseOptions.map((option) => ({
+                                  value: option,
+                                  label: option,
+                                }))}
+                                value={draftDose}
+                              />
+                              <SegmentedToggle
+                                label={t('How often')}
+                                labelVisible
+                                onValueChange={setDraftFrequency}
+                                options={med.frequencyOptions.map((option) => ({
+                                  value: option,
+                                  label: option,
+                                }))}
+                                value={draftFrequency}
+                              />
+                              <div className={styles.adjustActions}>
+                                <Button
+                                  onClick={() => setAdjustingId(null)}
+                                  size="sm"
+                                  variant="ghost"
+                                >
+                                  {t('Cancel')}
+                                </Button>
+                                <Button
+                                  onClick={() => saveAdjustment(med)}
+                                  size="sm"
+                                  variant="primary"
+                                >
+                                  {t('Save adjustment')}
+                                </Button>
+                              </div>
                             </div>
-                          </div>
-                        ) : (
-                          <div
-                            aria-label={`${t('Draft decision for')} ${med.drug}`}
-                            className={styles.decisions}
-                          >
-                            <Button
-                              onClick={() => decide(med, 'keep')}
-                              size="sm"
-                              variant="secondary"
-                            >
-                              {t('Keep')}
-                            </Button>
-                            <Button
-                              onClick={() => decide(med, 'adjust')}
-                              size="sm"
-                              variant="secondary"
-                            >
-                              {t('Adjust')}
-                            </Button>
-                            <Button
-                              onClick={() => decide(med, 'pause')}
-                              size="sm"
-                              variant="secondary"
-                            >
-                              {t('Pause')}
-                            </Button>
-                            <Button
-                              onClick={() => decide(med, 'stop')}
-                              size="sm"
-                              variant="destructive"
-                            >
-                              {t('Stop')}
-                            </Button>
-                          </div>
-                        )}
-                      </div>
-                    ) : null}
+                          ) : null}
+                        </div>
+                      </CollapsibleContent>
+                    </Collapsible>
                   </li>
                 );
               })}
@@ -481,45 +400,55 @@ export function PrescribeRail({
           >
             <div className={styles.sectionHead}>
               <h3 className={styles.sectionLabel} id="new-medications-title">
-                {t('New medications')}
+                {t('Add medication')}
               </h3>
-              {canAddMedication && searchPool.length > 0 ? (
-                <Button
-                  className={styles.addAction}
-                  leadingIcon={<AddIcon aria-hidden="true" size={16} />}
-                  onClick={() => setView('search')}
-                  size="sm"
-                  variant="ghost"
-                >
-                  {t('Add medication')}
-                </Button>
-              ) : null}
             </div>
 
+            {canAddMedication && medicationOptions.length > 0 ? (
+              <Autocomplete
+                autoHighlight
+                inputProps={{ 'aria-label': t('Search medications') }}
+                items={medicationOptions}
+                noResultsMessage={t('No medication matches.')}
+                onQueryChange={setQuery}
+                onValueChange={(_, item) => {
+                  if (!item) return;
+                  addFormularyMedication(item.medication);
+                  setQuery('');
+                }}
+                placeholder={t('Search medications')}
+                query={query}
+                renderItem={(item) => (
+                  <span className={styles.optionCopy}>
+                    <span className={styles.rowDrug}>{item.label}</span>
+                    <span className={styles.rowMeta}>{item.description}</span>
+                  </span>
+                )}
+                size="sm"
+              />
+            ) : null}
+
             {draftAdditions.length > 0 ? (
-              <div className={styles.draftGroup}>
-                <p className={styles.groupLabel}>{t('Draft additions')}</p>
-                <ul className={styles.rows}>
-                  {draftAdditions.map((med) => (
-                    <li className={styles.row} key={med.id}>
-                      <span className={styles.rowCopy}>
-                        <span className={styles.rowDrug}>{med.drug}</span>
-                        <span className={styles.rowMeta}>{med.dose}</span>
-                        {med.source === 'ai' ? (
-                          <Badge variant="ai">{t('AI suggestion')}</Badge>
-                        ) : null}
-                      </span>
-                      <Button
-                        onClick={() => removeAddition(med.id)}
-                        size="sm"
-                        variant="ghost"
-                      >
-                        {t('Remove')}
-                      </Button>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+              <ul aria-label={t('Draft additions')} className={styles.rows}>
+                {draftAdditions.map((med) => (
+                  <li className={styles.row} key={med.id}>
+                    <span className={styles.rowCopy}>
+                      <span className={styles.rowDrug}>{med.drug}</span>
+                      <span className={styles.rowMeta}>{med.dose}</span>
+                      {med.source === 'ai' ? (
+                        <Badge variant="ai">{t('AI suggestion')}</Badge>
+                      ) : null}
+                    </span>
+                    <Button
+                      onClick={() => removeAddition(med.id)}
+                      size="sm"
+                      variant="ghost"
+                    >
+                      {t('Remove')}
+                    </Button>
+                  </li>
+                ))}
+              </ul>
             ) : null}
 
             {canAddMedication && suggestions.length > 0 ? (
@@ -533,11 +462,6 @@ export function PrescribeRail({
                     <h4 className={styles.aiTitle} id="ai-suggestions-title">
                       {t('AI suggestions')}
                     </h4>
-                    <p className={styles.aiDescription}>
-                      {t(
-                        'Review the evidence and missing checks before adding anything.',
-                      )}
-                    </p>
                   </div>
                 </div>
                 <ul className={styles.aiRows}>
@@ -589,24 +513,34 @@ export function PrescribeRail({
         <div className={styles.footerCopy}>
           <p className={styles.draftNotice}>{t('Draft only — not saved.')}</p>
           {pending.length > 0 ? (
-            <p aria-live="polite" className={styles.footerGate}>
+            <p
+              aria-live="polite"
+              className={styles.footerGate}
+              id="prescribe-footer-state"
+            >
               {t('Review')} {pending.length}{' '}
               {pending.length === 1
                 ? t('current medication')
                 : t('current medications')}{' '}
               {t('to continue.')}
             </p>
+          ) : !hasDiagnosis ? (
+            <p className={styles.footerGate} id="prescribe-footer-state">
+              {t('Diagnosis required.')}
+            </p>
           ) : null}
         </div>
-        {canAddMedication ? (
-          <Button
-            onClick={() => onComplete(currentDraft)}
-            size="sm"
-            variant="primary"
-          >
-            {t('Finish review')}
-          </Button>
-        ) : null}
+        <Button
+          aria-describedby={
+            !canAddMedication ? 'prescribe-footer-state' : undefined
+          }
+          disabled={!canAddMedication}
+          onClick={() => onComplete(currentDraft)}
+          size="sm"
+          variant="primary"
+        >
+          {t('Finish review')}
+        </Button>
       </div>
     </section>
   );

@@ -21,10 +21,12 @@ import {
   DataGrid,
   DataGridPagination,
   DataGridTable,
-  DataGridToolbar,
   ChevronRightIcon,
   RefreshIcon,
-  SegmentedToggle,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
 } from '../../components/ui';
 import {
   EmptyState,
@@ -334,6 +336,15 @@ export function PatientsRegistry({
       </Alert>
     ) : undefined;
 
+  const registryTable = (
+    <>
+      <DataGridTable aria-label={t('Workspace patients')} />
+      {state === 'ready' && visible.length > 0 ? (
+        <DataGridPagination pageSizes={[10, 20, 50]} rowsPerPageLabel={t('Patients per page')} />
+      ) : null}
+    </>
+  );
+
   return (
     <WorkspacePage
       as="section"
@@ -404,23 +415,26 @@ export function PatientsRegistry({
         table={table}
       >
         {state === 'ready' && canFilterByAssurance ? (
-          <DataGridToolbar className={styles.toolbar}>
-            <SegmentedToggle
-              label={t('Filter by identity status')}
-              onValueChange={(value) => setAssurance(value as AssuranceFilter)}
-              options={[
-                { value: 'all', label: `${t('All')} ${counts.all}` },
-                { value: 'unverified', label: `${t('Provisional')} ${counts.unverified}` },
-                { value: 'verified', label: `${t('Verified')} ${counts.verified}` },
-              ]}
-              value={assurance}
-            />
-          </DataGridToolbar>
-        ) : null}
-        <DataGridTable aria-label={t('Workspace patients')} />
-        {state === 'ready' && visible.length > 0 ? (
-          <DataGridPagination pageSizes={[10, 20, 50]} rowsPerPageLabel={t('Patients per page')} />
-        ) : null}
+          <Tabs
+            onValueChange={(value) => setAssurance(value as AssuranceFilter)}
+            value={assurance}
+          >
+            <TabsList aria-label={t('Filter by identity status')}>
+              <TabsTrigger count={counts.all} value="all">
+                {t('All')}
+              </TabsTrigger>
+              <TabsTrigger count={counts.unverified} value="unverified">
+                {t('Provisional')}
+              </TabsTrigger>
+              <TabsTrigger count={counts.verified} value="verified">
+                {t('Verified')}
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value={assurance}>{registryTable}</TabsContent>
+          </Tabs>
+        ) : (
+          registryTable
+        )}
       </DataGrid>
     </WorkspacePage>
   );

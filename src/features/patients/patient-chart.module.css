@@ -242,6 +242,13 @@
   flex-wrap: wrap;
 }
 
+.carePlan {
+  margin-block-start: var(--space-5);
+  padding-block-start: var(--space-4);
+  border-block-start: 1px solid var(--color-border);
+  max-inline-size: 40rem;
+}
+
 @media (max-width: 1023px) {
   .workspaceRegion[data-stacked="true"] .actionRail {
     border-block-start: 1px solid var(--color-border);

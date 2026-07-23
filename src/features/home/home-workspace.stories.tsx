@@ -187,18 +187,18 @@ export const NewDoctorFirstHome: Story = {
     const canvas = within(canvasElement);
     await expect(
       canvas.getByRole("heading", {
-        name: "You’re in. Your cabinet is ready.",
+        name: "Your cabinet is ready.",
       }),
     ).toBeVisible();
     await expect(
       canvas.getByText(
-        "Pick the tests, choose how the sample is collected, and the results come back here.",
+        "Book patients, order tests, and review results.",
       ),
     ).toBeVisible();
     await expect(canvas.getByText("Not started")).toBeVisible();
     await expect(
       canvas.getByText(
-        "You can book patients now. A verified licence is required to place orders under your own attribution, collect payments, issue legal documents, submit claims and appear in the doctor directory.",
+        "Booking is available now. A verified licence unlocks orders under your name, payments, legal documents, claims, and the doctor directory.",
       ),
     ).toBeVisible();
     await expect(canvas.queryByText("No patients")).not.toBeInTheDocument();
@@ -243,7 +243,7 @@ export const NewDoctorFirstHome: Story = {
 
     await expect(
       canvas.getByText(
-        "Sokha Chann — results already back. Your records will not change.",
+        "Demo results ready for Sokha Chann. No records change.",
       ),
     ).toBeVisible();
     await userEvent.click(
@@ -263,14 +263,14 @@ export const FirstHomeWithoutDemoPatient: Story = {
     const canvas = within(canvasElement);
     await expect(
       canvas.getByRole("heading", {
-        name: "You’re in. Your cabinet is ready.",
+        name: "Your cabinet is ready.",
       }),
     ).toBeVisible();
     await expect(
       canvas.queryByRole("button", { name: "Open demo patient" }),
     ).not.toBeInTheDocument();
     await expect(
-      canvas.queryByText(/results already back/),
+      canvas.queryByText(/Demo results ready/),
     ).not.toBeInTheDocument();
     await expect(
       canvas.getByRole("button", { name: "Create booking" }),

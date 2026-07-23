@@ -90,7 +90,7 @@ function InterventionRow({
           >
             {t('Mark done')}
           </Button>
-          {!check.ok && requiresEvidence(intervention.kind) ? (
+          {!check.ok && requiresEvidence(intervention.kind) && onException ? (
             <Button onClick={onException} size="sm" variant="ghost">
               {t('Record exception')}
             </Button>

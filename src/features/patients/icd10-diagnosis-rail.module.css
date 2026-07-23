@@ -55,15 +55,15 @@
 /* Groups sit further apart than the rows inside them: spacing carries the
    structure so no row needs a border. */
 .groups {
-  gap: var(--space-5);
+  gap: var(--space-4);
 }
 
 .group {
-  gap: var(--space-1);
+  gap: var(--space-2);
 }
 
 .rows {
-  gap: var(--space-1);
+  gap: var(--space-0-5);
 }
 
 .groupLabel {
@@ -71,10 +71,14 @@
   align-items: center;
   gap: var(--space-1-5);
   margin: 0;
-  color: var(--color-status-ai-fg);
+  color: var(--color-text-secondary);
   font-size: var(--type-sm);
   font-weight: var(--weight-medium);
   line-height: var(--leading-normal);
+}
+
+.aiLabel {
+  color: var(--color-status-ai-fg);
 }
 
 .groupLabel > svg {
@@ -102,7 +106,7 @@
 }
 
 .suggestionRow[data-selected="true"] {
-  background: var(--color-selection-bg);
+  background: transparent;
 }
 
 .rowChoice {
@@ -118,10 +122,18 @@
 }
 
 .rowCopy {
+  display: grid;
+  min-inline-size: 0;
+  grid-template-columns: var(--space-12) minmax(0, 1fr);
+  align-items: start;
+  gap: var(--space-3);
+}
+
+.rowText {
   display: flex;
   min-inline-size: 0;
-  align-items: baseline;
-  gap: var(--space-3);
+  flex-direction: column;
+  gap: var(--space-0-5);
 }
 
 .rowLabel {
@@ -129,6 +141,14 @@
   font-size: var(--type-sm);
   font-weight: var(--weight-regular);
   line-height: var(--leading-snug);
+  overflow-wrap: anywhere;
+}
+
+.rowMeta {
+  color: var(--color-text-secondary);
+  font-size: var(--type-xs);
+  font-variant-numeric: tabular-nums;
+  line-height: var(--leading-normal);
   overflow-wrap: anywhere;
 }
 
@@ -229,6 +249,15 @@
 
 .optionCopy > span {
   overflow-wrap: anywhere;
+}
+
+.searchGroup {
+  display: flex;
+  min-inline-size: 0;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-block-start: var(--space-1);
+  border-top: 1px solid var(--color-border);
 }
 
 .searchResults {

@@ -79,15 +79,15 @@ export const ExistingDiagnoses: Story = {
     await expect(
       canvas.getByRole("heading", { name: "Select diagnosis" }),
     ).toBeVisible();
+    await expect(canvas.getByText("Selected diagnoses")).toBeVisible();
+    await expect(canvas.getByText("HbA1c 8.9% · not repeated")).toBeVisible();
+    await expect(canvas.getByText("eGFR 11 · albuminuria")).toBeVisible();
+    await expect(canvas.getByText("AI suggestions")).toBeVisible();
+    await expect(
+      canvas.getByRole("combobox", { name: "Search or add diagnosis" }),
+    ).toHaveAttribute("placeholder", "Code or diagnosis name");
     const next = canvas.getByRole("button", { name: /Review medicines/ });
     await expect(next).toBeEnabled();
-    await userEvent.click(next);
-    await expect(
-      canvas.getByRole("heading", { name: "Prescribe" }),
-    ).toBeVisible();
-    await expect(
-      canvas.getByRole("button", { name: "Change diagnoses" }),
-    ).toBeVisible();
   },
 };
 
@@ -127,7 +127,9 @@ export const PreserveMedicationDraft: Story = {
     await userEvent.click(
       canvas.getByRole("button", { name: /Review medicines/ }),
     );
-    await expect(canvas.getByText("Draft additions")).toBeVisible();
+    await expect(
+      canvas.getByRole("list", { name: "Draft additions" }),
+    ).toBeVisible();
     await expect(canvas.getByText("AI suggestion")).toBeVisible();
   },
 };

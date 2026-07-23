@@ -72,7 +72,7 @@ function firstUseLicenceContent(
       return {
         actionLabel: "Start verification",
         description:
-          "You can book patients now. A verified licence is required to place orders under your own attribution, collect payments, issue legal documents, submit claims and appear in the doctor directory.",
+          "Booking is available now. A verified licence unlocks orders under your name, payments, legal documents, claims, and the doctor directory.",
         status: "Not started",
         tone: "warning",
       };
@@ -149,12 +149,10 @@ function FirstUseHome({
       <header className={styles.welcomeHeader}>
         <div className={styles.welcomeCopy}>
           <h1 className={styles.welcomeTitle}>
-            {t("You’re in. Your cabinet is ready.")}
+            {t("Your cabinet is ready.")}
           </h1>
           <p className={styles.bookingDescription}>
-            {t(
-              "Pick the tests, choose how the sample is collected, and the results come back here.",
-            )}
+            {t("Book patients, order tests, and review results.")}
           </p>
         </div>
         {/* One primary action. The demo record is an alternative way to start,
@@ -179,8 +177,8 @@ function FirstUseHome({
             rather than a blind tour, and that opening it is safe. */}
         {demoPatient ? (
           <p className={styles.bookingNote}>
-            {`${demoPatient.name} — ${t(demoPatient.summary)}. `}
-            {t("Your records will not change.")}
+            {`${t("Demo results ready for")} ${demoPatient.name}. `}
+            {t("No records change.")}
           </p>
         ) : null}
       </header>

@@ -4,9 +4,9 @@ import { useState } from 'react';
 
 import {
   Button,
-  CalendarAddIcon,
   CheckIcon,
   ChevronRightIcon,
+  HeartCheckIcon,
   NotificationsIcon,
   PrescriptionIcon,
   Progress,
@@ -40,9 +40,9 @@ const NEXT_ACTIONS: readonly NextAction[] = [
   },
   {
     id: 'schedule',
-    icon: <CalendarAddIcon aria-hidden="true" size={16} />,
-    label: 'Schedule follow-up',
-    description: 'Set a follow-up reminder',
+    icon: <HeartCheckIcon aria-hidden="true" size={16} />,
+    label: 'Care plan',
+    description: 'Review goals and next steps',
   },
 ];
 

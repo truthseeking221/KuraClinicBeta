@@ -281,6 +281,8 @@ export type PatientChartProps = {
   actionRailMode?: PatientChartActionRailMode;
   /** Canonical results composition (results feature), supplied by the caller. */
   results?: ReactNode;
+  /** Canonical CarePlanCard composition; absent means no plan exists yet. */
+  carePlan?: ReactNode;
   state?: PatientChartState;
   defaultTab?: PatientChartTab;
   /** Controlled selected record view for completion and deep-link handoffs. */
@@ -305,6 +307,7 @@ export type PatientChartProps = {
 export function PatientChart({
   actionRail,
   actionRailMode = "launcher",
+  carePlan,
   defaultTab = "overview",
   headerActions,
   onBack,
@@ -531,6 +534,9 @@ export function PatientChart({
                   status.assurance === "unverified" &&
                   onVerifyIdentity ? (
                     <VerifyIdentity onVerifyIdentity={onVerifyIdentity} />
+                  ) : null}
+                  {carePlan ? (
+                    <div className={styles.carePlan}>{carePlan}</div>
                   ) : null}
                 </TabsContent>
                 <TabsContent value="orders">

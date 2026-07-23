@@ -77,7 +77,7 @@ export const FilterToProvisional: Story = {
   tags: ['play-fn'],
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await userEvent.click(canvas.getByRole('radio', { name: /Provisional/ }));
+    await userEvent.click(canvas.getByRole('tab', { name: /Provisional/ }));
     await expect(canvas.queryByText('Sok Nimol')).not.toBeInTheDocument();
     await expect(canvas.getByText('Lina Prum')).toBeInTheDocument();
     // Terminal records live only under All: they are facts, not a bucket.

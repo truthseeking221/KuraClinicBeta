@@ -65,7 +65,8 @@ export const PATIENTS_KM: KhmerDictionary = {
     'កំណត់ត្រានេះមិនមាន ឬមិនស្ថិតក្នុងកន្លែងធ្វើការនេះទេ។',
   'Back to patients': 'ត្រឡប់ទៅបញ្ជីអ្នកជំងឺ',
   "Couldn't load this patient": 'មិនអាចផ្ទុកអ្នកជំងឺនេះបានទេ',
-  'Check your connection and try again.': 'ពិនិត្យការតភ្ជាប់ រួចព្យាយាមម្តងទៀត។',
+  'Check your connection and try again.':
+    'ពិនិត្យការតភ្ជាប់ រួចព្យាយាមម្តងទៀត។',
   'Switch patient': 'ប្តូរអ្នកជំងឺ',
   'This patient is deceased': 'អ្នកជំងឺនេះបានទទួលមរណភាព',
   'The record is closed to new clinical work.':
@@ -110,7 +111,8 @@ export const PATIENTS_KM: KhmerDictionary = {
   'Active orders': 'ការបញ្ជាសកម្ម',
   'Past orders': 'ការបញ្ជាមុនៗ',
   'Search past orders': 'ស្វែងរកការបញ្ជាមុនៗ',
-  'No past orders match this search.': 'គ្មានការបញ្ជាមុនៗត្រូវនឹងការស្វែងរកនេះទេ។',
+  'No past orders match this search.':
+    'គ្មានការបញ្ជាមុនៗត្រូវនឹងការស្វែងរកនេះទេ។',
   'Show more past orders': 'បង្ហាញការបញ្ជាមុនៗបន្ថែម',
 
   // Order lifecycle status
@@ -200,12 +202,14 @@ export const PATIENTS_KM: KhmerDictionary = {
   'to review': 'ត្រូវពិនិត្យ',
   'No current medications are available in this draft.':
     'គ្មានថ្នាំកំពុងប្រើក្នុងសេចក្តីព្រាងនេះទេ។',
+  'No current medications.': 'គ្មានថ្នាំកំពុងប្រើទេ។',
   'Needs review': 'ត្រូវការត្រួតពិនិត្យ',
   'Draft · keep current': 'សេចក្តីព្រាង · រក្សាដដែល',
   'Draft · adjust': 'សេចក្តីព្រាង · កែសម្រួល',
   'Draft · pause': 'សេចក្តីព្រាង · ផ្អាក',
   'Draft · stop': 'សេចក្តីព្រាង · បញ្ឈប់',
   'Draft decision for': 'ការសម្រេចព្រាងសម្រាប់',
+  Plan: 'ផែនការ',
   Keep: 'រក្សាដដែល',
   Adjust: 'កែសម្រួល',
   Pause: 'ផ្អាក',
@@ -220,6 +224,7 @@ export const PATIENTS_KM: KhmerDictionary = {
   'Add medication': 'បន្ថែមថ្នាំ',
   'Search medications': 'ស្វែងរកថ្នាំ',
   'No medication matches': 'គ្មានថ្នាំត្រូវនឹង',
+  'No medication matches.': 'គ្មានថ្នាំត្រូវគ្នាទេ។',
   'Try another search.': 'សាកល្បងស្វែងរកផ្សេង។',
   'Draft additions': 'ការបន្ថែមក្នុងសេចក្តីព្រាង',
   'Add to draft': 'បន្ថែមទៅសេចក្តីព្រាង',
@@ -233,6 +238,7 @@ export const PATIENTS_KM: KhmerDictionary = {
 
   // Prescribe rail: footer gate
   'Draft only — not saved.': 'សេចក្តីព្រាងតែប៉ុណ្ណោះ — មិនបានរក្សាទុក។',
+  'Diagnosis required.': 'ត្រូវការរោគវិនិច្ឆ័យ។',
   'current medication': 'ថ្នាំកំពុងប្រើ',
   'current medications': 'ថ្នាំកំពុងប្រើ',
   'to continue.': 'ដើម្បីបន្ត។',

@@ -108,9 +108,9 @@ export const Default: Story = {
       canvas.getByRole("heading", { name: "Select diagnosis" }),
     ).toBeVisible();
     await expect(
-      canvas.getByText("Draft — not verified or saved."),
+      canvas.getByText("Draft only. Nothing is saved yet."),
     ).toBeVisible();
-    await expect(canvas.getByText("AI suggested")).toBeVisible();
+    await expect(canvas.getByText("AI suggestions")).toBeVisible();
     await expect(
       canvas.getByRole("button", { name: "Review medicines" }),
     ).toBeDisabled();
