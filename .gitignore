@@ -23,6 +23,7 @@
 
 # misc
 .DS_Store
+/books/
 *.pem
 /.claude/scheduled_tasks.lock
 
